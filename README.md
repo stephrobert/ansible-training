@@ -9,13 +9,12 @@ Ce n’est pas un cours académique, mais plutôt un guide pour vous accompagner
 
 ## 🎯 Objectifs
 
-- **Comprendre les concepts fondamentaux** d’Ansible : inventaire, ad-hoc, modules, playbooks.
-- **Apprendre à écrire des playbooks** clairs et modulaires en utilisant les bonnes pratiques YAML.
-- **Structurer et réutiliser votre code** via les rôles et les collections.
-- **Gérer la sécurité et les données sensibles** avec Ansible Vault.
-- **Orchestrer des environnements complexes** et automatiser des déploiements multi-niveaux.
-- **Intégrer Ansible dans un workflow DevOps**, avec des pipelines CI/CD.
-- **Mettre en place des tests automatisés** pour garantir la qualité de vos automatisations.
+- [**Comprendre les concepts fondamentaux d’Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/) : inventaire, ad-hoc, modules, playbooks.
+- [**Apprendre à écrire des playbooks**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecriture-de-playbooks-ansible/) clairs et modulaires en utilisant les bonnes pratiques YAML.
+- [**Structurer et réutiliser votre code**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-roles/) via les rôles et les collections.
+-[ **Gérer la sécurité et les données sensibles**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/vault/) avec Ansible Vault.
+- [**Mettre en place des tests automatisés**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/molecule-tox/) pour garantir la qualité de vos automatisations.
+- ...
 
 ---
 
