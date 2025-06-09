@@ -51,6 +51,8 @@ Avant de commencer, assurez-vous d’avoir :
   python3 -m pipx ensurepath
   pipx install ansible
   pipx install ansible-lint
+  pipx install pytest
+  pipx inject pytest pytest-testinfra
   ```
 
 - **Incus** pour tester localement vos playbooks sans impacter votre infrastructure de production.
