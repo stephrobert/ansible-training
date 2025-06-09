@@ -55,7 +55,22 @@ Avant de commencer, assurez-vous d’avoir :
   pipx inject pytest pytest-testinfra
   ```
 
-- **Incus** pour tester localement vos playbooks sans impacter votre infrastructure de production.
+A partir du TP 3, il sera nécessaire d'installer **Incus** (anciennement LXD).
+En effet, Incus est un gestionnaire de conteneurs et de machines virtuelles qui
+vous permet de créer et gérer des environnements virtuels. Il est
+particulièrement utile pour les TP qui risquent d'endommager votre instance de Linux.
+
+Pour l'installer, exécutez les commandes suivantes :
+
+```bash
+sudo apt install incus
+```
+
+Initialiser Incus :
+
+```bash
+sudo incus init --minimal
+```
 
 ---
 
