@@ -1,0 +1,21 @@
+#cloud-config
+users:
+  - name: admin
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: sudo
+    shell: /bin/bash
+    lock_passwd: true
+package_update: true
+package_upgrade: true
+packages:
+  - python3-pip
+  - pipx
+  - git
+  - python3-venv
+write_files:
+  - path: /home/admin/.profile
+    content: |
+       export PATH=$PATH:/home/admin/.local/bin
+    append: true
+runcmd:
+  - chown -R admin:admin /home/admin

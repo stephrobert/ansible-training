@@ -1,0 +1,67 @@
+- name: Déployer un virtualhost Apache
+  hosts: tp
+  connection: community.general.incus
+  vars:
+    server_name: monsite.local
+    document_root: /var/www/monsite
+  tasks:
+    - name: Installer Apache
+      become: true
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Installer les modules Apache nécessaires
+      become: true
+      ansible.builtin.apt:
+        name:
+          - apache2
+          - libapache2-mod-wsgi-py3
+          - python3-pip
+        state: present
+
+    - name: Créer le dossier du site
+      become: true
+      ansible.builtin.file:
+        path: "{{ document_root }}"
+        state: directory
+        mode: '0755'
+        owner: www-data
+        group: www-data
+
+    - name: Création d'un fichier index.html
+      become: true
+      ansible.builtin.copy:
+        dest: "{{ document_root }}/index.html"
+        content: "<html><body><h1>Bienvenue sur {{ server_name }}</h1></body></html>"
+        mode: '0644'
+        owner: www-data
+        group: www-data
+
+    - name: Générer le fichier de conf Apache
+      become: true
+      ansible.builtin.template:
+        src: templates/apache_vhost.conf.j2
+        dest: "/etc/apache2/sites-available/{{ server_name }}.conf"
+        mode: '0644'
+        owner: root
+        group: root
+
+    - name: Activer le site
+      become: true
+      ansible.builtin.command: a2ensite {{ server_name }}.conf
+      notify: Reload Apache
+
+    - name: Ajout du nom de domaine dans /etc/hosts
+      become: true
+      delegate_to: localhost
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        line: "{{ ansible_default_ipv4.address }} {{ server_name }}"
+        state: present
+
+  handlers:
+    - name: Reload Apache
+      become: true
+      ansible.builtin.service:
+        name: apache2
+        state: reloaded
