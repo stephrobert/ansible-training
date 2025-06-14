@@ -43,11 +43,19 @@ Avant de commencer, assurez-vous d’avoir :
   ```bash
   sudo apt-get install python3 python3-pip
   ```
+- **python-virtualenv** :
+
+  ```bash
+  sudo apt install python3-virtualenv
+  mkdir -p ~/.venvs
+  virtualenv ~/.venvs/ansible-training
+  source ~/.venvs/ansible-training/bin/activate
+  ```
 
 - **Pipx** pour installer Ansible et ses dépendances de manière isolée :
 
   ```bash
-  python3 -m pip install --user pipx
+  python3 -m pip install pipx
   python3 -m pipx ensurepath
   pipx install ansible
   pipx install ansible-lint
