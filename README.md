@@ -23,14 +23,15 @@ Ce n’est pas un cours académique, mais plutôt un guide pour vous accompagner
 - [`00-Introduction-Ansible`](./00-Introduction-Ansible) — Présentation d’Ansible, concepts fondamentaux (inventaires, modules, ad-hoc, YAML).
 - [`01-Inventaires-Statiques`](./01-Inventaires-Statiques) — Introduction à Ansible, installation, configuration de l’inventaire, commandes ad-hoc.
 - [`02-Playbooks`](./02-Playbooks) — Rédaction de playbooks simples, tâches, variables, gestion des handlers et conditions.
-- [`03-Templates`](./03-Templates) — Utilisation avancée des variables (groupes, hôtes, fichiers vars), Jinja2 et templates pour la génération dynamique de fichiers.
-- [`04-Roles`](./04-Roles) — Structuration du code : création, organisation et réutilisation de rôles Ansible, bonnes pratiques.
-- [`05-Collection-modules`](./05-Collection-modules) — Création et publication de collections personnalisées, développement de modules Ansible en Python.
-- [`06-Galaxy-et-Community`](./06-Galaxy-et-Community) — Utilisation d’Ansible Galaxy, import de rôles existants et contribution à la communauté.
-- [`07-Sécurité-et-Vault`](./07-Sécurité-et-Vault) — Chiffrement des données sensibles avec Ansible Vault, bonnes pratiques de sécurisation.
-- [`08-Orchestration-Avancée`](./08-Orchestration-Avancée) — Scénarios multi-niveaux, orchestration de clusters (Docker, Kubernetes), déploiements blue/green, rolling updates.
-- [`09-CI-CD-Integration`](./09-CI-CD-Integration) — Intégration d’Ansible dans des pipelines CI/CD (GitLab CI, GitHub Actions, Jenkins), bonnes pratiques DevOps.
-- [`10-Tests-et-Validation`](./10-Tests-et-Validation) — Tests de playbooks avec Molecule et Testinfra, validation automatique, intégration continue pour l’assurance qualité.
+- [`03-Handlers`](./03-Handlers) — Utilisation des handlers pour exécuter des actions conditionnelles, gestion des modifications de configuration.
+- [`04-Templates`](./03-Templates) — Utilisation avancée des variables (groupes, hôtes, fichiers vars), Jinja2 et templates pour la génération dynamique de fichiers.
+- [`05-Roles`](./04-Roles) — Structuration du code : création, organisation et réutilisation de rôles Ansible, bonnes pratiques.
+- [`06-Collection-modules`](./05-Collection-modules) — Création et publication de collections personnalisées, développement de modules Ansible en Python.
+- [`07-Galaxy-et-Community`](./06-Galaxy-et-Community) — Utilisation d’Ansible Galaxy, import de rôles existants et contribution à la communauté.
+- [`08-Sécurité-et-Vault`](./07-Sécurité-et-Vault) — Chiffrement des données sensibles avec Ansible Vault, bonnes pratiques de sécurisation.
+- [`09-Orchestration-Avancée`](./08-Orchestration-Avancée) — Scénarios multi-niveaux, orchestration de clusters (Docker, Kubernetes), déploiements blue/green, rolling updates.
+- [`10-CI-CD-Integration`](./09-CI-CD-Integration) — Intégration d’Ansible dans des pipelines CI/CD (GitLab CI, GitHub Actions, Jenkins), bonnes pratiques DevOps.
+- [`11-Tests-et-Validation`](./10-Tests-et-Validation) — Tests de playbooks avec Molecule et Testinfra, validation automatique, intégration continue pour l’assurance qualité.
 
 ---
 
