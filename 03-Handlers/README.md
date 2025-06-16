@@ -65,32 +65,50 @@ Créez le fichier `config-ssh.yml` suivant :
   connection: community.general.incus
   become: true
   tasks:
+
+    - name: Installer le paquet openssh-server
+      ansible.builtin.package:
+        name: openssh-server
+        state: present
+
+    - name: Activer le service SSH
+      ansible.builtin.service:
+        name: ssh
+        state: started
+        enabled: true
+
     - name: Désactiver la connexion root via SSH
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/ssh/sshd_config
         regexp: '^PermitRootLogin'
         line: 'PermitRootLogin No'
         state: present
         backup: true
-      notify: restart_sshd
+      notify: Restart_sshd
 
   handlers:
-    - name: restart_sshd
-      service:
-        name: sshd
+    - name: Restart_sshd
+      ansible.builtin.service:
+        name: ssh
         state: restarted
 ```
 
-- Cette tâche modifie (ou ajoute) la ligne `PermitRootLogin No` dans `/etc/ssh/sshd_config`.
-- Le handler redémarre le service SSH **uniquement si la configuration a changé**.
-- Utilisez `become: true` car la modification nécessite les droits root.
+**Explications :**
+
+- Ce playbook installe le paquet `openssh-server` et active le service SSH.
+- Il modifie la configuration SSH pour désactiver la connexion root.
+- La tâche `lineinfile` utilise `notify` pour déclencher le handler `Restart_sshd`
+  uniquement si la ligne a été modifiée.
+- Le handler redémarre le service SSH si la configuration a changé.
+- Le handler est défini à la fin du playbook, il sera exécuté après toutes les
+  tâches si nécessaire.
 
 ### Etape 2 : test de comportement
 
 * Exécutez une première fois le playbook :
 
   ```bash
-  ansible-playbook config-ssh.yml
+  ansible-playbook config-ssh.yml -i server1,
   ```
 
   Le handler doit s’exécuter.
@@ -98,7 +116,7 @@ Créez le fichier `config-ssh.yml` suivant :
 * Exécutez une seconde fois :
 
   ```bash
-  ansible-playbook config-ssh.yml
+  ansible-playbook config-ssh.yml -i server1,
   ```
 
   Le handler ne doit **pas** s'exécuter (fichier déjà en place, pas de
