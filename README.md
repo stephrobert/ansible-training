@@ -28,12 +28,12 @@ Ce n’est pas un cours académique, mais plutôt un guide pour vous accompagner
 - [`03-Handlers`](./03-Handlers) — Utilisation des handlers pour exécuter des actions conditionnelles, gestion des modifications de configuration.
 - [`04-Templates`](./04-Templates) — Utilisation avancée des variables (groupes, hôtes, fichiers vars), Jinja2 et templates pour la génération dynamique de fichiers.
 - [`05-Inventaires-Dynamiques`](./05-Inventaires-Dynamiques) — Création d’inventaires dynamiques, intégration avec des services cloud (AWS, Azure, GCP), gestion des groupes dynamiques.
+- [`06-Roles`](./06-Roles) — Structuration du code : création, organisation et réutilisation de rôles Ansible, bonnes pratiques.
 
 **TP à venir :**
 
 Cette liste sera mise à jour au fur et à mesure de l’ajout de nouveaux TP !
 
-- [`06-Roles`](./06-Roles) — Structuration du code : création, organisation et réutilisation de rôles Ansible, bonnes pratiques.
 - [`07-Collection-modules`](./07-Collection-modules) — Création et publication de collections personnalisées, développement de modules Ansible en Python.
 - [`08-Galaxy-et-Community`](./08-Galaxy-et-Community) — Utilisation d’Ansible Galaxy, import de rôles existants et contribution à la communauté.
 - [`09-Sécurité-et-Vault`](./09-Sécurité-et-Vault) — Chiffrement des données sensibles avec Ansible Vault, bonnes pratiques de sécurisation.
