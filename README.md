@@ -30,6 +30,8 @@ Ce n’est pas un cours académique, mais plutôt un guide pour vous accompagner
 
 **TP à venir :**
 
+Cette liste sera mise à jour au fur et à mesure de l’ajout de nouveaux TP !
+
 - [`05-Roles`](./05-Roles) — Structuration du code : création, organisation et réutilisation de rôles Ansible, bonnes pratiques.
 - [`06-Collection-modules`](./06-Collection-modules) — Création et publication de collections personnalisées, développement de modules Ansible en Python.
 - [`07-Galaxy-et-Community`](./07-Galaxy-et-Community) — Utilisation d’Ansible Galaxy, import de rôles existants et contribution à la communauté.
@@ -49,6 +51,7 @@ Avant de commencer, assurez-vous d’avoir :
   ```bash
   sudo apt-get install python3 python3-pip
   ```
+
 - **python-virtualenv** :
 
   ```bash
