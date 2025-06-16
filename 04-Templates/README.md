@@ -213,7 +213,4 @@ Vous pouvez maintenant vous attaquer au challenge proposé dans le fichier `chal
 
 ---
 
-
-Ce TP est un excellent pont vers l’écriture de rôles (TP04) et la gestion avancée des configurations !
-
 Bonne création de templates ! 🎨
