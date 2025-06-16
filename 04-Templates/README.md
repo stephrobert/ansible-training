@@ -1,6 +1,6 @@
-# 03 – Templates Jinja2 avec Ansible
+# 04 - Templates Jinja2 avec Ansible
 
-Bienvenue dans le troisième TP de la formation Ansible 🚀
+Bienvenue dans le quatrième TP de la formation Ansible 🚀
 
 ---
 
@@ -194,6 +194,15 @@ navigateur ou en ligne de commande.
 
 ```bash
 <html><body><h1>Bienvenue sur monsite.local</h1></body></html>
+```
+
+### Etape 4 : nettoyage
+
+Après avoir terminé le challenge, vous pouvez nettoyer le conteneur incus pour éviter les
+conflits futurs :
+
+```bash
+incus delete webserver1 --force
 ```
 
 ---

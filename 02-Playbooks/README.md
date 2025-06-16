@@ -16,7 +16,7 @@ Ansible](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configu
 Ces guide couvrent :
 
 * la structure YAML d’un playbook
-* les principaux modules, les variables, les conditionnels et les handlers
+* les principaux modules, les variables, les conditionnels
 * l’utilisation de `--check`, `-vvv`, `ansible-console` pour du debug avancé
 
 ---
@@ -25,7 +25,7 @@ Ces guide couvrent :
 
 1. Structurer un playbook YAML minimum
 2. Installer un paquet et gérer un service sur l’hôte `localhost`
-3. Utiliser variables, handlers et conditions (`when`)
+3. Utiliser variables et conditions (`when`)
 4. Apprendre les bases du debug avec `--check` et verbosité
 
 ---
