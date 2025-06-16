@@ -118,8 +118,17 @@ db01 | SUCCESS => {
 ## Étape 2 : Création des groupes d’hôtes
 
 Pour organiser les hôtes, nous allons créer des groupes dans notre inventaire
-dynamique. Modifiez le fichier `incus.yml` pour y ajouter des groupes avec le
-code suivant :
+dynamique.
+
+Pour obtenir de la documentation sur les options de groupement, vous pouvez
+consulter la documentation du plugin.
+
+```bash
+ansible-doc -t inventory kmpm.incus.incus
+```
+
+Modifiez le fichier `incus.yml` pour y ajouter des groupes avec le code suivant
+:
 
 ```yaml
 ---
@@ -149,8 +158,6 @@ On peut aussi tester les groupes avec la commande adhoc :
 
 ```bash
 ansible web -m ansible.builtin.ping
-
-☁  05-Inventaires-Dynamiques [main] ⚡  ansible web -m ansible.builtin.ping
 
 web01 | SUCCESS => {
     "ansible_facts": {
