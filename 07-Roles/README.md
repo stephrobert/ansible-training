@@ -1,4 +1,4 @@
-# TP 06 – Écriture de rôles Ansible
+# 07 – Écriture de rôles Ansible
 
 Bienvenue dans ce TP consacré à l'écriture de **rôles Ansible**. Ce TP contient
 plusieurs Étapes conçus pour vous faire pratiquer la création de rôles

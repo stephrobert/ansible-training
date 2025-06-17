@@ -1,4 +1,4 @@
-# TP 07 – Utiliser les blocks dans Ansible
+# 08 – Utiliser les blocks dans Ansible
 
 Bienvenue dans ce TP consacré à l’utilisation des **blocks** dans Ansible. Les
 blocks permettent de regrouper des tâches, appliquer des directives communes

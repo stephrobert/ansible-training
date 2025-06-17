@@ -140,7 +140,7 @@ groupby:
   web:
     type: pattern
     attribute: '^web'
-  deb:
+  db:
     type: pattern
     attribute: '^db'
 ```
