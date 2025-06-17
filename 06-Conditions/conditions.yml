@@ -1,0 +1,25 @@
+---
+- name: TP Conditions - Tester des conditions avec when
+  hosts: all
+  gather_facts: true
+  tasks:
+
+    - name: Afficher le système d'exploitation
+      ansible.builtin.debug:
+        msg: "Le système est {{ ansible_distribution }} {{ ansible_distribution_version }}"
+
+    - name: Créer un fichier uniquement sur Ubuntu
+      ansible.builtin.copy:
+        content: "Ce fichier est uniquement créé sur Ubuntu."
+        dest: /tmp/ubuntu_only.txt
+        mode: "0644"
+      when: ansible_distribution == "Ubuntu"
+
+    - name: Créer un fichier si le système est Ubuntu *et* la version est >= 24.04
+      ansible.builtin.copy:
+        content: "Ce fichier est créé uniquement si le système est Ubuntu et la version >= 24.04."
+        dest: /tmp/ubuntu_24_plus.txt
+        mode: "0644"
+      when:
+        - ansible_distribution == "Ubuntu"
+        - ansible_distribution_version is version_compare('24.04', '>=', strict=True)
