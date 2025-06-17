@@ -29,17 +29,18 @@ Ce n’est pas un cours académique, mais plutôt un guide pour vous accompagner
 - [`04-Templates`](./04-Templates) — Utilisation avancée des variables (groupes, hôtes, fichiers vars), Jinja2 et templates pour la génération dynamique de fichiers.
 - [`05-Inventaires-Dynamiques`](./05-Inventaires-Dynamiques) — Création d’inventaires dynamiques, intégration avec des services cloud (AWS, Azure, GCP), gestion des groupes dynamiques.
 - [`06-Roles`](./06-Roles) — Structuration du code : création, organisation et réutilisation de rôles Ansible, bonnes pratiques.
+- [`07-Blocks`](./07-Blocks) — Utilisation des blocks pour regrouper des tâches et gérer les erreurs.
 
 **TP à venir :**
 
 Cette liste sera mise à jour au fur et à mesure de l’ajout de nouveaux TP !
 
-- [`07-Collection-modules`](./07-Collection-modules) — Création et publication de collections personnalisées, développement de modules Ansible en Python.
-- [`08-Galaxy-et-Community`](./08-Galaxy-et-Community) — Utilisation d’Ansible Galaxy, import de rôles existants et contribution à la communauté.
-- [`09-Sécurité-et-Vault`](./09-Sécurité-et-Vault) — Chiffrement des données sensibles avec Ansible Vault, bonnes pratiques de sécurisation.
-- [`10-Orchestration-Avancée`](./10-Orchestration-Avancée) — Scénarios multi-niveaux, orchestration de clusters (Docker, Kubernetes), déploiements blue/green, rolling updates.
-- [`11-CI-CD-Integration`](./11-CI-CD-Integration) — Intégration d’Ansible dans des pipelines CI/CD (GitLab CI, GitHub Actions, Jenkins), bonnes pratiques DevOps.
-- [`12-Tests-et-Validation`](./12-Tests-et-Validation) — Tests de playbooks avec Molecule et Testinfra, validation automatique, intégration continue pour l’assurance qualité.
+- [`08-Collection-modules`](./08-Collection-modules) — Création et publication de collections personnalisées, développement de modules Ansible en Python.
+- [`09-Galaxy-et-Community`](./09-Galaxy-et-Community) — Utilisation d’Ansible Galaxy, import de rôles existants et contribution à la communauté.
+- [`10-Sécurité-et-Vault`](./10-Sécurité-et-Vault) — Chiffrement des données sensibles avec Ansible Vault, bonnes pratiques de sécurisation.
+- [`11-Orchestration-Avancée`](./11-Orchestration-Avancée) — Scénarios multi-niveaux, orchestration de clusters (Docker, Kubernetes), déploiements blue/green, rolling updates.
+- [`12-CI-CD-Integration`](./12-CI-CD-Integration) — Intégration d’Ansible dans des pipelines CI/CD (GitLab CI, GitHub Actions, Jenkins), bonnes pratiques DevOps.
+- [`13-Tests-et-Validation`](./13-Tests-et-Validation) — Tests de playbooks avec Molecule et Testinfra, validation automatique, intégration continue pour l’assurance qualité.
 
 ---
 

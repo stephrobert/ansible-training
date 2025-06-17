@@ -1,0 +1,9 @@
+---
+plugin: kmpm.incus.incus
+groupby:
+  debian:
+    type: os
+    attribute: Debian
+  almalinux:
+    type: os
+    attribute: 'Almalinux'
