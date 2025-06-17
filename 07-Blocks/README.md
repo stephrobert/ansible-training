@@ -138,5 +138,3 @@ nettoyage. Le test doit être effectué sur les hôtes `server1` et `server2`.
 * Actions de post-traitement via `always`
 
 Vous êtes maintenant capable de construire des playbooks robustes et lisibles ✨
-
-
