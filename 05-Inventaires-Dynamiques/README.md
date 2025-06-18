@@ -10,7 +10,7 @@ fichier d'inventaire.
 ## 🧠 Lecture recommandée
 
 Avant de commencer, je vous recommande de lire cette section du guide : 🔗
-[Inventaires dynamiques](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/#activation-des-plugins-dinventaire-dynamique)
+[Inventaires dynamiques](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires-dynamiques/)
 
 Vous y apprendrez :
 

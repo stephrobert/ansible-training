@@ -8,7 +8,7 @@ Bienvenue dans le premier TP pratique de la formation Ansible ! 🌟
 
 Avant de plonger dans la partie pratique, je vous invite à consulter la documentation sur les inventaires Ansible :
 
-🔗 [**Les Inventaires Ansible (fichiers statiques INI/YAML, organisation en groupes, variables...)**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/)
+🔗 [**Les Inventaires Ansible (fichiers statiques INI/YAML, organisation en groupes, variables...)**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires-statiques/)
 
 Ce contenu explique les points suivants :
 
