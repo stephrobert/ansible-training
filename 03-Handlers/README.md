@@ -10,7 +10,7 @@ certaines tâches doivent être exécutées.
 
 Avant de commencer, je vous recommande de lire cette section du guide : 🔗
 [Templates et Handlers
-(guide)](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecriture-de-playbooks-ansible/#utilisation-des-handlers-ansible)
+(guide)](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/handlers/)
 
 Vous y apprendrez :
 
