@@ -11,7 +11,7 @@ différents environnements.
 
 Avant de commencer, je vous recommande de lire cette section du guide : 🔗
 [Conditions Ansible
-(`when`)](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecriture-de-playbooks-ansible/#utilisations-des-conditions-dansible-when)
+(`when`)](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/conditions/)
 
 Vous y apprendrez :
 
