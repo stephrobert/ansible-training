@@ -1,0 +1,9 @@
+---
+plugin: kmpm.incus.incus
+groupby:
+  web:
+    type: pattern
+    attribute: '^web'
+  db:
+    type: pattern
+    attribute: '^db'

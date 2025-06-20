@@ -35,7 +35,6 @@ Vous y apprendrez :
 ├── README.md
 ├── ansible.cfg
 ├── incus.yaml
-├── playbook.yml
 └── challenge/
     ├── README.md
     └── tests/

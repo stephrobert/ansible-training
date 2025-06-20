@@ -32,14 +32,14 @@ Ce n’est pas un cours académique, mais plutôt un guide pour vous accompagner
 - [`07-Roles`](./07-Roles) — Structuration du code : création, organisation et réutilisation de rôles Ansible, bonnes pratiques.
 - [`08-Blocks`](./08-Blocks) — Utilisation des blocks pour regrouper des tâches et gérer les erreurs.
 - [`09-Vault`](./09-Vault) — Chiffrement des données sensibles avec Ansible Vault, bonnes pratiques de sécurisation.
-
+- [`10-Customs-Facts`](./10-Customs-Facts) — Définition et utilisation de faits personnalisés (custom facts) pour adapter les playbooks aux caractéristiques des hôtes.
+-
 **TP à venir :**
 
 Voici une idée de futurs TP !
 
-- [`10-Collection-modules`](./10-Collection-modules) — Création et publication de collections personnalisées, développement de modules Ansible en Python.
-- [`11-Galaxy-et-Community`](./11-Galaxy-et-Community) — Utilisation d’Ansible Galaxy, import de rôles existants et contribution à la communauté.
-- [`12-Sécurité-et-Vault`](./12-Sécurité-et-Vault) — Chiffrement des données sensibles avec Ansible Vault, bonnes pratiques de sécurisation.
+- [`11-Collection-modules`](./11-Collection-modules) — Création et publication de collections personnalisées, développement de modules Ansible en Python.
+- [`12-Galaxy-et-Community`](./12-Galaxy-et-Community) — Utilisation d’Ansible Galaxy, import de rôles existants et contribution à la communauté.
 - [`13-Orchestration-Avancée`](./13-Orchestration-Avancée) — Scénarios multi-niveaux, orchestration de clusters (Docker, Kubernetes), déploiements blue/green, rolling updates.
 - [`14-CI-CD-Integration`](./14-CI-CD-Integration) — Intégration d’Ansible dans des pipelines CI/CD (GitLab CI, GitHub Actions, Jenkins), bonnes pratiques DevOps.
 - [`15-Tests-et-Validation`](./15-Tests-et-Validation) — Tests de playbooks avec Molecule et Testinfra, validation automatique, intégration continue pour l’assurance qualité.
