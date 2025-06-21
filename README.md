@@ -105,11 +105,6 @@ sudo incus init --minimal
    ```
 
 2. **Explorer les premiers exemples** (dans `00-Introduction-Ansible`) pour vous familiariser avec l’inventaire et les commandes Ad-hoc.
-3. **Lancer un playbook exemple** depuis `01-Playbooks` :
-
-   ```bash
-   ansible-playbook -i inventaire/hosts.ini 01-Playbooks/exemple.yml
-   ```
 
 ---
 
