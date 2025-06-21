@@ -59,7 +59,7 @@ Avant de commencer, assurez-vous d’avoir :
 - **python-virtualenv** :
 
   ```bash
-  sudo apt install python3-virtualenv
+  sudo apt install python3-venv python3-virtualenv
   mkdir -p ~/.venvs
   virtualenv ~/.venvs/ansible-training
   source ~/.venvs/ansible-training/bin/activate
