@@ -106,7 +106,7 @@ sudo incus init --minimal
 
 2. **Commencez par le dossier `00-Introduction-Ansible` pour vous familiariser
    avec les concepts et le vocabulaire propre à Ansible.**
-3. **Ensuite poursuivez avec les autres dossiers dans l’ordre indiqué.**:
+3. **Ensuite poursuivez avec les autres dossiers dans l’ordre indiqué.**
 
 ---
 
