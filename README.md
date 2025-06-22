@@ -100,7 +100,7 @@ sudo incus init --minimal
 1. **Cloner le dépôt** :
 
    ```bash
-   git clone https://github.com/votre-utilisateur/ansible-training.git
+   git clone https://github.com/stephrobert/ansible-training.git
    cd ansible-training
    ```
 
