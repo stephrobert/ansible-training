@@ -211,6 +211,15 @@ pouvez installer Incus directement à partir des dépôts officiels. Voici les
    sudo dnf install incus
    ```
 
+#### Vérification de l'installation
+
+Pour vérifier que l'installation s'est bien déroulée, vous pouvez exécuter la
+commande suivante :
+
+```bash
+incus version
+```
+
 ---
 
 ## 🚀 Démarrage rapide
