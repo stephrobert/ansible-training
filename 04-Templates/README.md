@@ -34,17 +34,17 @@ Ce guide couvre notamment :
 03-Templates/
 ├── README.md           ← ce fichier
 ├── templates/
-│   └── motd.j2         ← template Jinja à créer
+│   └── index.html.j2   ← template Jinja à créer
 ├── playbook.yml        ← playbook principal
 └── challenge/
     ├── README.md
     └── tests/
-        └── test_templates.py
+        └── test_indexhtml.py
 ```
 
 ---
 
-## ⚙️ Exercice : Génération d’un fichier `motd` personnalisé
+## ⚙️ Exercice : Génération d’un fichier `apache_vhost.conf.j2` personnalisé
 
 ### Etape 0 : Prérequis
 
@@ -86,7 +86,7 @@ Créer un fichier `template.yml` à la racine du dossier `03-Templates/` avec le
 
 ```yaml
 - name: Déployer un virtualhost Apache
-  hosts: tp
+  hosts: webserver1
   connection: community.general.incus
   vars:
     server_name: monsite.local
@@ -177,7 +177,35 @@ Avant d'exécuter le playbook, assurez-vous que le conteneur Incus est en cours 
 incus list
 ```
 
-Ensuite, exécutez le playbook avec la commande suivante :
+Vérifiez votre configuration `sudo` avant de lancer le playbook avec la commande suivante :
+
+```bash
+sudo -l
+```
+
+CAS n°1 : pour chaque commande avec sudo il faut entrer le mot de passe.
+
+Sortie de la commande `sudo -l` :
+```bash
+User mon_user may run the following commands on ansible-client:
+    (ALL : ALL) ALL
+```
+
+CAS n°2 : pour chaque commande avec sudo pas de mot de passe nécessaire.
+
+Sortie de la commande `sudo -l` :
+```bash
+User mon_user may run the following commands on ansible-client:
+    (ALL : ALL) NOPASSWD: ALL
+```
+
+Si vous êtes dans le CAS n°1, exécutez le playbook avec la commande suivante :
+
+```bash
+ansible-playbook template.yml -i webserver1, --ask-become-pass
+```
+
+Si vous êtes dans le CAS n°2, exécutez le playbook avec la commande suivante :
 
 ```bash
 ansible-playbook template.yml -i webserver1,
