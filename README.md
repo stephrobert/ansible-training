@@ -104,12 +104,9 @@ sudo incus init --minimal
    cd ansible-training
    ```
 
-2. **Explorer les premiers exemples** (dans `00-Introduction-Ansible`) pour vous familiariser avec l’inventaire et les commandes Ad-hoc.
-3. **Lancer un playbook exemple** depuis `01-Playbooks` :
-
-   ```bash
-   ansible-playbook -i inventaire/hosts.ini 01-Playbooks/exemple.yml
-   ```
+2. **Commencez par le dossier `00-Introduction-Ansible` pour vous familiariser
+   avec les concepts et le vocabulaire propre à Ansible.**
+3. **Ensuite poursuivez avec les autres dossiers dans l’ordre indiqué.**:
 
 ---
 
