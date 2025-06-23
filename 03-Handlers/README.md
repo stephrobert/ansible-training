@@ -37,7 +37,7 @@ Vous y apprendrez :
 └── challenge/
     ├── README.md
     └── tests/
-        └── test_handler.py
+        └── test_rsyslog.py
 ```
 
 ---
