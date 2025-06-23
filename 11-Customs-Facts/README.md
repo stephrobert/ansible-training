@@ -1,6 +1,6 @@
-# 10 – Utilisation des Custom Facts Ansible
+# 11 – Utilisation des Custom Facts Ansible
 
-Bienvenue dans le dixième TP de la formation Ansible ! Ce TP vous apprendra à
+Bienvenue dans le onzième TP de la formation Ansible ! Ce TP vous apprendra à
 **définir et exploiter des faits personnalisés (custom facts)** Ansible.
 Ces faits permettent d'adapter dynamiquement les playbooks aux caractéristiques
 des hôtes.

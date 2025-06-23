@@ -1,6 +1,6 @@
-# 05 – Inventaires dynamiques avec Ansible
+# 06 – Inventaires dynamiques avec Ansible
 
-Bienvenue dans le cinquième TP de la formation Ansible ! Ce TP vous initie à
+Bienvenue dans le sixième TP de la formation Ansible ! Ce TP vous initie à
 l’utilisation des **inventaires dynamiques**, un mécanisme permettant à Ansible
 de découvrir automatiquement les hôtes à gérer, sans avoir à les lister dans un
 fichier d'inventaire.
@@ -31,7 +31,7 @@ Vous y apprendrez :
 ## 📁 Arborescence
 
 ```bash
-05-Inventaires-Dynamiques/
+06-Inventaires-Dynamiques/
 ├── README.md
 ├── ansible.cfg
 ├── incus.yaml

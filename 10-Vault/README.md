@@ -1,6 +1,6 @@
-# 09 – Sécurisation des données sensibles avec Ansible Vault
+# 10 – Sécurisation des données sensibles avec Ansible Vault
 
-Bienvenue dans le septième TP de la formation Ansible ! Ce TP vous apprendra à
+Bienvenue dans le dixième TP de la formation Ansible ! Ce TP vous apprendra à
 **crypter et déchiffrer des données sensibles** avec **Ansible Vault**, et à les
 utiliser dans vos playbooks de manière sécurisée.
 
@@ -41,8 +41,6 @@ simplifier, vous pouvez utiliser un conteneur Incus ou une machine Ubuntu.
 ```bash
 incus launch images:ubuntu/24.04/cloud web01 --config=cloud-init.user-data="$(cat ../cloud-config.yaml)"
 incus launch images:ubuntu/24.04/cloud db01 --config=cloud-init.user-data="$(cat ../cloud-config.yaml)"
-
-incus alias add login 'exec @ARGS@ -- su -l admin'
 ```
 
 ---

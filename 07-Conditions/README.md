@@ -1,6 +1,6 @@
-# 06 – Utilisation des Conditions (`when`) avec Ansible
+# 07 – Utilisation des Conditions (`when`) avec Ansible
 
-Bienvenue dans le sixième TP de la formation Ansible ! Ce TP vous apprendra à
+Bienvenue dans le septième TP de la formation Ansible ! Ce TP vous apprendra à
 **contrôler l'exécution des tâches en fonction de conditions**. C’est une
 fonctionnalité essentielle pour rendre vos playbooks dynamiques et adaptés à
 différents environnements.
@@ -40,7 +40,6 @@ virtuelle Ubuntu.
 
 ```bash
 incus launch images:ubuntu/24.04/cloud myhost --config=cloud-init.user-data="$(cat ../cloud-config.yaml)"
-incus alias add login 'exec @ARGS@ -- su -l admin'
 ```
 
 ### Étape 1 : Créer un playbook avec conditions
