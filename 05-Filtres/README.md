@@ -1,9 +1,17 @@
 # 04 – TP Progressif : Filtres Jinja avec Ansible
 
 Bienvenue dans ce TP Ansible où vous allez apprendre à utiliser les **filtres
-Jinja** de manière progressive à travers plusieurs exercices. L'objectif est de
-générer dynamiquement un fichier de configuration `/etc/myapp/config.ini` à
-partir de variables, tout en les manipulant avec des filtres.
+Jinja** de manière progressive à travers plusieurs étapes. L'objectif est de
+générer dynamiquement un fichier de configuration `config.ini` à partir de
+variables, tout en les manipulant avec des filtres.
+
+---
+
+## 🧠 Rappel et lecture recommandée
+
+Avant de démarrer, consultez ce guide complet pour comprendre l’utilisation des
+filtres Jinja dans Ansible : 🔗 [Utiliser Jinja avec Ansible (guide
+Stéphane Robert)](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/filtres-jinja/)
 
 ---
 
@@ -14,13 +22,13 @@ application utilise un fichier de configuration de type INI contenant plusieurs
 paramètres : port, environnement, debug, modules, chemins, etc.
 
 Nous allons construire un playbook `playbook.yml` et un template Jinja2
-`config.ini.j2` que nous ferons évoluer à chaque exercice.
+`config.ini.j2` que nous ferons évoluer à chaque Etape.
 
 ---
 
-## ⚙️ Préparation
+## ⚙️ Etape 0 : Prérequis
 
-### Lancer un conteneur Ubuntu avec Incus :
+Lancer un conteneur Ubuntu avec Incus :
 
 ```bash
 incus launch images:ubuntu/24.04/cloud myhost --config=cloud-init.user-data="$(cat ../cloud-config.yaml)"
@@ -28,7 +36,7 @@ incus launch images:ubuntu/24.04/cloud myhost --config=cloud-init.user-data="$(c
 
 ---
 
-## 🎓 Exercice 1 – Templates et Playbook sans aucun filtre
+## 🎓 Etape 1 – Templates et Playbook sans aucun filtre
 
 Créez un fichier `templates/config.ini.j2` :
 
@@ -78,7 +86,7 @@ incus exec myhost -- cat /tmp/config.ini
 
 ---
 
-## ✨ Exercice 2 – Ajouter des valeurs par défaut
+## ✨ Etape 2 – Ajouter des valeurs par défaut
 
 Remplacez `app_port` dans le template `config.ini.j2` par une valeur par défaut
 si elle n'est pas définie :
@@ -94,7 +102,7 @@ défaut.
 
 ---
 
-## ✉️ Exercice 3 – Variables facultatives avec `omit`
+## ✉️ Etape 3 – Variables facultatives avec `omit`
 
 Dans le playbook:
 
@@ -115,7 +123,7 @@ incus exec myhost -- ls -l /tmp/config.ini
 
 ---
 
-## ⛔️ Exercice 4 – Rendre `environment` obligatoire
+## ⛔️ Etape 4 – Rendre `environment` obligatoire
 
 1. Dans le playbook, commentez `environment: production` dans `vars:`.
 2. Dans le template `config.ini.j2`, utilisez le filtre `mandatory` :
@@ -124,13 +132,13 @@ incus exec myhost -- ls -l /tmp/config.ini
   environment = {{ environment | mandatory }}
   ```
 
-3. Exécutez le playbook. Vous devriez obtenir une erreur indiquant que `environment`
-   est obligatoire.
+3. Exécutez le playbook. Vous devriez obtenir une erreur indiquant que
+   `environment` est obligatoire.
 4. Décommentez `environment: production` dans `vars:` et réexécutez le playbook.
 
 ---
 
-## 🔄 Exercice 5 – Forcer les types
+## 🔄 Etape 5 – Forcer les types
 
 1. Dans la section `vars:` du playbook mettez `port: "8080"` (chaîne).
 
@@ -148,7 +156,7 @@ debug = {{ debug | default(false) | bool }}
 
 ---
 
-## 📃 Exercice 6 – Travailler avec les listes
+## 📃 Etape 6 – Travailler avec les listes
 
 Dans le template :
 
@@ -165,7 +173,7 @@ modules = auth,web,api
 
 ---
 
-## 🔑 Exercice 7 – Manipuler les dictionnaires
+## 🔑 Etape 7 – Manipuler les dictionnaires
 
 Ajoutez `tags:` dans `vars:` :
 
@@ -192,7 +200,7 @@ tag_service = myapp
 
 ---
 
-## 🔢 Exercice 8 – Export YAML avec `to_nice_yaml`
+## 🔢 Etape 8 – Export YAML avec `to_nice_yaml`
 
 Ajoutez une tâche pour générer le YAML des variables :
 
