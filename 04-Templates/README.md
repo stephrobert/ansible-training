@@ -31,7 +31,7 @@ Ce guide couvre notamment :
 ## 📁 Arborescence
 
 ```bash
-03-Templates/
+04-Templates/
 ├── README.md           ← ce fichier
 ├── templates/
 │   └── motd.j2         ← template Jinja à créer
@@ -53,7 +53,6 @@ installé Incus comme indiqué dans le README à la racine du projet.
 
 ```bash
 incus launch images:ubuntu/24.04/cloud webserver1  --config=cloud-init.user-data="$(cat ../cloud-config.yaml)"
-incus alias add login 'exec @ARGS@ -- su -l admin'
 ```
 
 ### Étape 1 : Créer un template
