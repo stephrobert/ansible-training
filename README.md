@@ -211,6 +211,35 @@ pouvez installer Incus directement à partir des dépôts officiels. Voici les
    sudo dnf install incus
    ```
 
+#### Autoriser `incus` pour votre utilisateur
+
+Pour autoriser votre utilisateur à utiliser `incus` sans être forcé de passer par l'utilisateur `root`, vous pouvez exécuter les
+commande suivante :
+
+1. Ajouter les groupes nécessaires pour `incus`
+
+   ```bash
+   # Penser à remplacer <username> par votre utilisateur 
+   sudo usermod -a -G incus <username>
+   sudo usermod -a -G incus-admin <username>
+   ```
+
+2. Redémarrer la machine pour prendre en compte l'ajout dans les groupes
+
+Le redémarrage du service ne semble pas suffisant pour prendre en compte les changements de groupes. Cependant, suivant la distribution cette commande devrait suffire.
+
+   ```bash
+   sudo systemctl restart incus
+   # Sinon
+   sudo init 6
+   ```
+
+3. Vérifier la prise en compte des droits
+
+   ```bash
+   incus list
+   ```
+
 #### Vérification de l'installation
 
 Pour vérifier que l'installation s'est bien déroulée, vous pouvez exécuter la
