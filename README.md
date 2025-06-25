@@ -136,11 +136,14 @@ sudo pipx ensurepath --global # optional to allow pipx actions with --global arg
 
 ### Installation d' Ansible avec `pipx`
 
-Maintenant que `pipx` est installé, vous pouvez installer Ansible en utilisant
+Maintenant que `pipx` est installé, vous pouvez installer Ansible et les outils de test en utilisant
 la commande suivante :
 
 ```bash
 pipx install --include-deps ansible
+pipx install ansible-lint
+pipx install pytest
+pipx inject pytest pytest-testinfra
 ```
 
 ### Test après installation d’Ansible
