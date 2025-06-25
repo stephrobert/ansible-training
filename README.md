@@ -230,7 +230,7 @@ commande suivante :
 
 2. Redémarrer la machine pour prendre en compte l'ajout dans les groupes
 
-Le redémarrage du service ne semble pas suffisant pour prendre en compte les changements de groupes. Cependant, suivant la distribution cette commande devrait suffire.
+   Le redémarrage du service ne semble pas suffisant pour prendre en compte les changements de groupes. Cependant, suivant la distribution cette commande devrait suffire.
 
    ```bash
    sudo systemctl restart incus
@@ -238,10 +238,20 @@ Le redémarrage du service ne semble pas suffisant pour prendre en compte les ch
    sudo init 6
    ```
 
-3. Vérifier la prise en compte des droits
+3. Après redémarrage, initialiser `incus`
+
+   ```bash
+   incus admin init
+   ```
+
+4. Vérifier la prise en compte des droits
 
    ```bash
    incus list
+
+   +------+-------+------+------+------+-----------+
+   | NAME | STATE | IPV4 | IPV6 | TYPE | SNAPSHOTS |
+   +------+-------+------+------+------+-----------+
    ```
 
 #### Vérification de l'installation
@@ -251,6 +261,9 @@ commande suivante :
 
 ```bash
 incus version
+
+Client version: 6.0.0
+Server version: 6.0.0
 ```
 
 ---
