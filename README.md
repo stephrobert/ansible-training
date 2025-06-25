@@ -67,16 +67,18 @@ avec Ansible Vault.
 - [`12-Lookup`](./12-Lookup) — Utilisation des lookups pour récupérer des
   données externes (fichiers, variables d’environnement, résultats de commandes,
   APIs) dans les playbooks.
+- [`13-Taches-Asynchrones`](./13-Taches-Asynchrones) — Gestion des tâches
+  asynchrones dans Ansible : exécution parallèle, suivi des tâches, etc.
 
 TP en cours de réalisation :
 
-- [`13-Molecule`](./13-Molecule) — Mise en place de tests automatisés
+- [`14-Molecule`](./14-Molecule) — Mise en place de tests automatisés
   avec Molecule et Tox pour valider les rôles Ansible.
-- [`14-Collections`](./14-Collections) — Création et utilisation de collections
+- [`15-Collections`](./15-Collections) — Création et utilisation de collections
   Ansible pour regrouper rôles, plugins et modules.
-- [`15-Tests`](./15-Tests) — Mise en place de tests automatisés pour valider les
+- [`16-Tests`](./16-Tests) — Mise en place de tests automatisés pour valider les
   rôles et playbooks Ansible.
-- [`16-Advanced`](./16-Advanced) — Mise en pratique sur un cas concret
+- [`17-Advanced`](./17-Advanced) — Mise en pratique sur un cas concret
   de configuration complète avec Ansible.
 
 ---
