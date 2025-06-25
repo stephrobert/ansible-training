@@ -232,10 +232,10 @@ machines, et la configuration SSH appliquée selon la distribution.
 
 ---
 
-## 🎓 Pour aller plus loin
+## 🧪 Challenge à valider
 
-* Editez le fichier `README.md` dans le rôle `sshd` expliquant les
-  différentes variables et leur utilisation.
+Voir `challenge/README.md` pour la consigne du challenge final : Vous devrez
+écrire un rôle Ansible permettant de configurer le service **rsyslog**.
 
 ---
 
