@@ -32,13 +32,12 @@ Vous y découvrirez :
 7. Tester la cascade avec `lookup('ansible.builtin.first_found', ...)`
 8. Utiliser un lookup dans un template
 9. Charger une configuration depuis `vars` via lookup
-10. Appliquer les bonnes pratiques
 
 ---
 
 ## 💧 Étapes
 
-### Exercice 1 – Lire un fichier local
+### Etape 1 – Lire un fichier local
 
 Placez-vous dans le dossier `12-Lookup` :
 
@@ -65,7 +64,7 @@ Vous devriez voir le contenu du fichier `README.md` s'afficher dans la sortie.
 
 ---
 
-### Exercice 2 – Lire une variable d’environnement
+### Etape 2 – Lire une variable d’environnement
 
 Ajoutez le tâche suivante dans votre playbook :
 
@@ -85,7 +84,7 @@ Vous devriez voir le chemin de votre répertoire personnel s'afficher.
 
 ---
 
-### Exercice 3 – Générer un mot de passe
+### Etape 3 – Générer un mot de passe
 
 Ajoutez la tâche suivante pour générer un mot de passe sécurisé :
 
@@ -106,7 +105,7 @@ Vous devriez voir un mot de passe aléatoire de 16 caractères s'afficher.
 
 ---
 
-### Exercice 4 – Lister des fichiers
+### Etape 4 – Lister des fichiers
 
 Ajoutez la tâche suivante pour générer une liste de fichiers de configuration :
 
@@ -126,7 +125,7 @@ Vous devriez voir une liste des fichiers `.conf` présents dans `/etc`.
 
 ---
 
-### Exercice 5 – Extraire dans un CSV
+### Etape 5 – Extraire dans un CSV
 
 Créez un fichier `data.csv` dans le répertoire courant :
 
@@ -154,7 +153,7 @@ Vous devriez voir la valeur `456` s'afficher.
 
 ---
 
-### Exercice 6 – Lire une clé JSON
+### Etape 6 – Lire une clé JSON
 
 Sur la machine ou sera executé le playbook, il faut d'abord installer la libraire jmespath :
 
@@ -186,7 +185,7 @@ Vous devriez voir la version `1.2.3` s'afficher.
 
 ---
 
-### Exercice 7 – Utiliser `first_found`
+### Etape 7 – Utiliser `first_found`
 
 Regardez dans le dossier `conf.d` si vous avez des fichiers de configuration.
 Vous devriez en avoir au moins un, le fichier `default.cfg`.
@@ -213,7 +212,7 @@ existent, c'est le premier trouvé qui sera utilisé.
 
 ---
 
-### Exercice 8 – Lookup dans un template
+### Etape 8 – Lookup dans un template
 
 Créez un fichier `templates/config.ini.j2` :
 
@@ -247,7 +246,7 @@ Le mot de passe sera différent à chaque exécution.
 
 ---
 
-### Exercice 9 – Lookup dans `vars:`
+### Etape 9 – Lookup dans `vars:`
 
 Dans le même playbook, ajoutez la section `vars:` avant les tâches :
 
