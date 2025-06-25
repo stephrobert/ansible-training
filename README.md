@@ -61,24 +61,12 @@ avec Ansible Vault.
 - [`10-Customs-Facts`](./10-Customs-Facts) — Définition et utilisation de faits
   personnalisés (custom facts) pour adapter les playbooks aux caractéristiques
   des hôtes.
--
-**TP à venir :**
-
-Voici une idée de futurs TP !
-
-- [`11-Collection-modules`](./11-Collection-modules) — Création et publication
-  de collections personnalisées, développement de modules Ansible en Python.
-- [`12-Galaxy-et-Community`](./12-Galaxy-et-Community) — Utilisation d’Ansible
-  Galaxy, import de rôles existants et contribution à la communauté.
-- [`13-Orchestration-Avancée`](./13-Orchestration-Avancée) — Scénarios
-  multi-niveaux, orchestration de clusters (Docker, Kubernetes), déploiements
-  blue/green, rolling updates.
-- [`14-CI-CD-Integration`](./14-CI-CD-Integration) — Intégration d’Ansible dans
-  des pipelines CI/CD (GitLab CI, GitHub Actions, Jenkins), bonnes pratiques
-  DevOps.
-- [`15-Tests-et-Validation`](./15-Tests-et-Validation) — Tests de playbooks avec
-  Molecule et Testinfra, validation automatique, intégration continue pour
-  l’assurance qualité.
+- [`11-Custom-Facts`](./11-Custom-Facts) — Création et Utilisastion des faits
+  personnalisés (custom facts) pour adapter les playbooks aux caractéristiques
+  des hôtes.
+- [`12-Lookup`](./12-Lookup) — Utilisation des lookups pour récupérer des
+  données externes (fichiers, variables d’environnement, résultats de commandes,
+  APIs) dans les playbooks.
 
 ---
 
@@ -219,7 +207,7 @@ commande suivante :
 1. Ajouter les groupes nécessaires pour `incus`
 
    ```bash
-   # Penser à remplacer <username> par votre utilisateur 
+   # Penser à remplacer <username> par votre utilisateur
    sudo usermod -a -G incus <username>
    sudo usermod -a -G incus-admin <username>
    ```
