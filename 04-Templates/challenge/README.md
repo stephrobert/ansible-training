@@ -19,13 +19,13 @@ dans le dossier `/var/www/monsite`.
 
 * Le fichier HTML doit afficher au minimum :
 
-  * Le nom de la machine (`ansible_hostname`)
-  * Le système d'exploitation (`ansible_distribution`,
-    `ansible_distribution_version`)
-  * Le temps de fonctionnement (`ansible_uptime_seconds`)
-  * La mémoire totale (`ansible_memtotal_mb`)
-  * Le nombre de CPU (`ansible_processor_cores`) et leur type
-    (`ansible_processor[0]`)
+  * Le nom de la machine (`ansible_facts.hostname`)
+  * Le système d'exploitation (`ansible_facts.distribution`,
+    `ansible_facts.distribution_version`)
+  * Le temps de fonctionnement (`ansible_facts.uptime_seconds`)
+  * La mémoire totale (`ansible_facts.memtotal_mb`)
+  * Le nombre de CPU (`ansible_facts.processor_cores`) et leur type
+    (`ansible_facts.processor[0]`)
 * Le fichier `index.html` doit être copié à l'aide du module `template`
 * Le répertoire `/var/www/monsite` doit exister et avoir les droits `0755`
 * Le fichier doit être propriété de `root:root` avec les droits `0644`
@@ -40,7 +40,7 @@ Exemple de contenu attendu dans `index.html` :
   <title>Informations système</title>
 </head>
 <body>
-  <h1>Bienvenue sur tp</h1>
+  <h1>Bienvenue sur webserver1</h1>
   <ul>
     <li><strong>OS :</strong> Ubuntu 24.04</li>
     <li><strong>Uptime :</strong> 0 heures</li>
