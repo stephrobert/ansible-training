@@ -34,7 +34,7 @@ Le test `test_rsyslog.py` vérifiera que :
 Lancez le test avec la commande suivante :
 
 ```bash
-pytest -v tests/test_rsyslog.py
+pytest -v
 ```
 
 Le test doit passer sans erreurs, comme ceci :
@@ -47,8 +47,8 @@ rootdir: /home/outscale/Projets/perso/ansible-training/03-Handlers
 plugins: testinfra-10.2.2
 collected 2 items
 
-tests/test_rsyslog.py::test_rsyslog_cron_uncommented PASSED                                                                                                                                                                                                           [ 50%]
-tests/test_rsyslog.py::test_rsyslog_service_running PASSED                                                                                                                                                                                                            [100%]
+challenge/tests/test_rsyslog.py::test_rsyslog_cron_uncommented PASSED                                                                                                                                                                                                           [ 50%]
+challenge/tests/test_rsyslog.py::test_rsyslog_service_running PASSED                                                                                                                                                                                                            [100%]
 
 ==== 2 passed in 1.92s ====
 ```
