@@ -1,0 +1,30 @@
+---
+- name: Déployer et configurer fail2ban
+  hosts: all
+  become: true
+  gather_facts: true
+  connection: community.general.incus
+  tasks:
+    - name: Installe Openssh-server
+      ansible.builtin.package:
+        name: openssh-server
+        state: present
+    - name: Assurer que le service SSH est actif
+      ansible.builtin.service:
+        name: sshd
+        state: started
+        enabled: true
+    - name: Créer le répertoire .ssh pour l'utilisateur admin
+      ansible.builtin.file:
+        path: /home/admin/.ssh
+        state: directory
+        owner: admin
+        group: admin
+        mode: '0700'
+    - name: Copie la clé publique SSH
+      ansible.builtin.copy:
+        src: ~/.ssh/id_rsa.pub
+        dest: /home/admin/.ssh/authorized_keys
+        owner: admin
+        group: admin
+        mode: '0600'

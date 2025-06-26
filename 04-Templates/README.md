@@ -185,6 +185,7 @@ sudo -l
 CAS n°1 : pour chaque commande avec sudo il faut entrer le mot de passe.
 
 Sortie de la commande `sudo -l` :
+
 ```bash
 User mon_user may run the following commands on ansible-client:
     (ALL : ALL) ALL
@@ -193,6 +194,7 @@ User mon_user may run the following commands on ansible-client:
 CAS n°2 : pour chaque commande avec sudo pas de mot de passe nécessaire.
 
 Sortie de la commande `sudo -l` :
+
 ```bash
 User mon_user may run the following commands on ansible-client:
     (ALL : ALL) NOPASSWD: ALL
