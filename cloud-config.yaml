@@ -4,7 +4,8 @@ users:
     sudo: ALL=(ALL) NOPASSWD:ALL
     groups: sudo
     shell: /bin/bash
-    lock_passwd: true
+    lock_passwd: false
+    passwd: "{{ 'admin' | password_hash('sha512') }}"
 package_update: true
 package_upgrade: true
 packages:
