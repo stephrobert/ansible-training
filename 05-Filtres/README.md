@@ -123,18 +123,18 @@ incus exec myhost -- ls -l /tmp/config.ini
 
 ---
 
-## ⛔️ Etape 4 – Rendre `environment` obligatoire
+## ⛔️ Etape 4 – Rendre `app_environment` obligatoire
 
-1. Dans le playbook, commentez `environment: production` dans `vars:`.
+1. Dans le playbook, commentez `app_environment: production` dans `vars:`.
 2. Dans le template `config.ini.j2`, utilisez le filtre `mandatory` :
 
   ```jinja
-  environment = {{ environment | mandatory }}
+  environment = {{ app_environment | mandatory }}
   ```
 
 3. Exécutez le playbook. Vous devriez obtenir une erreur indiquant que
-   `environment` est obligatoire.
-4. Décommentez `environment: production` dans `vars:` et réexécutez le playbook.
+   `app_environment` est obligatoire.
+4. Décommentez `app_environment: production` dans `vars:` et réexécutez le playbook.
 
 ---
 
