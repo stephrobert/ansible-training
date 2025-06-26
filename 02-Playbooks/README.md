@@ -9,9 +9,9 @@ Bienvenue dans le deuxième TP de la formation Ansible !
 Avant de commencer, je vous invite à lire :
 
 * ce guide complet sur la rédaction, l’exécution et le débogage de playbooks
-Ansible : 🔗 [Écriture de playbooks
-Ansible](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecriture-de-playbooks-ansible/)
-* Ce guide sur les présentations des principaux modules Ansible : 🔗 [Modules Ansible](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/)
+Ansible : 🔗 [Écriture de playbooks Ansible](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecriture-de-playbooks-ansible/)
+* ce guide sur [la création et l'utilsations des variables](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/variables/)
+* ce guide sur les présentations des principaux modules Ansible : 🔗 [Modules Ansible](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/)
 
 Ces guide couvrent :
 
