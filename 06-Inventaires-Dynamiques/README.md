@@ -75,13 +75,22 @@ Testons que le plugin est bien installé en exécutant :
 ansible-inventory -i incus.yml --list
 ```
 
+Vou devriez voir une réponse incluant tous les conteneurs en cous d'exécution :
+
+```bash
+@all:
+  |--@ungrouped:
+  |  |--db01
+  |  |--web01
+```
+
 Pour éviter de devoir spécifier l'inventaire à chaque commande, nous allons
 configurer Ansible pour utiliser cet inventaire dynamique par défaut. Pour cela,
 créez un fichier `ansible.cfg` dans le même répertoire avec le contenu suivant :
 
 ```ini
 [defaults]
-inventory = ./incus_inventory.yaml
+inventory = ./incus.yaml
 host_key_checking = False
 retry_files_enabled = False
 interpreter_python = auto_silent
@@ -152,6 +161,17 @@ ansible-inventory -i incus.yml --graph
 
 Vous devriez voir une structure d'inventaire avec les groupes `debian`, `web` et
 `deb` contenant les hôtes correspondants.
+
+```bash
+@all:
+  |--@debian:
+  |  |--db01
+  |  |--web01
+  |--@web:
+  |  |--web01
+  |--@db:
+  |  |--db01
+```
 
 On peut aussi tester les groupes avec la commande adhoc :
 
