@@ -38,8 +38,11 @@ Assurez-vous que vous avez au moins **une machine cible** (locale ou distante).
 Pour simplifier, vous pouvez utiliser un conteneur Incus ou une machine
 virtuelle Ubuntu.
 
+Création de 2 machines cibles avec incus sous `Ubuntu 22.04` et `Ubuntu 24.04` :
+
 ```bash
 incus launch images:ubuntu/24.04/cloud myhost --config=cloud-init.user-data="$(cat ../cloud-config.yaml)"
+incus launch images:ubuntu/22.04/cloud myhost2 --config=cloud-init.user-data="$(cat ../cloud-config.yaml)"
 ```
 
 ### Étape 1 : Créer un playbook avec conditions
@@ -71,10 +74,11 @@ Exécutez le playbook :
 ansible-playbook conditions.yml
 ```
 
-Vérifiez les fichiers créés dans `/tmp/` :
+Vérifiez les fichiers créés dans `/tmp/` sur les machines distantes :
 
 ```bash
-ls /tmp/ubuntu_only.txt
+incus exec myhost ls /tmp/ubuntu_only.txt
+incus exec myhost2 ls /tmp/ubuntu_only.txt
 ```
 
 ---
@@ -102,10 +106,11 @@ Exécutez le playbook :
 ansible-playbook conditions.yml
 ```
 
-Vérifiez les fichiers créés dans `/tmp/` :
+Vérifiez les fichiers créés dans `/tmp/` sur les machines distantes :
 
 ```bash
-ls /tmp/ubuntu_24_plus.txt
+incus exec myhost ls /tmp/ubuntu_24_plus.txt       # Affiche: /tmp/ubuntu_24_plus.txt
+incus exec myhost2 ls /tmp/ubuntu_24_plus.txt      # Affiche: ls: cannot access '/tmp/ubuntu_24_plus.txt': No such file or directory
 ```
 
 ---
@@ -114,6 +119,7 @@ ls /tmp/ubuntu_24_plus.txt
 
 ```bash
 incus delete myhost --force
+incus delete myhost2 --force
 ```
 
 ---
