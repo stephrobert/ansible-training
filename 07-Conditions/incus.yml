@@ -1,6 +1,9 @@
 ---
 plugin: kmpm.incus.incus
 groupby:
+  ubuntu:
+    type: os
+    attribute: Ubuntu
   debian:
     type: os
     attribute: Debian
