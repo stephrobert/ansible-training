@@ -7,3 +7,6 @@ groupby:
   almalinux:
     type: os
     attribute: 'Almalinux'
+  servers:
+    type: pattern
+    attribute: '^server'

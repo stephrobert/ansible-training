@@ -70,6 +70,7 @@ ansible-galaxy init roles/sshd
     line: 'PermitRootLogin no'
     state: present
     backup: true
+  notify: Redémarrer ssh
 ```
 
 4. Editez le fichier `roles/sshd/handlers/main.yml` avec le contenu suivant :
@@ -87,7 +88,7 @@ ansible-galaxy init roles/sshd
 ```yaml
 ---
 - name: Test du rôle sshd
-  hosts: server1
+  hosts: servers
   become: true
   roles:
     - sshd
@@ -119,7 +120,7 @@ permit_root_login: 'no'
 sshd_service: ssh
 ```
 
-2. Adaptez `tasks/main.yml` pour utiliser ces variables :
+2. Adaptez `roles/sshd/tasks/main.yml` pour utiliser ces variables :
 
 ```yaml
 - name: Installer le serveur SSH
