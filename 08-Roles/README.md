@@ -70,6 +70,7 @@ ansible-galaxy init roles/sshd
     line: 'PermitRootLogin no'
     state: present
     backup: true
+  notify: Redémarrer ssh
 ```
 
 4. Editez le fichier `roles/sshd/handlers/main.yml` avec le contenu suivant :
@@ -87,7 +88,7 @@ ansible-galaxy init roles/sshd
 ```yaml
 ---
 - name: Test du rôle sshd
-  hosts: server1
+  hosts: servers
   become: true
   roles:
     - sshd
@@ -119,7 +120,7 @@ permit_root_login: 'no'
 sshd_service: ssh
 ```
 
-2. Adaptez `tasks/main.yml` pour utiliser ces variables :
+2. Adaptez `roles/sshd/tasks/main.yml` pour utiliser ces variables :
 
 ```yaml
 - name: Installer le serveur SSH
@@ -137,7 +138,7 @@ sshd_service: ssh
   notify: Redémarrer ssh
 ```
 
-3. Modifiez le handler pour utiliser la variable `sshd_service` :
+3. Modifiez `roles/sshd/handlers/main.yml` pour utiliser la variable `sshd_service` :
 
 ```yaml
 - name: Redémarrer ssh
@@ -151,7 +152,7 @@ sshd_service: ssh
 ```yaml
 ---
 - name: Test du rôle sshd avec surcharge
-  hosts: all
+  hosts: servers
   become: true
   roles:
     - role: sshd
@@ -195,21 +196,21 @@ touch roles/sshd/vars/almalinux.yml
 touch roles/sshd/vars/default.yml
 ```
 
-3. Contenu de `debian.yml` :
+3. Contenu de `roles/sshd/vars/debian.yml` :
 
 ```yaml
 ---
 sshd_service: ssh
 ```
 
-4. Contenu de `almalinux.yml` :
+4. Contenu de `roles/sshd/vars/almalinux.yml` :
 
 ```yaml
 ---
 sshd_service: sshd
 ```
 
-5. Contenu de `default.yml` :
+5. Contenu de `roles/sshd/vars/default.yml` :
 
 ```yaml
 ---
