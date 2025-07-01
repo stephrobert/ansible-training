@@ -10,7 +10,7 @@ conditions sont remplies** sur la machine cible `myhost` (créée via Incus).
 
 ## 📚 Contexte de test
 
-La machine cible s'appelle `myhost` et doit être lancée avec la commande suivante :
+La machine cible s'appelle `myhost` et doit être lancée avec les commandes suivantes :
 
 ```bash
 incus rm myhost --force
@@ -18,20 +18,20 @@ incus launch images:ubuntu/24.04/cloud myhost --config=cloud-init.user-data="$(c
 incus file push ~/.ssh/id_ed25519.pub myhost/home/admin/.ssh/authorized_keys
 ```
 
-**Note**: Remplacez `~/.ssh/id_ed25519.pub` par le chemin de votre clé publique SSH si
-vous utilisez une autre clé.
+**Note**:
+- Remplacez `~/.ssh/id_ed25519.pub` par le chemin de votre clé publique SSH si vous utilisez une autre clé.
+- Une autre solution consiste à réutiliser votre playbook de configuration de ssh de la partie `03-Handlers`.
 
 ## 🎓 Objectif
 
 Votre playbook nommé `challenge.yml` devra :
 
-1. Créer le group `developers` s'il n'existe pas
-2. Installer le serveur ssh sur la machine cible
-   (utilisez le module `ansible.builtin.package` avec `name: openssh-server`)
+1. Tester vos expressions avant exécution
+2. Créer le group `developers` s'il n'existe pas
 3. **Créer un fichier `/tmp/flag_condition.txt`** si deux conditions sont
    remplies :
-    * Le fact `ansible_os_family` de la vm est **Debian**
-    * Le groupe `developers` existe
+    * Le fact `ansible_distribution` de la vm est **Ubuntu**
+    * La tâche de création du groupe `developers` s'est bien exécutée.
   Sinon, le fichier **ne doit pas exister**.
 
 **Note** : Vous pouvez détruire et recréer la machine cible à chaque
@@ -43,8 +43,15 @@ Des tests automatisés sont disponibles.
 
 Ils vérifient que :
 
-* Que nous sommes bien en présence d'une distribution Ubuntu
-* Le fichier est bien créé
+* Le fichier `challenge.yml` contient bien les éléments suivants:
+  * Une vérification des variables avec `ansible.builtin.debug:`
+  * La création du groupe avec `ansible.builtin.group`
+  * L'utilisation de `register`pour enregistrer le resultat de l'execution d'une tâche
+  * L'utilisation de conditions avec `when`
+  * La recherche de `Ubuntu` dans la variable `ansible_distribution`
+* Nous sommes bien en présence d'une distribution `Ubuntu`
+* Le groupe `developers` existe bien
+* Le fichier `/tmp/flag_condition.txt` est bien créé
 
 Lancez la validation avec :
 
@@ -60,22 +67,36 @@ platform linux -- Python 3.10.12, pytest-8.3.5, pluggy-1.5.0 -- /home/outscale/.
 cachedir: .pytest_cache
 rootdir: /home/outscale/Projets/ansible-training/07-Conditions
 plugins: testinfra-10.2.2
-collected 3 items
+collected 4 items
 
-challenge/tests/test_conditions.py::test_file_exists PASSED       [ 33%]
-challenge/tests/test_conditions.py::test_distribution PASSED      [ 66%]
-challenge/tests/test_conditions.py::test_group_exists PASSED      [100%]
+challenge/tests/test_conditions.py::test_local_challenge_contains_required_facts PASSED       [ 25%]
+challenge/tests/test_conditions.py::test_remote_distribution PASSED                           [ 50%]
+challenge/tests/test_conditions.py::test_remote_group_exists PASSED                           [ 75%]
+challenge/tests/test_conditions.py::test_remote_file_exists PASSED                            [100%]
 
-=== 3 passed in 0.85s ===
+=== 4 passed in 1.24s ===
 ```
 
 ## ✅ Conseils
 
-* Utilisez le module `ansible.builtin.group` pour créer le groupe `developers`
-* Utilisez la commande `getent` pour vérifier la présence du groupe
-* Ajoutez un `debug:` pour tester vos expressions avant exécution
+* Utilisez un `ansible.builtin.debug:` pour tester vos expressions avant exécution
+* Utilisez le module `ansible.builtin.group:` pour créer le groupe `developers`
+* Utilisez `register:` pour définir une variable qui va stocker le résultat de la tache
 * Utilisez `when:` avec une condition combinée (et logique)
 
 ---
 
 Bonne chance ! 🎉
+
+<details>
+  <summary>Cliquer pour de l'aide supplémentaire</summary>
+  
+  #### Ressource supplémentaire :
+  
+  - 🔗 [Aide Ansible - conditions pour les variables enregistrées](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_conditionals.html#conditions-based-on-registered-variables)
+
+* Utilisez `register:` pour définir une variable qui va stocker le résultat de la tâche.
+* Dans la clause `when:` controler la distribution **et** vérifier que la tache s'est bien exécutée grace à cette variable.
+* La clause `is succeeded` peut servir a vérifier que la tâche s'est bien déroulée.
+
+</details>
