@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
 # Création de l'environnement virtuel
 RUN uv venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-RUN uv pip install ansible ansible-lint pytest pytest-testinfra
+RUN uv pip install ansible>=2.18 ansible-lint>=v25.6.1 pytest>=8.4.1 pytest-testinfra>=6.0.0
 
 # Stage 2: Image finale minimale
 FROM python:3.13-slim-bookworm AS final
