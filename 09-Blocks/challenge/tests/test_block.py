@@ -9,7 +9,7 @@ def get_server1_ip():
         ["incus", "info", "server1"], capture_output=True, text=True, check=True
     )
     # Rechercher l'IP IPv4 dans la sortie
-    m = re.search(r"inet:\s*([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)", result.stdout)
+    m = re.search(r"inet:\s*([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/.* \(global\)", result.stdout)
     assert m, "Impossible de trouver l'IP IPv4 de server1"
     return m.group(1)
 
@@ -36,7 +36,7 @@ def get_server2_ip():
     result = subprocess.run(
         ["incus", "info", "server2"], capture_output=True, text=True, check=True
     )
-    m = re.search(r"inet:\s*([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)", result.stdout)
+    m = re.search(r"inet:\s*([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/.* \(global\)", result.stdout)
     assert m, "Impossible de trouver l'IP IPv4 de server2"
     return m.group(1)
 
