@@ -39,7 +39,8 @@ Ce guide couvre notamment :
 └── challenge/
     ├── README.md
     └── tests/
-        └── test_indexhtml.py
+        ├── test_indexhtml.py
+        └── test_indexhtml_v2.py
 ```
 
 ---
