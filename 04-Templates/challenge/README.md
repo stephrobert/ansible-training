@@ -106,7 +106,7 @@ Les tests automatiques vérifient ensuite la phase 2 :
 Lancez les tests avec :
 
 ```bash
-pytest -v
+pytest -v challenge/tests/test_indexhtml_v2.py
 ```
 
 Vous devriez voir un rapport indiquant que tous les tests passent.
@@ -127,5 +127,16 @@ challenge/tests/test_indexhtml_v2.py::test_remote_file_permissions_and_owner PAS
 
 === 5 passed in 2.90s ===
 ```
+
+**Attention** : Assurez-vous que le service `ssh` est en cours d'exécution
+sur la machine webserver1, et que vous avez accès à la machine via SSH avec une clé
+publique. Pour copier votre clé publique, utilisez les commandes suivantes :
+
+```bash
+incus exec webserver1 -- mkdir -p /home/admin/.ssh
+incus file push ~/.ssh/id_ed25519.pub webserver1/home/admin/.ssh/authorized_keys
+```
+
+---
 
 Bonne chance ! 🚀
