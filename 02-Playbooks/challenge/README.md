@@ -52,6 +52,18 @@ commande suivante :
 ```bash
 pytest -v
 ```
+Assurez-vous d’avoir installé python3-testinfra pour pouvoir utiliser la commande ci-dessus.
+
+Pour l’installer, voici les commandes dont vous avez besoin :           
+
+```bash
+sudo apt update
+```
+
+```bash
+sudo apt install -y python3-testinfra
+```
+
 
 Résultat attendu :
 
