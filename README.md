@@ -312,7 +312,7 @@ sur les bonnes pratiques de contribution.
 
 ## ☕ Me soutenir
 
-Si vous trouvez ce guide utile et souhaitez me soutenir, vous pouvez me offrir
+Si vous trouvez ce guide utile et souhaitez me soutenir, vous pouvez m'offrir
 un café :
 
 [![Ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/votre-identifiant)
