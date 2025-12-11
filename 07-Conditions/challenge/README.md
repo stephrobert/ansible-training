@@ -10,11 +10,11 @@ conditions sont remplies** sur la machine cible `myhost` (créée via Incus).
 
 ## 📚 Contexte de test
 
-La machine cible s'appelle `myhost` et doit être lancée avec les commandes suivantes :
+La machine cible s'appelle `myhost` et doit être lancée avec les commandes suivantes à partir du dossier `/challenge` :
 
 ```bash
 incus rm myhost --force
-incus launch images:ubuntu/24.04/cloud myhost --config=cloud-init.user-data="$(cat ../cloud-config.yaml)"
+incus launch images:ubuntu/24.04/cloud myhost --config=cloud-init.user-data="$(cat ../../cloud-config.yaml)"
 incus file push ~/.ssh/id_ed25519.pub myhost/home/admin/.ssh/authorized_keys
 ```
 
