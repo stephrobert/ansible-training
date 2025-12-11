@@ -13,10 +13,13 @@ packages:
   - pipx
   - git
   - python3-venv
+  - openssh-server
 write_files:
   - path: /home/admin/.profile
     content: |
        export PATH=$PATH:/home/admin/.local/bin
     append: true
 runcmd:
+  - systemctl enable ssh
+  - systemctl start ssh
   - chown -R admin:admin /home/admin
