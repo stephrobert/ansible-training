@@ -4,7 +4,7 @@
 #
 # Cibles : setup → run → verify → clean
 
-LAB_ROOT  := $(shell git rev-parse --show-toplevel 2>/dev/null || cd ../.. && pwd)
+LAB_ROOT  := $(shell git rev-parse --show-toplevel 2>/dev/null || (cd ../.. && pwd))
 INVENTORY := $(LAB_ROOT)/inventory/hosts.yml
 PLAYBOOK  := $(CURDIR)/playbook.yml
 

@@ -1,7 +1,7 @@
 # Lab decouvrir/declaratif-vs-imperatif — comparer un script Bash et un playbook
 # Ansible sur la même tâche (déploiement nginx).
 
-LAB_ROOT  := $(shell git rev-parse --show-toplevel 2>/dev/null || cd ../../.. && pwd)
+LAB_ROOT  := $(shell git rev-parse --show-toplevel 2>/dev/null || (cd ../../.. && pwd))
 INVENTORY := $(LAB_ROOT)/inventory/hosts.yml
 PLAYBOOK  := $(CURDIR)/playbook.yml
 TARGET    := web1.lab
