@@ -13,7 +13,8 @@ sans dépendre d'un wrapper SSH manuel — il s'appuie sur Ansible.
 """
 
 import pytest
-import testinfra
+
+from conftest import lab_host
 
 
 # Hôtes managés (correspondent au groupe `rhce_lab` de l'inventaire)
@@ -22,10 +23,8 @@ MANAGED_NODES = ["web1.lab", "web2.lab", "db1.lab"]
 
 @pytest.fixture(scope="module", params=MANAGED_NODES)
 def host(request):
-    """Connexion testinfra via Ansible inventory."""
-    return testinfra.get_host(
-        f"ansible://{request.param}?ansible_inventory=inventory/hosts.yml"
-    )
+    """Connexion testinfra via SSH direct avec clé absolue (cf. conftest.py)."""
+    return lab_host(request.param)
 
 
 def test_chrony_installed_and_running(host):

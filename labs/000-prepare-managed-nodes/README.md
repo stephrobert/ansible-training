@@ -2,7 +2,21 @@
 
 Ce lab est joué **automatiquement** à la fin de `make provision`. Il prépare les 3 managed nodes (`web1`, `web2`, `db1`) pour qu'ils soient utilisables par tous les playbooks de la formation.
 
-> Ce lab n'est pas une page de la formation à proprement parler — c'est un **bootstrap idempotent** qui matérialise un principe Ansible essentiel : **Ansible se prépare lui-même**. Cloud-init ne pose que le minimum (user `ansible` + clé SSH + sudo NOPASSWD). Tout le reste — chrony, paquets utiles, /etc/hosts, SELinux, timezone — est appliqué par ce playbook.
+---
+
+## 🧠 Rappel et lecture recommandée
+
+🔗 [**Préparer les nœuds gérés Ansible : Python, SSH, sudo, firewall**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas/preparer-noeuds-geres/)
+
+Cette page explique :
+
+- Les **5 prérequis** d'un managed node (Python 3, SSH par clé, sudo NOPASSWD, firewall, NTP)
+- Le pattern **« Ansible se prépare lui-même »** : cloud-init pose le minimum, Ansible converge le reste
+- Le **bootstrap via le module `raw`** quand Python 3 n'est pas disponible côté cible
+
+---
+
+> Ce lab n'est pas une page de la formation à proprement parler — c'est un **bootstrap idempotent** qui matérialise le principe **Ansible se prépare lui-même**. Cloud-init ne pose que le minimum (user `ansible` + clé SSH + sudo NOPASSWD). Tout le reste — chrony, paquets utiles, /etc/hosts, SELinux, timezone — est appliqué par ce playbook.
 
 ## Ce que fait `playbook.yml`
 

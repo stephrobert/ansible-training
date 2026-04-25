@@ -2,19 +2,17 @@
 Valide que le playbook Ansible est idempotent et converge vers une seule
 ligne « Servi par ... » dans index.html, indépendamment du nombre de runs.
 
-Lancement depuis la racine du lab :
-    pytest -v labs/decouvrir/declaratif-vs-imperatif/challenge/tests/
+Lancement depuis la racine du repo :
+    pytest -v labs/01-decouvrir-declaratif-vs-imperatif/challenge/tests/
 """
 
 import subprocess
 
-import testinfra
+from conftest import lab_host
 
 
 def get_host():
-    return testinfra.get_host(
-        "ansible://web1.lab?ansible_inventory=inventory/hosts.yml"
-    )
+    return lab_host("web1.lab")
 
 
 def test_nginx_installed_and_running():
@@ -46,7 +44,7 @@ def test_playbook_idempotent_second_run():
     result = subprocess.run(
         [
             "ansible-playbook",
-            "labs/decouvrir/declaratif-vs-imperatif/playbook.yml",
+            "labs/01-decouvrir-declaratif-vs-imperatif/playbook.yml",
         ],
         capture_output=True,
         text=True,

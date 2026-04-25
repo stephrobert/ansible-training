@@ -2,14 +2,15 @@
 Tests pytest+testinfra pour le challenge "Premier playbook" (Apache sur db1.lab:8080).
 
 Valide la solution écrite par l'apprenant dans
-labs/premiers-pas/premier-playbook/challenge/solution.yml
+labs/04-premiers-pas-premier-playbook/challenge/solution.yml
 
 Lancement (depuis la racine du repo) :
-    pytest -v labs/premiers-pas/premier-playbook/challenge/tests/
+    pytest -v labs/04-premiers-pas-premier-playbook/challenge/tests/
 """
 
 import pytest
-import testinfra
+
+from conftest import lab_host
 
 TARGET_HOST = "db1.lab"
 HTTP_PORT = 8080
@@ -18,10 +19,8 @@ EXPECTED_CONTENT = "Hello from db1.lab — Ansible RHCE 2026"
 
 @pytest.fixture(scope="module")
 def host():
-    """Connexion testinfra à db1.lab via l'inventaire Ansible du lab."""
-    return testinfra.get_host(
-        f"ansible://{TARGET_HOST}?ansible_inventory=inventory/hosts.yml"
-    )
+    """Connexion testinfra à db1.lab via SSH direct (cf. conftest.py racine)."""
+    return lab_host(TARGET_HOST)
 
 
 def test_httpd_package_installed(host):
