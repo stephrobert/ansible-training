@@ -1,0 +1,25 @@
+---
+# Variables globales appliquées à tous les hôtes du lab.
+# Utilisable par toutes les pages de la formation comme valeurs par défaut.
+
+# Distribution cible
+lab_os_family: RedHat
+lab_os_distribution: AlmaLinux
+lab_os_major_version: "10"
+
+# Domaine local
+lab_domain: lab
+
+# Timezone alignée sur l'auteur
+lab_timezone: Europe/Paris
+
+# Locale par défaut
+lab_locale: fr_FR.UTF-8
+lab_keymap: fr-oss
+
+# Réseau du lab (CIDR)
+lab_network_cidr: 10.10.20.0/24
+lab_network_gateway: 10.10.20.1
+lab_network_dns:
+  - 10.10.20.1
+  - 1.1.1.1

@@ -1,0 +1,22 @@
+#cloud-config
+# Cloud-init minimal des managed nodes (web1, web2, db1).
+# Voir control-node.user-data.tmpl pour la philosophie.
+#
+# Variables substituées par provision.sh : __HOSTNAME__, __SSH_PUBKEY__
+
+hostname: __HOSTNAME__
+fqdn: __HOSTNAME__.lab
+manage_etc_hosts: true
+preserve_hostname: false
+
+users:
+  - name: ansible
+    groups: [wheel]
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    shell: /bin/bash
+    lock_passwd: true
+    ssh_authorized_keys:
+      - __SSH_PUBKEY__
+
+disable_root: true
+ssh_pwauth: false

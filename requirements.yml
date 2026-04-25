@@ -1,0 +1,31 @@
+---
+# Collections Ansible Galaxy nécessaires pour le lab et la formation RHCE.
+# Installées par scripts/bootstrap.sh via `ansible-galaxy collection install -r`.
+
+collections:
+  # Note : `ansible.builtin` est embarquée dans ansible-core, pas installable
+  # depuis Galaxy. Pour la version, on s'appuie sur la version de ansible-core.
+
+  # Modules POSIX étendus (mount, sysctl, firewalld, selinux…)
+  - name: ansible.posix
+    version: ">=2.0.0"
+
+  # Modules utilitaires (urls, archives, parsers…)
+  - name: community.general
+    version: ">=10.0.0"
+
+  # Modules réseau Linux (nmcli, ip, route…)
+  - name: ansible.netcommon
+    version: ">=8.0.0"
+
+  # System Roles upstream (équivalent open-source de redhat.rhel_system_roles
+  # qui est certifié et disponible uniquement sur Automation Hub)
+  - name: fedora.linux_system_roles
+    version: ">=1.97.0"
+
+  # Pour les tests Molecule + scénarios libvirt
+  - name: community.libvirt
+    version: ">=2.0.0"
+
+# Roles Galaxy à installer pour les exemples de la formation
+roles: []

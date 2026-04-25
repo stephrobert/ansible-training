@@ -1,0 +1,32 @@
+---
+# Execution Environment du lab — utilisé pour les exemples ansible-navigator
+# Construit avec : ansible-builder build -t lab-ansible-ee:latest -f ee/execution-environment.yml
+#
+# Note phase 0 : ce fichier est un placeholder. Il sera complété et construit
+# en phase 5 (section Ansible Navigator) de la roadmap, quand la formation
+# couvrira concrètement les EE. La structure ci-dessous est conforme au schéma
+# v3 d'ansible-builder 3.x.
+
+version: 3
+
+images:
+  base_image:
+    name: registry.access.redhat.com/ubi9/python-312:latest
+
+dependencies:
+  ansible_core:
+    package_pip: ansible-core>=2.18,<2.19
+
+  ansible_runner:
+    package_pip: ansible-runner
+
+  python:
+    - jmespath
+    - netaddr
+    - passlib
+
+  galaxy:
+    collections:
+      - name: ansible.posix
+      - name: community.general
+      - name: ansible.netcommon

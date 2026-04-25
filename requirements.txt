@@ -1,0 +1,18 @@
+# Dépendances Python du lab Ansible
+# Installées par scripts/bootstrap.sh via mise/pipx (cf. la roadmap §12.7)
+#
+# Ces versions sont alignées sur le RHCE EX294 RHEL 9/10 (mi-2026).
+# Chaque outil est installé dans son propre environnement isolé via pipx
+# pour éviter les conflits avec les autres labs Python du poste.
+
+ansible-core>=2.18,<2.19
+ansible-navigator>=25.0
+ansible-lint>=25.0
+molecule>=25.0
+molecule-plugins[docker,libvirt]
+yamllint>=1.35
+
+# Tests des challenges (pattern repris de l'ancien lab ansible-training)
+# pytest + testinfra valident chaque solution de challenge.
+pytest>=8.0
+pytest-testinfra>=10.0

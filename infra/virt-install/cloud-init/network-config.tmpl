@@ -1,0 +1,17 @@
+# Template network-config v2 (Netplan) pour le lab Ansible.
+# Substitutions : __IP__ (avec préfixe CIDR, ex: 10.10.20.10/24)
+# Note : enp1s0 est l'interface par défaut sur les VMs virtio en libvirt.
+
+version: 2
+ethernets:
+  enp1s0:
+    dhcp4: false
+    addresses:
+      - __IP__/24
+    routes:
+      - to: default
+        via: 10.10.20.1
+    nameservers:
+      addresses:
+        - 10.10.20.1
+        - 1.1.1.1

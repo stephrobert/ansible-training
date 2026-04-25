@@ -1,0 +1,52 @@
+# Sortie réelle capturée sur web1 (AlmaLinux 10) — 25 avril 2026
+
+## SCRIPT BASH IMPÉRATIF — 3 runs successifs
+
+### 1er run (état initial : nginx absent)
+[1/4] Installation du paquet nginx...
+[2/4] Ouverture du port 80 dans firewalld...
+success
+success
+[3/4] Démarrage et activation du service nginx...
+Created symlink '/etc/systemd/system/multi-user.target.wants/nginx.service' → '/usr/lib/systemd/system/nginx.service'.
+[4/4] Personnalisation de la page d'accueil (PIÈGE non idempotent)...
+OK : nginx déployé. Occurrences de 'Servi par' dans la page :
+1
+
+### 2e run (DÉRIVE : la ligne se duplique)
+[1/4] Installation du paquet nginx...
+[2/4] Ouverture du port 80 dans firewalld...
+Warning: ALREADY_ENABLED: http
+success
+success
+[3/4] Démarrage et activation du service nginx...
+[4/4] Personnalisation de la page d'accueil (PIÈGE non idempotent)...
+OK : nginx déployé. Occurrences de 'Servi par' dans la page :
+2
+
+### 3e run (la dérive continue)
+[1/4] Installation du paquet nginx...
+[2/4] Ouverture du port 80 dans firewalld...
+[3/4] Démarrage et activation du service nginx...
+[4/4] Personnalisation de la page d'accueil (PIÈGE non idempotent)...
+OK : nginx déployé. Occurrences de 'Servi par' dans la page :
+3
+
+
+## PLAYBOOK ANSIBLE DÉCLARATIF — 3 runs successifs
+
+### 1er run (état initial : nginx absent, après reset)
+PLAY RECAP *********************************************************************
+web1.lab : ok=4 changed=4 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0
+
+### 2e run (idempotent : changed=0)
+PLAY RECAP *********************************************************************
+web1.lab : ok=4 changed=0 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0
+
+### 3e run (idempotent : changed=0)
+PLAY RECAP *********************************************************************
+web1.lab : ok=4 changed=0 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0
+
+### Vérification finale
+$ curl -s http://10.10.20.21/ | grep -c 'Servi par'
+1

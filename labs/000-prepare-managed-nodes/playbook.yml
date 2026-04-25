@@ -1,0 +1,76 @@
+---
+# Playbook de préparation des managed nodes du lab.
+# Joué une fois après `make provision`. Cloud-init n'a posé que le user
+# `ansible` + sa clé SSH ; ce playbook fait le reste, ce qui matérialise
+# le principe "Ansible se prépare lui-même".
+#
+# Idempotent : un second passage doit afficher changed=0.
+
+- name: Préparation des managed nodes (chrony, paquets utiles, /etc/hosts)
+  hosts: rhce_lab
+  gather_facts: true
+  become: true
+
+  vars:
+    lab_packages:
+      - python3-libselinux        # nécessaire à Ansible quand SELinux est enforcing
+      - firewalld                 # firewall RHEL/Alma standard (objectif RHCE)
+      - python3-firewall          # binding Python du module ansible.posix.firewalld
+      - chrony                    # synchro horaire cohérente entre managed nodes
+      - bash-completion
+      - vim-enhanced
+      - tar
+      - rsync
+
+    lab_hosts_entries:
+      - { ip: 10.10.20.10, name: control-node }
+      - { ip: 10.10.20.21, name: web1 }
+      - { ip: 10.10.20.22, name: web2 }
+      - { ip: 10.10.20.31, name: db1 }
+
+  tasks:
+    - name: Installer les paquets de base
+      ansible.builtin.dnf:
+        name: "{{ lab_packages }}"
+        state: present
+
+    - name: Activer et démarrer chronyd
+      ansible.builtin.systemd:
+        name: chronyd
+        enabled: true
+        state: started
+
+    - name: Activer et démarrer firewalld
+      ansible.builtin.systemd:
+        name: firewalld
+        enabled: true
+        state: started
+
+    - name: Autoriser le service SSH dans firewalld (zone publique par défaut)
+      ansible.posix.firewalld:
+        service: ssh
+        permanent: true
+        immediate: true
+        state: enabled
+
+    - name: Inscrire chaque hôte du lab dans /etc/hosts
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        line: "{{ item.ip }} {{ item.name }}.lab {{ item.name }}"
+        regexp: "^{{ item.ip | regex_escape }}\\s"
+        state: present
+        owner: root
+        group: root
+        mode: "0644"
+      loop: "{{ lab_hosts_entries }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Vérifier que SELinux est en mode enforcing
+      ansible.posix.selinux:
+        state: enforcing
+        policy: targeted
+
+    - name: Régler la timezone du lab (Europe/Paris)
+      community.general.timezone:
+        name: Europe/Paris

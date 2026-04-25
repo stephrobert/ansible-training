@@ -1,0 +1,19 @@
+---
+profile: production
+
+exclude_paths:
+  - .ansible_facts/
+  - .cache/
+  - .venv/
+  - infra/
+  - ssh/
+
+skip_list:
+  # Erreur fréquente sur les playbooks de lab : le run admin sur control-node
+  # se fait souvent en tant que root, on n'a pas besoin de become explicite.
+  - run-once[task]
+
+warn_list:
+  - experimental
+
+verbosity: 1

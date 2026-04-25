@@ -194,3 +194,31 @@ cython_debug/
 .cursorindexingignore
 .ansible/.lock
 .test.md
+solution/
+.github/copilot-instructions.md
+# === Lab KVM/libvirt + Ansible ===
+# Cache et artefacts Ansible
+.ansible_facts/
+.ansible/
+*.retry
+
+# Logs et tempos labs
+labs/**/expected-output.tmp
+labs/**/*.log
+
+# Clé SSH du lab (regénérée par bootstrap)
+ssh/id_ed25519
+ssh/id_ed25519.pub
+
+# Cloud-init ISOs et fichiers générés par provision.sh
+# (les .tmpl sources restent versionnés)
+infra/virt-install/cloud-init/control-node/
+infra/virt-install/cloud-init/web1/
+infra/virt-install/cloud-init/web2/
+infra/virt-install/cloud-init/db1/
+
+# Logs provision
+infra/virt-install/logs/
+
+# Build/lint cache
+.ansible-lint-cache/

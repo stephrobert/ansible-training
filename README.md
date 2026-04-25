@@ -32,6 +32,56 @@ avec Ansible Vault.
 
 ---
 
+## 🧪 Lab reproductible KVM/libvirt
+
+Ce dépôt fournit une infrastructure de **lab reproductible** pour les exercices :
+4 VMs **AlmaLinux 10** sur **KVM/libvirt** provisionnées en une commande.
+
+**Topologie de référence** :
+
+| Hôte | IP | Rôle |
+| --- | --- | --- |
+| `control-node.lab` | 10.10.20.10 | Poste Ansible (push SSH) |
+| `web1.lab` / `web2.lab` | 10.10.20.21 / .22 | Serveurs web (groupe `webservers`) |
+| `db1.lab` | 10.10.20.31 | Base de données (groupe `dbservers`) |
+
+**Démarrage en 3 commandes** :
+
+```bash
+make bootstrap   # installe ansible, ansible-lint, pytest, libvirt
+make provision   # crée le réseau libvirt + 4 VMs + prépare les managed nodes
+make verify-conn # ansible all -m ping → 4 pong attendus
+```
+
+Le **Makefile** orchestre tout (`provision`, `destroy`, `snapshot`, `restore`,
+`test-all`, `lint-all`). Le cloud-init des VMs se limite au strict minimum
+(utilisateur `ansible` + clé SSH + sudo NOPASSWD) ; le reste de la préparation
+(firewalld, chrony, SELinux, `/etc/hosts`) est appliqué par Ansible
+lui-même via le playbook `labs/000-prepare-managed-nodes/playbook.yml` —
+matérialisation directe du principe « **Ansible se prépare lui-même** ».
+
+**Structure du lab** :
+
+```text
+ansible-training/
+├── Makefile                 # orchestration de bout en bout
+├── ansible.cfg              # config Ansible (forks, become, callback yaml)
+├── inventory/hosts.yml      # inventaire YAML : control + webservers + dbservers
+├── infra/virt-install/      # provision/destroy + cloud-init templates
+├── ee/                      # Execution Environment (image OCI)
+├── docs/                    # documentation interne du lab
+├── scripts/                 # bootstrap, lint-all, test-all, snapshot, restore
+├── ssh/                     # clés SSH générées localement (jamais commitées)
+└── labs/
+    ├── 000-prepare-managed-nodes/   # prépare le lab côté managed nodes
+    └── decouvrir/                   # exercices Découvrir Ansible (RHCE)
+```
+
+Pour les détails (topologie, troubleshooting, schéma de répertoire d'un lab
+unitaire), voir [`docs/`](./docs/).
+
+---
+
 ## 📚 Structure du Projet
 
 **TP Existants :**

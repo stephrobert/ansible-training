@@ -1,0 +1,35 @@
+---
+# Playbook Ansible déclaratif équivalent au script Bash.
+# Décrit l'état désiré : nginx installé, port 80 ouvert, service actif,
+# UNE SEULE ligne « Servi par <host> » dans index.html, quelle que soit la relance.
+
+- name: Déployer nginx (équivalent déclaratif du script Bash)
+  hosts: web1.lab
+  become: true
+
+  tasks:
+    - name: Installer le paquet nginx
+      ansible.builtin.dnf:
+        name: nginx
+        state: present
+
+    - name: Ouvrir le service http dans firewalld de manière permanente
+      ansible.posix.firewalld:
+        service: http
+        permanent: true
+        immediate: true
+        state: enabled
+
+    - name: Activer et démarrer nginx
+      ansible.builtin.systemd:
+        name: nginx
+        enabled: true
+        state: started
+
+    - name: Garantir une UNIQUE ligne « Servi par … » dans index.html (idempotent)
+      ansible.builtin.lineinfile:
+        path: /usr/share/nginx/html/index.html
+        regexp: "^<p>Servi par "
+        line: "<p>Servi par {{ inventory_hostname_short }}</p>"
+        state: present
+        create: false
