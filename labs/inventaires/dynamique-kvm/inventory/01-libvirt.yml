@@ -1,0 +1,15 @@
+---
+# Plugin community.libvirt.libvirt — interroge l'API libvirt locale.
+# Documentation : ansible-doc -t inventory community.libvirt.libvirt
+plugin: community.libvirt.libvirt
+uri: qemu:///system
+inventory_hostname: name
+
+# Création de groupes logiques basés sur le nom de la VM.
+# Toute VM dont le nom commence par 'web' va dans le groupe 'webservers',
+# etc. Permet de cibler le sous-ensemble du parc qu'on gère via Ansible.
+groups:
+  lab_vms: inventory_hostname in ['control-node', 'web1', 'web2', 'db1']
+  webservers: inventory_hostname in ['web1', 'web2']
+  dbservers: inventory_hostname == 'db1'
+  control: inventory_hostname == 'control-node'

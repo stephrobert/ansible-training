@@ -1,0 +1,15 @@
+---
+# defaults/main.yml — utilisateurs à créer (override-able)
+users_to_create: []
+# Format attendu :
+# users_to_create:
+#   - name: alice
+#     shell: /bin/zsh
+#     groups:
+#       - wheel
+#       - developers
+#   - name: bob
+#     shell: /bin/bash
+
+users_default_shell: /bin/bash
+users_create_home: true

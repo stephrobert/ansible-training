@@ -1,0 +1,9 @@
+---
+# vars/RedHat.yml — chargé via include_vars selon ansible_os_family
+__webserver_package_name: nginx
+__webserver_service_name: nginx
+__webserver_html_dir: /usr/share/nginx/html
+__webserver_config_dir: /etc/nginx
+__webserver_log_dir: /var/log/nginx
+__webserver_pid_file: /run/nginx.pid
+__webserver_user: nginx

@@ -1,0 +1,16 @@
+---
+galaxy_info:
+  author: Stéphane Robert
+  namespace: stephrobert
+  role_name: users
+  description: Créer des utilisateurs Linux (lab TDD)
+  license: MIT
+  min_ansible_version: "2.16"
+  platforms:
+    - name: EL
+      versions: ["9", "10"]
+  galaxy_tags:
+    - users
+    - linux
+
+dependencies: []

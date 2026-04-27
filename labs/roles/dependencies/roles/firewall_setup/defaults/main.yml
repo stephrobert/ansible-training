@@ -1,0 +1,3 @@
+---
+firewall_zones:
+  - public

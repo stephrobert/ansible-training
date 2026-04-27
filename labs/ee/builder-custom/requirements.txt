@@ -1,0 +1,4 @@
+# Dépendances Python pour les collections du lab 86 — pinnées.
+kubernetes==31.0.0
+PyYAML==6.0.2
+jsonpatch==1.33

@@ -1,0 +1,2 @@
+# requirements-buggy.txt — version Python deps incompatible volontaire.
+kubernetes==9999.0.0    # ← ERREUR : version PyPI inexistante

@@ -1,0 +1,21 @@
+---
+# handlers/main.yml — actions réactives notifiées par tasks/
+
+- name: Restart nginx
+  ansible.builtin.systemd_service:
+    name: "{{ webserver_package }}"
+    state: restarted
+
+- name: Reload nginx
+  ansible.builtin.systemd_service:
+    name: "{{ webserver_package }}"
+    state: reloaded
+
+- name: Notify deployment
+  ansible.builtin.copy:
+    dest: /var/log/deploy-notification.log
+    content: |
+      Deployment completed: {{ ansible_date_time.iso8601 }}
+      Host: {{ inventory_hostname }}
+      Webserver port: {{ webserver_listen_port }}
+    mode: "0644"

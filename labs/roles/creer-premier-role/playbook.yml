@@ -1,0 +1,7 @@
+---
+- name: Déployer le rôle webserver
+  hosts: web1.lab
+  become: true
+
+  roles:
+    - role: webserver

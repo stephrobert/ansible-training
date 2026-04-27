@@ -1,0 +1,18 @@
+---
+- name: Installer httpd
+  ansible.builtin.dnf:
+    name: httpd
+    state: "{{ httpd_state }}"
+
+- name: Démarrer et activer httpd
+  ansible.builtin.systemd_service:
+    name: httpd
+    state: started
+    enabled: true
+
+- name: Ouvrir le service HTTP dans firewalld
+  ansible.posix.firewalld:
+    service: http
+    permanent: true
+    immediate: true
+    state: enabled

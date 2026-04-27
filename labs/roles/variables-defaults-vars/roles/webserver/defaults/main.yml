@@ -1,0 +1,15 @@
+---
+# defaults/main.yml — variables OVERRIDE-ABLES (priorité faible)
+# L'utilisateur du rôle peut redéfinir ces valeurs dans son playbook.
+webserver_package: nginx
+webserver_state: present
+webserver_service_state: started
+webserver_service_enabled: true
+
+# Configuration nginx
+webserver_listen_port: 80
+webserver_worker_processes: auto
+webserver_worker_connections: 1024
+
+# Page d'accueil personnalisée
+webserver_index_content: "<h1>Hello from {{ inventory_hostname }}</h1>"

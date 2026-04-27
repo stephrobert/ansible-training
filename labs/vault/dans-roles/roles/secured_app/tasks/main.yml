@@ -1,0 +1,12 @@
+---
+- name: Pose la config en utilisant les secrets du rôle
+  ansible.builtin.copy:
+    dest: /tmp/lab81-secured-app.txt
+    content: |
+      Lab 81 — vault dans rôle ({{ inventory_hostname }})
+      user: {{ secured_app_user }}
+      port: {{ secured_app_port }}
+      log_dir: {{ secured_app_log_dir }}
+      db_password starts: {{ secured_app_db_password[:9] }}
+      api_token: {{ secured_app_api_token }}
+    mode: "0600"

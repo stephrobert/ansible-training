@@ -1,0 +1,15 @@
+---
+- name: Démarrer firewalld
+  ansible.builtin.systemd_service:
+    name: firewalld
+    state: started
+    enabled: true
+
+- name: Activer les zones requises
+  ansible.posix.firewalld:
+    zone: "{{ item }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  loop: "{{ firewall_zones }}"
+  ignore_errors: true   # zone déjà active = pas grave

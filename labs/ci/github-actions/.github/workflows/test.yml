@@ -1,0 +1,88 @@
+---
+# .github/workflows/test.yml — CI/CD pour rôle Ansible 2026
+# Pipeline : lint → molecule test (matrice multi-distros + multi-versions ansible-core)
+
+name: Test webserver role
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'  # lundi 6h — re-test contre dernières versions
+
+permissions: {}
+
+jobs:
+  lint:
+    name: Lint (ansible-lint + yamllint)
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
+        with:
+          python-version: '3.12'
+
+      - name: Install lint tools
+        run: |
+          pip install ansible-lint==25.* yamllint
+
+      - name: Run yamllint
+        run: yamllint roles/
+
+      - name: Run ansible-lint (profile production)
+        run: ansible-lint --profile=production roles/
+
+  molecule:
+    name: Molecule (${{ matrix.distro }} / ansible-core ${{ matrix.ansible }})
+    runs-on: ubuntu-24.04
+    needs: lint
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        distro:
+          - rockylinux9
+          - alma10
+          - ubuntu2404
+        ansible:
+          - 2.17
+          - 2.18
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
+        with:
+          python-version: '3.12'
+
+      - name: Install Molecule + plugins
+        run: |
+          pip install \
+            "ansible-core==${{ matrix.ansible }}.*" \
+            "molecule>=26.0" \
+            "molecule-plugins[podman]>=25.0" \
+            "ansible-lint==25.*"
+
+      - name: Install Ansible collections
+        run: ansible-galaxy collection install -r requirements.yml
+
+      - name: Run molecule test
+        run: molecule test
+        env:
+          MOLECULE_DISTRO: ${{ matrix.distro }}
+          PY_COLORS: 1
+          ANSIBLE_FORCE_COLOR: 1

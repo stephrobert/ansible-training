@@ -1,0 +1,18 @@
+---
+galaxy_info:
+  author: Stéphane Robert
+  namespace: stephrobert
+  role_name: webserver
+  description: Installer et configurer nginx (rôle fil rouge formation RHCE)
+  license: MIT
+  min_ansible_version: "2.16"
+  platforms:
+    - name: EL
+      versions:
+        - "9"
+        - "10"
+  galaxy_tags:
+    - nginx
+    - webserver
+
+dependencies: []

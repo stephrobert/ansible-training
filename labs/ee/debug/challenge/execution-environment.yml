@@ -1,0 +1,19 @@
+---
+# Solution corrigée (challenge) :
+# 1. Ajout de "version: 3" (mandatory).
+# 2. Collection corrigée (existe sur Galaxy).
+# 3. Python deps avec version réelle disponible sur PyPI.
+version: 3
+
+images:
+  base_image:
+    name: quay.io/ansible/community-ee-minimal:latest
+
+dependencies:
+  ansible_core:
+    package_pip: ansible-core==2.18.1
+  ansible_runner:
+    package_pip: ansible-runner==2.4.1
+  galaxy: requirements.yml
+  python: requirements.txt
+  system: bindep.txt

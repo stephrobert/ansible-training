@@ -1,0 +1,11 @@
+---
+# handlers/main.yml — actions réactives (notifiées par tasks/)
+- name: Restart nginx
+  ansible.builtin.systemd_service:
+    name: nginx
+    state: restarted
+
+- name: Reload nginx
+  ansible.builtin.systemd_service:
+    name: nginx
+    state: reloaded

@@ -1,0 +1,27 @@
+---
+# playbook.yml — démontre la lookup HashiCorp Vault / OpenBao depuis Ansible.
+# Pré-requis : ./setup-vault.sh (démarre le serveur + pose les secrets de démo).
+
+- name: Démo lookup HashiCorp Vault / OpenBao
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    db_password: "{{ lookup('community.hashi_vault.vault_kv2_get',
+                            'lab82',
+                            engine_mount_point='secret',
+                            url=hashi_vault_url,
+                            token=hashi_vault_token).secret.db_password }}"
+
+  tasks:
+    - name: Vérifier la lookup (debug, no_log pour ne pas afficher le secret)
+      ansible.builtin.debug:
+        msg: "DB password length: {{ db_password | length }}"
+      no_log: false   # demo : on autorise pour voir
+
+    - name: Pose un fichier preuve
+      ansible.builtin.copy:
+        dest: /tmp/lab82-vault-lookup.txt
+        content: "Vault lookup OK, password length: {{ db_password | length }}\n"
+        mode: "0600"

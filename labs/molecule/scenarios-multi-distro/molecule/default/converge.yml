@@ -1,0 +1,16 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Mettre à jour les caches (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_os_family == 'Debian'
+      changed_when: false
+
+  roles:
+    - role: webserver
+      vars:
+        webserver_index_content: "Multi-distro test on {{ ansible_distribution }}"

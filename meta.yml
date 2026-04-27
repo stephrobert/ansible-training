@@ -1,0 +1,240 @@
+---
+# Source de vérité de l'ordre des labs et de leur regroupement en sections.
+# Le README.md racine est généré depuis ce fichier par scripts/render-readme.py.
+#
+# Pour insérer un nouveau lab : ajouter son ID stable dans la section voulue.
+# Pour réordonner : déplacer la ligne. Pas de mv à faire.
+
+repo:
+  id: ansible-training
+  category: ansible             # 'ansible' | 'kubernetes' | 'linux' | 'terraform' | …
+  title: "Ansible Training — RHCE EX294 2026"
+  blog_url: "https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/"
+  description: |
+    Lab pédagogique public de la formation Ansible RHCE EX294 2026.
+    Chaque lab est autonome : tutoriel guidé + challenge testé par pytest+testinfra.
+
+sections:
+  - id: bootstrap
+    title: "Bootstrap"
+    description: "Préparation système des managed nodes (joué auto par `make provision`)."
+    auto_run: true                  # → dsoxlab next saute par-dessus
+    labs:
+      - bootstrap-prepare-managed-nodes
+
+  - id: decouvrir
+    title: "Découvrir Ansible"
+    description: "Premiers contacts : déclaratif vs impératif, installation, CLI, configuration."
+    labs:
+      - decouvrir-declaratif-vs-imperatif
+      - decouvrir-installation-ansible
+      - decouvrir-configuration-ansible
+      - decouvrir-prise-en-main-cli
+
+  - id: premiers-pas
+    title: "Premiers pas"
+    description: "Premier playbook, premiers secrets vault."
+    labs:
+      - premiers-pas-premier-playbook
+      - premiers-pas-ansible-vault
+
+  - id: ecrire-code
+    title: "Écrire du code Ansible"
+    description: "Structure d'un play, contrôle d'exécution, variables, Jinja2, conditions, boucles, gestion d'erreurs."
+    labs:
+      - ecrire-code-plays-et-tasks
+      - ecrire-code-handlers
+      - ecrire-code-tags
+      - ecrire-code-checkmode-diff
+      - ecrire-code-parallelisme-strategies
+      - ecrire-code-async-poll
+      - ecrire-code-delegation
+      - ecrire-code-variables-base
+      - ecrire-code-types-collections
+      - ecrire-code-facts-magic-vars
+      - ecrire-code-custom-facts
+      - ecrire-code-precedence-variables
+      - ecrire-code-register-set-fact
+      - ecrire-code-lookups
+      - ecrire-code-jinja2-base
+      - ecrire-code-filtres-jinja-essentiels
+      - ecrire-code-conditions-when
+      - ecrire-code-boucles-loop
+      - ecrire-code-boucles-with-deprecated
+      - ecrire-code-block-rescue-always
+      - ecrire-code-failed-when-changed-when
+      - ecrire-code-ignore-errors
+      - ecrire-code-any-errors-fatal
+      - ecrire-code-filtres-jinja-avances
+      - ecrire-code-tests-jinja
+      - ecrire-code-module-template
+      - ecrire-code-lineinfile-vs-template
+      - ecrire-code-import-include
+
+  - id: modules-fichiers
+    title: "Modules fichiers"
+    description: "Manipulation de fichiers : copy, file, blockinfile, lineinfile, replace, fetch, archive."
+    labs:
+      - modules-fichiers-copy
+      - modules-fichiers-file
+      - modules-fichiers-blockinfile
+      - modules-fichiers-lineinfile
+      - modules-fichiers-replace
+      - modules-fichiers-fetch
+      - modules-fichiers-archive-unarchive
+
+  - id: modules-paquets
+    title: "Modules paquets"
+    description: "Gestion paquets agnostique (package), options dnf, dépôts RPM."
+    labs:
+      - modules-paquets-package
+      - modules-paquets-dnf-options
+      - modules-paquets-yum-repository
+
+  - id: modules-services
+    title: "Modules services"
+    description: "Gestion services systemd et tâches planifiées cron."
+    labs:
+      - modules-services-systemd
+      - modules-services-cron
+
+  - id: modules-utilisateurs
+    title: "Modules utilisateurs"
+    description: "Gestion users, groups, clés SSH, sudoers."
+    labs:
+      - modules-utilisateurs-user
+      - modules-utilisateurs-group
+      - modules-utilisateurs-authorized-key
+      - modules-utilisateurs-sudoers
+
+  - id: modules-rhel
+    title: "Modules RHEL"
+    description: "Spécificités RHEL : firewalld, SELinux, sysctl, mount, parted, filesystem, LVM."
+    labs:
+      - modules-rhel-firewalld
+      - modules-rhel-selinux
+      - modules-rhel-sysctl
+      - modules-rhel-mount
+      - modules-rhel-parted
+      - modules-rhel-filesystem
+      - modules-rhel-lvm-storage
+
+  - id: modules-reseau
+    title: "Modules réseau"
+    description: "Téléchargement et appels HTTP : get_url, uri."
+    labs:
+      - modules-reseau-get-url
+      - modules-reseau-uri
+
+  - id: modules-diagnostic
+    title: "Modules diagnostic"
+    description: "Inspection et synchronisation : stat, find, assert/fail, wait_for/pause."
+    labs:
+      - modules-diagnostic-stat
+      - modules-diagnostic-find
+      - modules-diagnostic-assert-fail
+      - modules-diagnostic-wait-for-pause
+
+  - id: inventaires
+    title: "Inventaires"
+    description: "group_vars/host_vars, patterns d'hôtes, inventaire dynamique libvirt."
+    labs:
+      - inventaires-group-vars-host-vars
+      - inventaires-patterns-hotes
+      - inventaires-dynamique-kvm
+
+  - id: roles
+    title: "Rôles"
+    description: "Anatomie d'un rôle, variables, handlers, argument_specs, consommation, dépendances."
+    labs:
+      - roles-creer-premier-role
+      - roles-variables-defaults-vars
+      - roles-handlers-meta
+      - roles-argument-specs
+      - roles-consommer-role
+      - roles-dependencies
+
+  - id: molecule
+    title: "Tests Molecule"
+    description: "Cycle TDD avec Molecule, scénarios multi-distro."
+    labs:
+      - molecule-introduction
+      - molecule-installation-config
+      - molecule-tdd-cycle
+      - molecule-scenarios-multi-distro
+
+  - id: tests
+    title: "Tests Python & lint"
+    description: "testinfra, tox multi-version, ansible-lint profil production."
+    labs:
+      - tests-testinfra
+      - tests-tox-multiversion
+      - tests-ansible-lint-production
+
+  - id: ci
+    title: "CI/CD"
+    description: "Pipelines GitHub Actions et GitLab CI pour rôles et collections."
+    labs:
+      - ci-github-actions
+      - ci-gitlab
+
+  - id: galaxy
+    title: "Galaxy & publication"
+    description: "ansible-galaxy CLI, requirements.yml, audit de rôles tiers, versioning et publication."
+    labs:
+      - galaxy-ansible-galaxy-cli
+      - galaxy-installer-roles
+      - galaxy-auditer-role-existant
+      - galaxy-versionner-publier
+
+  - id: vault
+    title: "Ansible Vault"
+    description: "Vault complet : encrypt_string, vault-id multiples, mixtes, dans rôles, intégration HashiCorp/Passbolt."
+    labs:
+      - vault-introduction
+      - vault-chiffrer-fichier-variable
+      - vault-id-multiples
+      - vault-playbooks-mixtes
+      - vault-dans-roles
+      - vault-integration-hashicorp
+      - vault-integration-passbolt
+
+  - id: ee
+    title: "Execution Environments"
+    description: "ansible-navigator, ansible-builder, EE custom, pipeline CI, debug."
+    labs:
+      - ee-hello
+      - ee-inspection
+      - ee-builder-custom
+      - ee-ci-pipeline
+      - ee-debug
+
+  - id: troubleshooting
+    title: "Troubleshooting"
+    description: "Verbosité, debugger interactif, idempotence et performance."
+    labs:
+      - troubleshooting-verbosite
+      - troubleshooting-debugger
+      - troubleshooting-idempotence-perfs
+
+  - id: collections
+    title: "Collections"
+    description: "Découverte, requirements, création, CI tests, migration depuis un rôle."
+    labs:
+      - collections-decouvrir
+      - collections-requirements
+      - collections-creer-custom
+      - collections-ci-tests
+      - collections-migration-role
+
+  - id: pratiques
+    title: "Pratiques avancées"
+    description: "ansible-pull mode GitOps."
+    labs:
+      - pratiques-ansible-pull-gitops
+
+  - id: rhce
+    title: "Examen RHCE EX294"
+    description: "Mock examen complet 4h avec 12 tâches."
+    labs:
+      - rhce-mock-ex294

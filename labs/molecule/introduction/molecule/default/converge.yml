@@ -1,0 +1,8 @@
+---
+# converge.yml — playbook qui appelle le rôle à tester.
+- name: Converge
+  hosts: all
+  become: true
+
+  roles:
+    - role: webserver

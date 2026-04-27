@@ -1,0 +1,34 @@
+---
+# .ansible-lint — config pour le profil production (le plus strict)
+profile: production
+
+exclude_paths:
+  - .cache/
+  - .git/
+  - molecule/
+  - tests/
+
+# Règles à skipper avec justification (jamais sans raison)
+skip_list: []
+
+# Règles supplémentaires à warn (pas fail)
+warn_list:
+  - experimental
+  - role-name             # autorise des noms avec '-' (Galaxy)
+
+use_default_rules: true
+verbosity: 1
+
+# Tags activés — par défaut, profile: production active la majorité
+enable_list:
+  - args
+  - empty-string-compare
+  - no-log-password
+  - no-same-owner
+  - yaml
+
+mock_modules:
+  - amazon.aws.ec2_instance
+
+mock_roles:
+  - geerlingguy.docker

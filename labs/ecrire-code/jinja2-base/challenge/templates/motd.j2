@@ -1,0 +1,10 @@
+==========================================
+  Bienvenue sur {{ inventory_hostname }}
+==========================================
+{% if host_role == "DB" %}
+Profil : DB
+{% endif %}
+Services :
+{% for s in services -%}
+  - {{ s }}
+{% endfor %}

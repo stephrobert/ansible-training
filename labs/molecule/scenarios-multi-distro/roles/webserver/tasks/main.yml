@@ -1,0 +1,31 @@
+---
+# tasks/main.yml — pattern multi-distro classique :
+# - charger vars/<os_family>.yml dynamiquement
+# - utiliser le module 'package' (agnostique apt/dnf)
+
+- name: Charger les variables spécifiques à la distribution
+  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
+
+- name: Installer nginx (module agnostique)
+  ansible.builtin.package:
+    name: "{{ __webserver_package_name }}"
+    state: present
+
+- name: Créer le HTML directory s'il manque
+  ansible.builtin.file:
+    path: "{{ __webserver_html_dir }}"
+    state: directory
+    owner: "{{ __webserver_user }}"
+    mode: "0755"
+
+- name: Déployer la page d'accueil
+  ansible.builtin.copy:
+    dest: "{{ __webserver_html_dir }}/index.html"
+    content: "{{ webserver_index_content | default('Hello from ' + inventory_hostname) }}\n"
+    mode: "0644"
+
+- name: Démarrer et activer le service
+  ansible.builtin.systemd_service:
+    name: "{{ __webserver_service_name }}"
+    state: started
+    enabled: true

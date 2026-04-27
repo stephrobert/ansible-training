@@ -1,0 +1,13 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Mettre à jour les caches de paquets
+      ansible.builtin.dnf:
+        update_cache: true
+      changed_when: false
+
+  roles:
+    - role: webserver

@@ -1,0 +1,28 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  become: true
+
+  tasks:
+    - name: Charger les vars distro pour la vérif
+      ansible.builtin.include_vars: "../../roles/webserver/vars/{{ ansible_os_family }}.yml"
+
+    - name: Vérifier que le paquet nginx est installé
+      ansible.builtin.package_facts:
+
+    - name: Assertion paquet nginx présent
+      ansible.builtin.assert:
+        that:
+          - "'nginx' in ansible_facts.packages"
+        fail_msg: "nginx absent sur {{ ansible_distribution }}"
+
+    - name: Vérifier la page d'accueil
+      ansible.builtin.slurp:
+        src: "{{ __webserver_html_dir }}/index.html"
+      register: index
+
+    - name: Assertion contenu page d'accueil
+      ansible.builtin.assert:
+        that:
+          - "'Multi-distro test' in (index.content | b64decode)"

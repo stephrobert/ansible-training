@@ -194,7 +194,9 @@ cython_debug/
 .cursorindexingignore
 .ansible/.lock
 .test.md
-solution/
+# Note: solution/ est versionné mais TOUS ses .yml/.sh/.j2/.txt sont
+# chiffrés via ansible-vault (cf. .vault-pass + cibles `make solutions-lock`).
+# Ne jamais commiter en clair.
 .github/copilot-instructions.md
 # === Lab KVM/libvirt + Ansible ===
 # Cache et artefacts Ansible
@@ -224,7 +226,38 @@ infra/virt-install/logs/
 .ansible-lint-cache/
 
 # Solutions des challenges écrites par l'apprenant — ne jamais committer
-# (la solution officielle privée vit dans solution/, gitignored aussi)
+# (la solution officielle du formateur vit dans solution/, chiffrée via vault)
 labs/**/challenge/solution.yml
 labs/**/challenge/solution.sh
 labs/**/challenge/solution.py
+
+# Artefacts générés par les challenges (ne jamais commit)
+labs/**/challenge/vault-secret.yml
+labs/**/challenge/.vault-pass
+labs/**/challenge/.vault_password
+labs/**/.vault_password
+labs/**/challenge/files/*.pub.key.pub
+
+# Clés SSH générées par les labs (PRIVÉES) — ne jamais commit.
+# Naming trompeur hérité du lab authorized-key : `alice.pub.key` est la clé
+# PRIVÉE (perms 600), `alice.pub.key.pub` est la clé PUBLIQUE (perms 644).
+# Le README du lab doit expliquer comment regénérer la paire :
+#   ssh-keygen -t ed25519 -f alice.pub.key -N "" -C alice@laptop
+labs/**/files/*.pub.key
+labs/**/files/*.pub.key.pub
+
+# Sortie des fetch (lab 34) — artefacts de tests
+collected/*
+!collected/.gitkeep
+
+# Mot de passe Vault du formateur — ne JAMAIS committer
+# Sert à chiffrer/déchiffrer les solutions de référence dans solution/
+# Sauvegarder le password ailleurs (gestionnaire de mots de passe, repo privé)
+.vault-pass
+.vault-pass.txt
+
+# CLI dsoxlab : la SQLite est locale à chaque apprenant
+# Stockée par défaut dans ~/.local/share/dsoxlab/progress.db (hors repo).
+# Override via env DSOXLAB_DB.
+.progress.db
+progress.db

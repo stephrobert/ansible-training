@@ -1,0 +1,21 @@
+---
+# tasks/main.yml — rôle webserver
+# Installe nginx, le démarre, et ouvre le firewall.
+
+- name: Installer nginx
+  ansible.builtin.dnf:
+    name: nginx
+    state: present
+
+- name: Démarrer et activer nginx
+  ansible.builtin.systemd_service:
+    name: nginx
+    state: started
+    enabled: true
+
+- name: Ouvrir le service HTTP dans firewalld
+  ansible.posix.firewalld:
+    service: http
+    permanent: true
+    immediate: true
+    state: enabled

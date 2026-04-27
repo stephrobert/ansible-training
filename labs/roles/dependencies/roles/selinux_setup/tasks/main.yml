@@ -1,0 +1,5 @@
+---
+- name: S'assurer que SELinux est en mode {{ selinux_state }}
+  ansible.posix.selinux:
+    policy: targeted
+    state: "{{ selinux_state }}"

@@ -1,0 +1,14 @@
+---
+# prepare.yml — lancé une seule fois après create, avant converge.
+# Idéal pour des prérequis qui ne sont pas du ressort du rôle (init systemd, etc.)
+- name: Préparer l'instance
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Installer les outils de diagnostic dans le container
+      ansible.builtin.dnf:
+        name:
+          - procps-ng
+          - iproute
+        state: present

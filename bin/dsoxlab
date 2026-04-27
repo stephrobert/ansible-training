@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Wrapper pour la CLI `dsoxlab` (suivi d'avancement des labs).
+# Lance `python -m dsoxlab` depuis la racine du repo, peu importe d'où on l'invoque
+# (utile quand le wrapper est symlinké dans ~/.local/bin/).
+#
+# Cette CLI est embarquée dans ce repo en attendant que le projet `dsoxlab`
+# standalone soit prêt à la remplacer.
+set -euo pipefail
+
+# Résoudre les symlinks éventuels pour trouver la vraie racine du repo.
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+REPO_ROOT="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
+
+# PYTHONPATH = repo root pour que `python -m dsoxlab` trouve le package.
+# cd dans le repo pour que `meta.find_repo_root()` localise meta.yml.
+cd "$REPO_ROOT"
+PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m dsoxlab "$@"

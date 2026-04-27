@@ -1,0 +1,28 @@
+---
+# meta/main.yml — démontre dependencies (rôles requis avant celui-ci).
+
+galaxy_info:
+  author: Stéphane Robert
+  namespace: stephrobert
+  role_name: webserver
+  description: Webserver avec dépendances (firewall + selinux)
+  license: MIT
+  min_ansible_version: "2.16"
+  platforms:
+    - name: EL
+      versions: ["9", "10"]
+  galaxy_tags:
+    - nginx
+    - webserver
+
+# Dépendances — exécutées AVANT les tasks/main.yml du rôle webserver.
+# Ordre : selinux_setup → firewall_setup → webserver tasks.
+dependencies:
+  - role: selinux_setup
+    vars:
+      selinux_state: enforcing
+
+  - role: firewall_setup
+    vars:
+      firewall_zones:
+        - public

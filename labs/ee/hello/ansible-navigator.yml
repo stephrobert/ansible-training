@@ -1,0 +1,19 @@
+---
+ansible-navigator:
+  execution-environment:
+    image: quay.io/ansible/creator-ee:latest
+    container-engine: podman
+    pull:
+      policy: missing
+    volume-mounts:
+      - src: "{{ HOME }}/.ssh"
+        dest: "/home/runner/.ssh"
+        options: "ro,Z"
+      - src: "{{ playbook_dir }}/../../ssh"
+        dest: "/runner/ssh"
+        options: "ro,Z"
+  mode: stdout
+  playbook-artifact:
+    enable: false
+  logging:
+    level: warning

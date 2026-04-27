@@ -1,0 +1,7 @@
+---
+# requirements-buggy.yml — collection inexistante volontaire.
+collections:
+  - name: ansible.posix
+    version: 2.0.0
+  - name: community.does-not-exist  # ← ERREUR : collection inexistante
+    version: 1.2.3

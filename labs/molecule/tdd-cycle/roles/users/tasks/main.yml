@@ -1,0 +1,15 @@
+---
+# tasks/main.yml — création d'utilisateurs Linux (TDD-driven)
+# Cycle TDD : test rouge → code minimal → test vert → refactor.
+
+- name: Créer les utilisateurs
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    shell: "{{ item.shell | default(users_default_shell) }}"
+    groups: "{{ item.groups | default([]) }}"
+    append: true
+    create_home: "{{ users_create_home }}"
+    state: present
+  loop: "{{ users_to_create }}"
+  loop_control:
+    label: "{{ item.name }}"

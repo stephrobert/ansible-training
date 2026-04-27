@@ -1,0 +1,25 @@
+---
+# molecule.yml — premier scénario Molecule (driver delegated, ansible-native).
+# Démontre la philosophie Molecule v6+ où driver = collections Ansible.
+dependency:
+  name: galaxy
+
+driver:
+  name: default
+
+platforms:
+  - name: instance
+    image: docker.io/rockylinux/rockylinux:9
+    pre_build_image: true
+    privileged: true
+    command: /sbin/init
+
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      stdout_callback: yaml
+      callback_enabled: profile_tasks
+
+verifier:
+  name: ansible

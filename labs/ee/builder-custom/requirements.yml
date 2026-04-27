@@ -1,0 +1,9 @@
+---
+# Collections Ansible pinnées pour le lab 86.
+collections:
+  - name: ansible.posix
+    version: 2.0.0
+  - name: community.general
+    version: 10.5.0
+  - name: kubernetes.core
+    version: 5.1.1

@@ -1,0 +1,35 @@
+{# Template nginx.conf — utilise les variables defaults/main.yml du rôle.
+   Démontre comment defaults/ alimentent un template Jinja2.
+#}
+user nginx;
+worker_processes {{ webserver_worker_processes }};
+error_log {{ __webserver_log_dir }}/error.log notice;
+pid {{ __webserver_pid_file }};
+
+events {
+    worker_connections {{ webserver_worker_connections }};
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+    access_log    {{ __webserver_log_dir }}/access.log;
+
+    sendfile        on;
+    keepalive_timeout  65;
+
+    server {
+        listen       {{ webserver_listen_port }};
+        server_name  _;
+
+        location / {
+            root   {{ __webserver_html_dir }};
+            index  index.html;
+        }
+
+        error_page 500 502 503 504 /50x.html;
+        location = /50x.html {
+            root {{ __webserver_html_dir }};
+        }
+    }
+}

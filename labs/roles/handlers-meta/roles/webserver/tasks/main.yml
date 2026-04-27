@@ -1,0 +1,48 @@
+---
+# tasks/main.yml — démontre l'usage des handlers via notify:
+- name: Installer le paquet nginx
+  ansible.builtin.dnf:
+    name: "{{ webserver_package }}"
+    state: "{{ webserver_state }}"
+
+- name: Supprimer la conf par défaut conflictuelle
+  ansible.builtin.file:
+    path: /etc/nginx/conf.d/default.conf
+    state: absent
+  notify: Restart nginx
+
+- name: Déployer nginx.conf depuis le template
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    mode: "0644"
+    backup: true
+    validate: nginx -t -c %s
+  notify: Reload nginx               # ← reload (pas restart) si juste changement de conf
+
+- name: Déployer la page d'accueil personnalisée
+  ansible.builtin.copy:
+    dest: "{{ __webserver_html_dir }}/index.html"
+    content: "{{ webserver_index_content }}\n"
+    mode: "0644"
+  # Pas de notify — un changement de page HTML ne nécessite pas de reload nginx
+
+- name: Ouvrir le port HTTP custom dans firewalld
+  ansible.posix.firewalld:
+    port: "{{ webserver_listen_port }}/tcp"
+    permanent: true
+    immediate: true
+    state: enabled
+
+- name: Démarrer et activer nginx
+  ansible.builtin.systemd_service:
+    name: "{{ webserver_package }}"
+    state: "{{ webserver_service_state }}"
+    enabled: "{{ webserver_service_enabled }}"
+
+- name: Tracer le déploiement (handler conditionnel)
+  ansible.builtin.copy:
+    dest: /var/log/webserver-deploy.log
+    content: "Deployed at {{ ansible_date_time.iso8601 }} on {{ inventory_hostname }}\n"
+    mode: "0644"
+  notify: Notify deployment            # ← handler custom de notification

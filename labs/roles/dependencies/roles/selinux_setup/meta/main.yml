@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  author: Stéphane Robert
+  role_name: selinux_setup
+  description: Configurer SELinux
+  license: MIT
+  min_ansible_version: "2.16"
+  platforms:
+    - name: EL
+      versions: ["9", "10"]
+dependencies: []

@@ -1,0 +1,7 @@
+---
+- name: Lab 84 — Premier run avec ansible-navigator + EE
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Ping via le module ansible.builtin.ping
+      ansible.builtin.ping:

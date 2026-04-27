@@ -1,0 +1,64 @@
+---
+# verify.yml — assertions TDD pour le rôle users.
+# Pattern TDD : ces tests étaient ROUGES avant d'écrire tasks/main.yml,
+# puis VERTS une fois le code écrit.
+
+- name: Verify
+  hosts: all
+  gather_facts: false
+  become: true
+
+  tasks:
+    # Test 1 — alice existe et a le bon shell
+    - name: Vérifier que alice existe
+      ansible.builtin.user:
+        name: alice
+        state: present
+      check_mode: true
+      register: alice_check
+      failed_when: alice_check is changed
+
+    - name: Vérifier le shell d'alice
+      ansible.builtin.command: getent passwd alice
+      register: alice_passwd
+      changed_when: false
+
+    - name: Assertion shell d'alice = /bin/zsh
+      ansible.builtin.assert:
+        that:
+          - "'/bin/zsh' in alice_passwd.stdout"
+        fail_msg: "alice doit avoir /bin/zsh, vu : {{ alice_passwd.stdout }}"
+
+    # Test 2 — alice est dans le groupe wheel
+    - name: Vérifier alice membre de wheel
+      ansible.builtin.command: id alice
+      register: alice_id
+      changed_when: false
+
+    - name: Assertion alice in wheel
+      ansible.builtin.assert:
+        that:
+          - "'wheel' in alice_id.stdout"
+        fail_msg: "alice doit être dans wheel, vu : {{ alice_id.stdout }}"
+
+    # Test 3 — bob existe avec shell par défaut bash
+    - name: Vérifier que bob existe avec /bin/bash
+      ansible.builtin.command: getent passwd bob
+      register: bob_passwd
+      changed_when: false
+
+    - name: Assertion bob shell = /bin/bash
+      ansible.builtin.assert:
+        that:
+          - "'/bin/bash' in bob_passwd.stdout"
+
+    # Test 4 — carol existe (pas de shell explicite → fallback users_default_shell)
+    - name: Vérifier que carol existe
+      ansible.builtin.command: getent passwd carol
+      register: carol_passwd
+      changed_when: false
+
+    - name: Assertion carol shell = /bin/bash (default)
+      ansible.builtin.assert:
+        that:
+          - "'/bin/bash' in carol_passwd.stdout"

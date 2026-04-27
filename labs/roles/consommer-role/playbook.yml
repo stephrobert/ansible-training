@@ -1,0 +1,42 @@
+---
+# Démonstration des 3 façons de consommer un rôle dans un playbook :
+# - roles: classique (avant tasks:)
+# - import_role: parsing au démarrage du playbook
+# - include_role: parsing au runtime (avec when:, loop:)
+
+# 1. Pattern classique : roles: au top du play
+- name: Pattern roles classique
+  hosts: web1.lab
+  become: true
+  roles:
+    - role: webserver
+
+# 2. Pattern import_role : statique, parsé au démarrage
+- name: Pattern import_role
+  hosts: web1.lab
+  become: true
+  tasks:
+    - name: Message avant le rôle
+      ansible.builtin.debug:
+        msg: "Avant l'import du rôle webserver"
+
+    - name: Importer le rôle webserver
+      ansible.builtin.import_role:
+        name: webserver
+
+    - name: Message après le rôle
+      ansible.builtin.debug:
+        msg: "Après l'import du rôle webserver"
+
+# 3. Pattern include_role : dynamique, conditionnel
+- name: Pattern include_role
+  hosts: db1.lab
+  become: true
+  tasks:
+    - name: Inclure le rôle UNIQUEMENT sur RHEL 9+
+      ansible.builtin.include_role:
+        name: webserver
+        tasks_from: main.yml          # ← peut cibler un autre fichier que main.yml
+      vars:
+        webserver_listen_port: 9090
+      when: ansible_distribution_major_version | int >= 9

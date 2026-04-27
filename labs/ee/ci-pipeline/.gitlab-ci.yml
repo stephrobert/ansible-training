@@ -1,0 +1,54 @@
+---
+# .gitlab-ci.yml — pipeline EE équivalent : build + Trivy scan + push.
+stages:
+  - build
+  - scan
+  - push
+  - sign
+
+variables:
+  EE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+  EE_LATEST: $CI_REGISTRY_IMAGE:latest
+
+build-ee:
+  stage: build
+  image: quay.io/ansible/ansible-builder:3.1.0
+  script:
+    - ansible-builder build
+        --tag "$EE_TAG"
+        --tag "$EE_LATEST"
+        --container-runtime podman
+        --file execution-environment.yml
+        --context ./context
+  artifacts:
+    paths:
+      - context/Containerfile
+    expire_in: 1 day
+
+trivy-scan:
+  stage: scan
+  image: aquasec/trivy:0.59.1
+  script:
+    - trivy image --severity HIGH,CRITICAL --exit-code 1 "$EE_TAG"
+  needs: [build-ee]
+
+push-ee:
+  stage: push
+  image: quay.io/podman/stable:latest
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | podman login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+  script:
+    - podman push "$EE_TAG"
+    - podman push "$EE_LATEST"
+  needs: [trivy-scan]
+  only:
+    - main
+
+cosign-sign:
+  stage: sign
+  image: gcr.io/projectsigstore/cosign:v2.4.1
+  script:
+    - cosign sign --yes "$EE_TAG"
+  needs: [push-ee]
+  only:
+    - main

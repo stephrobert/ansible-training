@@ -1,0 +1,10 @@
+---
+- name: Restart nginx
+  ansible.builtin.systemd_service:
+    name: "{{ webserver_package }}"
+    state: restarted
+
+- name: Reload nginx
+  ansible.builtin.systemd_service:
+    name: "{{ webserver_package }}"
+    state: reloaded

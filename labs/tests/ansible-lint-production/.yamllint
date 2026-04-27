@@ -1,0 +1,27 @@
+---
+# .yamllint — config minimale recommandée 2026
+extends: default
+
+rules:
+  line-length:
+    max: 160
+    level: warning
+
+  truthy:
+    allowed-values:
+      - "true"
+      - "false"
+    check-keys: false
+
+  comments:
+    min-spaces-from-content: 1
+
+  comments-indentation: false
+  document-start: enable
+  empty-lines:
+    max: 2
+
+ignore: |
+  .cache/
+  molecule/
+  .tox/

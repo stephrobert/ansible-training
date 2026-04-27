@@ -1,0 +1,1 @@
+kubernetes==31.0.0   # version réelle disponible sur PyPI

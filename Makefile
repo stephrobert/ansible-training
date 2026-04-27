@@ -9,7 +9,7 @@ GREEN := \033[0;32m
 BLUE  := \033[0;34m
 NC    := \033[0m
 
-.PHONY: help bootstrap provision destroy verify-conn snapshot restore test-all lint-all clean ssh-control ssh-web1 ssh-web2 ssh-db1 status
+.PHONY: help bootstrap provision destroy verify-conn snapshot restore test-all lint-all clean ssh-control ssh-web1 ssh-web2 ssh-db1 status solutions-lock solutions-unlock solutions-status solve dsoxlab dsoxlab-next dsoxlab-stats lab hosts-add hosts-remove hosts-status ssh-config-add ssh-config-remove ssh-config-status
 
 help:        ## Affiche cette aide
 	@echo ""
@@ -38,7 +38,7 @@ provision:   ## Crée réseau libvirt + 4 VMs + prep managed nodes (Ansible)
 	    sleep 2; \
 	done
 	@echo -e "$(BLUE)[provision]$(NC) Préparation des managed nodes (Ansible)..."
-	@cd $(LAB_DIR)/labs/000-prepare-managed-nodes && make run
+	@cd $(LAB_DIR)/labs/bootstrap/prepare-managed-nodes && make run
 	@echo -e "$(GREEN)[OK]$(NC) Lab prêt — lance 'make verify-conn' ou 'make test-all'"
 
 destroy:     ## Détruit les 4 VMs et le réseau libvirt
@@ -48,6 +48,24 @@ destroy:     ## Détruit les 4 VMs et le réseau libvirt
 verify-conn: ## ansible all -m ping (doit retourner pong sur les 4 hôtes)
 	@echo -e "$(BLUE)[verify-conn]$(NC) Test connectivité Ansible..."
 	@ansible all -i $(INVENTORY) -m ansible.builtin.ping
+
+hosts-add:    ## 🔗 Ajoute les 4 hôtes du lab dans /etc/hosts (permet `ssh web1.lab`)
+	@./scripts/manage-hosts.sh add
+
+hosts-remove: ## 🧹 Retire les entrées du lab de /etc/hosts
+	@./scripts/manage-hosts.sh remove
+
+hosts-status: ## 🔍 État des entrées du lab dans /etc/hosts
+	@./scripts/manage-hosts.sh status
+
+ssh-config-add:    ## 🔑 Ajoute ~/.ssh/config.d/ansible-training.conf (utilise la clé du repo pour web1.lab, etc.)
+	@./scripts/manage-ssh-config.sh add
+
+ssh-config-remove: ## 🧹 Retire ~/.ssh/config.d/ansible-training.conf
+	@./scripts/manage-ssh-config.sh remove
+
+ssh-config-status: ## 🔍 État du fragment ~/.ssh/config.d/ansible-training.conf
+	@./scripts/manage-ssh-config.sh status
 
 snapshot:    ## Snapshot libvirt sur les 4 VMs avant test risqué
 	@./scripts/snapshot-vms.sh
@@ -60,6 +78,39 @@ test-all:    ## Exécute make verify dans chaque labs/*/* unitaire
 
 lint-all:    ## yamllint + ansible-lint sur tout le repo
 	@./scripts/lint-all.sh
+
+solutions-lock:    ## 🔒 Chiffre toutes les solutions/ avec ansible-vault
+	@./scripts/lock-solutions.sh
+
+solutions-unlock:  ## 🔓 Déchiffre toutes les solutions/ (à reverrouiller avant commit)
+	@./scripts/unlock-solutions.sh
+
+solutions-status:  ## 📋 Affiche l'état chiffré/clair de chaque fichier de solution/
+	@./scripts/solutions-status.sh
+
+dsoxlab:    ## 📊 Tableau de bord d'avancement (CLI dans bin/dsoxlab)
+	@./bin/dsoxlab
+
+dsoxlab-next:    ## 🎯 Suggère le prochain lab à attaquer
+	@./bin/dsoxlab next
+
+dsoxlab-stats:   ## 📈 Statistiques par section
+	@./bin/dsoxlab stats
+
+lab:        ## 📖 Affiche un lab en Markdown riche (usage : make lab LAB=decouvrir/installation-ansible [CHALLENGE=1] [WIDTH=100])
+	@if [ -z "$(LAB)" ]; then \
+	    echo "Usage : make lab LAB=<section>/<dirname> [CHALLENGE=1] [BOTH=1] [WIDTH=N]"; \
+	    exit 1; \
+	fi
+	@./bin/dsoxlab lab $(LAB) $(if $(CHALLENGE),-c) $(if $(BOTH),-b) $(if $(WIDTH),-w $(WIDTH))
+
+solve:             ## 🎯 Pose la solution officielle d'un lab (usage : make solve LAB=ecrire-code/handlers)
+	@if [ -z "$(LAB)" ]; then \
+	    echo "Usage : make solve LAB=<section>/<lab>"; \
+	    echo "Astuce : 'find labs -mindepth 2 -maxdepth 2 -type d | sort' pour lister."; \
+	    exit 1; \
+	fi
+	@./scripts/solve.sh $(LAB)
 
 clean:       ## Nettoie les artefacts temporaires
 	@find . -name "*.retry" -delete

@@ -1,0 +1,69 @@
+---
+# meta/argument_specs.yml — validation automatique des variables d'entrée du rôle.
+# Disponible depuis Ansible 2.11. Affiche une erreur claire si une variable est
+# du mauvais type, hors d'une liste de valeurs autorisées, ou manquante.
+
+argument_specs:
+  main:
+    short_description: "Installer et configurer nginx avec validation"
+    description:
+      - >
+        Ce rôle installe nginx, le configure via un template, et ouvre le port
+        HTTP. Toutes les variables d'entrée sont validées automatiquement
+        avant l'exécution des tâches.
+    author:
+      - Stéphane Robert
+
+    options:
+      webserver_package:
+        type: str
+        default: nginx
+        description: Nom du paquet à installer (toujours nginx pour ce rôle)
+        choices:
+          - nginx
+
+      webserver_state:
+        type: str
+        default: present
+        description: État du paquet
+        choices:
+          - present
+          - absent
+          - latest
+
+      webserver_service_state:
+        type: str
+        default: started
+        description: État souhaité du service
+        choices:
+          - started
+          - stopped
+          - restarted
+          - reloaded
+
+      webserver_service_enabled:
+        type: bool
+        default: true
+        description: Démarrage automatique du service au boot
+
+      webserver_listen_port:
+        type: int
+        default: 80
+        description: Port d'écoute HTTP (1-65535)
+
+      webserver_worker_processes:
+        type: str
+        default: auto
+        description: |
+          Nombre de worker_processes nginx. 'auto' = un par cœur CPU.
+          Sinon une chaîne représentant un entier (sera quotée dans nginx.conf).
+
+      webserver_worker_connections:
+        type: int
+        default: 1024
+        description: "Connexions max par worker (typique : 1024-8192)"
+
+      webserver_index_content:
+        type: str
+        required: false
+        description: Contenu HTML de la page d'accueil

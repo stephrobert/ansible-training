@@ -1,0 +1,37 @@
+---
+# meta/main.yml — carte d'identité Galaxy enrichie
+
+galaxy_info:
+  author: Stéphane Robert
+  namespace: stephrobert
+  role_name: webserver
+  description: |
+    Installer et configurer nginx avec configuration paramétrable.
+    Supporte le déploiement sur RHEL 9/10 et AlmaLinux 9/10.
+  company: stephane-robert.info
+  license: MIT
+  min_ansible_version: "2.16"
+  issue_tracker_url: https://github.com/stephrobert/ansible-training/issues
+
+  platforms:
+    - name: EL
+      versions:
+        - "9"
+        - "10"
+    - name: AlmaLinux
+      versions:
+        - "9"
+        - "10"
+
+  galaxy_tags:
+    - nginx
+    - webserver
+    - http
+    - rhce
+
+# Dépendances : aucune pour l'instant. Le lab 72 ajoutera des dépendances.
+dependencies: []
+
+# Mode allow_duplicates : autoriser l'inclusion multiple du rôle dans un play
+# (avec params différents) sans warning.
+allow_duplicates: false

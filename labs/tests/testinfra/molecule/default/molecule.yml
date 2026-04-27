@@ -1,0 +1,22 @@
+---
+# molecule.yml — verifier testinfra (Python) au lieu de verify.yml (Ansible).
+dependency:
+  name: galaxy
+
+driver:
+  name: default
+
+platforms:
+  - name: instance
+    image: docker.io/rockylinux/rockylinux:9
+    pre_build_image: true
+    privileged: true
+    command: /sbin/init
+
+provisioner:
+  name: ansible
+
+verifier:
+  name: testinfra      # ← Python plutôt qu'Ansible
+  options:
+    v: true

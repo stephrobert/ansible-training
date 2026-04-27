@@ -1,0 +1,27 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  become: true
+
+  tasks:
+    - name: Vérifier que nginx est installé
+      ansible.builtin.command: rpm -q nginx
+      register: pkg
+      changed_when: false
+
+    - name: Assertion installation
+      ansible.builtin.assert:
+        that:
+          - pkg.rc == 0
+
+    - name: Vérifier le port d'écoute (8080 via host_vars)
+      ansible.builtin.command: ss -tlnp
+      register: listening
+      changed_when: false
+
+    - name: Assertion port 8080
+      ansible.builtin.assert:
+        that:
+          - "':8080' in listening.stdout"
+        fail_msg: "nginx n'écoute pas sur 8080 (host_vars override appliqué ?)"

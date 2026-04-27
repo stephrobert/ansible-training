@@ -1,0 +1,30 @@
+---
+# playbook.yml — récupération de secret Passbolt via lookup.
+# Pré-requis : collection anatomicjc.passbolt + py-passbolt installé.
+#   ansible-galaxy collection install anatomicjc.passbolt
+#   pip install py-passbolt
+#
+# Variables nécessaires (via env ou -e) :
+#   passbolt_uri              : URL Passbolt (ex: https://localhost:8443)
+#   passbolt_private_key      : Clé privée OpenPGP (PEM, multi-lignes)
+#   passbolt_passphrase       : Passphrase de la clé
+#   passbolt_verify_ssl       : false en dev (self-signed)
+- name: Lab 83 — Lookup Passbolt
+  hosts: localhost
+  gather_facts: false
+  vars:
+    passbolt_verify_ssl: false
+  tasks:
+    - name: Récupérer le secret 'lab83-demo' depuis Passbolt
+      ansible.builtin.set_fact:
+        demo_secret: "{{ lookup('anatomicjc.passbolt.passbolt',
+                                'lab83-demo',
+                                uri=passbolt_uri,
+                                private_key=passbolt_private_key,
+                                passphrase=passbolt_passphrase,
+                                verify_ssl=passbolt_verify_ssl).password }}"
+      no_log: true
+
+    - name: Afficher uniquement la longueur du secret (jamais le secret)
+      ansible.builtin.debug:
+        msg: "Secret length: {{ demo_secret | length }}"

@@ -1,0 +1,8 @@
+---
+# vars/main.yml — variables INTERNES (priorité haute, NE PAS modifier)
+# Chemins système et constantes du rôle. Préfixe `__` pour signaler
+# qu'elles sont privées et ne doivent pas être touchées par l'utilisateur.
+__webserver_config_dir: /etc/nginx
+__webserver_log_dir: /var/log/nginx
+__webserver_html_dir: /usr/share/nginx/html
+__webserver_pid_file: /run/nginx.pid

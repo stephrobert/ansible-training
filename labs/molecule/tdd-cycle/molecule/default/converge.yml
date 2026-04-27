@@ -1,0 +1,17 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  vars:
+    users_to_create:
+      - name: alice
+        shell: /bin/zsh
+        groups:
+          - wheel
+      - name: bob
+        shell: /bin/bash
+      - name: carol
+
+  roles:
+    - role: users

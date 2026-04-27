@@ -1,0 +1,28 @@
+---
+# execution-environment.yml v3 — EE custom pour le lab 86.
+# Build : ansible-builder build --tag lab86/my-ee:1.0.0 --container-runtime podman
+version: 3
+
+images:
+  base_image:
+    name: quay.io/ansible/community-ee-minimal:latest
+
+dependencies:
+  ansible_core:
+    package_pip: ansible-core==2.18.1
+  ansible_runner:
+    package_pip: ansible-runner==2.4.1
+  galaxy: requirements.yml
+  python: requirements.txt
+  system: bindep.txt
+
+additional_build_files:
+  - src: configs/ansible.cfg
+    dest: configs
+
+additional_build_steps:
+  prepend_base:
+    - RUN echo "Build $(date) — lab 86 ansible-training" > /etc/ee-build-info
+  append_final:
+    - COPY _build/configs/ansible.cfg /etc/ansible/ansible.cfg
+    - RUN chmod 0644 /etc/ansible/ansible.cfg

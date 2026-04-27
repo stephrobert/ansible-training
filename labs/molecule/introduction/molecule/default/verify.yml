@@ -1,0 +1,31 @@
+---
+# verify.yml — assertions Ansible-native pour valider l'état post-converge.
+- name: Verify
+  hosts: all
+  gather_facts: false
+  become: true
+
+  tasks:
+    - name: Vérifier que nginx est installé
+      ansible.builtin.command: rpm -q nginx
+      register: nginx_pkg
+      changed_when: false
+
+    - name: Assertion — paquet nginx présent
+      ansible.builtin.assert:
+        that:
+          - nginx_pkg.rc == 0
+        fail_msg: "nginx n'est pas installé"
+        success_msg: "nginx installé OK"
+
+    - name: Vérifier que le fichier nginx.conf existe
+      ansible.builtin.stat:
+        path: /etc/nginx/nginx.conf
+      register: nginx_conf
+
+    - name: Assertion — nginx.conf existe
+      ansible.builtin.assert:
+        that:
+          - nginx_conf.stat.exists
+          - nginx_conf.stat.isreg
+        fail_msg: "/etc/nginx/nginx.conf manquant"

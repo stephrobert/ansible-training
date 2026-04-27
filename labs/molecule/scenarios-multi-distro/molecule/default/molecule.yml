@@ -1,0 +1,44 @@
+---
+# molecule.yml — matrice multi-distribution pour valider la portabilité du rôle.
+# Chaque ajout de distro = une nouvelle entrée dans platforms.
+
+dependency:
+  name: galaxy
+
+driver:
+  name: default
+
+platforms:
+  - name: rocky9
+    image: docker.io/rockylinux/rockylinux:9
+    pre_build_image: true
+    privileged: true
+    command: /sbin/init
+    groups:
+      - rhel_family
+
+  - name: alma10
+    image: docker.io/almalinux/10-init:latest
+    pre_build_image: true
+    privileged: true
+    command: /sbin/init
+    groups:
+      - rhel_family
+
+  - name: debian12
+    image: docker.io/geerlingguy/docker-debian12-ansible:latest
+    pre_build_image: true
+    privileged: true
+    command: /lib/systemd/systemd
+    groups:
+      - debian_family
+
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      stdout_callback: yaml
+      callback_enabled: profile_tasks
+
+verifier:
+  name: ansible

@@ -1,0 +1,8 @@
+---
+- name: Démo argument_specs — playbook valide
+  hosts: web1.lab
+  become: true
+  roles:
+    - role: webserver
+      vars:
+        webserver_listen_port: 8081

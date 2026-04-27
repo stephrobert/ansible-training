@@ -1,0 +1,7 @@
+---
+deployment_environment: production
+http_port: 80
+worker_count: 4
+
+env_name: lab80
+env_port: 80

@@ -1,0 +1,7 @@
+---
+# defaults/main.yml — variables PUBLIQUES override-ables (clair)
+secured_app_user: appuser
+secured_app_port: 9000
+secured_app_log_dir: /var/log/secured-app
+secured_app_db_password: "{{ vault_secured_app_db_password }}"
+secured_app_api_token: "{{ vault_secured_app_api_token }}"

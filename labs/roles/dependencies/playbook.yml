@@ -1,0 +1,6 @@
+---
+- name: Déployer webserver — déclenche selinux_setup + firewall_setup en cascade
+  hosts: web1.lab
+  become: true
+  roles:
+    - role: webserver

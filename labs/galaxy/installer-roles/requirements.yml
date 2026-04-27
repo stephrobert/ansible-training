@@ -1,0 +1,33 @@
+---
+# requirements.yml — sources mixtes : Galaxy + Git + version pinning
+
+roles:
+  # 1. Rôle Galaxy public (avec version pinnée)
+  - name: geerlingguy.docker
+    version: 7.4.4
+
+  # 2. Rôle depuis Git (branche main)
+  - src: https://github.com/stephrobert/ansible-role-motd
+    name: stephrobert.motd
+    version: main
+
+  # 3. Rôle depuis Git avec tag
+  - src: https://github.com/geerlingguy/ansible-role-postgresql
+    name: geerlingguy.postgresql
+    version: 4.1.0
+
+collections:
+  # 4. Collections communautaires
+  - name: ansible.posix
+    version: ">=1.5.0,<2.0.0"
+
+  - name: community.general
+    version: ">=8.0.0"
+
+  # 5. Collection pinnée par version exacte (production)
+  - name: community.crypto
+    version: "2.20.0"
+
+  # 6. Collection Galaxy
+  - name: ansible.utils
+    version: ">=4.0.0"

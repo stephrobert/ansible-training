@@ -1,0 +1,7 @@
+---
+# Démo : utiliser le rôle SANS override (valeurs par défaut)
+- name: Déployer webserver avec config par défaut
+  hosts: web1.lab
+  become: true
+  roles:
+    - role: webserver

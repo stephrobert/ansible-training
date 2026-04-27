@@ -1,0 +1,6 @@
+---
+- name: Déployer webserver avec handlers
+  hosts: web1.lab
+  become: true
+  roles:
+    - role: webserver

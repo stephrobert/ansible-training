@@ -1,0 +1,40 @@
+---
+# tasks/main.yml — démontre l'usage des variables defaults/ et vars/
+- name: Installer le paquet nginx
+  ansible.builtin.dnf:
+    name: "{{ webserver_package }}"
+    state: "{{ webserver_state }}"
+
+- name: Supprimer la conf par défaut conflictuelle
+  ansible.builtin.file:
+    path: /etc/nginx/conf.d/default.conf
+    state: absent
+  notify: Restart nginx
+
+- name: Déployer nginx.conf depuis le template (utilise les variables)
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    mode: "0644"
+    backup: true
+    validate: nginx -t -c %s
+  notify: Restart nginx
+
+- name: Déployer la page d'accueil personnalisée
+  ansible.builtin.copy:
+    dest: "{{ __webserver_html_dir }}/index.html"
+    content: "{{ webserver_index_content }}\n"
+    mode: "0644"
+
+- name: Ouvrir le port HTTP custom dans firewalld
+  ansible.posix.firewalld:
+    port: "{{ webserver_listen_port }}/tcp"
+    permanent: true
+    immediate: true
+    state: enabled
+
+- name: Démarrer et activer nginx
+  ansible.builtin.systemd_service:
+    name: "{{ webserver_package }}"
+    state: "{{ webserver_service_state }}"
+    enabled: "{{ webserver_service_enabled }}"

@@ -1,0 +1,19 @@
+---
+galaxy_info:
+  author: Stéphane Robert
+  namespace: stephrobert
+  role_name: httpd_server
+  description: Installer et configurer Apache httpd (challenge lab 58)
+  license: MIT
+  min_ansible_version: "2.16"
+  platforms:
+    - name: EL
+      versions:
+        - "9"
+        - "10"
+  galaxy_tags:
+    - apache
+    - httpd
+    - webserver
+
+dependencies: []

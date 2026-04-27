@@ -1,0 +1,58 @@
+---
+# molecule.yml — configuration enrichie du scénario.
+# Démontre :
+# - dependency: galaxy avec requirements.yml
+# - platforms multiples
+# - provisioner config (callbacks, vars)
+# - scenario test_sequence personnalisée
+
+dependency:
+  name: galaxy
+  options:
+    requirements-file: ./molecule/default/requirements.yml
+    role-file: ./molecule/default/requirements.yml
+
+driver:
+  name: default
+
+platforms:
+  - name: instance-rocky9
+    image: docker.io/rockylinux/rockylinux:9
+    pre_build_image: true
+    privileged: true
+    command: /sbin/init
+    groups:
+      - rocky
+
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      stdout_callback: yaml
+      callback_enabled: profile_tasks, timer
+      forks: 5
+      gathering: smart
+  inventory:
+    host_vars:
+      instance-rocky9:
+        webserver_listen_port: 8080
+  playbooks:
+    converge: ${MOLECULE_PLAYBOOK:-converge.yml}
+
+verifier:
+  name: ansible
+
+scenario:
+  name: default
+  test_sequence:
+    - dependency
+    - cleanup
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - verify
+    - cleanup
+    - destroy

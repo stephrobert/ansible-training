@@ -1,0 +1,41 @@
+---
+argument_specs:
+  main:
+    short_description: Créer des utilisateurs Linux
+    options:
+      users_to_create:
+        type: list
+        elements: dict
+        required: false
+        default: []
+        description: Liste des utilisateurs à créer
+        options:
+          name:
+            type: str
+            required: true
+            description: Nom de l'utilisateur
+          shell:
+            type: str
+            required: false
+            description: Shell de l'utilisateur (défaut users_default_shell)
+            choices:
+              - /bin/bash
+              - /bin/zsh
+              - /bin/sh
+              - /sbin/nologin
+          groups:
+            type: list
+            elements: str
+            required: false
+            default: []
+            description: Groupes secondaires de l'utilisateur
+
+      users_default_shell:
+        type: str
+        default: /bin/bash
+        description: Shell par défaut si non spécifié par utilisateur
+
+      users_create_home:
+        type: bool
+        default: true
+        description: Créer ou non le home directory

@@ -1,0 +1,5 @@
+---
+# defaults/main.yml — variables override-ables par l'utilisateur du rôle
+webserver_state: present
+webserver_service_state: started
+webserver_service_enabled: true
