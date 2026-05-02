@@ -32,6 +32,66 @@ Vous y trouverez :
 - [Pré-requis poste de travail](#-pré-requis-poste-de-travail)
 - [Dépannage](#-dépannage)
 
+### Alternative avec Docker
+
+Si vous préférez utiliser Docker plutôt que d'installer Ansible directement sur votre système, nous fournissons une image Docker prête à l'emploi avec tous les outils nécessaires et le lab pré-installé.
+
+#### Prérequis Docker
+
+Assurez-vous d'avoir Docker installé sur votre système :
+
+* **Sur Ubuntu/Debian** :
+https://docs.docker.com/engine/install/ubuntu/
+https://docs.docker.com/engine/install/linux-postinstall/
+
+* **Sur Fedora** :
+https://docs.docker.com/engine/install/fedora/
+https://docs.docker.com/engine/install/linux-postinstall/
+
+* **Sur macOS/Windows** : Installez [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+
+#### Construction et utilisation de l'image
+
+1. **Cloner le dépôt** (si ce n'est pas déjà fait) :
+   ```bash
+   git clone https://github.com/stephrobert/ansible-training.git
+   cd ansible-training
+   ```
+
+2. **Construire l'image Docker** :
+   ```bash
+   cd environments/docker
+   docker build -t ansible-training .
+   ```
+
+3. **Lancer le conteneur interactif** :
+   ```bash
+   docker run -it --rm ansible-training
+   ```
+
+4. **Ou monter un répertoire local pour persister vos modifications** :
+   ```bash
+   docker run -it --rm -v $(pwd)/../../:/workspace ansible-training
+   ```
+
+#### Contenu de l'environnement Docker
+
+L'image Docker inclut :
+- **Ansible** (dernière version stable)
+- **ansible-lint** pour la validation des playbooks
+- **pytest** et **pytest-testinfra** pour les tests
+- **Git** pour le versioning
+- **Le lab complet** pré-installé dans `/home/lab-user/ansible-training`
+- Un utilisateur non-root `lab-user` pour plus de sécurité
+
+#### Avantages de l'approche Docker
+
+- ✅ **Isolation complète** : aucun impact sur votre système hôte
+- ✅ **Reproductibilité** : environnement identique pour tous
+- ✅ **Prêt à l'emploi** : tous les outils pré-installés et configurés
+- ✅ **Multi-plateforme** : fonctionne sur Linux, macOS et Windows
+- ✅ **Nettoyage facile** : suppression simple du conteneur
+
 ---
 
 ## 🚀 Démarrage rapide
