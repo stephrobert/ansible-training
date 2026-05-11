@@ -37,9 +37,8 @@ case "$ACTION" in
         chmod 700 "$SSH_CONF_DIR"
         if ! grep -qE '^\s*Include\s+(~/\.ssh/)?config\.d/' "$MAIN_CONF" 2>/dev/null; then
             echo -e "${YELLOW}[warn]${NC} ${MAIN_CONF} n'inclut pas ~/.ssh/config.d/*.conf."
-            echo "       Ajoute en première ligne de ${MAIN_CONF} :"
-            echo "         Include ~/.ssh/config.d/*.conf"
-            echo "       Sinon le fragment sera créé mais ssh ne le lira pas."
+            echo "Include ~/.ssh/config.d/*.conf" >> "$MAIN_CONF"
+            echo -e "${GREEN}[OK]${NC} Include ~/.ssh/config.d/*.conf ajouté."
         fi
         if [ -f "${SSH_CONF_DIR}/lab-ansible.conf" ]; then
             echo -e "${YELLOW}[warn]${NC} ${SSH_CONF_DIR}/lab-ansible.conf existe (ancienne config)."
