@@ -30,13 +30,13 @@ fi
 
 case "${PKG_MGR}" in
   dnf)
-    SYS_PACKAGES=(libvirt qemu-kvm virt-install cloud-utils libguestfs-tools openssh-clients make git)
+    SYS_PACKAGES=(libvirt qemu-kvm virt-install cloud-utils libguestfs-tools openssh-clients make git python3-rich python3-pyyaml)
     for pkg in "${SYS_PACKAGES[@]}"; do
       rpm -q "${pkg}" >/dev/null 2>&1 || { log "Installation: ${pkg}"; sudo dnf install -y "${pkg}"; }
     done
     ;;
   apt)
-    SYS_PACKAGES=(libvirt-daemon-system libvirt-clients qemu-kvm virtinst cloud-image-utils libguestfs-tools openssh-client make git)
+    SYS_PACKAGES=(libvirt-daemon-system libvirt-clients qemu-kvm virtinst cloud-image-utils libguestfs-tools openssh-client make git python3-rich python3-yaml)
     sudo apt-get update -qq
     for pkg in "${SYS_PACKAGES[@]}"; do
       dpkg -l "${pkg}" >/dev/null 2>&1 || { log "Installation: ${pkg}"; sudo apt-get install -y "${pkg}"; }
