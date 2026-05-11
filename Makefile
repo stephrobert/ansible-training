@@ -9,7 +9,7 @@ GREEN := \033[0;32m
 BLUE  := \033[0;34m
 NC    := \033[0m
 
-.PHONY: help bootstrap provision destroy verify-conn snapshot restore test-all lint-all clean ssh-control ssh-web1 ssh-web2 ssh-db1 status solutions-lock solutions-unlock solutions-status solve dsoxlab dsoxlab-next dsoxlab-stats lab hosts-add hosts-remove hosts-status ssh-config-add ssh-config-remove ssh-config-status
+.PHONY: help bootstrap provision setup destroy verify-conn snapshot restore test-all lint-all clean ssh-control ssh-web1 ssh-web2 ssh-db1 status solutions-lock solutions-unlock solutions-status solve dsoxlab dsoxlab-next dsoxlab-stats lab hosts-add hosts-remove hosts-status ssh-config-add ssh-config-remove ssh-config-status
 
 help:        ## Affiche cette aide
 	@echo ""
@@ -23,7 +23,11 @@ bootstrap:   ## Installe les outils requis (ansible, navigator, lint, molecule, 
 	@echo -e "$(BLUE)[bootstrap]$(NC) Installation des outils du lab..."
 	@./scripts/bootstrap.sh
 
-provision:   ## Crée réseau libvirt + 4 VMs + prep managed nodes (Ansible)
+## provision = setup + hosts-add + ssh-config-add en une seule commande
+provision: setup hosts-add ssh-config-add
+
+## Crée réseau libvirt + 4 VMs + prep managed nodes (Ansible)
+setup:
 	@echo -e "$(BLUE)[provision]$(NC) Provisionning des VMs..."
 	@./infra/virt-install/provision.sh
 	@echo -e "$(BLUE)[provision]$(NC) Attente SSH (~30s)..."
