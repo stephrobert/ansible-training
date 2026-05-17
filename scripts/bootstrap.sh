@@ -57,22 +57,18 @@ sudo systemctl enable --now libvirtd >/dev/null 2>&1 || true
 systemctl is-active --quiet libvirtd && ok "libvirtd actif" || fail "libvirtd ne démarre pas"
 
 # ---------------------------------------------------------------------
-# 3. Outils Python via mise + pipx
+# 3. Outils ansible via pipx
 # ---------------------------------------------------------------------
-log "Vérification des outils Ansible via mise/pipx..."
+log "Vérification des outils Ansible via pipx..."
 
-if ! command -v mise >/dev/null 2>&1; then
-    fail "mise n'est pas installé sur ce poste — voir https://mise.jdx.dev/getting-started.html"
-fi
-
-# ansible-core est typiquement déjà installé via mise (cf. mise list)
-if ! mise which ansible >/dev/null 2>&1 && ! command -v ansible >/dev/null 2>&1; then
-    log "Installation d'ansible via mise..."
-    mise use -g ansible@latest
+# ansible-core est typiquement déjà installé via pipx
+if ! command -v ansible >/dev/null 2>&1; then
+    log "Installation d'ansible via pipx..."
+    pipx install --include-deps ansible
 fi
 ok "ansible présent : $(ansible --version | head -1)"
 
-# ansible-lint via pipx (déjà géré par mise pipx:ansible-lint sur le poste)
+# ansible-lint via pipx (non présent dans consignes installation-ansible du blog)
 if ! command -v ansible-lint >/dev/null 2>&1; then
     log "Installation d'ansible-lint via pipx..."
     pipx install ansible-lint
