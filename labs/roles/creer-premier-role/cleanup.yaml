@@ -1,0 +1,28 @@
+---
+# Reset du lab creer-premier-role : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+#
+# Même cible que le setup.yaml : db1.lab, l'hôte du challenge.
+- name: Cleanup creer-premier-role lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset name, state, enabled (creer-premier-role)
+      ansible.builtin.systemd_service:
+        name: "nginx"
+        state: "stopped"
+        enabled: "no"
+      failed_when: false
+    - name: Reset name, state (creer-premier-role)
+      ansible.builtin.dnf:
+        name: "nginx"
+        state: "absent"
+      failed_when: false
+    - name: Reset service, state, permanent, immediate (creer-premier-role)
+      ansible.posix.firewalld:
+        service: "http"
+        state: "disabled"
+        permanent: "yes"
+        immediate: "yes"
+      failed_when: false

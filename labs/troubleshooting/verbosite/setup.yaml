@@ -1,0 +1,22 @@
+---
+# Mise en place du lab verbosite : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup verbosite lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (verbosite)
+      ansible.builtin.file:
+        path: "/tmp/lab89-profile.txt"
+        state: "absent"
+
+- name: Brief the learner (verbosite)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Pick the -v level that matches the symptom, enable profile_tasks and the yaml stdout_callback, and see what a missing no_log leaks
+      run_once: true

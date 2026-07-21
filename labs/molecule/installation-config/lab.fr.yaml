@@ -1,0 +1,4 @@
+---
+id: molecule-installation-config
+title: "Molecule : enrichir un scénario au-delà du minimum"
+description: "Ajouter prepare.yml et requirements.yml, personnaliser les instances via host_vars, définir une test_sequence avec idempotence, activer profile_tasks."

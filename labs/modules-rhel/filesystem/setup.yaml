@@ -1,0 +1,93 @@
+---
+# Mise en place du lab filesystem : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+# Le lab est autonome : on repartitionne le disque secondaire /dev/vdb
+# (vdb1 de 1 GiB pour le swap, vdb2 le reste pour xfs), sans dépendre
+# du lab parted.
+- name: Setup filesystem lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (filesystem)
+      ansible.builtin.shell: |
+        # Reprend /dev/vdb à qui le détient : les 3 labs de stockage
+        # (parted, filesystem, lvm-storage) partagent ce disque, et celui qui
+        # passe après lvm-storage trouve un PV qui tient le device.
+        umount -l /mnt/lvm-data 2>/dev/null || true
+        umount -l /mnt/data 2>/dev/null || true
+        # /dev/vdb est PARTAGE par les 3 labs de stockage et par le capstone
+        # RHCE. Chacun le nettoyait sous SON nom de VG en dur (lab_vg ici,
+        # vg_lab pour le capstone) : le voisin ne liberait rien, et le lab
+        # suivant echouait sur "Can not open /dev/vdb exclusively".
+        #
+        # On part du DISQUE et non des noms : lsblk dit ce qui est reellement
+        # empile dessus, y compris les mappings device-mapper qui SURVIVENT a
+        # vgremove et gardent le disque occupe.
+        # (Sans accent ni apostrophe : ce bloc part dans un shell Ansible.)
+        for mp in $(lsblk -nlo MOUNTPOINT /dev/vdb 2>/dev/null | grep -v "^$"); do
+            umount "$mp" 2>/dev/null || umount -l "$mp" 2>/dev/null || true
+        done
+        for sw in $(lsblk -nlo NAME,FSTYPE /dev/vdb 2>/dev/null | awk "\$2==\"swap\" {print \$1}"); do
+            swapoff "/dev/$sw" 2>/dev/null || true
+        done
+        for vg in $(pvs --noheadings -o vg_name /dev/vdb* 2>/dev/null | tr -d " " | sort -u); do
+            [ -n "$vg" ] || continue
+            vgchange -an "$vg" 2>/dev/null || true
+            vgremove -ff -y "$vg" 2>/dev/null || true
+            rm -rf "/dev/$vg" || true
+        done
+        # Mappings dm restants, reperes par le disque qui les porte : ils
+        # survivent a la disparition des metadonnees de leur propre VG.
+        for dm in $(lsblk -nlo NAME,TYPE /dev/vdb 2>/dev/null | awk "\$2==\"lvm\" {print \$1}"); do
+            dmsetup remove -f "$dm" 2>/dev/null || true
+        done
+        # Les PV peuvent etre poses sur les PARTITIONS, pas sur le disque nu.
+        for pv in $(pvs --noheadings -o pv_name 2>/dev/null | tr -d " " | grep "^/dev/vdb" || true); do
+            pvremove -ff -y "$pv" 2>/dev/null || true
+        done
+        swapoff /dev/vdb1 2>/dev/null || true
+        sed -i -e '\|/mnt/lvm-data|d' -e '\|/mnt/data|d' \
+               -e '\|lab_vg|d' -e '\|/dev/vdb|d' /etc/fstab 2>/dev/null || true
+        # dmsetup avant vgremove : le mapping survit sinon, et garde le disque
+        dmsetup remove /dev/mapper/lab_vg-lab_lv 2>/dev/null || true
+        dmsetup remove lab_vg-lab_lv 2>/dev/null || true
+        lvremove -f /dev/lab_vg/lab_lv 2>/dev/null || true
+        vgchange -an lab_vg 2>/dev/null || true
+        vgremove -f lab_vg 2>/dev/null || true
+        pvremove -ff -y /dev/vdb 2>/dev/null || true
+        # vgremove laisse le repertoire /dev/lab_vg, et vgcreate refuse alors
+        # de repartir : le lab suivant ne demarrait pas.
+        rm -rf /dev/lab_vg || true
+        # Disque vierge : ni partition, ni signature de systeme de fichiers
+        for p in /dev/vdb[0-9]*; do test -b "$p" && wipefs -af "$p" || true; done
+        wipefs -af /dev/vdb || true
+        sgdisk --zap-all /dev/vdb || true
+        partprobe /dev/vdb || true
+      changed_when: false
+      failed_when: false
+
+    - name: Poser les 2 partitions cibles sur /dev/vdb
+      ansible.builtin.shell: |
+        parted -s /dev/vdb mklabel gpt \
+          mkpart swap 1MiB 1025MiB \
+          mkpart data 1025MiB 100%
+        partprobe /dev/vdb || true
+        udevadm settle 2>/dev/null || true
+        # Effacer les signatures APRES le repartitionnement, et pas seulement
+        # avant : les nouvelles partitions demarrent au meme offset que celles
+        # du lab parted, donc elles heritent de sa signature xfs. Le module
+        # filesystem la voit et refuse : "already used as xfs, use force=true".
+        for p in /dev/vdb1 /dev/vdb2; do test -b "$p" && wipefs -af "$p" || true; done
+        udevadm settle 2>/dev/null || true
+      changed_when: false
+
+- name: Brief the learner (filesystem)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Format /dev/vdb1 as swap and /dev/vdb2 as xfs, activate the swap, mount /mnt/data, and make both survive a reboot via /etc/fstab
+      run_once: true

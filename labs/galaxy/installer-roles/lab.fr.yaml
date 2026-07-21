@@ -1,0 +1,4 @@
+---
+id: galaxy-installer-roles
+title: "Installer rôles et collections depuis Galaxy ou Git"
+description: "Écrire un requirements.yml mêlant rôles Galaxy, sources Git et collections, épingler chaque version et vendoriser un rôle pour un projet reproductible."

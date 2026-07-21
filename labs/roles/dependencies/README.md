@@ -1,139 +1,143 @@
-# Lab 72 — Dépendances entre rôles (`meta/main.yml: dependencies:`)
+# Lab 72 — Dependencies between roles (`meta/main.yml: dependencies:`)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Pré-requis unique : les 4 VMs du lab répondent au ping.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Single prerequisite: the 4 lab VMs respond to the ping.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Dépendances entre rôles Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-roles/dependencies/)
+🔗 [**Dependencies between Ansible roles**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/dependencies/)
 
-Un rôle peut **déclarer** d'autres rôles dont il dépend. Ansible les
-exécute **avant** lui.
+A role can **declare** other roles it depends on. Ansible runs
+them **before** it.
 
 ```yaml
 # roles/webserver/meta/main.yml
 dependencies:
   - role: selinux_setup
     vars:
-      selinux_state: enforcing
+      selinux_setup_state: enforcing
   - role: firewall_setup
     vars:
-      firewall_open_ports:
+      firewall_setup_open_ports:
         - 80/tcp
         - 443/tcp
 ```
 
-→ Quand on lance `webserver`, Ansible exécute **dans cet ordre** :
+→ When you run `webserver`, Ansible executes **in this order**:
 `selinux_setup` → `firewall_setup` → `webserver`.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Déclarer des **`dependencies:`** dans `meta/main.yml`.
-2. Passer des **variables** aux rôles dépendants.
-3. Comprendre l'**ordre d'exécution** des dépendances.
-4. Éviter le piège du **diamant** (A dépend de B et C, B et C
-   dépendent de D — D s'exécute combien de fois ?).
-5. Différencier `dependencies:` (méta) de `import_role`/`include_role`
+1. Declare **`dependencies:`** in `meta/main.yml`.
+2. Pass **variables** to the dependent roles.
+3. Understand the **execution order** of the dependencies.
+4. Avoid the **diamond** pitfall (A depends on B and C, B and C
+   depend on D: how many times does D run?).
+5. Differentiate `dependencies:` (meta) from `import_role`/`include_role`
    (lab 71).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
 ansible db1.lab -m ansible.builtin.ping
 ```
 
-## ⚙️ Arborescence
+## ⚙️ Tree
 
 ```text
 labs/roles/dependencies/
 ├── README.md
-├── Makefile
-├── playbook.yml
+├── challenge/
+│   └── solution.yml               ← to write: consumes webserver only
 └── roles/
     ├── webserver/
     │   ├── meta/main.yml         ← dependencies: [selinux_setup, firewall_setup]
     │   └── tasks/main.yml
-    ├── selinux_setup/             ← rôle dépendance #1
+    ├── selinux_setup/             ← dependency role #1
     │   ├── meta/main.yml
     │   ├── tasks/main.yml
     │   └── defaults/main.yml
-    └── firewall_setup/            ← rôle dépendance #2
+    └── firewall_setup/            ← dependency role #2
         ├── meta/main.yml
         ├── tasks/main.yml
         └── defaults/main.yml
 ```
 
-## 📚 Exercice 1 — Lire `roles/webserver/meta/main.yml`
+## 📚 Exercise 1 — Read `roles/webserver/meta/main.yml`
 
 ```yaml
 galaxy_info:
-  # ... (champs du lab 60) ...
+  # ... (fields from lab 60) ...
 
 dependencies:
   - role: selinux_setup
     vars:
-      selinux_state: enforcing
-      selinux_booleans:
-        - httpd_can_network_connect
+      selinux_setup_state: enforcing
 
   - role: firewall_setup
     vars:
-      firewall_open_ports:
+      firewall_setup_open_ports:
         - 80/tcp
         - 443/tcp
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **2 dépendances** déclarées avec leurs vars.
-- **Ordre d'exécution** : `selinux_setup` → `firewall_setup` → `webserver`.
-- Les **vars passées** sont scoped à la dépendance (ne polluent pas le
-  rôle parent).
+- **2 dependencies** declared with their vars.
+- **Execution order**: `selinux_setup` → `firewall_setup` → `webserver`.
+- The **passed vars** are scoped to the dependency (they do not pollute the
+  parent role).
 
-## 📚 Exercice 2 — Rôle dépendance `selinux_setup`
+## 📚 Exercise 2 — The `selinux_setup` dependency role
 
 ```yaml
 # roles/selinux_setup/tasks/main.yml
-- name: Vérifier que SELinux est en {{ selinux_state }}
+- name: Tracer l'ordre d'exécution (preuve pour le challenge)
+  ansible.builtin.lineinfile:
+    path: /tmp/deps-order.txt
+    line: selinux_setup
+    create: true
+    mode: "0644"
+
+- name: S'assurer que SELinux est en mode {{ selinux_setup_state }}
   ansible.posix.selinux:
     policy: targeted
-    state: "{{ selinux_state }}"
-
-- name: Activer les booléens SELinux
-  ansible.posix.seboolean:
-    name: "{{ item }}"
-    state: true
-    persistent: true
-  loop: "{{ selinux_booleans }}"
+    state: "{{ selinux_setup_state }}"
 ```
 
-🔍 **Observation** : un rôle "dépendance" a **exactement** la même
-structure qu'un rôle normal. La seule différence : il est référencé
-par d'autres dans `meta/main.yml`.
+🔍 **Observation**: a "dependency" role has **exactly** the same
+structure as a normal role. The only difference: it is referenced
+by others in `meta/main.yml`.
 
-## 📚 Exercice 3 — Lancer le play
+## 📚 Exercise 3 — Run the play
+
+Write a minimal play that consumes only the `webserver` role
+(see challenge), then:
 
 ```bash
-ansible-playbook labs/roles/dependencies/playbook.yml
+ANSIBLE_ROLES_PATH=labs/roles/dependencies/roles \
+  ansible-playbook labs/roles/dependencies/challenge/solution.yml
 ```
 
-🔍 **Sortie attendue** :
+🔍 **Expected output**:
 
 ```text
-TASK [selinux_setup : Vérifier que SELinux est en enforcing]
-TASK [selinux_setup : Activer les booléens SELinux]
-TASK [firewall_setup : Installer firewalld]
-TASK [firewall_setup : Ouvrir les ports 80, 443]
-TASK [webserver : Installer nginx]
+TASK [selinux_setup : Tracer l'ordre d'exécution (preuve pour le challenge)]
+TASK [selinux_setup : S'assurer que SELinux est en mode enforcing]
+TASK [firewall_setup : Tracer l'ordre d'exécution (preuve pour le challenge)]
+TASK [firewall_setup : Démarrer et activer firewalld]
+TASK [firewall_setup : Ouvrir les ports demandés par l'appelant]
+TASK [webserver : Tracer l'ordre d'exécution (preuve pour le challenge)]
+TASK [webserver : Installer le paquet nginx]
 TASK [webserver : ...]
 ```
 
-Les dépendances sont exécutées **en premier** (dans l'ordre de
-déclaration), puis le rôle.
+The dependencies are executed **first** (in declaration order),
+then the role.
 
-## 📚 Exercice 4 — Le piège du diamant
+## 📚 Exercise 4 — The diamond pitfall
 
 ```text
        myapp
@@ -147,64 +151,64 @@ selinux    firewall
        common
 ```
 
-Si `selinux_setup` et `firewall_setup` dépendent tous deux de `common`,
-**combien de fois `common` tourne-t-il** ?
+If `selinux_setup` and `firewall_setup` both depend on `common`,
+**how many times does `common` run**?
 
-**Réponse** : **une seule fois**. Ansible déduplique les dépendances
-identiques (même nom + mêmes vars).
+**Answer**: **only once**. Ansible deduplicates identical dependencies
+(same name + same vars).
 
-> ⚠️ **Mais attention** : si `selinux_setup` appelle `common` avec
-> `vars: {x: 1}` et `firewall_setup` avec `vars: {x: 2}`, alors `common`
-> tourne **2 fois** (vars différentes = considéré comme différent).
+> ⚠️ **But beware**: if `selinux_setup` calls `common` with
+> `vars: {x: 1}` and `firewall_setup` with `vars: {x: 2}`, then `common`
+> runs **2 times** (different vars = considered different).
 
-## 📚 Exercice 5 — `dependencies:` vs `include_role:`
+## 📚 Exercise 5 — `dependencies:` vs `include_role:`
 
 | Aspect | `dependencies:` (meta) | `include_role:` (tasks) |
 | --- | --- | --- |
-| Lieu de déclaration | `meta/main.yml` | `tasks/main.yml` |
-| Évaluation | Statique (au parsing) | Dynamique (runtime) |
-| Conditionnel | Non (sauf via `when:` propagé) | Oui (`when:` au runtime) |
-| Visible dans `--list-tasks` | Non (pas explicitement) | Oui |
-| Cas d'usage | Pré-requis structurel **toujours** appliqué | Choix runtime selon variable |
+| Declaration location | `meta/main.yml` | `tasks/main.yml` |
+| Evaluation | Static (at parsing) | Dynamic (runtime) |
+| Conditional | No (except via propagated `when:`) | Yes (`when:` at runtime) |
+| Visible in `--list-tasks` | No (not explicitly) | Yes |
+| Use case | Structural prerequisite **always** applied | Runtime choice based on a variable |
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`dependencies:`** garantit qu'un rôle a ses **pré-requis structurels**
-  satisfaits, **avant** sa propre exécution.
-- Les **vars passées aux dépendances** sont scoped — ne polluent pas
-  le rôle parent.
-- **Déduplication automatique** des dépendances identiques (sauf si
-  vars différentes).
-- **Pattern common** : un rôle `common` (utilisateurs base, paquets de
-  base) dont presque tout le reste dépend.
+- **`dependencies:`** guarantees that a role has its **structural prerequisites**
+  satisfied, **before** its own execution.
+- The **vars passed to the dependencies** are scoped: they do not pollute
+  the parent role.
+- **Automatic deduplication** of identical dependencies (unless
+  vars differ).
+- **Common pattern**: a `common` role (base users, base packages) that
+  almost everything else depends on.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voulez que `selinux_setup` ne tourne **que sur RHEL** (pas
-   Debian). Comment l'exprimer dans `dependencies:` ? (Indice :
-   `when:` propagé.)
+1. You want `selinux_setup` to run **only on RHEL** (not
+   Debian). How do you express it in `dependencies:`? (Hint:
+   propagated `when:`.)
 
-2. Vous avez un rôle `common` qui pose des fichiers, et 3 rôles qui
-   en dépendent. Sur un play qui appelle les 3 rôles, combien de fois
-   `common` tourne-t-il ?
+2. You have a `common` role that places files, and 3 roles that
+   depend on it. On a play that calls the 3 roles, how many times does
+   `common` run?
 
-3. Quand préférer `dependencies:` à `include_role: + when:` ? Donnez
-   un cas où l'un est meilleur que l'autre.
+3. When to prefer `dependencies:` over `include_role: + when:`? Give
+   a case where one is better than the other.
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md).
+See [`challenge/README.md`](challenge/README.md).
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`allow_duplicates: true`** sur le rôle dépendance : l'autorise à
-  s'exécuter plusieurs fois (par défaut, une seule).
-- **`role_path`** : où Ansible cherche les rôles (priorités :
+- **`allow_duplicates: true`** on the dependency role: allows it to
+  run several times (by default, only once).
+- **`role_path`**: where Ansible looks for roles (priorities:
   `roles/`, `~/.ansible/roles/`, `/usr/share/ansible/roles/`).
-- **Anti-pattern** : ne pas chaîner `dependencies:` sur 5 niveaux de
-  profondeur. Plus lisible : un play parent qui orchestre.
+- **Anti-pattern**: do not chain `dependencies:` over 5 levels of
+  depth. More readable: a parent play that orchestrates.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint labs/roles/dependencies/

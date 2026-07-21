@@ -1,0 +1,4 @@
+---
+id: tests-tox-multiversion
+title: "tox : tester un rôle sur plusieurs versions d'ansible-core"
+description: "Écrire un tox.ini qui épingle une version d'ansible-core par environnement et lance molecule test sur toute la matrice en une commande."

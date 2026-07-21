@@ -1,0 +1,34 @@
+---
+# prepare.yml : joué une seule fois après « create », avant « converge ».
+#
+# Ce playbook est fourni avec le lab : c'est le banc de test, pas
+# l'exercice. Le lab 63 vous demandera d'en écrire un vous-même.
+#
+# Frontière à tenir : ce qui est du RESSORT DU RÔLE va dans le rôle, ce qui
+# relève de l'environnement de test va ici. Le rôle webserver ouvre son
+# port avec ansible.posix.firewalld : sur une VM, firewalld tourne déjà,
+# c'est un prérequis de la machine. Une image conteneur, elle, est nue.
+# Installer firewalld DANS le rôle serait mentir sur son périmètre : le
+# rôle configure un pare-feu, il n'a pas à en installer un. Le poser ici,
+# c'est équiper le banc de test pour qu'il ressemble à une VM.
+
+- name: Prepare
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Installer firewalld, prérequis du rôle absent de l'image
+      ansible.builtin.dnf:
+        name: firewalld
+        state: present
+        update_cache: true
+
+    # Sans service actif, ansible.posix.firewalld échoue sur
+    # « firewalld is not running » : la tâche du rôle a besoin du démon,
+    # pas seulement du paquet.
+    - name: Démarrer firewalld
+      ansible.builtin.systemd_service:
+        name: firewalld
+        state: started
+        enabled: true

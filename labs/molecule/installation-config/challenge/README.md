@@ -1,42 +1,78 @@
-# 🎯 Challenge — Configuration Molecule enrichie
+# 🎯 Challenge: enrich the Molecule configuration
 
-## ✅ Objectif
+## ✅ Mission
 
-Vérifier que le scénario Molecule du lab est **enrichi** par rapport au
-minimum (lab 62) :
+The `molecule/default/` scenario is shipped in its **minimal** version from
+lab 62 (converge.yml, verify.yml, create.yml and destroy.yml are provided).
+Your job: the configuration enrichments, which you write
+yourself.
 
-| Fichier | Présence |
+`prepare.yml`, however, is the only harness playbook you must write:
+it is precisely the subject of this lab. Without it, the instance stays bare and the
+`converge` fails.
+
+Expected state (this is what pytest checks):
+
+| Item | Expectation |
 | --- | --- |
-| `molecule/default/prepare.yml` | ✅ |
-| `molecule/default/requirements.yml` | ✅ |
-| `molecule/default/molecule.yml` avec `host_vars` | ✅ |
-| `molecule/default/molecule.yml` avec `test_sequence` incluant `idempotence` et `verify` | ✅ |
-| Callbacks `profile_tasks` activés | ✅ |
+| `molecule/default/requirements.yml` | To create: collections needed by the scenario (ansible.posix, containers.podman...) with a version constraint |
+| `molecule.yml`: `dependency` | `dependency.options.requirements-file` wired to your `requirements.yml` |
+| `molecule/default/prepare.yml` | To create: instance preparation play (prerequisites outside the role's scope) |
+| `molecule.yml`: `host_vars` | `provisioner.inventory.host_vars` overrides `webserver_listen_port: 8080` for the instance |
+| `molecule.yml`: `test_sequence` | custom sequence under `scenario:`, including `prepare`, `converge`, `idempotence` and `verify` |
+| `molecule.yml`: callbacks | `callback_enabled` with `profile_tasks` and `timer` |
+| Everything | `molecule syntax` passes (pytest actually runs it) |
 
-## 🧩 Indices
+Warning: `verify.yml` (provided) checks that nginx listens on the
+overridden port. If your `host_vars` is absent or wrong, a full `molecule test`
+will fail.
 
-C'est un challenge **purement structurel** — les fichiers sont déjà livrés
-dans `molecule/default/`. Le challenge consiste à :
+## 🧩 Hints
 
-1. Lire et comprendre les enrichissements.
-2. Optionnellement lancer `molecule test` pour voir l'effet (callbacks,
-   idempotence forcée).
+- `dependency.name: galaxy` accepts `options.requirements-file` to
+  point to a scenario dependencies file.
+- `prepare.yml` is played once after `create`, before `converge`:
+  perfect to install `procps-ng` and `iproute` (diagnostics) that are
+  not the role's responsibility.
+- Two prerequisites, not one. `verify.yml` needs `ss` (package
+  `iproute`) to observe the listening port, but the **role itself** needs
+  `firewalld`: it opens its port with `ansible.posix.firewalld`.
+  On a VM the daemon already runs; in a container, it does not, and the
+  `converge` dies on "firewalld is not running". Installing the package is not
+  enough, you also have to start the service. A role that **configures**
+  a firewall has no business **installing** one: it is up to the test harness to
+  provide the machine in the expected state.
+- Contrary to a widespread belief, Molecule's default sequence
+  already plays `prepare`. Declaring your `test_sequence` therefore does not serve
+  to enable it, but to remove the steps you do not have (`cleanup`,
+  `side_effect`) and to make the contract explicit.
+- The default sequence is overridden like this:
 
-Posez un `solution.sh` minimal :
+  ```yaml
+  scenario:
+    name: default
+    test_sequence:
+      - ...
+  ```
+
+- Test as you go:
+
+  ```bash
+  cd labs/molecule/installation-config
+  ANSIBLE_ROLES_PATH=$PWD/roles molecule syntax
+  ```
+
+## 📓 Command log
+
+When your configuration is ready, record in `challenge/solution.sh`
+the Molecule commands you ran. This log must exist for pytest
+to run:
 
 ```bash
-#!/usr/bin/env bash
-echo "Lab 63 : config Molecule enrichie validée par pytest."
-exit 0
+chmod +x challenge/solution.sh
 ```
 
-## 🚀 Lancement (optionnel)
-
-```bash
-cd labs/molecule/installation-config && molecule test
-```
-
-## 🧪 Validation automatisée
+## 🧪 Validation
 
 ```bash
 pytest -v labs/molecule/installation-config/challenge/tests/
@@ -45,23 +81,11 @@ pytest -v labs/molecule/installation-config/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/molecule/installation-config clean
+dsoxlab clean molecule-installation-config
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`ansible-lint --profile production`** : validez la qualité de votre solution.
-
-  ```bash
-  ansible-lint --profile production labs/molecule/installation-config/challenge/solution.yml
-  ```
-
-  Sortie attendue : `Passed: 0 failure(s), 0 warning(s)`.
-
-- **Idempotence** : relancez la solution une seconde fois — un `PLAY RECAP`
-  avec `changed=0` partout confirme un playbook propre.
-
-- **Cas limites** : pensez aux scénarios d'erreur (host indisponible,
-  dépendance manquante, valeur invalide) que votre solution pourrait
-  rencontrer en production. Comment les gérer (`block/rescue`,
-  `failed_when`, `assert`) ?
+- `MOLECULE_PLAYBOOK`: environment variable to substitute the
+  converge playbook (pattern `${MOLECULE_PLAYBOOK:-converge.yml}`).
+- `molecule test --destroy=never`: keep the instance for inspection.

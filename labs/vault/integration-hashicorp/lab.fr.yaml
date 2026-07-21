@@ -1,0 +1,4 @@
+---
+id: vault-integration-hashicorp
+title: "Récupérer des secrets depuis HashiCorp Vault ou OpenBao"
+description: "Démarrer un Vault local, y stocker un secret, le lire depuis Ansible avec community.hashi_vault, et comparer les auth token, AppRole et JWT."

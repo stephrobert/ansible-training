@@ -1,51 +1,51 @@
-# Lab 85 — Inspection d'Execution Environments
+# Lab 85 — Inspecting Execution Environments
 
-> 💡 **Pré-requis** : avoir terminé le [lab 84](../84-ee-hello/) (Podman + ansible-navigator installés).
+> 💡 **Prerequisite**: having completed [lab 84](../hello/) (Podman + ansible-navigator installed).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Inspecter un EE — images, doc, collections**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/lookup-doc/)
+🔗 [**Inspect an EE: images, doc, collections**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/lookup-doc/)
 
-Avant de **builder son propre EE** (lab 86), il faut savoir **inspecter** un EE existant : quelles collections embarquées ? quelle version d'ansible-core ? quelles dépendances Python ? quels packages système ? Ansible Navigator fournit **`ansible-navigator images`** pour cette exploration en TUI, et **`ansible-navigator doc`** pour la doc d'un module donné depuis l'EE.
+Before **building your own EE** (lab 86), you must know how to **inspect** an existing EE: which embedded collections? which ansible-core version? which Python dependencies? which system packages? Ansible Navigator provides **`ansible-navigator images`** for this TUI exploration, and **`ansible-navigator doc`** for the doc of a given module from the EE.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Lister** les collections d'un EE (`ansible-navigator images` ou `podman run ... ansible-galaxy`).
-2. **Comparer** 3 EE communautaires : `creator-ee`, `awx-ee`, `community-ee-minimal`.
-3. **Lire la doc** d'un module dans le contexte de l'EE (`ansible-navigator doc`).
-4. **Choisir** l'EE adapté à un cas d'usage : formation, AWX, prod minimaliste.
+1. **List** the collections of an EE (`ansible-navigator images` or `podman run ... ansible-galaxy`).
+2. **Compare** 3 community EEs: `creator-ee`, `awx-ee`, `community-ee-minimal`.
+3. **Read the doc** of a module in the context of the EE (`ansible-navigator doc`).
+4. **Choose** the EE suited to a use case: training, AWX, minimalist production.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training/labs/ee/inspection/
+cd $ANSIBLE_TRAINING/labs/ee/inspection/
 ./inspect.sh
 ```
 
-## ⚙️ Arborescence
+## ⚙️ Tree
 
 ```text
 labs/ee/inspection/
 ├── README.md
-├── inspect.sh                       ← compare 3 EE et liste collections
+├── inspect.sh                       ← compares 3 EEs and lists collections
 └── challenge/
     └── tests/
-        └── test_ee_inspection.py    ← tests structurels (4 tests)
+        └── test_ee_inspection.py    ← structural tests (4 tests)
 ```
 
-## 📚 Exercice 1 — Inspection TUI avec ansible-navigator images
+## 📚 Exercise 1 — TUI inspection with ansible-navigator images
 
 ```bash
 ansible-navigator images --eei quay.io/ansible/creator-ee:latest
 ```
 
-L'interface TUI s'ouvre avec **5 sections** numérotées :
+The TUI opens with **5 sections** numbered:
 
 ```text
-0 │ Image information     ← ID, taille, registry
-1 │ Image layers          ← layers du Dockerfile
+0 │ Image information     ← ID, size, registry
+1 │ Image layers          ← Dockerfile layers
 2 │ OS release            ← UBI 9 / RHEL 9 / Fedora
 3 │ System packages       ← rpm -qa
 4 │ Ansible version       ← ansible-core
@@ -54,50 +54,50 @@ L'interface TUI s'ouvre avec **5 sections** numérotées :
 7 │ Python version        ← python3 --version
 ```
 
-Naviguez dans `5` (collections) — vous y trouvez `ansible.posix`, `community.general`, `ansible.utils`, `community.kubernetes`, etc., **avec leurs versions précises**.
+Navigate into `5` (collections): there you find `ansible.posix`, `community.general`, `ansible.utils`, `community.kubernetes`, etc., **with their exact versions**.
 
-🔍 **Observation** : c'est **la** commande pour répondre à « avant de build mon EE, qu'est-ce qui est déjà dans `creator-ee` ? ». Évite de réinstaller des collections déjà présentes.
+🔍 **Observation**: this is **the** command to answer "before building my EE, what is already in `creator-ee`?". It avoids reinstalling collections that are already present.
 
-## 📚 Exercice 2 — Comparer 3 EE communautaires
+## 📚 Exercise 2 — Compare 3 community EEs
 
-| EE | Taille | Cas d'usage |
+| EE | Size | Use case |
 |----|--------|-------------|
-| **`quay.io/ansible/creator-ee`** | ~1.2 GB | Formation, dev. Riche : ansible-lint, navigator deps, nombreuses collections. |
-| **`quay.io/ansible/awx-ee`** | ~900 MB | AWX upstream. Collections AWX par défaut. |
-| **`quay.io/ansible/community-ee-minimal`** | ~400 MB | Base **minimale** — point de départ pour custom EE. |
+| **`quay.io/ansible/creator-ee`** | ~1.2 GB | Training, dev. Rich: ansible-lint, navigator deps, many collections. |
+| **`quay.io/ansible/awx-ee`** | ~900 MB | AWX upstream. AWX collections by default. |
+| **`ghcr.io/ansible-community/community-ee-minimal`** | ~400 MB | **Minimal** base: starting point for a custom EE. |
 
-Lancez le script :
+Run the script:
 
 ```bash
 ./inspect.sh
 ```
 
-Le script pull les 3 EE, affiche les tailles, liste les collections de creator-ee, et compare les versions ansible-core.
+The script pulls the 3 EEs, displays the sizes, lists the collections of creator-ee, and compares the ansible-core versions.
 
-🔍 **Observation** : pour **un EE custom production**, partir de **`community-ee-minimal`** et n'ajouter **que** les collections nécessaires est la stratégie qui produit l'image la plus petite et la moins exposée.
+🔍 **Observation**: for **a custom production EE**, starting from **`community-ee-minimal`** and adding **only** the necessary collections is the strategy that produces the smallest and least exposed image.
 
-## 📚 Exercice 3 — Lire la doc d'un module dans l'EE
+## 📚 Exercise 3 — Read the doc of a module in the EE
 
 ```bash
 ansible-navigator doc ansible.builtin.copy --eei quay.io/ansible/creator-ee:latest
 ```
 
-L'interface TUI affiche :
+The TUI displays:
 
-- **Synopsis** du module.
-- **Paramètres** avec types, valeurs par défaut, exemples.
-- **Examples** YAML directement copiables.
-- **Return values** : ce que le module renvoie en `register:`.
+- **Synopsis** of the module.
+- **Parameters** with types, default values, examples.
+- **Examples** YAML directly copyable.
+- **Return values**: what the module returns in `register:`.
 
-🔍 **Observation** : la doc affichée est **celle de la version embarquée dans l'EE**, pas la doc internet. Garantit que les paramètres mentionnés sont bien disponibles avec la version Ansible utilisée.
+🔍 **Observation**: the doc displayed is **that of the version embedded in the EE**, not the internet doc. It guarantees that the mentioned parameters are indeed available with the Ansible version used.
 
-## 📚 Exercice 4 — Lister les collections embarquées (mode CLI)
+## 📚 Exercise 4 — List the embedded collections (CLI mode)
 
 ```bash
 ansible-navigator collections --eei quay.io/ansible/creator-ee:latest
 ```
 
-Sortie :
+Output:
 
 ```text
 0 │ ansible.builtin           2.18.1
@@ -107,48 +107,48 @@ Sortie :
 …
 ```
 
-Pour un format scriptable :
+For a scriptable format:
 
 ```bash
 podman run --rm quay.io/ansible/creator-ee:latest \
   ansible-galaxy collection list --format json | jq
 ```
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Idempotence** : un second run de votre solution doit afficher `changed=0`
-  partout dans le `PLAY RECAP`. C'est le signal mécanique d'un playbook
-  conforme aux bonnes pratiques.
-- **FQCN explicite** : préférez toujours `ansible.builtin.<module>` (ou la
-  collection appropriée) plutôt que le nom court — `ansible-lint --profile
-  production` le vérifie.
-- **Convention de ciblage** : ce lab cible votre poste local ; pour adapter à un
-  autre groupe, ajustez `hosts:` dans `lab.yml`/`solution.yml` puis relancez.
-- **Reset isolé** : `make clean` à la racine du lab désinstalle proprement
-  ce que la solution a posé pour pouvoir rejouer le scénario.
+- **Idempotence**: a second run of your solution must show `changed=0`
+  everywhere in the `PLAY RECAP`. This is the mechanical signal of a playbook
+  compliant with best practices.
+- **Explicit FQCN**: always prefer `ansible.builtin.<module>` (or the
+  appropriate collection) over the short name. `ansible-lint --profile
+  production` checks it.
+- **Targeting convention**: this lab targets your local machine. To adapt it to
+  another group, adjust `hosts:` in `lab.yml`/`solution.yml` then rerun.
+- **Isolated reset**: `dsoxlab clean <lab-id>` at the lab root cleanly uninstalls
+  what the solution set up so you can replay the scenario.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Pour une formation Ansible **avec K8s**, quel EE prendre ? Pourquoi ?
+1. For an Ansible training **with K8s**, which EE do you take? Why?
 
-2. Pour une production prod **minimaliste** ne déployant **que** des serveurs Linux, quel EE ?
+2. For a **minimalist** production deploying **only** Linux servers, which EE?
 
-3. Comment **vérifier** qu'un EE contient une collection précise et sa version, **sans** le pull localement ?
+3. How do you **verify** that an EE contains a specific collection and its version, **without** pulling it locally?
 
-4. Pourquoi `creator-ee` est-il le plus volumineux ? Que peut-on retirer pour faire son propre EE plus léger ?
+4. Why is `creator-ee` the largest? What can you remove to make your own lighter EE?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Le challenge ([`challenge/tests/`](challenge/tests/)) valide que le script d'inspection référence bien les 3 EE et utilise les commandes de référence.
+The challenge ([`challenge/tests/`](challenge/tests/)) validates that the inspection script indeed references the 3 EEs and uses the reference commands.
 
 ```bash
 LAB_NO_REPLAY=1 pytest -v challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`ansible-navigator config`** : voir la config Ansible **dans** l'EE (différente de la config locale).
-- **`skopeo inspect docker://quay.io/...`** : inspecter sans pull (économise la bande passante).
-- **`crane manifest`** : alternative à skopeo, plus rapide.
-- **Lab 86** : créer son propre EE custom.
-- **Red Hat AAP EE** : `ee-supported-rhel9` contient les collections **certifiées Red Hat**.
+- **`ansible-navigator config`**: see the Ansible config **inside** the EE (different from the local config).
+- **`skopeo inspect docker://quay.io/...`**: inspect without pulling (saves bandwidth).
+- **`crane manifest`**: alternative to skopeo, faster.
+- **Lab 86**: create your own custom EE.
+- **Red Hat AAP EE**: `ee-supported-rhel9` contains the **Red Hat certified** collections.

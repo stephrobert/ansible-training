@@ -1,10 +1,18 @@
 ---
 # Playbook de préparation des managed nodes du lab.
-# Joué une fois après `make provision`. Cloud-init n'a posé que le user
+# Joué une fois après `dsoxlab provision`. Cloud-init n'a posé que le user
 # `ansible` + sa clé SSH ; ce playbook fait le reste, ce qui matérialise
 # le principe "Ansible se prépare lui-même".
 #
 # Idempotent : un second passage doit afficher changed=0.
+
+- name: Rassembler les facts de TOUS les nœuds du lab
+  # Le play suivant ne cible que les managed nodes, mais /etc/hosts doit aussi
+  # porter l'adresse du control node : sans ce play, hostvars['control-node.lab']
+  # n'a aucun fact et son adresse est introuvable.
+  hosts: control:rhce_lab
+  gather_facts: true
+  become: false
 
 - name: Préparation des managed nodes (chrony, paquets utiles, /etc/hosts)
   hosts: rhce_lab
@@ -22,11 +30,14 @@
       - tar
       - rsync
 
-    lab_hosts_entries:
-      - { ip: 10.10.20.10, name: control-node }
-      - { ip: 10.10.20.21, name: web1 }
-      - { ip: 10.10.20.22, name: web2 }
-      - { ip: 10.10.20.31, name: db1 }
+    # Les nœuds du lab viennent de l'inventaire, leurs adresses des facts.
+    # AUCUNE IP n'est écrite ici : Terraform les attribue, et la table figée qui
+    # traînait à cet emplacement (10.10.20.10/.21/.22/.31) ne correspondait à
+    # AUCUNE machine. Chaque nœud se retrouvait avec un /etc/hosts pointant
+    # quatre adresses mortes, alors que l'objectif du lab est justement qu'ils
+    # se résolvent entre eux. Le test grepait les mêmes constantes fausses : il
+    # était vert et ne prouvait rien.
+    lab_nodes: "{{ groups['control'] + groups['rhce_lab'] }}"
 
   tasks:
     - name: Installer les paquets de base
@@ -56,15 +67,20 @@
     - name: Inscrire chaque hôte du lab dans /etc/hosts
       ansible.builtin.lineinfile:
         path: /etc/hosts
-        line: "{{ item.ip }} {{ item.name }}.lab {{ item.name }}"
-        regexp: "^{{ item.ip | regex_escape }}\\s"
+        # item vaut « web1.lab » : le FQDN vient de l'inventaire, l'adresse des
+        # facts de l'hôte concerné, jamais d'une constante.
+        line: >-
+          {{ hostvars[item].ansible_default_ipv4.address }}
+          {{ item }} {{ item.split('.')[0] }}
+        # Ancrage sur l'adresse : rejouer ne duplique pas la ligne (idempotence).
+        regexp: "^{{ hostvars[item].ansible_default_ipv4.address | regex_escape }}\\s"
         state: present
         owner: root
         group: root
         mode: "0644"
-      loop: "{{ lab_hosts_entries }}"
+      loop: "{{ lab_nodes }}"
       loop_control:
-        label: "{{ item.name }}"
+        label: "{{ item }}"
 
     - name: Vérifier que SELinux est en mode enforcing
       ansible.posix.selinux:

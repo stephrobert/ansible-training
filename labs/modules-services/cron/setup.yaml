@@ -1,0 +1,22 @@
+---
+# Mise en place du lab cron : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup cron lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (cron)
+      ansible.builtin.file:
+        path: "/etc/cron.d/lab-rhce"
+        state: "absent"
+
+- name: Brief the learner (cron)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Schedule idempotent cron jobs via a user crontab or /etc/cron.d, with environment variables and clean disabling
+      run_once: true

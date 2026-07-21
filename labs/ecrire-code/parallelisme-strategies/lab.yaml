@@ -1,0 +1,34 @@
+---
+id: ecrire-code-parallelisme-strategies
+title: "Parallelism: forks, serial, throttle, strategy"
+description: "Tell forks from serial, run a rolling update with serial: 1, compare the linear and free strategies and rate-limit a single task with throttle."
+section: ecrire-code
+level: l3
+difficulty: advanced
+lab_type: lab
+estimated_time: "50m"
+skills:
+  - forks
+  - serial-rolling-update
+  - strategy
+  - throttle
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/parallelisme-strategies/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        web1: web1.lab
+        web2: web2.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

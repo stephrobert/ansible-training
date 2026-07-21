@@ -1,0 +1,23 @@
+---
+# Mise en place du lab requirements : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup requirements lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (requirements)
+      ansible.builtin.shell: |
+        rm -f /tmp/lab94-*
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (requirements)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Declare four sources in a requirements.yml, pin every version, check integrity with collection verify and target several Galaxy servers
+      run_once: true

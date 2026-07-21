@@ -1,0 +1,4 @@
+---
+id: modules-fichiers-file
+title: "Module file : états, permissions et liens symboliques"
+description: "Gérer l'état d'un fichier ou d'un répertoire (directory, absent, link, hard, touch), les permissions récursives et les liens symboliques."

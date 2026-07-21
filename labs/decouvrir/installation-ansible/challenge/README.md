@@ -1,40 +1,40 @@
-# 🎯 Challenge — Script de vérification d'installation
+# 🎯 Challenge — Installation verification script
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire un script Bash `solution.sh` à la racine de **ce répertoire**
-(`labs/decouvrir/installation-ansible/challenge/solution.sh`) qui :
+Write a Bash script `solution.sh` at the root of **this directory**
+(`labs/decouvrir/installation-ansible/challenge/solution.sh`) that:
 
-1. Vérifie que **`ansible --version`** retourne `core 2.18` ou supérieur
-2. Vérifie que les **8 binaires standard** sont dans le `PATH`
-3. Vérifie qu'au moins **100 modules** sont disponibles via `ansible-doc -l`
-4. Vérifie que les **3 collections clés** sont installées :
+1. Checks that **`ansible --version`** returns `core 2.18` or higher
+2. Checks that the **8 standard binaries** are in the `PATH`
+3. Checks that at least **100 modules** are available via `ansible-doc -l`
+4. Checks that the **3 key collections** are installed:
    `ansible.posix`, `community.general`, `community.libvirt`
-5. **Exit 0** si tout est OK, **exit 1** sinon avec un message d'erreur clair
+5. **Exit 0** if everything is OK, **exit 1** otherwise with a clear error message
 
-Squelette à compléter :
+Skeleton to complete:
 
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
 
-# 1. Récupérer la version d'ansible-core (ex. : "2.18")
-#    Astuce : `ansible --version | head -1` retourne "ansible [core 2.x.y]".
+# 1. Get the ansible-core version (e.g.: "2.18")
+#    Tip: `ansible --version | head -1` returns "ansible [core 2.x.y]".
 VERSION=$(ansible --version | ???)
-# Comparer "$VERSION" à 2.18 — sortir avec exit 1 si inférieur.
+# Compare "$VERSION" to 2.18, exit 1 if lower.
 
-# 2. Vérifier la présence des 8 binaires standard dans le PATH.
-#    Liste : ansible, ansible-playbook, ansible-doc, ansible-galaxy,
+# 2. Check that the 8 standard binaries are in the PATH.
+#    List: ansible, ansible-playbook, ansible-doc, ansible-galaxy,
 #            ansible-vault, ansible-inventory, ansible-config, ansible-console.
 for bin in ???; do
     command -v "$bin" >/dev/null || { echo "MISSING $bin"; exit 1; }
 done
 
-# 3. Compter les modules disponibles via `ansible-doc -l` (>= 100 attendu).
+# 3. Count the available modules via `ansible-doc -l` (>= 100 expected).
 COUNT=$(ansible-doc -l 2>/dev/null | wc -l)
 [[ ??? ]] || { echo "Trop peu de modules ($COUNT)"; exit 1; }
 
-# 4. Vérifier la présence des 3 collections clés via `ansible-galaxy collection list`.
+# 4. Check that the 3 key collections are present via `ansible-galaxy collection list`.
 for col in ansible.posix community.general community.libvirt; do
     ansible-galaxy collection list "$col" >/dev/null 2>&1 \
         || { echo "Collection $col manquante"; exit 1; }
@@ -45,27 +45,27 @@ echo "Installation OK"
 
 ## 🧪 Validation
 
-Le script `tests/test_install.py` lance votre `solution.sh` et vérifie
-qu'il retourne **exit 0** sans erreur :
+The `tests/test_functional.py` script runs your `solution.sh` and checks that
+it returns **exit 0** without error:
 
 ```bash
 pytest -v labs/decouvrir/installation-ansible/challenge/tests/
 ```
 
-## 🚀 Pour aller plus loin
+## 🚀 Going further
 
-- Ajoutez un check de la **version Python** (≥ 3.11 attendu).
-- Affichez la **méthode d'installation détectée** (pipx vs dnf vs mise) en
-  parsant `ansible --version`.
+- Add a **Python version** check (≥ 3.11 expected).
+- Display the **detected installation method** (pipx vs dnf vs mise) by
+  parsing `ansible --version`.
 
 ## 🧹 Reset
 
-Pour rejouer le challenge dans un état neutre :
+To replay the challenge in a clean state:
 
 ```bash
-make -C labs/decouvrir/installation-ansible/ clean
+dsoxlab clean decouvrir-installation-ansible
 ```
 
-Cette cible désinstalle/supprime ce que la solution a posé sur les managed
-nodes (paquets, fichiers, services, règles firewall) afin que vous puissiez
-relancer la solution from scratch.
+This target uninstalls/removes what the solution laid down on the managed
+nodes (packages, files, services, firewall rules) so that you can replay the
+solution from scratch.

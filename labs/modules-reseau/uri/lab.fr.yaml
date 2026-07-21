@@ -1,0 +1,4 @@
+---
+id: modules-reseau-uri
+title: "Module uri : appels API REST"
+description: "Appeler une API REST en GET/POST avec body JSON, accepter plusieurs status_code et boucler un healthcheck avec until/retries."

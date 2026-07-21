@@ -1,0 +1,22 @@
+---
+# Mise en place du lab facts-magic-vars : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup facts-magic-vars lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (facts-magic-vars)
+      ansible.builtin.file:
+        path: "/tmp/facts-summary.txt"
+        state: "absent"
+
+- name: Brief the learner (facts-magic-vars)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Read system facts, use inventory_hostname, groups and hostvars, then cut the collection cost with gather_subset
+      run_once: true

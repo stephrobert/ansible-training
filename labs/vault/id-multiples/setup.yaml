@@ -1,0 +1,33 @@
+---
+# Mise en place du lab id-multiples : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup id-multiples lab (lab_web1)
+  hosts: lab_web1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (id-multiples)
+      ansible.builtin.file:
+        path: "/tmp/lab79-challenge-web1.lab.txt"
+        state: "absent"
+      failed_when: false
+- name: Setup id-multiples lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (id-multiples)
+      ansible.builtin.file:
+        path: "/tmp/lab79-challenge-db1.lab.txt"
+        state: "absent"
+      failed_when: false
+
+- name: Brief the learner (id-multiples)
+  hosts: lab_web1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Encrypt each environment with a labelled vault-id, decrypt several vault-ids in a single run and lay out group_vars per environment
+      run_once: true

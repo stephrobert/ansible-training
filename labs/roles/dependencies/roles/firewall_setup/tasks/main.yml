@@ -1,15 +1,21 @@
 ---
-- name: Démarrer firewalld
+- name: Tracer l'ordre d'exécution (preuve pour le challenge)
+  ansible.builtin.lineinfile:
+    path: /tmp/deps-order.txt
+    line: firewall_setup
+    create: true
+    mode: "0644"
+
+- name: Démarrer et activer firewalld
   ansible.builtin.systemd_service:
     name: firewalld
     state: started
     enabled: true
 
-- name: Activer les zones requises
+- name: Ouvrir les ports demandés par l'appelant
   ansible.posix.firewalld:
-    zone: "{{ item }}"
+    port: "{{ item }}"
     permanent: true
     immediate: true
     state: enabled
-  loop: "{{ firewall_zones }}"
-  ignore_errors: true   # zone déjà active = pas grave
+  loop: "{{ firewall_setup_open_ports }}"

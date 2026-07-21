@@ -1,0 +1,28 @@
+---
+# Reset du lab handlers : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup handlers lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, regexp, line (handlers)
+      ansible.builtin.lineinfile:
+        path: "/etc/nginx/nginx.conf"
+        regexp: '^(\s*)listen(\s+)[0-9]+;'
+        line: "        listen       80;"
+      failed_when: false
+    - name: Retirer les directives de durcissement posées par la solution
+      ansible.builtin.lineinfile:
+        path: "/etc/nginx/nginx.conf"
+        regexp: "{{ item }}"
+        state: absent
+      loop:
+        - '^\s*server_tokens\s+'
+        - '^\s*add_header\s+X-Content-Type-Options\s+'
+      failed_when: false
+    - name: Reset path, state (handlers)
+      ansible.builtin.file:
+        path: "/var/log/ansible-handlers.log"
+        state: "absent"
+      failed_when: false

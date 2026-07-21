@@ -1,0 +1,4 @@
+---
+id: modules-fichiers-archive-unarchive
+title: "Modules archive et unarchive : compresser et extraire"
+description: "Créer une archive tar.gz sur le managed node et extraire des tarballs locaux, distants ou déjà présents, de façon idempotente avec creates."

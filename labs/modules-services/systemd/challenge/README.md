@@ -1,25 +1,26 @@
-# 🎯 Challenge — `systemd_service` + unit file custom
+# 🎯 Challenge — `systemd_service` + custom unit file
 
-## ✅ Objectif
+## ✅ Objective
 
-Sur **web1.lab**, gérer le service standard **`chronyd`** ET créer un
-**unit file custom** `lab-marker.service` (oneshot) qui touche un fichier
-flag au démarrage.
+On **web1.lab**, manage the standard service **`chronyd`** AND create a
+**custom unit file** `lab-marker.service` (oneshot) that touches a flag
+file at startup.
 
-> 💡 **Pourquoi `chronyd` et pas `httpd`/`nginx` ?** Les ports 80/443 sont
-> déjà occupés sur `web1.lab` par un lab précédent. `chronyd` (NTP, port 123
-> UDP) ne crée pas de conflit.
+> 💡 **Why `chronyd` and not `nginx`?** `nginx` already occupies ports
+> 80/443 of `web1.lab` for other labs. `chronyd` (NTP, port 123 UDP) creates
+> no conflict, and the `systemd_service` module is used exactly the
+> same way regardless of the service: it is the subject, not the daemon.
 
-## 🧩 4 étapes
+## 🧩 4 steps
 
-1. **Installer** `chrony` via `dnf`.
-2. **Démarrer + activer** `chronyd` au boot via `systemd_service:`.
-3. **Créer** le fichier `/etc/systemd/system/lab-marker.service` via
-   `copy: content:` avec un unit file inline.
-4. **Recharger systemd** (`daemon_reload: true`) ET activer/démarrer
+1. **Install** `chrony` via `dnf`.
+2. **Start + enable** `chronyd` at boot via `systemd_service:`.
+3. **Create** the file `/etc/systemd/system/lab-marker.service` via
+   `copy: content:` with an inline unit file.
+4. **Reload systemd** (`daemon_reload: true`) AND enable/start
    `lab-marker`.
 
-## 🧩 Contenu attendu de `lab-marker.service`
+## 🧩 Expected content of `lab-marker.service`
 
 ```ini
 [Unit]
@@ -35,12 +36,12 @@ RemainAfterExit=yes
 WantedBy=multi-user.target
 ```
 
-> 💡 **`Type=oneshot` + `RemainAfterExit=yes`** : le service exécute son
-> `ExecStart` une fois puis reste marqué `active` (sinon il serait `inactive`
-> dès la fin du `touch`). Pattern classique pour des services « init » non
-> daemon.
+> 💡 **`Type=oneshot` + `RemainAfterExit=yes`**: the service runs its
+> `ExecStart` once then stays marked `active` (otherwise it would be `inactive`
+> as soon as the `touch` finishes). Classic pattern for "init" non-daemon
+> services.
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -85,20 +86,20 @@ WantedBy=multi-user.target
         state: ???
 ```
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **`daemon_reload: true`** est obligatoire **après avoir modifié** une
->   unit file. Sinon systemd ignore les changements (cache).
-> - **`state:`** = `started`, `stopped`, `restarted`, `reloaded`. Utiliser
->   `restarted` dans **handlers**, pas dans tasks (sinon non-idempotent
->   par défaut).
-> - **`enabled: true`** = au boot. Pas équivalent à `started: true`
->   (running maintenant). Pour les deux ensemble : `state: started` +
+> - **`daemon_reload: true`** is mandatory **after modifying** a
+>   unit file. Otherwise systemd ignores the changes (cache).
+> - **`state:`** = `started`, `stopped`, `restarted`, `reloaded`. Use
+>   `restarted` in **handlers**, not in tasks (otherwise non-idempotent
+>   by default).
+> - **`enabled: true`** = at boot. Not equivalent to `started: true`
+>   (running now). For both together: `state: started` +
 >   `enabled: true`.
-> - **Pas de `.service` dans `name:`** : juste `httpd`, pas
->   `httpd.service`. Sauf pour disambiguer (timer, socket).
+> - **No `.service` in `name:`**: just `nginx`, not
+>   `nginx.service`. Except to disambiguate (timer, socket).
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-services/systemd/challenge/solution.yml
@@ -106,7 +107,7 @@ ansible web1.lab -m ansible.builtin.command -a "systemctl is-active chronyd lab-
 ansible web1.lab -m ansible.builtin.command -a "ls -la /var/run/lab-marker.flag"
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-services/systemd/challenge/tests/
@@ -115,19 +116,19 @@ pytest -v labs/modules-services/systemd/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/modules-services/systemd clean
+dsoxlab clean modules-services-systemd
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`state: restarted`** vs **`state: reloaded`** : `restarted` est
-  destructif (downtime), `reloaded` envoie `SIGHUP` (sans downtime, mais
-  uniquement si le service le supporte).
-- **`scope: user`** : gérer un service systemd **utilisateur**
-  (`~/.config/systemd/user/`) au lieu d'un service système.
-- **`masked: true`** : empêche le démarrage manuel ou automatique d'un
-  service (renvoie vers `/dev/null`).
-- **Lint** :
+- **`state: restarted`** vs **`state: reloaded`**: `restarted` is
+  destructive (downtime), `reloaded` sends `SIGHUP` (no downtime, but
+  only if the service supports it).
+- **`scope: user`**: manage a **user** systemd service
+  (`~/.config/systemd/user/`) instead of a system service.
+- **`masked: true`**: prevents the manual or automatic start of a
+  service (redirects to `/dev/null`).
+- **Lint**:
 
    ```bash
    ansible-lint labs/modules-services/systemd/challenge/solution.yml

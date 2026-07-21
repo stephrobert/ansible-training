@@ -1,24 +1,23 @@
-# 🎯 Challenge — Validation défensive avec `assert:` + `fail:`
+# 🎯 Challenge — Defensive validation with `assert:` + `fail:`
 
-## ✅ Objectif
+## ✅ Objective
 
-Sur **db1.lab**, écrire un play qui **valide les prérequis** avant d'écrire un
-fichier marker `/tmp/lab-assert-validated.txt`. Les validations doivent :
+On **db1.lab**, write a play that **validates the prerequisites** before writing
+a marker file `/tmp/lab-assert-validated.txt`. The validations must:
 
-1. Vérifier l'OS (AlmaLinux/RedHat/Rocky **uniquement**) — `assert:`.
-2. Vérifier la version majeure ≥ 9 — `assert:`.
-3. Vérifier qu'**au moins** 512Mo de RAM — `assert:`.
-4. **Échouer explicitement** via `fail:` si l'inventory_hostname n'est pas
-   `db1.lab` (le play est conçu uniquement pour db1).
+1. Check the OS (AlmaLinux/RedHat/Rocky **only**), `assert:`.
+2. Check the major version ≥ 9, `assert:`.
+3. Check that there is **at least** 512MB of RAM, `assert:`.
+4. **Fail explicitly** via `fail:` if the inventory_hostname is not
+   `db1.lab` (the play is designed only for db1).
 
-## 🧩 Étapes
+## 🧩 Steps
 
-1. **`assert:`** avec 3 conditions et `fail_msg:` clair.
-2. **`fail:`** avec `when:` sur `inventory_hostname != 'db1.lab'`.
-3. **`copy: content:`** pour écrire `/tmp/lab-assert-validated.txt` après
-   validation.
+1. **`assert:`** with 3 conditions and a clear `fail_msg:`.
+2. **`fail:`** with `when:` on `inventory_hostname != 'db1.lab'`.
+3. **`copy: content:`** to write `/tmp/lab-assert-validated.txt` after validation.
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -52,26 +51,26 @@ fichier marker `/tmp/lab-assert-validated.txt`. Les validations doivent :
         mode: "0644"
 ```
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **`assert:`** = pré-condition. Si fausse, le play s'arrête (failed).
->   Pour avertir sans bloquer : `assert:` + `ignore_errors: true` (mais
->   pas idiomatique — préférer `fail:` conditionnel).
-> - **`that:`** = liste de conditions. **Toutes** doivent être vraies.
->   Format : strings ou listes. Pour OR : `or` Jinja dans une string.
-> - **`fail:` + `when:`** : alternative à `assert:`. Plus flexible si la
->   condition vient d'un `register` complexe.
-> - **`success_msg`** vs **`fail_msg`** : message custom selon le résultat.
->   Améliore énormément la lisibilité du log.
+> - **`assert:`** = precondition. If false, the play stops (failed).
+>   To warn without blocking: `assert:` + `ignore_errors: true` (but
+>   not idiomatic, prefer a conditional `fail:`).
+> - **`that:`** = list of conditions. **All** must be true.
+>   Format: strings or lists. For OR: `or` Jinja in a string.
+> - **`fail:` + `when:`**: alternative to `assert:`. More flexible if the
+>   condition comes from a complex `register`.
+> - **`success_msg`** vs **`fail_msg`**: custom message depending on the result.
+>   Improves the log readability enormously.
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-diagnostic/assert-fail/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "cat /tmp/lab-assert-validated.txt"
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-diagnostic/assert-fail/challenge/tests/
@@ -83,15 +82,15 @@ pytest -v labs/modules-diagnostic/assert-fail/challenge/tests/
 ansible db1.lab -b -m file -a "path=/tmp/lab-assert-validated.txt state=absent"
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`pre_tasks:` vs `tasks:`** : les `pre_tasks:` tournent **avant** tout
-  rôle inclus, utile pour valider les prérequis avant que les rôles importent.
-- **`quiet: true`** : silence les `assert:` qui passent (utile sur 50+ assertions).
-- **`force_handlers: true`** : déclencher les handlers même en cas de
-  `assert: failed` (rare mais utile pour notifier d'un échec de précondition).
-- **Pattern `set_fact +  assert`** : calculer une valeur, l'asserter ensuite.
-- **Lint** :
+- **`pre_tasks:` vs `tasks:`**: the `pre_tasks:` run **before** any included
+  role, useful to validate prerequisites before the roles import.
+- **`quiet: true`**: silences the `assert:` that pass (useful on 50+ assertions).
+- **`force_handlers: true`**: trigger the handlers even in case of an
+  `assert: failed` (rare but useful to notify of a precondition failure).
+- **`set_fact + assert` pattern**: compute a value, then assert it.
+- **Lint**:
 
    ```bash
    ansible-lint labs/modules-diagnostic/assert-fail/challenge/solution.yml

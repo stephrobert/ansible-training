@@ -1,0 +1,108 @@
+---
+# Reset du lab mock-ex294 : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+#
+# Attention particulière à /etc/fstab : la tâche 10 y écrit une entrée qui
+# pointe /dev/vg_lab/lv_data. Si on démonte et détruit le VG sans retirer la
+# ligne, le prochain reboot de db1 bloque sur un montage impossible. Un lab ne
+# doit jamais laisser une VM partagée dans cet état.
+
+- name: Cleanup mock-ex294 lab (labenv)
+  hosts: labenv
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Retirer les artefacts des tâches 2, 3, 4, 12, 13, 14, 15 et 17
+      ansible.builtin.shell: |
+        rm -f /tmp/lab100-* /tmp/file{1..5} 2>/dev/null; true
+      changed_when: false
+      failed_when: false
+
+    - name: Retirer la règle sudo de la tâche 7
+      ansible.builtin.file:
+        path: /etc/sudoers.d/appuser-systemctl
+        state: absent
+
+    - name: Retirer la crontab d'appuser (tâche 16)
+      ansible.builtin.file:
+        path: /var/spool/cron/appuser
+        state: absent
+
+    # Seulement notre fact : le répertoire est partagé avec le lab custom-facts.
+    - name: Retirer le fact personnalisé de la tâche 18
+      ansible.builtin.file:
+        path: /etc/ansible/facts.d/lab100.fact
+        state: absent
+
+    - name: Retirer appuser (tâche 7)
+      ansible.builtin.user:
+        name: appuser
+        state: absent
+        remove: true
+
+    - name: Retirer appgroup (tâche 7)
+      ansible.builtin.group:
+        name: appgroup
+        state: absent
+
+- name: Cleanup des webservers (mock-ex294)
+  hosts: lab_web1:lab_web2
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Retirer l'index.html de la tâche 11
+      ansible.builtin.file:
+        path: /usr/share/nginx/html/index.html
+        state: absent
+
+    - name: Remettre httpd_can_network_connect à off (tâche 8)
+      ansible.posix.seboolean:
+        name: httpd_can_network_connect
+        state: false
+        persistent: true
+      failed_when: false
+
+    - name: Refermer http et https (tâche 9)
+      ansible.posix.firewalld:
+        service: "{{ item }}"
+        permanent: true
+        immediate: true
+        state: disabled
+      loop:
+        - http
+        - https
+      failed_when: false
+
+- name: Cleanup de db1 (mock-ex294)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Refermer mysql (tâche 9)
+      ansible.posix.firewalld:
+        service: mysql
+        permanent: true
+        immediate: true
+        state: disabled
+      failed_when: false
+
+    - name: Démonter /mnt/data et retirer son entrée fstab (tâche 10)
+      ansible.posix.mount:
+        path: /mnt/data
+        state: absent
+      failed_when: false
+
+    - name: Détruire la pile LVM du mock et rendre /dev/vdb vierge
+      ansible.builtin.shell: |
+        umount -l /mnt/data 2>/dev/null || true
+        sed -i -e '\|/mnt/data|d' -e '\|vg_lab|d' /etc/fstab 2>/dev/null || true
+        dmsetup remove vg_lab-lv_data 2>/dev/null || true
+        lvremove -f /dev/vg_lab/lv_data 2>/dev/null || true
+        vgchange -an vg_lab 2>/dev/null || true
+        vgremove -f vg_lab 2>/dev/null || true
+        pvremove -ff -y /dev/vdb 2>/dev/null || true
+        rm -rf /dev/vg_lab || true
+        wipefs -af /dev/vdb 2>/dev/null || true
+        rmdir /mnt/data 2>/dev/null || true
+      changed_when: false
+      failed_when: false

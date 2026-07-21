@@ -1,24 +1,24 @@
-# 🎯 Challenge — Continuer après une erreur ignorée
+# 🎯 Challenge — Continue after an ignored error
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `challenge/solution.yml` qui sur **db1.lab** :
+Write `challenge/solution.yml` that, on **db1.lab**:
 
-1. Tente d'**arrêter un service inexistant** — la tâche échoue.
-2. **Ignore l'erreur** explicitement.
-3. Pose ensuite `/tmp/ignore-after.txt` contenant `play continued` — preuve
-   que le play a continué malgré l'échec.
+1. Tries to **stop a nonexistent service**, the task fails.
+2. **Ignores the error** explicitly.
+3. Then writes `/tmp/ignore-after.txt` containing `play continued`, proof
+   that the play continued despite the failure.
 
-Le play termine en succès (`failed=0`) malgré l'erreur silencieuse.
+The play ends in success (`failed=0`) despite the silent error.
 
-## 🧩 Indices
+## 🧩 Hints
 
-- **`ignore_errors: true`** sur une tâche : l'erreur est loguée mais le play
-  continue.
-- **`ansible.builtin.systemd_service`** avec `state: stopped` sur un service
-  qui n'existe pas → erreur garantie.
+- **`ignore_errors: true`** on a task: the error is logged but the play
+  continues.
+- **`ansible.builtin.systemd_service`** with `state: stopped` on a service
+  that does not exist → guaranteed error.
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -40,34 +40,34 @@ Le play termine en succès (`failed=0`) malgré l'erreur silencieuse.
         mode: "0644"
 ```
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
-> - **`ignore_errors` ≠ `ignore_unreachable`** : le premier ignore les
->   échecs de tâche, le second les hôtes injoignables. À l'examen, lire
->   attentivement quel type d'erreur la consigne demande d'ignorer.
-> - **`ignore_errors: true`** est un **keyword task-level**, pas un
->   paramètre du module. Le placer dans `systemd_service:` donne une
->   erreur "Unsupported parameters".
-> - **Anti-pattern** : `ignore_errors: true` sur une tâche **critique**
->   masque un vrai problème. Toujours combiner avec `register:` + `when:`
->   pour réagir au lieu de simplement ignorer.
-> - **Lecture du `PLAY RECAP`** : `failed=0, ignored=1` — la colonne
->   `ignored` n'existe pas dans toutes les versions, mais le compteur
->   d'erreurs ne s'incrémente pas avec `ignore_errors`.
+> - **`ignore_errors` ≠ `ignore_unreachable`**: the first ignores task
+>   failures, the second unreachable hosts. In the exam, read
+>   carefully which type of error the instructions ask you to ignore.
+> - **`ignore_errors: true`** is a **task-level keyword**, not a
+>   module parameter. Placing it inside `systemd_service:` gives an
+>   "Unsupported parameters" error.
+> - **Anti-pattern**: `ignore_errors: true` on a **critical** task
+>   hides a real problem. Always combine it with `register:` + `when:`
+>   to react instead of just ignoring.
+> - **Reading the `PLAY RECAP`**: `failed=0, ignored=1`. The
+>   `ignored` column does not exist in all versions, but the error
+>   counter does not increment with `ignore_errors`.
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/ecrire-code/ignore-errors/challenge/solution.yml
 ```
 
-🔍 **Sortie attendue** :
+🔍 **Expected output**:
 
-- 1ère tâche : `failed!` mais `...ignoring`
-- 2ème tâche : `changed`
-- `PLAY RECAP` : `failed=0, ignored=1`
+- 1st task: `failed!` but `...ignoring`
+- 2nd task: `changed`
+- `PLAY RECAP`: `failed=0, ignored=1`
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/ignore-errors/challenge/tests/
@@ -76,20 +76,20 @@ pytest -v labs/ecrire-code/ignore-errors/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/ecrire-code/ignore-errors clean
+dsoxlab clean ecrire-code-ignore-errors
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`ignore_unreachable: true`** : continue même si l'hôte devient
-  injoignable (différent d'`ignore_errors` qui ne couvre que les **task
+- **`ignore_unreachable: true`**: continues even if the host becomes
+  unreachable (different from `ignore_errors`, which covers only **task
   failures**).
-- **`ignore_errors` vs `failed_when: false`** : équivalents en pratique pour
-  marquer un échec comme non bloquant. Préférez `failed_when: ...` si vous
-  voulez conditionner.
-- **Combiner avec `register:`** : capturez le résultat pour réagir plus loin
-  via `when: previous_task is failed`.
-- **Lint** :
+- **`ignore_errors` vs `failed_when: false`**: equivalent in practice to
+  mark a failure as non-blocking. Prefer `failed_when: ...` if you
+  want to condition.
+- **Combine with `register:`**: capture the result to react later via
+  `when: previous_task is failed`.
+- **Lint**:
 
    ```bash
    ansible-lint labs/ecrire-code/ignore-errors/challenge/solution.yml

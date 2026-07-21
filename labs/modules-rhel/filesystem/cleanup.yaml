@@ -1,0 +1,35 @@
+---
+# Reset du lab filesystem : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup filesystem lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (filesystem)
+      ansible.builtin.shell: |
+        # Reprend /dev/vdb à qui le détient : les 3 labs de stockage
+        # (parted, filesystem, lvm-storage) partagent ce disque, et celui qui
+        # passe après lvm-storage trouve un PV qui tient le device.
+        umount -l /mnt/lvm-data 2>/dev/null || true
+        umount -l /mnt/data 2>/dev/null || true
+        swapoff /dev/vdb1 2>/dev/null || true
+        sed -i -e '\|/mnt/lvm-data|d' -e '\|/mnt/data|d' \
+               -e '\|lab_vg|d' -e '\|/dev/vdb|d' /etc/fstab 2>/dev/null || true
+        # dmsetup avant vgremove : le mapping survit sinon, et garde le disque
+        dmsetup remove /dev/mapper/lab_vg-lab_lv 2>/dev/null || true
+        dmsetup remove lab_vg-lab_lv 2>/dev/null || true
+        lvremove -f /dev/lab_vg/lab_lv 2>/dev/null || true
+        vgchange -an lab_vg 2>/dev/null || true
+        vgremove -f lab_vg 2>/dev/null || true
+        pvremove -ff -y /dev/vdb 2>/dev/null || true
+        # vgremove laisse le repertoire /dev/lab_vg, et vgcreate refuse alors
+        # de repartir : le lab suivant ne demarrait pas.
+        rm -rf /dev/lab_vg || true
+        # Disque vierge : ni partition, ni signature de systeme de fichiers
+        for p in /dev/vdb[0-9]*; do test -b "$p" && wipefs -af "$p" || true; done
+        wipefs -af /dev/vdb || true
+        sgdisk --zap-all /dev/vdb || true
+        partprobe /dev/vdb || true
+      changed_when: false
+      failed_when: false

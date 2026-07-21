@@ -27,5 +27,12 @@ collections:
   - name: community.libvirt
     version: ">=2.0.0"
 
+  # Pilote les conteneurs des scénarios Molecule (create.yml / destroy.yml du
+  # driver `default`). Les 4 labs de la section molecule en dépendent : sans
+  # elle, molecule saute la création et `converge` tente un SSH vers un hôte
+  # qui n'existe pas.
+  - name: containers.podman
+    version: ">=1.19.0"
+
 # Roles Galaxy à installer pour les exemples de la formation
 roles: []

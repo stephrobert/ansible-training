@@ -1,0 +1,13 @@
+---
+# Reset du lab block-rescue-always : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup block-rescue-always lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (block-rescue-always)
+      ansible.builtin.shell: |
+        rm -f /tmp/challenge-rescue.txt /tmp/challenge-always.txt
+      changed_when: false
+      failed_when: false

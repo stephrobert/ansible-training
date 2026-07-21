@@ -1,0 +1,4 @@
+---
+id: premiers-pas-ansible-vault
+title: "Premiers pas avec ansible-vault"
+description: "Chiffrer un fichier de secrets avec ansible-vault, le consommer via vars_files et protéger la sortie avec no_log et un .vault_password en 0600."

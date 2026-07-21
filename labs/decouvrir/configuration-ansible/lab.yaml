@@ -1,0 +1,32 @@
+---
+id: decouvrir-configuration-ansible
+title: "ansible.cfg: precedence and critical options"
+description: "Write a project ansible.cfg, check the active config with ansible-config dump, override an option by environment variable and enable a callback."
+section: decouvrir
+level: l1
+difficulty: beginner
+lab_type: lab
+estimated_time: "30m"
+skills:
+  - configuration
+  - config-precedence
+  - callback-plugins
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/ansible-config-fichier/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

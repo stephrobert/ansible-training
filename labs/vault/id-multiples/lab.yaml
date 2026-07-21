@@ -1,0 +1,33 @@
+---
+id: vault-id-multiples
+title: "Multiple vault-ids: isolate dev, staging and prod"
+description: "Encrypt each environment with a labelled vault-id, decrypt several vault-ids in a single run and lay out group_vars per environment."
+section: vault
+level: l2
+difficulty: intermediate
+lab_type: lab
+estimated_time: "45m"
+skills:
+  - vault-id
+  - secret-rotation
+  - environment-isolation
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/vault-id-multiples/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+        web1: web1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

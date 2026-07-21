@@ -1,43 +1,43 @@
-# Lab 82 — Intégration HashiCorp Vault / OpenBao
+# Lab 82 — HashiCorp Vault / OpenBao integration
 
-> 💡 **Pré-requis** :
-> - Podman ou Docker installé.
-> - Collection `community.hashi_vault` : `ansible-galaxy collection install community.hashi_vault`.
-> - Le module Python `hvac` : `pip install hvac` (ou `pipx inject ansible hvac`).
+> 💡 **Prerequisites**:
+> - Podman or Docker installed.
+> - Collection `community.hashi_vault`: `ansible-galaxy collection install community.hashi_vault`.
+> - The Python module `hvac`: `pip install hvac` (or `pipx inject ansible hvac`).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**HashiCorp Vault / OpenBao avec Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/integration-hashicorp-vault/)
+🔗 [**HashiCorp Vault / OpenBao with Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/integration-hashicorp-vault/)
 
-**Limites d'Ansible Vault** (labs 77-81) :
+**Limits of Ansible Vault** (labs 77-81):
 
-- Mot de passe vault stocké quelque part (fichier, env var) — risque humain.
-- Pas de **rotation centralisée** des secrets.
-- Pas d'**audit logs** détaillés (qui a accédé à quel secret quand).
-- Pas de **leases** ou de TTL sur les secrets.
+- Vault password stored somewhere (file, env var), a human risk.
+- No **centralized rotation** of secrets.
+- No detailed **audit logs** (who accessed which secret when).
+- No **leases** or TTL on the secrets.
 
-**HashiCorp Vault** (et son fork open-source **OpenBao**) résolvent ces problèmes : centralisation, rotation, audit, TTL, intégrations Cloud (AWS IAM, Azure AD, K8s service accounts).
+**HashiCorp Vault** (and its open-source fork **OpenBao**) solve these problems: centralization, rotation, audit, TTL, Cloud integrations (AWS IAM, Azure AD, K8s service accounts).
 
-**API quasi identique** entre HashiCorp Vault et OpenBao — un même playbook Ansible fonctionne avec les deux. Choix selon contexte :
+**Almost identical API** between HashiCorp Vault and OpenBao: the same Ansible playbook works with both. Choice depends on context:
 
-- **HashiCorp Vault** : licence BSL (commerciale au-delà d'un seuil), enterprise features.
-- **OpenBao** : fork 100 % open-source (MPL-2.0), gouvernance Linux Foundation.
+- **HashiCorp Vault**: BSL license (commercial beyond a threshold), enterprise features.
+- **OpenBao**: 100% open-source fork (MPL-2.0), Linux Foundation governance.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Démarrer** un Vault local en mode dev (Docker/Podman).
-2. **Stocker** un secret via `vault kv put`.
-3. **Récupérer** le secret depuis Ansible avec **`community.hashi_vault.vault_kv2_get`**.
-4. Comprendre la **différence** entre `vault_kv1_get` et `vault_kv2_get`.
-5. **Authentification** : token, AppRole, JWT, Kubernetes.
-6. **Workflow CI/CD** : utiliser Vault pour ne pas stocker de secrets dans Git.
+1. **Start** a local Vault in dev mode (Docker/Podman).
+2. **Store** a secret via `vault kv put`.
+3. **Retrieve** the secret from Ansible with **`community.hashi_vault.vault_kv2_get`**.
+4. Understand the **difference** between `vault_kv1_get` and `vault_kv2_get`.
+5. **Authentication**: token, AppRole, JWT, Kubernetes.
+6. **CI/CD workflow**: use Vault to avoid storing secrets in Git.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training/labs/vault/integration-hashicorp/
+cd $ANSIBLE_TRAINING/labs/vault/integration-hashicorp/
 
 # Installer hvac (client Python Vault)
 pipx inject ansible hvac
@@ -52,25 +52,26 @@ ansible-galaxy collection install community.hashi_vault
 IMAGE=openbao/openbao:latest ./setup-vault.sh
 ```
 
-## ⚙️ Arborescence cible
+## ⚙️ Target tree
 
 ```text
 labs/vault/integration-hashicorp/
 ├── README.md
-├── setup-vault.sh                ← démarre Vault dev en container
-├── playbook.yml                  ← lookup vault_kv2_get
+├── setup-vault.sh                ← starts dev Vault in a container + creates the secrets
 └── challenge/
+    ├── README.md                 ← challenge contract
+    ├── solution.yml              ← to write: lookup vault_kv2_get + proof
     └── tests/
-        └── test_vault_integration.py   ← tests structure
+        └── test_functional.py    ← tests against the running Vault
 ```
 
-## 📚 Exercice 1 — Démarrer Vault local
+## 📚 Exercise 1 — Start a local Vault
 
 ```bash
 ./setup-vault.sh
 ```
 
-Sortie :
+Output:
 
 ```text
 [setup-vault] Lancement de hashicorp/vault:latest...
@@ -83,35 +84,36 @@ Variables d'env à exporter pour le playbook :
   export VAULT_TOKEN=lab82-root
 ```
 
-🔍 **Observation** : Vault dev mode = **non sécurisé** (pas de TLS, pas de seal, root token statique). **Strictement** pour développement local. En prod : Vault HA + TLS + auto-unseal.
+🔍 **Observation**: Vault dev mode = **not secure** (no TLS, no seal, static root token). **Strictly** for local development. In prod: Vault HA + TLS + auto-unseal.
 
-## 📚 Exercice 2 — Stocker des secrets dans Vault
+## 📚 Exercise 2 — Store secrets in Vault
 
 ```bash
-# Le script setup-vault.sh a déjà posé secret/lab82
+# The setup-vault.sh script has already created secret/lab82
 podman exec vault-lab82 vault kv get secret/lab82
 
-# Pour ajouter un secret manuellement :
+# To add a secret manually:
 podman exec -e VAULT_TOKEN=lab82-root vault-lab82 \
   vault kv put secret/lab82-app \
     db_url=postgres://... \
     db_password=DemoPass123
 ```
 
-🔍 **Observation** : `kv v2` versionne automatiquement les secrets (history, rollback). `kv v1` est le mode legacy (sans versioning).
+🔍 **Observation**: `kv v2` automatically versions the secrets (history, rollback). `kv v1` is the legacy mode (without versioning).
 
-## 📚 Exercice 3 — Lookup depuis Ansible
+## 📚 Exercise 3 — Lookup from Ansible
+
+Write the challenge playbook (cf. [`challenge/README.md`](challenge/README.md)),
+then:
 
 ```bash
 export VAULT_ADDR=http://localhost:8200
 export VAULT_TOKEN=lab82-root
 
-ansible-playbook playbook.yml \
-  -e "hashi_vault_url=http://localhost:8200" \
-  -e "hashi_vault_token=lab82-root"
+ansible-playbook challenge/solution.yml
 ```
 
-Sortie :
+Output:
 
 ```text
 TASK [debug] **************
@@ -122,11 +124,11 @@ PLAY RECAP ****************
 localhost : ok=2 changed=1 unreachable=0 failed=0
 ```
 
-🔍 **Observation** : le playbook **ne contient aucun secret en clair**. La `lookup` récupère le secret au runtime depuis Vault. Audit logs Vault tracent qui a accédé.
+🔍 **Observation**: the playbook **contains no cleartext secret**. The `lookup` retrieves the secret at runtime from Vault. Vault audit logs track who accessed it.
 
-## 📚 Exercice 4 — Authentification AppRole (production)
+## 📚 Exercise 4 — AppRole authentication (production)
 
-En prod, **on n'utilise pas le token root**. Pattern recommandé : **AppRole**.
+In prod, **we do not use the root token**. Recommended pattern: **AppRole**.
 
 ```bash
 # Activer AppRole
@@ -157,7 +159,7 @@ SECRET_ID=$(podman exec -e VAULT_TOKEN=lab82-root vault-lab82 \
 echo "role_id=$ROLE_ID, secret_id=$SECRET_ID"
 ```
 
-Le playbook utilise alors `auth_method: approle` :
+The playbook then uses `auth_method: approle`:
 
 ```yaml
 - name: Lookup avec AppRole
@@ -171,75 +173,76 @@ Le playbook utilise alors `auth_method: approle` :
                             secret_id=secret_id).secret.db_password }}"
 ```
 
-🔍 **Observation** : le `secret_id` peut être **éphémère** (TTL court). Le `role_id` est **publique** (peut être commité). Pattern recommandé en CI/CD.
+🔍 **Observation**: the `secret_id` can be **ephemeral** (short TTL). The `role_id` is **public** (can be committed). Recommended pattern in CI/CD.
 
-## 📚 Exercice 5 — Différences HashiCorp Vault vs OpenBao
+## 📚 Exercise 5 — Differences HashiCorp Vault vs OpenBao
 
-Lancer le même playbook avec **OpenBao** :
+Run the same playbook with **OpenBao**:
 
 ```bash
 podman stop vault-lab82
 IMAGE=openbao/openbao:latest ./setup-vault.sh
 
-# Le playbook fonctionne IDENTIQUEMENT
-ansible-playbook playbook.yml \
-  -e "hashi_vault_url=http://localhost:8200" \
-  -e "hashi_vault_token=lab82-root"
+# The playbook works IDENTICALLY
+ansible-playbook challenge/solution.yml
 ```
 
-🔍 **Observation** : aucune modification du playbook. **API compatible**. Choisir Vault ou OpenBao selon licensing — pas selon fonctionnalités (95 % identiques).
+🔍 **Observation**: no modification of the playbook. **Compatible API**. Choose Vault or OpenBao based on licensing, not on features (95% identical).
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Idempotence** : un second run de votre solution doit afficher `changed=0`
-  partout dans le `PLAY RECAP`. C'est le signal mécanique d'un playbook
-  conforme aux bonnes pratiques.
-- **FQCN explicite** : préférez toujours `ansible.builtin.<module>` (ou la
-  collection appropriée) plutôt que le nom court — `ansible-lint --profile
-  production` le vérifie.
-- **Convention de ciblage** : ce lab cible db1.lab + un serveur HashiCorp Vault ; pour adapter à un
-  autre groupe, ajustez `hosts:` dans `lab.yml`/`solution.yml` puis relancez.
-- **Reset isolé** : `make clean` à la racine du lab désinstalle proprement
-  ce que la solution a posé pour pouvoir rejouer le scénario.
+- **Idempotence**: a second run of your solution must display `changed=0`
+  everywhere in the `PLAY RECAP`. This is the mechanical signal of a playbook
+  that follows best practices.
+- **Explicit FQCN**: always prefer `ansible.builtin.<module>` (or the
+  appropriate collection) rather than the short name (`ansible-lint --profile
+  production` checks this).
+- **Targeting convention**: this lab targets db1.lab + a HashiCorp Vault server; to adapt it to another
+  group, adjust `hosts:` in `lab.yml`/`solution.yml` then run it again.
+- **Isolated reset**: `dsoxlab clean <id-du-lab>` at the lab root cleanly uninstalls
+  what the solution set up so you can replay the scenario.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Pourquoi **Vault > Ansible Vault fichier** en production ?
+1. Why **Vault > Ansible Vault file** in production?
 
-2. Quelle est la **différence concrète** entre HashiCorp Vault et OpenBao en 2026 ?
+2. What is the **concrete difference** between HashiCorp Vault and OpenBao in 2026?
 
-3. Pourquoi **AppRole** plutôt que **token root** en CI/CD ? Que se passe-t-il si le token root fuite ?
+3. Why **AppRole** rather than **root token** in CI/CD? What happens if the root token leaks?
 
-4. Qu'est-ce qu'un **secret lease** en Vault ? Comment Ansible doit-il gérer les leases ?
+4. What is a **secret lease** in Vault? How should Ansible manage the leases?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Le challenge ([`challenge/`](challenge/)) valide la structure du lab via 6 tests pytest (script présent, support OpenBao, lookup correcte, kv v2, engine_mount_point, pas de secret en clair).
+The challenge ([`challenge/README.md`](challenge/README.md)) requires a running
+Vault: the tests read the secrets via the API and check that the
+proof deposited by your playbook matches (exact lengths, no
+cleartext secret, idempotence). Without a server, they `skip`.
 
 ```bash
 pytest -v challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Auth Kubernetes** : Vault s'intègre avec les service accounts K8s pour rotation auto.
-- **Auth AWS IAM / Azure AD / GCP** : pas de credentials à stocker.
-- **Dynamic secrets** : Vault génère des credentials DB éphémères (PostgreSQL, MySQL, MongoDB).
-- **Vault + Ansible Tower / AAP** : Vault Credential Type intégré.
-- **Lab 83** : alternative team-friendly avec Passbolt (gestionnaire de mots de passe d'équipe).
+- **Kubernetes auth**: Vault integrates with K8s service accounts for auto rotation.
+- **AWS IAM / Azure AD / GCP auth**: no credentials to store.
+- **Dynamic secrets**: Vault generates ephemeral DB credentials (PostgreSQL, MySQL, MongoDB).
+- **Vault + Ansible Tower / AAP**: integrated Vault Credential Type.
+- **Lab 83**: a team-friendly alternative with Passbolt (a team password manager).
 
-## 🔍 Sécurité — bonnes pratiques 2026
+## 🔍 Security — 2026 best practices
 
-- **Pas de token en clair** dans `playbook.yml` — toujours via env vars (`VAULT_TOKEN`).
-- **AppRole** en CI/CD avec `secret_id` éphémère (renouvelé par job).
-- **TLS mandatory** en production (`https://`, certificat pinné).
-- **Audit log** activé sur tous les Vault prod (`vault audit enable file file_path=...`).
-- **Rotation périodique** des `secret_id` AppRole.
+- **No token in cleartext** in `playbook.yml`, always via env vars (`VAULT_TOKEN`).
+- **AppRole** in CI/CD with an ephemeral `secret_id` (renewed per job).
+- **Mandatory TLS** in production (`https://`, pinned certificate).
+- **Audit log** enabled on all prod Vaults (`vault audit enable file file_path=...`).
+- **Periodic rotation** of the AppRole `secret_id`.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 ansible-lint labs/vault/integration-hashicorp/lab.yml
@@ -247,9 +250,9 @@ ansible-lint labs/vault/integration-hashicorp/challenge/solution.yml
 ansible-lint --profile production labs/vault/integration-hashicorp/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task,
+file modes as strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un
-> hook pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

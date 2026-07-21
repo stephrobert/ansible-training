@@ -1,31 +1,30 @@
-# 🎯 Challenge — Module `file:` (arborescence de release)
+# 🎯 Challenge — `file:` module (release tree)
 
-## ✅ Objectif
+## ✅ Objective
 
-Sur **web1.lab**, construire une **arborescence type "release"** typique de
-déploiement applicatif, en exerçant les **5 états** du module
-`ansible.builtin.file`.
+On **web1.lab**, build a typical **"release" tree** for application deployment,
+exercising the **5 states** of the `ansible.builtin.file` module.
 
-| Tâche | `state:` | Cible |
+| Task | `state:` | Target |
 | --- | --- | --- |
-| Répertoire de release | `directory` | `/opt/myapp/releases/v1.0.0` (mode 0755, owner root) |
-| Répertoire de logs | `directory` | `/opt/myapp/shared/logs` (mode 0750, owner+group nobody) |
-| Lien symbolique courant | `link` | `/opt/myapp/current` → `/opt/myapp/releases/v1.0.0` |
-| Suppression d'une ancienne config | `absent` | `/etc/myapp-old.conf` (s'il existe) |
-| Marqueur d'init | `touch` | `/var/log/myapp-init.timestamp` (mode 0644) |
+| Release directory | `directory` | `/opt/myapp/releases/v1.0.0` (mode 0755, owner root) |
+| Logs directory | `directory` | `/opt/myapp/shared/logs` (mode 0750, owner+group nobody) |
+| Current symbolic link | `link` | `/opt/myapp/current` → `/opt/myapp/releases/v1.0.0` |
+| Removal of an old config | `absent` | `/etc/myapp-old.conf` (if it exists) |
+| Init marker | `touch` | `/var/log/myapp-init.timestamp` (mode 0644) |
 
-## 🧩 Indices
+## 🧩 Hints
 
-- `state: directory` → crée le répertoire (et ses parents si besoin, via
-  `recurse: true` ou implicitement).
-- `state: link` → crée un symlink. **Pensez à `force: true`** pour écraser un
-  symlink existant qui pointerait ailleurs.
-- `state: absent` → supprime le fichier ou répertoire (récursivement pour un
+- `state: directory` → creates the directory (and its parents if needed, via
+  `recurse: true` or implicitly).
+- `state: link` → creates a symlink. **Remember `force: true`** to overwrite an
+  existing symlink that points elsewhere.
+- `state: absent` → removes the file or directory (recursively for a
   dir).
-- `state: touch` → met à jour le mtime (équivalent `touch`). Pas idempotent
-  en `changed` (à wrapper avec `changed_when: false` si on s'en soucie).
+- `state: touch` → updates the mtime (equivalent to `touch`). Not idempotent
+  in `changed` (to wrap with `changed_when: false` if you care).
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -68,26 +67,26 @@ déploiement applicatif, en exerçant les **5 états** du module
         mode: "0644"
 ```
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
 > - **`state:`** = `directory`, `file`, `link`, `hard`, `touch`,
->   `absent`. Confusion classique : `file` ne crée pas le fichier
->   (utiliser `touch` pour créer, ou `copy:` pour poser un contenu).
-> - **`recurse: true`** sur un répertoire applique mode/owner/group à
->   tout l'arbre. Attention aux performances sur gros volumes.
-> - **`state: link`** + `src:` + `force: true`** : remplace un lien
->   existant. Sans `force`, modification refusée si le link existe déjà.
-> - **`mode: u+x`** (symbolique) accepté en plus de `"0755"`. Utile pour
->   ajouter un bit sans écraser les autres.
+>   `absent`. Classic confusion: `file` does not create the file
+>   (use `touch` to create, or `copy:` to place content).
+> - **`recurse: true`** on a directory applies mode/owner/group to
+>   the whole tree. Watch out for performance on large volumes.
+> - **`state: link`** + `src:` + `force: true`**: replaces an existing
+>   link. Without `force`, modification refused if the link already exists.
+> - **`mode: u+x`** (symbolic) accepted in addition to `"0755"`. Useful to
+>   add a bit without overwriting the others.
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-fichiers/file/challenge/solution.yml
 ansible web1.lab -m ansible.builtin.command -a "ls -la /opt/myapp/"
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-fichiers/file/challenge/tests/
@@ -96,18 +95,18 @@ pytest -v labs/modules-fichiers/file/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/modules-fichiers/file clean
+dsoxlab clean modules-fichiers-file
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`recurse: true`** : sur `state: directory`, applique `mode/owner/group` à
-  toute l'arborescence (récursivement).
-- **`hard:`** : crée un hard link (au lieu d'un symlink).
-- **Pattern release blue/green** : posez **deux** symlinks (`current`, `next`)
-  qui pointent vers deux releases différentes, et permutez-les
-  atomiquement via `state: link, force: true`.
-- **Lint** :
+- **`recurse: true`**: on `state: directory`, applies `mode/owner/group` to
+  the whole tree (recursively).
+- **`hard:`**: creates a hard link (instead of a symlink).
+- **Blue/green release pattern**: place **two** symlinks (`current`, `next`)
+  that point to two different releases, and swap them
+  atomically via `state: link, force: true`.
+- **Lint**:
 
    ```bash
    ansible-lint labs/modules-fichiers/file/challenge/solution.yml

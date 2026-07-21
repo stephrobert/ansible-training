@@ -1,0 +1,4 @@
+---
+id: ecrire-code-block-rescue-always
+title: "block, rescue, always : try/catch/finally"
+description: "Grouper des tâches dans un block, capturer l'erreur avec rescue pour rollback, garantir le nettoyage avec always et lire ansible_failed_task."

@@ -1,0 +1,13 @@
+---
+# Reset du lab dans-roles : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup dans-roles lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (dans-roles)
+      ansible.builtin.file:
+        path: "/tmp/lab81-secured-app.txt"
+        state: "absent"
+      failed_when: false

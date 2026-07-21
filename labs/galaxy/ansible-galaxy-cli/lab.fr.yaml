@@ -1,0 +1,4 @@
+---
+id: galaxy-ansible-galaxy-cli
+title: "CLI ansible-galaxy : init, install, list, build, publish"
+description: "Initialiser un rôle et une collection, installer depuis Galaxy ou Git, lister l'existant, builder un tarball et publier avec un token API."

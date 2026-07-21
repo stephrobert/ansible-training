@@ -1,192 +1,193 @@
-# Lab 56 — Patterns d'hôtes (`web*`, `&prod`, `:`, `!`)
+# Lab 56 — Host patterns (`web*`, `&prod`, `:`, `!`)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
+> cd $ANSIBLE_TRAINING
 > ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
 > ```
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Patterns d'hôtes Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/patterns-hotes/)
+🔗 [**Ansible host patterns**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/patterns-hotes/)
 
-**`--limit`** et les opérateurs de pattern permettent de cibler **précisément** les hôtes voulus sans toucher au playbook. Quatre opérateurs essentiels :
+**`--limit`** and the pattern operators let you target **precisely** the hosts you want without touching the playbook. Four essential operators:
 
-| Opérateur | Effet | Exemple |
+| Operator | Effect | Example |
 |---|---|---|
-| **`:`** | Union (OU logique) | `webservers:dbservers` = web1 + web2 + db1 |
-| **`:&`** | Intersection (ET logique) | `webservers:&staging` = web1 (présent dans les 2) |
+| **`:`** | Union (logical OR) | `webservers:dbservers` = web1 + web2 + db1 |
+| **`:&`** | Intersection (logical AND) | `webservers:&staging` = web1 (present in both) |
 | **`:!`** | Exclusion | `webservers:!web1.lab` = web2 |
 | **`*`** | Wildcard | `web*.lab` = web1.lab + web2.lab |
 
-À l'examen RHCE, savoir cibler avec précision est **mandatory** pour ne pas exécuter une tâche dangereuse sur le mauvais host.
+At the RHCE exam, knowing how to target precisely is **mandatory** so as not to run a dangerous task on the wrong host.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Lister les hôtes ciblés par un pattern via **`--list-hosts`** (sans rien exécuter).
-2. Combiner **union**, **intersection**, **exclusion** dans un même pattern.
-3. Utiliser des **wildcards** (`*`) pour matcher des noms.
-4. Appliquer **`--limit`** sur un playbook pour réduire la portée.
-5. Comprendre l'**ordre de priorité** des opérateurs.
+1. List the hosts targeted by a pattern with **`--list-hosts`** (without running anything).
+2. Combine **union**, **intersection**, **exclusion** in a single pattern.
+3. Use **wildcards** (`*`) to match names.
+4. Apply **`--limit`** on a playbook to reduce the scope.
+5. Understand the **priority order** of the operators.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training/labs/inventaires/patterns-hotes
+cd $ANSIBLE_TRAINING/labs/inventaires/patterns-hotes
 ansible-inventory -i inventory/hosts.yml --graph
 ```
 
-L'inventaire de ce lab a **6 groupes** : `webservers`, `dbservers`, `prod` (parent), `staging`, `monitoring`, plus le `@ungrouped` automatique. Certains hôtes appartiennent à **plusieurs groupes** — c'est ça qui rend les intersections intéressantes.
+The inventory of this lab has **6 groups**: `webservers`, `dbservers`, `prod` (parent), `staging`, `monitoring`, plus the automatic `@ungrouped`. Some hosts belong to **several groups**, and that is what makes the intersections interesting.
 
-## ⚙️ Arborescence cible
+## ⚙️ Target tree
 
 ```text
 labs/inventaires/patterns-hotes/
-├── README.md           ← ce fichier
+├── README.md           ← this file
 ├── inventory/
-│   └── hosts.yml       ← inventaire avec hôtes multi-groupes
+│   └── hosts.yml       ← inventory with multi-group hosts
 └── challenge/
     ├── README.md
-    ├── solution.yml    ← playbook qui pose un marqueur sur chaque host
+    ├── solution.yml    ← playbook that lays down a marker on each host
     └── tests/
         └── test_patterns.py
 ```
 
-## 📚 Exercice 1 — Découvrir l'inventaire
+## 📚 Exercise 1 — Discover the inventory
 
 ```bash
 ansible-inventory -i inventory/hosts.yml --graph
 ```
 
-Notez l'appartenance multiple : **`web1.lab`** est dans `webservers`, `prod` (via children), et `staging`. **`db1.lab`** est dans `dbservers`, `prod`, et `monitoring`.
+Note the multiple membership: **`web1.lab`** is in `webservers`, `prod` (via children), and `staging`. **`db1.lab`** is in `dbservers`, `prod`, and `monitoring`.
 
-🔍 **Observation** : Ansible permet à un host d'être dans **autant de groupes** que vous voulez. C'est ce qui rend les intersections puissantes.
+🔍 **Observation**: Ansible allows a host to be in **as many groups** as you want. This is what makes the intersections powerful.
 
-## 📚 Exercice 2 — Pattern `all`
+## 📚 Exercise 2 — Pattern `all`
 
 ```bash
 ansible all -i inventory/hosts.yml --list-hosts
 ```
 
-Sortie : `web1.lab`, `web2.lab`, `db1.lab`. **`all`** est le groupe racine implicite.
+Output: `web1.lab`, `web2.lab`, `db1.lab`. **`all`** is the implicit root group.
 
-## 📚 Exercice 3 — Union avec `:`
+## 📚 Exercise 3 — Union with `:`
 
 ```bash
 ansible 'webservers:dbservers' -i inventory/hosts.yml --list-hosts
 ```
 
-Sortie : `web1.lab`, `web2.lab`, `db1.lab`. L'**union** retourne tous les hôtes des deux groupes.
+Output: `web1.lab`, `web2.lab`, `db1.lab`. The **union** returns all the hosts of the two groups.
 
-🔍 **Observation** : les **quotes simples** sont **mandatory** autour du pattern — sans elles, le shell interprète le `:` comme un séparateur de fichier ou autre.
+🔍 **Observation**: the **single quotes** are **mandatory** around the pattern: without them, the shell interprets the `:` as a file separator or something else.
 
-## 📚 Exercice 4 — Intersection avec `:&`
+## 📚 Exercise 4 — Intersection with `:&`
 
 ```bash
 ansible 'webservers:&staging' -i inventory/hosts.yml --list-hosts
 ```
 
-Sortie : **`web1.lab`** uniquement. **L'intersection** retourne les hôtes présents **dans les deux** groupes. `web1.lab` est dans `webservers` ET dans `staging`. `web2.lab` est dans `webservers` mais **pas** dans `staging` → exclu.
+Output: **`web1.lab`** only. The **intersection** returns the hosts present **in both** groups. `web1.lab` is in `webservers` AND in `staging`. `web2.lab` is in `webservers` but **not** in `staging` → excluded.
 
-🔍 **Observation** : pattern précieux pour des actions **chirurgicales** — par exemple, déployer un patch uniquement sur les machines qui sont **à la fois** webservers ET en staging.
+🔍 **Observation**: a valuable pattern for **surgical** actions, for example deploying a patch only on the machines that are **both** webservers AND in staging.
 
-## 📚 Exercice 5 — Exclusion avec `:!`
+## 📚 Exercise 5 — Exclusion with `:!`
 
 ```bash
 ansible 'webservers:!web1.lab' -i inventory/hosts.yml --list-hosts
 ```
 
-Sortie : **`web2.lab`** uniquement. **`!web1.lab`** retire `web1.lab` du groupe.
+Output: **`web2.lab`** only. **`!web1.lab`** removes `web1.lab` from the group.
 
 ```bash
 ansible 'all:!dbservers' -i inventory/hosts.yml --list-hosts
 ```
 
-Sortie : `web1.lab`, `web2.lab`. Tous **sauf** les dbservers.
+Output: `web1.lab`, `web2.lab`. All **except** the dbservers.
 
-## 📚 Exercice 6 — Wildcards
+## 📚 Exercise 6 — Wildcards
 
 ```bash
 ansible 'web*.lab' -i inventory/hosts.yml --list-hosts
 ```
 
-Sortie : `web1.lab`, `web2.lab`. Le **wildcard `*`** matche n'importe quelle suite de caractères.
+Output: `web1.lab`, `web2.lab`. The **wildcard `*`** matches any sequence of characters.
 
 ```bash
 ansible '*1.lab' -i inventory/hosts.yml --list-hosts
 ```
 
-Sortie : `web1.lab`, `db1.lab`. Tous les hôtes qui finissent par `1.lab`.
+Output: `web1.lab`, `db1.lab`. All the hosts that end with `1.lab`.
 
-## 📚 Exercice 7 — Combinaisons complexes
+## 📚 Exercise 7 — Complex combinations
 
 ```bash
 ansible 'prod:!monitoring' -i inventory/hosts.yml --list-hosts
 ```
 
-Sortie : `web1.lab`, `web2.lab`. Tous les hôtes de prod **sauf** ceux dans monitoring (db1).
+Output: `web1.lab`, `web2.lab`. All the hosts of prod **except** those in monitoring (db1).
 
 ```bash
 ansible 'webservers:dbservers:!staging' -i inventory/hosts.yml --list-hosts
 ```
 
-Sortie : `web2.lab`, `db1.lab`. Union de webservers et dbservers, **moins** ceux dans staging (web1).
+Output: `web2.lab`, `db1.lab`. Union of webservers and dbservers, **minus** those in staging (web1).
 
-🔍 **Observation** : les opérateurs s'évaluent **de gauche à droite**. Pour des patterns complexes, **tester avec `--list-hosts` avant** de lancer le vrai playbook.
+🔍 **Observation**: the operators are evaluated **from left to right**. For complex patterns, **test with `--list-hosts` first** before running the real playbook.
 
-## 📚 Exercice 8 — `--limit` sur un playbook
+## 📚 Exercise 8 — `--limit` on a playbook
 
-`--limit` applique le pattern **par-dessus** ce qui est dans `hosts:` du playbook :
+`--limit` applies the pattern **on top of** what is in the `hosts:` of the playbook:
 
 ```bash
 ansible-playbook -i inventory/hosts.yml challenge/solution.yml --limit 'webservers:!web1.lab'
 ```
 
-Le playbook cible `hosts: all` mais `--limit` réduit à **`web2.lab`** uniquement.
+The playbook targets `hosts: all` but `--limit` reduces it to **`web2.lab`** only.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Idempotence** : un second run de votre solution doit afficher `changed=0`
-  partout dans le `PLAY RECAP`. C'est le signal mécanique d'un playbook
-  conforme aux bonnes pratiques.
-- **FQCN explicite** : préférez toujours `ansible.builtin.<module>` (ou la
-  collection appropriée) plutôt que le nom court — `ansible-lint --profile
-  production` le vérifie.
-- **Convention de ciblage** : ce lab cible all (4 VMs avec patterns) ; pour adapter à un
-  autre groupe, ajustez `hosts:` dans `lab.yml`/`solution.yml` puis relancez.
-- **Reset isolé** : `make clean` à la racine du lab désinstalle proprement
-  ce que la solution a posé pour pouvoir rejouer le scénario.
+- **Idempotence**: a second run of your solution must show `changed=0`
+  everywhere in the `PLAY RECAP`. This is the mechanical signal of a playbook
+  that follows best practices.
+- **Explicit FQCN**: always prefer `ansible.builtin.<module>` (or the
+  appropriate collection) over the short name: `ansible-lint --profile
+  production` checks it.
+- **Targeting convention**: this lab targets all (4 VMs with patterns); to
+  adapt to another group, adjust `hosts:` in `lab.yml`/`solution.yml` then
+  rerun.
+- **Isolated reset**: `dsoxlab clean <lab-id>` at the root of the lab cleanly
+  uninstalls what the solution set down so you can replay the scenario.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Quelle commande lancera une tâche sur **tous les serveurs sauf `web1.lab` et `db1.lab`** ?
-2. Comment cibler **uniquement les hôtes présents dans `prod` ET dans `monitoring`** ?
-3. Si vous avez 50 webservers nommés `web01` à `web50`, comment cibler **uniquement `web10` à `web20`** ? (Indice : combiner ranges et exclusion).
+1. Which command will run a task on **all the servers except `web1.lab` and `db1.lab`**?
+2. How do you target **only the hosts present in `prod` AND in `monitoring`**?
+3. If you have 50 webservers named `web01` to `web50`, how do you target **only `web10` to `web20`**? (Hint: combine ranges and exclusion).
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Le challenge ([`challenge/README.md`](challenge/README.md)) demande d'écrire 3 commandes `ansible-playbook --limit ...` qui posent des fichiers marqueurs **uniquement sur les hôtes attendus** par chaque pattern. Tests automatisés via `pytest+testinfra` :
+The challenge ([`challenge/README.md`](challenge/README.md)) asks you to write 3 `ansible-playbook --limit ...` commands that lay down marker files **only on the expected hosts** for each pattern. Automated tests via `pytest+testinfra`:
 
 ```bash
 pytest -v challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Ranges dans les patterns** : `web[01:05].lab` matche `web01.lab` à `web05.lab`.
-- **Regex** : préfixer par `~` (`~web[1-3]\.lab`) — peu utilisé mais existe.
-- **`ansible-inventory -i ... --list --limit '...'`** : montre le résultat d'un pattern sans exécuter.
-- **Précédence** : `:` est un OU, `:&` est ET, `:!` est NOT, évalués de gauche à droite.
+- **Ranges in patterns**: `web[01:05].lab` matches `web01.lab` to `web05.lab`.
+- **Regex**: prefix with `~` (`~web[1-3]\.lab`), rarely used but it exists.
+- **`ansible-inventory -i ... --list --limit '...'`**: shows the result of a pattern without running.
+- **Precedence**: `:` is an OR, `:&` is AND, `:!` is NOT, evaluated from left to right.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 ansible-lint labs/inventaires/patterns-hotes/lab.yml
@@ -194,9 +195,9 @@ ansible-lint labs/inventaires/patterns-hotes/challenge/solution.yml
 ansible-lint --profile production labs/inventaires/patterns-hotes/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un
-> hook pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

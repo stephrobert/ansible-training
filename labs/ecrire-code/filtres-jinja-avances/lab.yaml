@@ -1,0 +1,33 @@
+---
+id: ecrire-code-filtres-jinja-avances
+title: "Advanced Jinja2 filters: regex, b64, password_hash"
+description: "Extract with regex_search, encode to base64, hash a password with sha512, query JSON with json_query and handle IPs and CIDRs."
+section: ecrire-code
+level: l3
+difficulty: advanced
+lab_type: lab
+estimated_time: "50m"
+skills:
+  - regex-filters
+  - password-hash
+  - json-query
+  - b64-encoding
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/filtres-jinja/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

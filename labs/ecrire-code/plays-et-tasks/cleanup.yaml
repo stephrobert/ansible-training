@@ -1,0 +1,23 @@
+---
+# Reset du lab plays-et-tasks : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup plays-et-tasks lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (plays-et-tasks)
+      ansible.builtin.file:
+        path: "/tmp/challenge-predeploy-db1.txt"
+        state: "absent"
+      failed_when: false
+    - name: Reset path, state (plays-et-tasks)
+      ansible.builtin.file:
+        path: "/tmp/challenge-postdeploy-db1.txt"
+        state: "absent"
+      failed_when: false
+    - name: Reset path, state (plays-et-tasks)
+      ansible.builtin.file:
+        path: "/usr/share/nginx/html/index.html"
+        state: "absent"
+      failed_when: false

@@ -1,82 +1,80 @@
 # Lab 68 — `ansible-lint --profile production` + pre-commit
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Pré-requis : `pipx install ansible-lint pre-commit yamllint`.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Prerequisites: `pipx install ansible-lint pre-commit yamllint`.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**ansible-lint en mode production**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-roles/ansible-lint-production/)
+🔗 [**ansible-lint in production mode**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ansible-lint-production-profile/)
 
-`ansible-lint` a **6 profils** progressifs :
+`ansible-lint` has **6 progressive profiles**:
 
-| Profil | Niveau | Cas d'usage |
+| Profile | Level | Use case |
 | --- | --- | --- |
-| `min` | Strict minimum | Code legacy, on veut juste éviter le pire |
-| `basic` | Léger | Apprentissage |
-| `moderate` | Modéré | Dev en cours |
-| `safety` | Sécurité | Audit |
-| `shared` | Rôles partagés | Galaxy |
-| **`production`** | **Tout strict** | **Code livré en prod** |
+| `min` | Bare minimum | Legacy code, you just want to avoid the worst |
+| `basic` | Light | Learning |
+| `moderate` | Moderate | Work in progress |
+| `safety` | Security | Audit |
+| `shared` | Shared roles | Galaxy |
+| **`production`** | **Fully strict** | **Code shipped to prod** |
 
-Le profil **`production`** est ce qu'attend la **RHCE 2026**. Il vérifie :
+The **`production`** profile is what the **RHCE 2026** expects. It checks:
 
-- FQCN obligatoire (`ansible.builtin.copy`)
-- `name:` sur chaque tâche
-- Pas de `command:`/`shell:` quand un module dédié existe
-- Idempotence respectée (pas de `changed_when` cassé)
-- `meta/main.yml` complet (galaxy_info, platforms, license, version min)
-- `meta/argument_specs.yml` présent
-- Pas de modules dépréciés
+- Mandatory FQCN (`ansible.builtin.copy`)
+- `name:` on every task
+- No `command:`/`shell:` when a dedicated module exists
+- Idempotence respected (no broken `changed_when`)
+- Complete `meta/main.yml` (galaxy_info, platforms, license, min version)
+- No deprecated modules
 - ...
 
-Et on l'**automatise** avec **pre-commit** : un hook git qui lance
-`ansible-lint` à chaque commit. Impossible de pousser du code non-conforme.
+And you **automate** it with **pre-commit**: a git hook that runs
+`ansible-lint` on every commit. Impossible to push non-compliant code.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Configurer un fichier `.ansible-lint` avec `profile: production`.
-2. Configurer `.yamllint` strict (interdire `yes`/`no`, lignes longues, etc.).
-3. Écrire un `.pre-commit-config.yaml` qui lance lint + yamllint à chaque
+1. Configure an `.ansible-lint` file with `profile: production`.
+2. Configure a strict `.yamllint` (forbid `yes`/`no`, long lines, etc.).
+3. Write a `.pre-commit-config.yaml` that runs lint + yamllint on every
    commit.
-4. Activer un hook qui **bloque les fuites de secrets** (private keys).
-5. Comprendre l'effet sur la CI : si le pre-commit passe localement, la CI
-   passe aussi.
+4. Enable a hook that **blocks secret leaks** (private keys).
+5. Understand the effect on the CI: if pre-commit passes locally, the CI
+   passes too.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
 pipx install ansible-lint pre-commit
 pipx inject ansible-lint yamllint
 ```
 
-## ⚙️ Arborescence
+## ⚙️ Tree layout
 
 ```text
 labs/tests/ansible-lint-production/
 ├── README.md
-├── Makefile
 ├── .ansible-lint                 ← profile: production
 ├── .yamllint                     ← truthy: only true/false
 ├── .pre-commit-config.yaml       ← hooks ansible-lint + yamllint + secrets
 └── roles/webserver/
 ```
 
-## 📚 Exercice 1 — `.ansible-lint`
+## 📚 Exercise 1 — `.ansible-lint`
 
 ```yaml
 ---
 profile: production
 strict: true
 
-# Exclusions ciblées
+# Targeted exclusions
 exclude_paths:
   - .cache/
   - .pytest_cache/
   - .tox/
 
-# Activer toutes les règles
+# Enable all rules
 enable_list:
   - fqcn-builtins
   - no-handler
@@ -84,10 +82,10 @@ enable_list:
   - no-same-owner
 ```
 
-🔍 **Observation** : `profile: production` active **~50 règles**. On peut
-en désactiver via `skip_list:` mais c'est un signal d'alerte.
+🔍 **Observation**: `profile: production` enables **~50 rules**. You can
+disable some via `skip_list:` but that is a warning sign.
 
-## 📚 Exercice 2 — `.yamllint`
+## 📚 Exercise 2 — `.yamllint`
 
 ```yaml
 ---
@@ -97,7 +95,7 @@ rules:
   line-length:
     max: 120
   truthy:
-    allowed-values: ['true', 'false']    # interdit yes/no/on/off
+    allowed-values: ['true', 'false']    # forbids yes/no/on/off
     check-keys: false
   comments:
     min-spaces-from-content: 1
@@ -105,11 +103,10 @@ rules:
     max-spaces-inside: 1
 ```
 
-🔍 **Observation** : `truthy: only true/false` est crucial — YAML 1.2
-strict considère `yes` comme une string, pas un booléen. Source de bugs
-silencieux.
+🔍 **Observation**: `truthy: only true/false` is crucial. Strict YAML 1.2
+treats `yes` as a string, not a boolean. A source of silent bugs.
 
-## 📚 Exercice 3 — `.pre-commit-config.yaml`
+## 📚 Exercise 3 — `.pre-commit-config.yaml`
 
 ```yaml
 ---
@@ -119,7 +116,7 @@ repos:
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
-      - id: detect-private-key       # ← bloque les fuites de clés SSH/TLS
+      - id: detect-private-key       # ← blocks SSH/TLS key leaks
       - id: check-yaml
       - id: check-added-large-files
 
@@ -130,40 +127,40 @@ repos:
         args: ['--strict']
 
   - repo: https://github.com/ansible/ansible-lint
-    rev: v25.0.0
+    rev: v26.6.0
     hooks:
       - id: ansible-lint
         args: ['--profile=production']
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **`detect-private-key`** : refuse les commits qui contiennent
-  `BEGIN PRIVATE KEY` (clé SSH/TLS). Indispensable.
-- **`--strict`** sur yamllint : **erreur** (non warning) sur règles violées.
-- **`--profile=production`** sur ansible-lint : niveau le plus strict.
+- **`detect-private-key`**: rejects commits that contain
+  `BEGIN PRIVATE KEY` (SSH/TLS key). Essential.
+- **`--strict`** on yamllint: **error** (not warning) on violated rules.
+- **`--profile=production`** on ansible-lint: the strictest level.
 
-## 📚 Exercice 4 — Activer pre-commit
+## 📚 Exercise 4 — Enable pre-commit
 
 ```bash
 cd labs/tests/ansible-lint-production
-pre-commit install      # installe le hook .git/hooks/pre-commit
-pre-commit run --all-files   # exécute manuellement sur tous les fichiers
+pre-commit install      # installs the .git/hooks/pre-commit hook
+pre-commit run --all-files   # run manually on all files
 ```
 
-🔍 Désormais, **chaque `git commit`** passera par ces hooks. Si l'un
-échoue, le commit est annulé.
+🔍 From now on, **every `git commit`** will go through these hooks. If one
+fails, the commit is aborted.
 
-## 📚 Exercice 5 — Démontrer un blocage
+## 📚 Exercise 5 — Demonstrate a block
 
-Modifiez une tâche du rôle pour qu'elle soit non-conforme :
+Modify a role task to make it non-compliant:
 
 ```yaml
 - name: Mauvais exemple
-  copy:                                   # ← FQCN manquant (anti-pattern)
+  copy:                                   # ← missing FQCN (anti-pattern)
     src: foo
     dest: /tmp/foo
-    mode: 0644                            # ← non quoté (anti-pattern)
+    mode: 0644                            # ← unquoted (anti-pattern)
 ```
 
 ```bash
@@ -171,7 +168,7 @@ git add .
 git commit -m "test"
 ```
 
-🔍 Sortie attendue :
+🔍 Expected output:
 
 ```text
 ansible-lint.....................................FAILED
@@ -179,49 +176,49 @@ ansible-lint.....................................FAILED
 - yaml[truthy]: Truthy value should be one of [false, true]
 ```
 
-Le commit est **bloqué**. Vous devez fixer avant de pouvoir pousser.
+The commit is **blocked**. You must fix it before you can push.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`profile: production`** = **standard RHCE 2026**. À utiliser dès la
-  CI.
-- **`pre-commit install`** une fois suffit — le hook persiste dans
+- **`profile: production`** = **RHCE 2026 standard**. Use it starting in
+  the CI.
+- **`pre-commit install`** once is enough: the hook persists in
   `.git/hooks/`.
-- **`detect-private-key`** : la fuite de clé SSH/TLS est l'un des
-  incidents les plus fréquents en open source. Hook obligatoire.
-- **`yamllint truthy: [true, false]`** : évite les bugs YAML 1.1 vs 1.2.
-- **CI redondante** : la CI doit aussi lancer `pre-commit run --all-files`
-  pour blocker les contrib externes qui n'auraient pas le hook local.
+- **`detect-private-key`**: an SSH/TLS key leak is one of the most frequent
+  incidents in open source. A mandatory hook.
+- **`yamllint truthy: [true, false]`**: avoids YAML 1.1 vs 1.2 bugs.
+- **Redundant CI**: the CI must also run `pre-commit run --all-files` to
+  block external contributions that would not have the local hook.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Comment adapter votre solution si la cible passait de **1 host** à un
-   parc de **50 serveurs** ? Quels paramètres (`forks`, `serial`, `strategy`)
-   faudrait-il ajuster pour conserver des temps d'exécution acceptables ?
+1. How would you adapt your solution if the target went from **1 host** to
+   a fleet of **50 servers**? Which parameters (`forks`, `serial`, `strategy`)
+   would you need to tune to keep execution times acceptable?
 
-2. Quels modules Ansible alternatifs auriez-vous pu utiliser pour atteindre
-   le même résultat ? Quels sont leurs trade-offs (idempotence garantie,
-   performance, dépendances de collection externe) ?
+2. Which alternative Ansible modules could you have used to reach the same
+   result? What are their trade-offs (guaranteed idempotence, performance,
+   external collection dependencies)?
 
-3. Si une étape du playbook échoue en cours d'exécution, quel est l'impact
-   sur les hôtes déjà traités ? Comment rendre le scénario reprenable
-   (`block/rescue/always`, `--start-at-task`, `serial`) ?
+3. If a playbook step fails mid-run, what is the impact on the hosts already
+   processed? How do you make the scenario resumable
+   (`block/rescue/always`, `--start-at-task`, `serial`)?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md).
+See [`challenge/README.md`](challenge/README.md).
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`ansible-lint --write`** : auto-fixe les anti-patterns simples
-  (FQCN, mode quoté).
-- **`pre-commit autoupdate`** : met à jour les versions pinned des hooks.
-- **GitHub Actions** : un job qui lance `pre-commit run --all-files` —
-  redondant avec local mais protège des contributeurs externes.
-- **Custom rules** : `ansible-lint` permet d'écrire vos propres règles
-  d'entreprise (interdire un module spécifique, etc.).
+- **`ansible-lint --write`**: auto-fixes simple anti-patterns
+  (FQCN, quoted mode).
+- **`pre-commit autoupdate`**: updates the pinned hook versions.
+- **GitHub Actions**: a job that runs `pre-commit run --all-files`,
+  redundant with local but protects against external contributors.
+- **Custom rules**: `ansible-lint` lets you write your own company rules
+  (forbid a specific module, etc.).
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint --profile production labs/tests/ansible-lint-production/

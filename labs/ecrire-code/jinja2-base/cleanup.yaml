@@ -1,0 +1,12 @@
+---
+# Reset du lab jinja2-base : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup jinja2-base lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (jinja2-base)
+      ansible.builtin.file:
+        path: "/etc/motd-challenge"
+        state: "absent"

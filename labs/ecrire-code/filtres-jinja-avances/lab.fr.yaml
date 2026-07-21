@@ -1,0 +1,4 @@
+---
+id: ecrire-code-filtres-jinja-avances
+title: "Filtres Jinja2 avancés : regex, b64, password_hash"
+description: "Extraire avec regex_search, encoder en base64, hacher un mot de passe en sha512, interroger un JSON avec json_query et manipuler des CIDR."

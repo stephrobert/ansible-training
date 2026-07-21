@@ -1,0 +1,4 @@
+---
+id: modules-rhel-lvm-storage
+title: "LVM : chaîner lvg, lvol, filesystem et mount"
+description: "Construire un PV, un VG et un LV sur un disque secondaire, le formater, le monter via fstab et l'étendre à chaud avec resizefs."

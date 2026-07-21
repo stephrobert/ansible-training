@@ -1,0 +1,23 @@
+---
+# Reset du lab id-multiples : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup id-multiples lab (lab_web1)
+  hosts: lab_web1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (id-multiples)
+      ansible.builtin.file:
+        path: "/tmp/lab79-challenge-web1.lab.txt"
+        state: "absent"
+      failed_when: false
+- name: Cleanup id-multiples lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (id-multiples)
+      ansible.builtin.file:
+        path: "/tmp/lab79-challenge-db1.lab.txt"
+        state: "absent"
+      failed_when: false

@@ -1,0 +1,4 @@
+---
+id: ecrire-code-boucles-with-deprecated
+title: "Boucles legacy with_* : migrer vers loop"
+description: "Reconnaître with_items, with_dict et with_subelements, les migrer vers loop plus filtres Jinja2 et automatiser avec ansible-lint --fix."

@@ -1,71 +1,71 @@
-# Lab 05 — Plays et tasks (anatomie complète d'un play)
+# Lab 05 — Plays and tasks (complete anatomy of a play)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Plays et tasks Ansible : anatomie complète, ordre d'exécution, mots-clés**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/plays-et-tasks/)
+🔗 [**Ansible plays and tasks: complete anatomy, execution order, keywords**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/plays-et-tasks/)
 
-Au lab 04, vous avez écrit un play simple avec juste `tasks:`. Mais un vrai play en production a **4 sections de tâches** qui s'exécutent dans un ordre précis :
+In lab 04, you wrote a simple play with just `tasks:`. But a real production play has **4 task sections** that execute in a precise order:
 
 ```text
 gather_facts → pre_tasks → roles → tasks → post_tasks → handlers
 ```
 
-Chaque section a son rôle :
+Each section has its role:
 
-- **`pre_tasks`** : préparatifs (snapshot, drainer un load balancer, poser un marqueur de début).
-- **`roles`** : code factorisé et réutilisable (vu plus tard).
-- **`tasks`** : le cœur du déploiement.
-- **`post_tasks`** : vérifications post-déploiement (smoke test, marqueur de fin, notification).
-- **`handlers`** : tâches **réactives**, déclenchées uniquement si une autre tâche `notify:` (lab 06).
+- **`pre_tasks`**: preparations (snapshot, drain a load balancer, lay down a start marker).
+- **`roles`**: factored and reusable code (seen later).
+- **`tasks`**: the heart of the deployment.
+- **`post_tasks`**: post-deployment checks (smoke test, end marker, notification).
+- **`handlers`**: **reactive** tasks, triggered only if another task does `notify:` (lab 06).
 
-> Les mots-clés de **parallélisme** (`serial:`, `strategy:`, `max_fail_percentage:`) ne sont **pas** abordés ici — ils sont l'objet du [lab 09 — parallélisme et stratégies](../09-ecrire-code-parallelisme-strategies/). Concentrez-vous d'abord sur l'**anatomie d'un play**.
+> The **parallelism** keywords (`serial:`, `strategy:`, `max_fail_percentage:`) are **not** covered here, they are the subject of [lab 09: parallelism and strategies](../parallelisme-strategies/). Focus first on the **anatomy of a play**.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Écrire un play structuré avec **`pre_tasks` + `tasks` + `post_tasks` + `handlers`**.
-2. Vérifier l'**ordre d'exécution** réel via des fichiers marqueurs horodatés.
-3. Distinguer un handler d'une tâche normale.
-4. Comprendre comment `notify:` déclenche un handler — et pourquoi un handler `ok` ne tourne pas.
+1. Write a structured play with **`pre_tasks` + `tasks` + `post_tasks` + `handlers`**.
+2. Check the real **execution order** via timestamped marker files.
+3. Distinguish a handler from a normal task.
+4. Understand how `notify:` triggers a handler, and why an `ok` handler does not run.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible webservers -m ansible.builtin.ping
 ansible webservers -b -m ansible.builtin.shell -a "rm -f /tmp/predeploy-* /tmp/postdeploy-*"
 ```
 
-Réponse attendue : 2 `pong`, puis nettoyage des marqueurs d'un éventuel run précédent.
+Expected response: 2 `pong`, then cleanup of the markers from a possible previous run.
 
-## ⚙️ Arborescence cible
+## ⚙️ Target tree
 
 ```text
 labs/ecrire-code/plays-et-tasks/
-├── README.md           ← ce fichier
-├── playbook.yml        ← À CRÉER — votre play complet
+├── README.md           ← this file
+├── playbook.yml        ← TO CREATE, your complete play
 └── challenge/
-    ├── README.md       ← challenge final (déjà présent)
+    ├── README.md       ← final challenge (already present)
     └── tests/
-        └── test_*.py   ← (déjà présent — pytest+testinfra)
+        └── test_*.py   ← (already present, pytest+testinfra)
 ```
 
-## 📚 Exercice 1 — Squelette du play
+## 📚 Exercise 1 — Skeleton of the play
 
-Créez `labs/ecrire-code/plays-et-tasks/playbook.yml` :
+Create `labs/ecrire-code/plays-et-tasks/playbook.yml`:
 
 ```yaml
 ---
@@ -74,54 +74,61 @@ Créez `labs/ecrire-code/plays-et-tasks/playbook.yml` :
   become: true
 
   pre_tasks:
-    # Vous allez écrire ici : poser un fichier marqueur "predeploy"
+    # You will write here: lay down a "predeploy" marker file
 
   tasks:
-    # Vous allez écrire ici : installer + démarrer + configurer nginx
+    # You will write here: install + start + configure nginx
 
   post_tasks:
-    # Vous allez écrire ici : poser un fichier marqueur "postdeploy"
+    # You will write here: lay down a "postdeploy" marker file
 
   handlers:
-    # Vous allez écrire ici : recharger nginx
+    # You will write here: reload nginx
 ```
 
-🔍 **Observation** : ce play présente la **structure complète** d'un déploiement professionnel : préparatifs (`pre_tasks`), action principale (`tasks`), validation (`post_tasks`), réactions à un changement (`handlers`). L'ordre d'exécution est **garanti** par Ansible.
+🔍 **Observation**: this play presents the **complete structure** of a professional deployment: preparations (`pre_tasks`), main action (`tasks`), validation (`post_tasks`), reactions to a change (`handlers`). The execution order is **guaranteed** by Ansible.
 
-## 📚 Exercice 2 — `pre_tasks` (marqueur "predeploy")
+## 📚 Exercise 2 — `pre_tasks` ("predeploy" marker)
 
-Dans `pre_tasks:`, créez un fichier `/tmp/predeploy-{{ inventory_hostname }}.txt` contenant un timestamp via `ansible.builtin.copy` + `content:`. Indices :
+In `pre_tasks:`, create a marker file `/tmp/predeploy-{{ inventory_hostname }}.txt` via `ansible.builtin.copy` + `content:`. Hints:
 
-- Module : `ansible.builtin.copy`
+- Module: `ansible.builtin.copy`
 - `dest: "/tmp/predeploy-{{ inventory_hostname }}.txt"`
-- `content: "predeploy {{ inventory_hostname }} at {{ ansible_date_time.iso8601 }}\n"`
+- `content: "predeploy {{ inventory_hostname }}\n"`
 - `mode: "0644"`
 
-🔍 **Observation à anticiper** : `ansible_date_time` est un fact (collecté via `gather_facts`) qui contient l'heure du **managed node** au moment de la collecte (pas l'heure du control node).
+🔍 **Observation to anticipate**: the content is **stable**, and that is the point. What will date this marker is its `mtime`, which the kernel lays down at the moment of the write. You will compare it to the one of the `postdeploy` marker in exercise 5.
 
-## 📚 Exercice 3 — `tasks` (nginx + ouverture firewalld)
+> ⚠️ **The reflex not to acquire**: writing `content: "predeploy at {{ ansible_date_time.iso8601 }}"`. It is tempting, and it is wrong twice.
+>
+> - **It does not date the write.** `ansible_date_time` is a fact: it carries the time of the **fact collection**, not that of the task. And `ansible.cfg` caches the facts for 2 hours (`fact_caching_timeout`): from one run to another, and between `pre_tasks` and `post_tasks`, this fact is **frozen**. Your two markers would carry the same time.
+> - **It breaks idempotence.** A content that changes on every run makes `copy:` render `changed` on every run. The role may well be "correct", but it lies about what it did.
+>
+> A timestamp in a `content:` is almost always the sign that you were looking for an `mtime`.
 
-Dans `tasks:`, enchaînez 4 tâches :
+## 📚 Exercise 3 — `tasks` (nginx + firewalld opening)
 
-1. **Installer nginx** : `ansible.builtin.dnf` avec `name: nginx`, `state: present`.
-2. **Configurer la page d'accueil** : `ansible.builtin.copy` qui pose `/etc/nginx/conf.d/site.conf` avec un `server` minimal qui sert `Hello world from {{ inventory_hostname }}`. Cette tâche **doit notifier** le handler — ajoutez `notify: Recharger nginx` à la fin.
-3. **Démarrer + activer nginx** : `ansible.builtin.systemd` avec `name: nginx`, `state: started`, `enabled: true`.
-4. **Ouvrir HTTP dans firewalld** : `ansible.posix.firewalld` avec `service: http`, `permanent: true`, `immediate: true`, `state: enabled`.
+In `tasks:`, chain 4 tasks:
 
-🔍 **Observation à anticiper** : seule la tâche **(2)** notifie le handler — parce que c'est elle qui modifie la config nginx. Les 3 autres ne déclenchent pas de reload.
+1. **Install nginx**: `ansible.builtin.dnf` with `name: nginx`, `state: present`.
+2. **Configure the welcome page**: `ansible.builtin.copy` that lays down `/etc/nginx/conf.d/site.conf` with a minimal `server` that serves `Hello world from {{ inventory_hostname }}`. This task **must notify** the handler, add `notify: Recharger nginx` at the end.
+3. **Start + enable nginx**: `ansible.builtin.systemd` with `name: nginx`, `state: started`, `enabled: true`.
+4. **Open HTTP in firewalld**: `ansible.posix.firewalld` with `service: http`, `permanent: true`, `immediate: true`, `state: enabled`.
 
-## 📚 Exercice 4 — `post_tasks` (smoke test + marqueur)
+🔍 **Observation to anticipate**: only task **(2)** notifies the handler, because it is the one that modifies the nginx config. The other 3 do not trigger a reload.
 
-Dans `post_tasks:`, enchaînez 2 tâches :
+## 📚 Exercise 4 — `post_tasks` (smoke test + marker)
 
-1. **Tester** `http://localhost` avec `ansible.builtin.uri` : `url: http://localhost`, `status_code: 200`.
-2. **Poser un marqueur** `/tmp/postdeploy-{{ inventory_hostname }}.txt` (même structure que le `predeploy` de l'exo 2).
+In `post_tasks:`, chain 2 tasks:
 
-🔍 **Observation à anticiper** : `post_tasks` s'exécute **après** que les handlers de `tasks:` aient tourné. C'est exactement ce qu'on veut pour un smoke test : on teste après le reload, pas avant.
+1. **Test** `http://localhost` with `ansible.builtin.uri`: `url: http://localhost`, `status_code: 200`.
+2. **Lay down a marker** `/tmp/postdeploy-{{ inventory_hostname }}.txt` (same structure as the `predeploy` from exercise 2).
 
-## 📚 Exercice 5 — `handlers` (reload nginx)
+🔍 **Observation to anticipate**: `post_tasks` executes **after** the handlers from `tasks:` have run. This is exactly what we want for a smoke test: we test after the reload, not before.
 
-Dans `handlers:`, ajoutez un handler unique :
+## 📚 Exercise 5 — `handlers` (reload nginx)
+
+In `handlers:`, add a single handler:
 
 ```yaml
 - name: Recharger nginx
@@ -130,17 +137,17 @@ Dans `handlers:`, ajoutez un handler unique :
     state: reloaded
 ```
 
-🔍 **Observation à anticiper** : un handler ressemble à une tâche normale, mais **ne s'exécute que si une tâche le `notify:`**. Si la tâche notifiante est en `ok` (idempotente, rien changé), le handler **ne tourne pas**. C'est exactement le comportement « restart-on-config-change » — voir lab 06 pour aller plus loin.
+🔍 **Observation to anticipate**: a handler looks like a normal task, but **only executes if a task does `notify:` it**. If the notifying task is `ok` (idempotent, nothing changed), the handler **does not run**. This is exactly the "restart-on-config-change" behavior, see lab 06 to go further.
 
-## 📚 Exercice 6 — Exécuter le playbook
+## 📚 Exercise 6 — Run the playbook
 
-Depuis la racine du repo :
+From the repo root:
 
 ```bash
 ansible-playbook labs/ecrire-code/plays-et-tasks/playbook.yml
 ```
 
-🔍 **Observation** : Ansible joue **toutes les tâches** sur **tous les hôtes** dans l'ordre `gather_facts → pre_tasks → tasks → handlers → post_tasks`. Sans `serial:`, les hôtes avancent **en parallèle** (par batch). La sortie console montre :
+🔍 **Observation**: Ansible plays **all the tasks** on **all the hosts** in the order `gather_facts → pre_tasks → tasks → handlers → post_tasks`. Without `serial:`, the hosts progress **in parallel** (by batch). The console output shows:
 
 ```text
 PLAY [Déployer nginx ...] *********************************
@@ -150,7 +157,7 @@ ok: [web2.lab]
 TASK [pre_tasks: predeploy] *******************************
 changed: [web1.lab]
 changed: [web2.lab]
-... (toutes les tâches sur tous les hôtes) ...
+... (all the tasks on all the hosts) ...
 RUNNING HANDLER [Recharger nginx] *************************
 changed: [web1.lab]
 changed: [web2.lab]
@@ -159,76 +166,76 @@ ok: [web1.lab]
 ok: [web2.lab]
 ```
 
-> Pour traiter **un hôte à la fois** (rolling update), il existe le mot-clé `serial:` — c'est l'objet du [lab 09](../09-ecrire-code-parallelisme-strategies/).
+> To process **one host at a time** (rolling update), there is the `serial:` keyword, it is the subject of [lab 09](../parallelisme-strategies/).
 
-## 📚 Exercice 7 — Vérifier l'ordre d'exécution
+## 📚 Exercise 7 — Check the execution order
 
-Les fichiers marqueurs prouvent l'ordre `pre_tasks` → `tasks` → `handlers` → `post_tasks` :
+The marker files prove the order `pre_tasks` → `tasks` → `handlers` → `post_tasks`:
 
 ```bash
-ssh ansible@web1.lab 'sudo ls -la /tmp/predeploy-web1.lab.txt /tmp/postdeploy-web1.lab.txt'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab 'sudo ls -la /tmp/predeploy-web1.lab.txt /tmp/postdeploy-web1.lab.txt'
 ```
 
-🔍 **Observation** : le `mtime` du fichier `predeploy` doit être **strictement antérieur** au `mtime` du fichier `postdeploy`. Si vous ouvrez les deux fichiers, le `predeploy` a un timestamp **avant** le `postdeploy` — preuve que `pre_tasks` s'exécute bien avant `post_tasks`.
+🔍 **Observation**: the `mtime` of the `predeploy` file must be **strictly earlier** than the `mtime` of the `postdeploy` file. This is the proof that `pre_tasks` does execute before `post_tasks`, and notice where it comes from: from `ls -la`, not from the content of the files. Both markers carry an identical text on every run; it is their modification dates that testify. This is exactly what the challenge test compares.
 
-## 📚 Exercice 8 — Vérifier l'idempotence
+## 📚 Exercise 8 — Check idempotence
 
-Relancez :
+Rerun:
 
 ```bash
 ansible-playbook labs/ecrire-code/plays-et-tasks/playbook.yml
 ```
 
-🔍 **Observation** : `PLAY RECAP` doit afficher `changed=0` partout. Et **important** : le handler `Recharger nginx` ne tourne pas (la tâche `(2)` est `ok` — pas de notification).
+🔍 **Observation**: `PLAY RECAP` must display `changed=0` everywhere. And **important**: the handler `Recharger nginx` does not run (the `(2)` task is `ok`, no notification).
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- Ordre d'exécution **garanti** : `gather_facts` → `pre_tasks` (+ leurs handlers) → `roles` → `tasks` (+ leurs handlers) → `post_tasks` (+ leurs handlers).
-- Les **handlers** s'exécutent **à la fin de leur section** par défaut. Pour les forcer plus tôt : `meta: flush_handlers` (lab 06).
-- Une tâche est **`changed`** si elle a modifié l'état. Un handler ne se déclenche **que sur `changed`** (jamais sur `ok`).
-- Le `notify:` sur la tâche `(2)` ne déclenche le handler **que si le fichier `site.conf` a réellement changé**. C'est ce qui rend le pattern « restart-on-config-change » idempotent.
+- Execution order **guaranteed**: `gather_facts` → `pre_tasks` (+ their handlers) → `roles` → `tasks` (+ their handlers) → `post_tasks` (+ their handlers).
+- The **handlers** execute **at the end of their section** by default. To force them earlier: `meta: flush_handlers` (lab 06).
+- A task is **`changed`** if it modified the state. A handler only triggers **on `changed`** (never on `ok`).
+- The `notify:` on task `(2)` only triggers the handler **if the `site.conf` file really changed**. This is what makes the "restart-on-config-change" pattern idempotent.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Que se passe-t-il si la tâche **(2)** échoue (config nginx invalide) ? Le handler est-il déclenché ? Les `post_tasks` tournent-ils ?
+1. What happens if task **(2)** fails (invalid nginx config)? Is the handler triggered? Do the `post_tasks` run?
 
-2. Vous voulez **forcer** le reload nginx **avant** le smoke test (sans attendre la fin de `tasks:`). Quel mécanisme Ansible utilise-t-on ? (Indice : `meta: flush_handlers`, lab 06.)
+2. You want to **force** the nginx reload **before** the smoke test (without waiting for the end of `tasks:`). Which Ansible mechanism do you use? (Hint: `meta: flush_handlers`, lab 06.)
 
-3. Pourquoi le smoke test (`uri:` dans `post_tasks`) tournerait-il **avant** le reload du handler si on l'avait mis dans `tasks:` au lieu de `post_tasks:` ?
+3. Why would the smoke test (`uri:` in `post_tasks`) run **before** the handler's reload if you had put it in `tasks:` instead of `post_tasks:`?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Le challenge ([`challenge/README.md`](challenge/README.md)) reproduit le pattern `pre_tasks` / `tasks` / `post_tasks` / `handlers` sur `db1.lab` avec Apache (`httpd`) au lieu de nginx. Tests automatisés via `pytest+testinfra` :
+The challenge ([`challenge/README.md`](challenge/README.md)) reproduces the `pre_tasks` / `tasks` / `post_tasks` / `handlers` pattern on `db1.lab`, with nginx as in the tutorial: what changes is the host, not the software. Automated tests via `pytest+testinfra`:
 
 ```bash
 pytest -v labs/ecrire-code/plays-et-tasks/challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`meta: flush_handlers`** : forcer le déclenchement immédiat des handlers en attente, sans attendre la fin de la section. Voir le [lab 06 — handlers](../06-ecrire-code-handlers/).
-- **`pre_tasks` défensif** : un `pre_tasks` qui appelle un endpoint `/health` interne et qui échoue **avant** la moindre modif — pattern classique en production.
-- **Parallélisme et rolling updates** : `serial:`, `strategy:`, `max_fail_percentage:` sont introduits dans le [lab 09](../09-ecrire-code-parallelisme-strategies/).
+- **`meta: flush_handlers`**: force the immediate triggering of pending handlers, without waiting for the end of the section. See [lab 06: handlers](../handlers/).
+- **Defensive `pre_tasks`**: a `pre_tasks` that calls an internal `/health` endpoint and fails **before** the slightest change, a classic pattern in production.
+- **Parallelism and rolling updates**: `serial:`, `strategy:`, `max_fail_percentage:` are introduced in [lab 09](../parallelisme-strategies/).
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/ecrire-code/plays-et-tasks/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/ecrire-code/plays-et-tasks/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/ecrire-code/plays-et-tasks/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

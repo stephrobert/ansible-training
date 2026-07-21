@@ -1,0 +1,13 @@
+---
+# Reset du lab copy : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup copy lab (lab_web1)
+  hosts: lab_web1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (copy)
+      ansible.builtin.shell: |
+        rm -f /etc/ssh/banner-rhce* /etc/motd-rhce*
+      changed_when: false
+      failed_when: false

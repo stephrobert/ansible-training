@@ -1,0 +1,34 @@
+---
+# Reset du lab dependencies : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup dependencies lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset name, state, enabled (dependencies)
+      ansible.builtin.systemd_service:
+        name: "nginx"
+        state: "stopped"
+        enabled: "no"
+      failed_when: false
+    - name: Reset name, state (dependencies)
+      ansible.builtin.dnf:
+        name: "nginx"
+        state: "absent"
+      failed_when: false
+    - name: Reset firewalld ports (dependencies)
+      ansible.posix.firewalld:
+        port: "{{ item }}"
+        state: "disabled"
+        permanent: "yes"
+        immediate: "yes"
+      loop:
+        - "443/tcp"
+        - "8081/tcp"
+      failed_when: false
+    - name: Reset order trace (dependencies)
+      ansible.builtin.shell: |
+        rm -f /tmp/deps-order.txt
+      changed_when: false
+      failed_when: false

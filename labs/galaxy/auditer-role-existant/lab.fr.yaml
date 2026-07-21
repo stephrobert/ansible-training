@@ -1,0 +1,4 @@
+---
+id: galaxy-auditer-role-existant
+title: "Auditer un rôle Galaxy avant de l'adopter"
+description: "Noter un rôle tiers sur six axes (mainteneur, qualité, sécurité, tests), repérer les anti-patterns et trancher : adopter, forker ou refuser."

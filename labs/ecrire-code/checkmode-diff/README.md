@@ -1,55 +1,55 @@
-# Lab 08 — Check mode et diff (dry-run et visualisation)
+# Lab 08 — Check mode and diff (dry-run and visualization)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Check mode et diff Ansible : dry-run et visualisation des changements**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/checkmode-diff/)
+🔗 [**Ansible check mode and diff: dry-run and change visualization**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/checkmode-diff/)
 
-`--check` simule l'exécution sans appliquer les changements. `--diff` affiche le diff
-unifié des fichiers modifiés. `check_mode: false` au niveau tâche force une exécution
-réelle même en mode `--check`. Combinés, ces 3 outils sont **la base de toute
-opération en production** — on valide d'abord, on applique ensuite.
+`--check` simulates the execution without applying the changes. `--diff` shows the
+unified diff of the modified files. `check_mode: false` at the task level forces a
+real execution even in `--check` mode. Combined, these 3 tools are **the foundation of any
+production operation**: you validate first, you apply next.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Lancer** un playbook en `--check` et lire le `PLAY RECAP` correctement.
-2. **Comparer** la sortie d'un run réel vs un run en `--check --diff`.
-3. **Identifier** les modules qui supportent `--check` et ceux qui ne le supportent pas.
-4. **Forcer** une tâche à s'exécuter en `--check` via `check_mode: false`.
-5. **Diagnostiquer** un faux positif `changed=1` en `--check` qui n'aurait pas eu lieu en réel.
+1. **Run** a playbook in `--check` and read the `PLAY RECAP` correctly.
+2. **Compare** the output of a real run vs a run in `--check --diff`.
+3. **Identify** the modules that support `--check` and those that do not.
+4. **Force** a task to run in `--check` via `check_mode: false`.
+5. **Diagnose** a `changed=1` false positive in `--check` that would not have happened for real.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
-Vérifier que `web1.lab` est joignable et que vous êtes au repo root :
+Check that `web1.lab` is reachable and that you are at the repo root:
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible web1.lab -m ping
 # Doit retourner "pong"
 ```
 
-S'assurer que `/etc/motd` existe (par défaut sur AlmaLinux, sinon créer un fichier vide) :
+Make sure `/etc/motd` exists (by default on AlmaLinux, otherwise create an empty file):
 
 ```bash
 ansible web1.lab -m command -a "ls -la /etc/motd" -b
 ```
 
-## 📚 Exercice 1 — Premier `--check` sur `copy:`
+## 📚 Exercise 1 — First `--check` on `copy:`
 
-Créez le fichier `lab.yml` à la racine du lab :
+Create the `lab.yml` file at the root of the lab:
 
 ```yaml
 ---
@@ -64,81 +64,81 @@ Créez le fichier `lab.yml` à la racine du lab :
         mode: "0644"
 ```
 
-**Lancez en check mode** :
+**Run it in check mode**:
 
 ```bash
 ansible-playbook labs/ecrire-code/checkmode-diff/lab.yml --check
 ```
 
-Vérifiez **immédiatement après** :
+Check **immediately after**:
 
 ```bash
 ansible web1.lab -m command -a "cat /etc/motd"
 ```
 
-🔍 **Observation** : le `PLAY RECAP` annonce `changed=1`, mais `cat /etc/motd` ne montre
-**pas** votre nouveau contenu. C'est normal — `--check` est un dry-run, **rien n'est
-écrit** côté managed node. Le `changed=1` indique seulement *ce qui aurait changé*.
+🔍 **Observation**: the `PLAY RECAP` announces `changed=1`, but `cat /etc/motd` does
+**not** show your new content. This is normal: `--check` is a dry-run, **nothing is
+written** on the managed node side. The `changed=1` only indicates *what would have changed*.
 
-## 📚 Exercice 2 — Ajouter `--diff` pour voir le contenu exact
+## 📚 Exercise 2 — Add `--diff` to see the exact content
 
-Relancez la même commande avec `--diff` :
+Rerun the same command with `--diff`:
 
 ```bash
 ansible-playbook labs/ecrire-code/checkmode-diff/lab.yml --check --diff
 ```
 
-🔍 **Observation** : la sortie inclut maintenant un **diff unifié** :
+🔍 **Observation**: the output now includes a **unified diff**:
 
 ```diff
 --- before: /etc/motd
 +++ after: /etc/motd
 @@ -1 +1 @@
--Welcome to AlmaLinux 10.1
+-Welcome to AlmaLinux 9
 +Bienvenue sur web1 — Ansible RHCE 2026
 ```
 
-Ce diff est **la matière première** d'une revue de changement avant déploiement.
-En production, on **commit ce diff dans la PR** ou on l'envoie à l'équipe Ops avant
-de lancer pour de vrai.
+This diff is **the raw material** of a change review before deployment.
+In production, you **commit this diff in the PR** or send it to the Ops team before
+launching for real.
 
-**Maintenant, exécution réelle** (sans `--check`) :
+**Now, real execution** (without `--check`):
 
 ```bash
 ansible-playbook labs/ecrire-code/checkmode-diff/lab.yml --diff
 ```
 
-Vérifiez :
+Check:
 
 ```bash
 ansible web1.lab -m command -a "cat /etc/motd"
 ```
 
-🔍 **Observation** : cette fois le contenu a bien changé.
+🔍 **Observation**: this time the content did change.
 
-## 📚 Exercice 3 — Re-exécuter en `--check` et comparer
+## 📚 Exercise 3 — Re-run in `--check` and compare
 
-Relancez **immédiatement** la même commande :
+Rerun **immediately** the same command:
 
 ```bash
 ansible-playbook labs/ecrire-code/checkmode-diff/lab.yml --check --diff
 ```
 
-🔍 **Observation** : `PLAY RECAP` annonce maintenant `changed=0`, et **aucun diff**
-n'est affiché. C'est l'**idempotence** combinée à `--check` : Ansible compare le
-checksum local au checksum du fichier sur web1, ils sont identiques, **pas de changement
-projeté**.
+🔍 **Observation**: `PLAY RECAP` now announces `changed=0`, and **no diff**
+is shown. This is **idempotence** combined with `--check`: Ansible compares the
+local checksum to the checksum of the file on web1, they are identical, **no projected
+change**.
 
-**Implication pratique** : un `--check` qui sort `changed=0` partout = rien à appliquer.
-C'est l'**état stationnaire** que vous voulez voir en CI avant un merge sur `main`.
+**Practical implication**: a `--check` that outputs `changed=0` everywhere = nothing to apply.
+This is the **steady state** you want to see in CI before a merge on `main`.
 
-## 📚 Exercice 4 — `check_mode: false` pour les tâches qui ont besoin de tourner
+## 📚 Exercise 4 — `check_mode: false` for the tasks that need to run
 
-Certaines tâches **doivent s'exécuter** même en `--check`, parce qu'elles produisent
-une **information** (pas un changement). Exemple typique : récupérer la version
-d'un binaire avec `command:`.
+Some tasks **must run** even in `--check`, because they produce
+an **information** (not a change). Typical example: retrieving the version
+of a binary with `command:`.
 
-Modifiez `lab.yml` :
+Modify `lab.yml`:
 
 ```yaml
 ---
@@ -163,28 +163,28 @@ Modifiez `lab.yml` :
         mode: "0644"
 ```
 
-**Lancer en `--check`** :
+**Run in `--check`**:
 
 ```bash
 ansible-playbook labs/ecrire-code/checkmode-diff/lab.yml --check --diff
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- La tâche `command: openssl version` **s'exécute pour de vrai** (vous voyez la version dans le `debug:`).
-- La tâche `copy:` **simule** l'écriture mais n'écrit pas.
-- Le `--diff` montre la nouvelle valeur du MOTD avec la version d'openssl interpolée.
+- The task `command: openssl version` **runs for real** (you see the version in the `debug:`).
+- The task `copy:` **simulates** the write but does not write.
+- The `--diff` shows the new value of the MOTD with the openssl version interpolated.
 
-**Sans `check_mode: false`** sur la tâche `command:`, Ansible aurait **skippé** la
-récupération de la version (et la suite du playbook aurait planté avec
-`'openssl_version' is undefined` ou un MOTD bizarre).
+**Without `check_mode: false`** on the `command:` task, Ansible would have **skipped** the
+retrieval of the version (and the rest of the playbook would have crashed with
+`'openssl_version' is undefined` or a weird MOTD).
 
-## 📚 Exercice 5 — Le piège : modules qui ne supportent pas `--check`
+## 📚 Exercise 5 — The trap: modules that do not support `--check`
 
-Tous les modules **ne supportent pas** `--check` correctement. Pour les modules
-non-supportés, Ansible affiche un warning et **skip** la tâche en mode check.
+Not all modules **support** `--check` correctly. For unsupported modules,
+Ansible shows a warning and **skips** the task in check mode.
 
-Ajoutez à `lab.yml` :
+Add to `lab.yml`:
 
 ```yaml
     - name: Tache non check-aware (exemple shell)
@@ -192,68 +192,68 @@ Ajoutez à `lab.yml` :
         echo "Hello from shell" >> /tmp/lab-shell-output.txt
 ```
 
-**Relancez en `--check`** :
+**Rerun in `--check`**:
 
 ```bash
 ansible-playbook labs/ecrire-code/checkmode-diff/lab.yml --check
 ```
 
-🔍 **Observation** : la tâche `shell:` est marquée **`skipped`** (pas `changed`), avec
-un warning du genre `Skipping... unable to check_mode`. Ansible n'a aucun moyen de
-deviner ce que votre commande shell ferait — donc il refuse de simuler.
+🔍 **Observation**: the `shell:` task is marked **`skipped`** (not `changed`), with
+a warning like `Skipping... unable to check_mode`. Ansible has no way to
+guess what your shell command would do, so it refuses to simulate.
 
-**Conséquence** : en `--check`, vous n'obtenez **pas** de garantie que tout le playbook
-se déroulera bien. Les tâches `shell:` / `command:` non check-aware sont des **angles
-morts**. À mitiger en :
+**Consequence**: in `--check`, you get **no** guarantee that the whole playbook
+will run fine. The non check-aware `shell:` / `command:` tasks are **blind
+spots**. To mitigate by:
 
-- préférant des **modules dédiés** (`copy:`, `template:`, `lineinfile:`) qui sont check-aware ;
-- ajoutant `check_mode: false` + `changed_when: ...` pour forcer l'exécution lecture-seule.
+- preferring **dedicated modules** (`copy:`, `template:`, `lineinfile:`) that are check-aware;
+- adding `check_mode: false` + `changed_when: ...` to force the read-only execution.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-Avant de passer au challenge, vérifiez que vous comprenez :
+Before moving on to the challenge, make sure you understand:
 
-- **`--check` ne modifie rien**, mais le `PLAY RECAP` peut afficher `changed=N` (intention de changement).
-- **`--diff` est l'outil de revue** : c'est ce qui apparaît dans une PR de change management.
-- **`changed=0` en `--check`** = état stationnaire, rien à faire en production.
-- **`check_mode: false`** force l'exécution d'une tâche en mode check (utile pour les tâches lecture-seule).
-- **`shell:` / `command:`** sont des angles morts du `--check` sauf si vous les rendez explicitement check-aware.
+- **`--check` modifies nothing**, but the `PLAY RECAP` can show `changed=N` (change intent).
+- **`--diff` is the review tool**: it is what appears in a change management PR.
+- **`changed=0` in `--check`** = steady state, nothing to do in production.
+- **`check_mode: false`** forces the execution of a task in check mode (useful for read-only tasks).
+- **`shell:` / `command:`** are blind spots of `--check` unless you make them explicitly check-aware.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous avez un playbook qui modifie une config nginx. Vous voulez **valider la syntaxe**
-   nginx avant de redéployer (via `nginx -t`). Comment articulez-vous `--check`,
-   `check_mode: false`, et `validate:` du module `template:` pour avoir une garantie
-   complète ?
+1. You have a playbook that modifies an nginx config. You want to **validate the nginx
+   syntax** before redeploying (via `nginx -t`). How do you combine `--check`,
+   `check_mode: false`, and the `validate:` of the `template:` module to get a complete
+   guarantee?
 
-2. Pourquoi un run en `--check` peut-il afficher `changed=1` alors qu'un run réel
-   immédiatement après affichera `changed=0` ? Donnez **deux causes** possibles.
+2. Why can a run in `--check` show `changed=1` while a real run
+   immediately after will show `changed=0`? Give **two possible causes**.
 
-3. Dans une CI, vous lancez `ansible-playbook --check --diff` sur chaque PR. Quel
-   **exit code** d'`ansible-playbook` retourne-t-il quand `changed > 0` en `--check` ?
-   Faut-il **fail la CI** dans ce cas ?
+3. In a CI, you run `ansible-playbook --check --diff` on every PR. What
+   **exit code** does `ansible-playbook` return when `changed > 0` in `--check`?
+   Should you **fail the CI** in that case?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Hooks de validation** : combinez `validate:` du module `template:` avec `--check`
-  pour échouer un dry-run si la config générée est syntaxiquement invalide
+- **Validation hooks**: combine the `validate:` of the `template:` module with `--check`
+  to fail a dry-run if the generated config is syntactically invalid
   (`validate: 'nginx -t -c %s'`).
-- **`--start-at-task`** : reprendre un playbook après une tâche échouée — utile
-  combiné à `--check` pour valider la suite avant de re-jouer.
-- **Le pattern `audit-only`** : un play qui ne fait que des `command: changed_when: false`
-  pour collecter de l'info sans rien modifier. Tourne bien en `--check` car aucune
-  tâche n'est censée modifier l'état.
-- **`ANSIBLE_DIFF_ALWAYS=1`** : variable d'env pour activer `--diff` par défaut
-  sans le passer à chaque commande. Utile en dev local.
+- **`--start-at-task`**: resume a playbook after a failed task, useful
+  combined with `--check` to validate the rest before replaying.
+- **The `audit-only` pattern**: a play that only does `command: changed_when: false`
+  to collect info without modifying anything. Runs fine in `--check` because no
+  task is supposed to modify the state.
+- **`ANSIBLE_DIFF_ALWAYS=1`**: env variable to enable `--diff` by default
+  without passing it on every command. Useful in local dev.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 # Lint de votre fichier de lab (tutoriel guidé)
@@ -266,9 +266,9 @@ ansible-lint labs/ecrire-code/checkmode-diff/challenge/solution.yml
 ansible-lint --profile production labs/ecrire-code/checkmode-diff/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

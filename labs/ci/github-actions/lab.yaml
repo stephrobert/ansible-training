@@ -1,0 +1,25 @@
+---
+id: ci-github-actions
+title: "GitHub Actions: CI workflow for a role"
+description: "Write a lint + molecule workflow with a distro x ansible-core matrix, pip caching, least-privilege permissions and persist-credentials disabled."
+section: ci
+level: l3
+difficulty: advanced
+lab_type: lab
+estimated_time: "40m"
+skills:
+  - ci-pipeline
+  - build-matrix
+  - workflow-hardening
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ci-github-actions/
+track:
+  - au-dela-ex294
+runtime:
+  type: shell
+  workdir: challenge/work
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

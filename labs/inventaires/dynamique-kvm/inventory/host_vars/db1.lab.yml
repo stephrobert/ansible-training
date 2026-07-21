@@ -1,0 +1,15 @@
+---
+# Le plugin libvirt force 'ansible_connection: community.libvirt.libvirt_qemu'
+# sur CHAQUE hôte qu'il découvre : il veut passer par l'API libvirt et l'agent
+# QEMU, pas par SSH. Or l'agent n'est pas installé sur ces VMs, et on veut une
+# connexion SSH classique.
+#
+# L'override doit donc être posé au niveau HÔTE, comme ici. Le mettre dans
+# group_vars/ ne suffirait pas : une variable de groupe (précédence 5) perd
+# contre une variable d'hôte posée par l'inventaire (précédence 7), alors qu'un
+# fichier host_vars/ (précédence 8) l'emporte. C'est toute la leçon de ce
+# fichier, et la raison pour laquelle il ne contient qu'une ligne utile.
+#
+# Le nom du fichier est celui du DOMAINE libvirt ('db1.lab'), pas un nom
+# court : c'est 'db1.lab' que remonte 'inventory_hostname: name'.
+ansible_connection: ssh

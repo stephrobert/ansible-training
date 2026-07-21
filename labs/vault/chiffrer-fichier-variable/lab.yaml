@@ -1,0 +1,32 @@
+---
+id: vault-chiffrer-fichier-variable
+title: "encrypt_string vs whole-file encryption"
+description: "Encrypt a single value with encrypt_string, mix it with plaintext variables via the !vault tag, and choose between inline and whole-file."
+section: vault
+level: l2
+difficulty: intermediate
+lab_type: lab
+estimated_time: "45m"
+skills:
+  - encrypt-string
+  - vault-inline
+  - vault-scope
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/chiffrer-fichier-variable/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

@@ -1,0 +1,22 @@
+---
+# Reset du lab checkmode-diff : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup checkmode-diff lab (lab_web1)
+  hosts: lab_web1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (checkmode-diff)
+      ansible.builtin.shell: |
+        rm -f /tmp/lab-shell-output.txt
+      changed_when: false
+      failed_when: false
+- name: Cleanup checkmode-diff lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (checkmode-diff)
+      ansible.builtin.file:
+        path: "/etc/lab-checkmode.txt"
+        state: "absent"

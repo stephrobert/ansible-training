@@ -1,33 +1,33 @@
-# 🎯 Challenge — Configuration applicative chiffrée sur `db1.lab`
+# 🎯 Challenge — Encrypted application configuration on `db1.lab`
 
-## ✅ Objectif
+## ✅ Objective
 
-Déposer une configuration applicative chiffrée sur `db1.lab`, contenant
-**3 secrets** différents.
+Drop an encrypted application configuration on `db1.lab`, containing
+**3 different secrets**.
 
-| Élément | Valeur attendue |
+| Item | Expected value |
 | --- | --- |
-| Hôte cible | `db1.lab` |
-| Fichier produit | `/tmp/db1-app.conf` |
+| Target host | `db1.lab` |
+| Produced file | `/tmp/db1-app.conf` |
 | Permissions | `0600`, owner `root` |
-| Variable `app_db_password` | doit apparaître dans le fichier |
-| Variable `app_jwt_secret` | doit apparaître dans le fichier |
-| Variable `app_redis_token` | doit apparaître dans le fichier |
-| Source des secrets | **fichier YAML chiffré** (`challenge/files/app_secrets.yml`) |
-| Mot de passe vault | `challenge/.vault_password` (mode `0600`, gitignored) |
+| Variable `app_db_password` | must appear in the file |
+| Variable `app_jwt_secret` | must appear in the file |
+| Variable `app_redis_token` | must appear in the file |
+| Secrets source | **encrypted YAML file** (`challenge/files/app_secrets.yml`) |
+| Vault password | `challenge/.vault_password` (mode `0600`, gitignored) |
 
-## 🧩 Indices
+## 🧩 Hints
 
-### Étape 1 — Préparer le mot de passe vault
+### Step 1 — Prepare the vault password
 
 ```bash
 cd labs/premiers-pas/ansible-vault/challenge/
 
-echo "??? choisissez un mot de passe robuste ???" > .vault_password
+echo "??? choose a strong password ???" > .vault_password
 chmod ??? .vault_password
 ```
 
-### Étape 2 — Créer le fichier de secrets en clair
+### Step 2 — Create the plaintext secrets file
 
 ```bash
 mkdir -p files
@@ -39,21 +39,21 @@ app_redis_token: ???
 EOF
 ```
 
-### Étape 3 — Chiffrer le fichier
+### Step 3 — Encrypt the file
 
 ```bash
 ansible-vault ??? files/app_secrets.yml --vault-password-file=.vault_password
 ```
 
-Vérification :
+Check:
 
 ```bash
-head -3 files/app_secrets.yml      # → doit commencer par $ANSIBLE_VAULT;1.1;AES256
+head -3 files/app_secrets.yml      # → must start with $ANSIBLE_VAULT;1.1;AES256
 ```
 
-### Étape 4 — Écrire `solution.yml`
+### Step 4 — Write `solution.yml`
 
-Squelette à compléter (les `???` sont à deviner) :
+Skeleton to complete (the `???` are to be guessed):
 
 ```yaml
 ---
@@ -62,7 +62,7 @@ Squelette à compléter (les `???` sont à deviner) :
   become: ???
   gather_facts: false
   vars_files:
-    - ???                          # le fichier chiffré
+    - ???                          # the encrypted file
 
   tasks:
     - name: Déposer /tmp/db1-app.conf avec les 3 secrets
@@ -76,60 +76,63 @@ Squelette à compléter (les `???` sont à deviner) :
         owner: ???
         group: ???
         mode: ???
-        no_log: ???
+      # Task level, aligned with `ansible.builtin.copy:` and not indented
+      # under it: see the trap noted below.
+      no_log: ???
 ```
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **`no_log: true`** est un keyword **task-level**, pas un paramètre du
->   module `copy:`. Le placer dans le module donne `Unsupported parameters`.
-> - **Mode `0600`** indispensable pour `.vault_password` ET pour le fichier
->   de secrets déposé. Sans ça, autres users du système peuvent voler le
->   contenu.
-> - **`vars_files: [files/app_secrets.yml]`** : chemin relatif au playbook.
->   Avec `solution.yml` dans `challenge/`, le chemin est juste
->   `files/app_secrets.yml` (pas `challenge/files/...`).
-> - **Le test scanne le `.vault_password`** pour vérifier mode 0600. Mode
->   0644 fait échouer le test, même si le déchiffrement marche.
+> - **`no_log: true`** is a **task-level** keyword, not a parameter of the
+>   `copy:` module. Placing it in the module gives `Unsupported parameters`.
+> - **Mode `0600`** essential for `.vault_password` AND for the secrets
+>   file dropped. Without it, other system users can steal the
+>   content.
+> - **`vars_files: [files/app_secrets.yml]`**: path relative to the playbook.
+>   With `solution.yml` in `challenge/`, the path is just
+>   `files/app_secrets.yml` (not `challenge/files/...`).
+> - **The test scans `.vault_password`** to check mode 0600. Mode
+>   0644 fails the test, even if decryption works.
 
-## 🚀 Lancement
+## 🚀 Running
 
-Depuis la racine du repo :
+From the repo root:
 
 ```bash
 ansible-playbook labs/premiers-pas/ansible-vault/challenge/solution.yml \
     --vault-password-file=labs/premiers-pas/ansible-vault/challenge/.vault_password
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/premiers-pas/ansible-vault/challenge/tests/
 ```
 
-Le test `pytest+testinfra` valide :
+The `pytest+testinfra` test validates:
 
-- `/tmp/db1-app.conf` existe sur `db1.lab` avec mode `0600` et owner `root`.
-- Les 3 variables (`db_password=`, `jwt_secret=`, `redis_token=`) sont
-  présentes dans le contenu.
-- Le fichier `challenge/files/app_secrets.yml` est bien **chiffré**
-  (commence par `$ANSIBLE_VAULT`).
-- Le fichier `challenge/.vault_password` a bien `mode 0600`.
+- `/tmp/db1-app.conf` exists on `db1.lab` with mode `0600` and owner `root`.
+- The 3 variables (`db_password=`, `jwt_secret=`, `redis_token=`) are
+  present in the content.
+- The `challenge/files/app_secrets.yml` file is indeed **encrypted**
+  (starts with `$ANSIBLE_VAULT`).
+- The `challenge/.vault_password` file does have `mode 0600`.
+- The solution is **idempotent**: a second run reports no change (RHCE criterion).
 
 ## 🧹 Reset
 
 ```bash
-make -C labs/premiers-pas/ansible-vault/ clean
+dsoxlab clean premiers-pas-ansible-vault
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`ANSIBLE_VAULT_PASSWORD_FILE=…`** dans `.env` ou `~/.bashrc` du
-  poste de travail pour ne plus taper `--vault-password-file`.
-- **`ansible-vault rekey`** : changer le mot de passe vault sans
-  toucher au contenu (rotation périodique).
-- **Précédence des secrets** : `vars_files:` > `defaults/main.yml` —
-  attention aux collisions.
-- **`ansible-lint --profile production`** détecte les fichiers de
-  secrets non chiffrés et le manque de `no_log:` sur les tâches
-  sensibles.
+- **`ANSIBLE_VAULT_PASSWORD_FILE=…`** in `.env` or the workstation's
+  `~/.bashrc` to stop typing `--vault-password-file`.
+- **`ansible-vault rekey`**: change the vault password without
+  touching the content (periodic rotation).
+- **Secrets precedence**: `vars_files:` > `defaults/main.yml`,
+  watch out for collisions.
+- **`ansible-lint --profile production`** detects unencrypted secrets
+  files and the lack of `no_log:` on sensitive
+  tasks.

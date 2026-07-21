@@ -1,0 +1,23 @@
+---
+# Mise en place du lab copy : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup copy lab (lab_web1)
+  hosts: lab_web1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (copy)
+      ansible.builtin.shell: |
+        rm -f /etc/ssh/banner-rhce* /etc/motd-rhce*
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (copy)
+  hosts: lab_web1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Transfer a file with src: or write inline content with content:, mastering mode, owner, backup and validate
+      run_once: true

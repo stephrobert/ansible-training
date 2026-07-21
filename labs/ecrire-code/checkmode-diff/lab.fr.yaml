@@ -1,0 +1,4 @@
+---
+id: ecrire-code-checkmode-diff
+title: "Check mode et diff : dry-run et visualisation"
+description: "Lancer un playbook en --check --diff, repérer les modules non compatibles, forcer check_mode: false et diagnostiquer un faux positif changed."

@@ -1,56 +1,46 @@
-# Lab — Module `parted:` (créer une partition disque)
+# Lab — Module `parted:` (create a disk partition)
 
-> ⚠️ **Lab destructif.** Manipule un **disque réel**. Toujours utiliser
-> une **VM jetable** ou un **disque vierge**. Une mauvaise unité = données
-> perdues.
+> ⚠️ **Destructive lab.** Operates on a **real disk**. Always use
+> a **throwaway VM** or a **blank disk**. A wrong unit = lost
+> data.
 >
-> 💡 **Lab autonome.** Pré-requis : VM avec **`/dev/vdb` réel** (idéal) ou
-> un fichier loopback (cf. section « Préparation »), et
-> `ansible-galaxy collection install community.general`.
+> 💡 **Self-contained lab.** Prerequisite: `ansible-galaxy collection install
+> community.general`. The secondary disk **`/dev/vdb`** (5 GiB) of
+> **db1.lab** is provisioned by the lab infra.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Module parted Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-parted/)
+🔗 [**Ansible parted module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-parted/)
 
-`community.general.parted:` crée, supprime, et inspecte des **partitions
-disque** Linux (MBR ou GPT) en idempotent. C'est le **prérequis brut** avant
-tout `filesystem:` ou `lvg:`.
+`community.general.parted:` creates, deletes, and inspects Linux **disk
+partitions** (MBR or GPT) idempotently. It is the **raw prerequisite** before
+any `filesystem:` or `lvg:`.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Créer** une partition primaire alignée sur un disque vierge.
-2. Choisir entre **MBR** et **GPT** selon le contexte.
-3. **Combiner** plusieurs partitions sans chevauchement.
-4. Poser des **flags** (`lvm`, `boot`, `esp`).
-5. **Inspecter** la table de partitions existante.
+1. **Create** an aligned primary partition on a blank disk.
+2. **Choose** between **MBR** and **GPT** depending on the context.
+3. **Combine** several partitions without overlap.
+4. Set **flags** (`lvm`, `boot`, `esp`).
+5. **Inspect** the existing partition table.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
-**Variante A — VM avec disque secondaire `/dev/vdb`** (recommandé) :
+**db1.lab** has a **real secondary disk** of 5 GiB, `/dev/vdb`,
+provisioned by the lab infra (`extra_disk_gb` in the repo's `meta.yml`):
 
 ```bash
 ansible db1.lab -b -m shell -a "lsblk /dev/vdb"
 ```
 
-**Variante B — fichier loopback** (si pas de disque secondaire) :
+`dsoxlab run` runs the lab's `setup.yaml`, which makes `/dev/vdb` blank (no
+partition, no filesystem signature, no leftover fstab entry).
+If you chain from the `filesystem` or `lvm-storage` labs, which share
+the same VM and the same disk, it is the one that resets the disk.
 
-```bash
-ansible db1.lab -b -m shell -a "
-  test -f /var/tmp/lab-disk.img || dd if=/dev/zero of=/var/tmp/lab-disk.img bs=1M count=800 status=none
-  losetup -fP --show /var/tmp/lab-disk.img"
-```
-
-> ⚠️ **Limite connue du loopback** validée en lab : sur AlmaLinux 10 + ansible-core 2.18 +
-> `community.general 12.x`, le module `community.general.parted` **bascule la
-> table en `msdos` même quand vous demandez `label: gpt`**, ne crée que la
-> 2e partition, et perd l'idempotence. Bug confirmé sur loop devices, **pas
-> sur disque réel**. Pour ce lab, **ajoutez un vrai disque** à votre VM
-> (`virsh attach-disk`) ou utilisez `parted` en CLI direct (validé) avant le
-> module.
-
-## 📚 Exercice 1 — Créer une partition GPT (sur `/dev/vdb` réel)
+## 📚 Exercise 1 — Create a GPT partition
 
 ```yaml
 ---
@@ -69,10 +59,10 @@ ansible db1.lab -b -m shell -a "
         name: "data"
 ```
 
-**Vérifier** : `lsblk /dev/vdb` montre `vdb1`, `parted -s /dev/vdb print` montre
+**Check**: `lsblk /dev/vdb` shows `vdb1`, `parted -s /dev/vdb print` shows
 `Partition Table: gpt`.
 
-## 📚 Exercice 2 — Plusieurs partitions sans flags
+## 📚 Exercise 2 — Several partitions without flags
 
 ```yaml
 - name: Partition 2 — reste du disque
@@ -85,7 +75,7 @@ ansible db1.lab -b -m shell -a "
     name: "lvm"
 ```
 
-## 📚 Exercice 3 — Inspecter sans modifier
+## 📚 Exercise 3 — Inspect without modifying
 
 ```yaml
 - name: Inspecter /dev/vdb
@@ -97,85 +87,84 @@ ansible db1.lab -b -m shell -a "
     msg: "{{ vdb_info.partitions }}"
 ```
 
-## ⚠️ Note sur les flags
+## ⚠️ Note on flags
 
-Sur **GPT**, les flags valides sont `boot`, `bios_grub`, `esp`, `lvm`, `raid`,
-`legacy_boot`, etc. Sur **MBR**, ce sont `boot`, `lba`, `lvm`, etc. Le flag
-`boot` sur GPT peut faire basculer la table en MBR — **préférer `esp`** pour
-l'EFI System Partition, et `lvm` pour les PV LVM.
+On **GPT**, the valid flags are `boot`, `bios_grub`, `esp`, `lvm`, `raid`,
+`legacy_boot`, etc. On **MBR**, they are `boot`, `lba`, `lvm`, etc. The `boot`
+flag on GPT can flip the table to MBR: **prefer `esp`** for
+the EFI System Partition, and `lvm` for LVM PVs.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Idempotence** : un second run du playbook doit afficher `changed=0` sur
-  toutes les tâches du module `community.general.parted`. Si une tâche reste `changed=1`, c'est
-  que la regex/condition n'est pas ancrée correctement (cf. exercices).
-- **FQCN explicite** : `community.general.parted` (et non son nom court) — `ansible-lint
-  --profile production` le vérifie.
-- **`validate:`** quand c'est disponible (lineinfile, copy, template) : un
-  binaire externe contrôle la syntaxe du fichier avant écriture, ce qui évite
-  de casser un service avec une config invalide.
-- **Convention de ciblage** : ce lab cible **db1.lab** (un seul host pour
-  isoler l'impact destructif).
+- **Idempotence**: a second run of the playbook must show `changed=0` on
+  all tasks of the `community.general.parted` module. If a task stays `changed=1`, the
+  regex/condition is not anchored correctly (see the exercises).
+- **Explicit FQCN**: `community.general.parted` (not its short name), checked by `ansible-lint
+  --profile production`.
+- **`validate:`** when available (lineinfile, copy, template): an external
+  binary checks the file syntax before writing, which avoids breaking a
+  service with an invalid config.
+- **Targeting convention**: this lab targets **db1.lab** (a single host to
+  isolate the destructive impact).
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Quand utiliser `community.general.parted` plutôt que `command: parted ...` (non idempotent — recréerait à chaque run) ? Listez 2 cas où chaque
-   alternative serait préférable (lisibilité, idempotence, performance).
+1. When should you use `community.general.parted` rather than `command: parted ...` (not idempotent, would recreate on every run)? List 2 cases where each
+   alternative would be preferable (readability, idempotence, performance).
 
-2. Si vous deviez partitionner un disque (GPT/MSDOS, flags, taille) sur **50 serveurs en parallèle**, quels
-   paramètres Ansible (`forks`, `serial`, `strategy`) ajusteriez-vous pour
-   tenir un SLA de 5 minutes ?
+2. If you had to partition a disk (GPT/MSDOS, flags, size) across **50 servers in parallel**, which
+   Ansible parameters (`forks`, `serial`, `strategy`) would you tune to
+   meet a 5-minute SLA?
 
-3. Comment gérer le cas où le module échoue **partiellement** (succès sur
-   certaines tâches, échec sur d'autres) ? Quelles stratégies permettent de
-   reprendre sans tout rejouer (`block/rescue`, `--start-at-task`, marqueur
-   d'état) ?
+3. How do you handle the case where the module fails **partially** (success on
+   some tasks, failure on others)? Which strategies let you resume without
+   replaying everything (`block/rescue`, `--start-at-task`, a state
+   marker)?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Une fois les exercices ci-dessus digérés, lancez le **challenge autonome** :
+Once you have digested the exercises above, launch the **self-contained challenge**:
 
 ```bash
 $ANSIBLE_TRAINING/bin/dsoxlab lab modules-rhel/parted --challenge
-# ou
+# or
 cat labs/modules-rhel/parted/challenge/README.md
 ```
 
-Le challenge demande d'écrire votre `challenge/solution.yml` sans regarder
-les exercices. Validation par `pytest` :
+The challenge asks you to write your `challenge/solution.yml` without looking
+at the exercises. Validation with `pytest`:
 
 ```bash
 pytest -v labs/modules-rhel/parted/challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- Combinez `community.general.parted` avec **`backup: true`** pour conserver une copie
-  horodatée du fichier original avant modification — utile pour rollback.
-- Étudiez **`check_mode: true`** + `--diff` : Ansible vous montre ce qu'il
-  ferait sans rien appliquer. Indispensable en production.
-- Comparez la **performance** entre 1 tâche `community.general.parted` × 10 et 1 tâche
-  `template:` qui génère le fichier complet en une fois — souvent le
-  template est plus rapide ET plus lisible quand le nombre de modifs grossit.
+- Combine `community.general.parted` with **`backup: true`** to keep a
+  timestamped copy of the original file before modification, useful for rollback.
+- Study **`check_mode: true`** + `--diff`: Ansible shows you what it
+  would do without applying anything. Essential in production.
+- Compare the **performance** between 1 `community.general.parted` task × 10 and 1 task
+  `template:` that generates the whole file at once: the
+  template is often faster AND more readable as the number of changes grows.
 
 ## 🧹 Cleanup
 
 ```bash
-make clean
+`dsoxlab clean <id-du-lab>`
 ```
 
-⚠️ Le cleanup **détruit** la table de partitions de `/dev/vdb`.
+⚠️ The cleanup **destroys** the partition table of `/dev/vdb`.
 
 ## 📂 Solution
 
-Voir `solution/modules-rhel/parted/solution.yml` (validée sur disque réel ;
-pour loopback, la solution utilise `parted` CLI en preflight pour contourner
-le bug du module).
+See `solution/modules-rhel/parted/solution.yml` (verified on the real
+secondary disk `/dev/vdb`).
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 ansible-lint labs/modules-rhel/parted/lab.yml
@@ -183,6 +172,5 @@ ansible-lint labs/modules-rhel/parted/challenge/solution.yml
 ansible-lint --profile production labs/modules-rhel/parted/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques RHCE 2026.
-
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows the RHCE 2026 best practices.

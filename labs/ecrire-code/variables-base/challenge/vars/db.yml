@@ -1,3 +1,0 @@
----
-db_engine: "postgresql"
-db_max_connections: 100

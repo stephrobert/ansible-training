@@ -1,0 +1,4 @@
+---
+id: modules-fichiers-fetch
+title: "Module fetch : rapatrier des fichiers des managed nodes"
+description: "Collecter logs et configurations des managed nodes vers le control node, en arborescence par hôte ou en mode flat avec inventory_hostname."

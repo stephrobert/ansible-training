@@ -1,31 +1,31 @@
-# 🎯 Challenge — Mixer `main.yml` (clair) + `vault.yml` (chiffré) par groupe
+# 🎯 Challenge — Mix `main.yml` (cleartext) + `vault.yml` (encrypted) per group
 
-## ✅ Objectif
+## ✅ Objective
 
-Démontrer le pattern production : un `group_vars/<grp>/main.yml` avec
-**variables non sensibles en clair**, et un `group_vars/<grp>/vault.yml`
-**chiffré** avec les mots de passe / tokens. Les deux fichiers sont
-chargés automatiquement par Ansible au runtime.
+Demonstrate the production pattern: a `group_vars/<grp>/main.yml` with
+**non-sensitive variables in cleartext**, and a `group_vars/<grp>/vault.yml`
+**encrypted** with the passwords / tokens. Both files are
+loaded automatically by Ansible at runtime.
 
-| Cible | Fichier produit | Contenu attendu |
+| Target | Produced file | Expected content |
 | --- | --- | --- |
 | `web1.lab` | `/tmp/lab80-challenge.txt` | `Env: lab80`, `Port: 80`, `Admin token starts: lab80_admi`, `Web secret length: 20` |
 
-## 🧩 Indices
+## 🧩 Hints
 
-### Structure attendue
+### Expected structure
 
 ```text
 group_vars/
 ├── all/
-│   ├── main.yml           ← env_name, env_port (clair)
-│   └── vault.yml          ← vault_admin_token (chiffré)
+│   ├── main.yml           ← env_name, env_port (cleartext)
+│   └── vault.yml          ← vault_admin_token (encrypted)
 └── webservers/
-    ├── main.yml           ← variables propres aux webservers (clair)
-    └── vault.yml          ← vault_web_secret (chiffré)
+    ├── main.yml           ← variables specific to webservers (cleartext)
+    └── vault.yml          ← vault_web_secret (encrypted)
 ```
 
-### Étape 1 — Variables en clair
+### Step 1 — Cleartext variables
 
 ```yaml
 # group_vars/all/main.yml
@@ -34,10 +34,12 @@ env_name: ???              # doit afficher "Env: lab80"
 env_port: ???              # doit afficher "Port: 80"
 ```
 
-### Étape 2 — Variables sensibles (chiffrées)
+### Step 2 — Sensitive variables (encrypted)
 
 ```bash
-echo "vault-mixte-2026" > .vault_password && chmod 0600 .vault_password
+# The lab vault password is generated locally, never committed:
+#   ./scripts/setup-lab-vault-passwords.sh
+# It creates .vault_password at the lab root, with the right permissions.
 
 cat > group_vars/all/vault.yml <<'YAML'
 ---
@@ -52,7 +54,7 @@ YAML
 ansible-vault encrypt group_vars/webservers/vault.yml --vault-password-file=.vault_password
 ```
 
-### Étape 3 — Écrire `challenge/solution.yml`
+### Step 3 — Write `challenge/solution.yml`
 
 ```yaml
 ---
@@ -73,18 +75,18 @@ ansible-vault encrypt group_vars/webservers/vault.yml --vault-password-file=.vau
       no_log: ???
 ```
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
-> - **Convention `vault_*`** : préfixer les variables sensibles. Permet
->   de **`grep -r vault_ inventory/`** pour auditer tous les secrets.
-> - **`group_vars/<grp>/main.yml` + `vault.yml`** : Ansible charge les
->   2 fichiers et merge. Pas besoin de `vars_files:` explicite.
-> - **Précédence** : `group_vars/<grp>/` > `group_vars/all/`. Donc une
->   variable dans `webservers/vault.yml` override `all/vault.yml`.
-> - **Diff lisible** : seul `vault.yml` est chiffré. `main.yml` reste
->   en clair → diffs Git lisibles sur les vars non sensibles.
+> - **`vault_*` convention**: prefix the sensitive variables. Allows
+>   **`grep -r vault_ inventory/`** to audit all the secrets.
+> - **`group_vars/<grp>/main.yml` + `vault.yml`**: Ansible loads the
+>   2 files and merges them. No need for an explicit `vars_files:`.
+> - **Precedence**: `group_vars/<grp>/` > `group_vars/all/`. So a
+>   variable in `webservers/vault.yml` overrides `all/vault.yml`.
+> - **Readable diff**: only `vault.yml` is encrypted. `main.yml` stays
+>   in cleartext → readable Git diffs on the non-sensitive vars.
 
-## 🚀 Lancement
+## 🚀 Launch
 
 ```bash
 ansible-playbook labs/vault/playbooks-mixtes/challenge/solution.yml \
@@ -100,14 +102,14 @@ pytest -v labs/vault/playbooks-mixtes/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/vault/playbooks-mixtes/ clean
+dsoxlab clean vault-playbooks-mixtes
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Convention** : préfixer les variables vault par `vault_` pour
-  documenter leur sensibilité.
-- **Deux fichiers vs un fichier `!vault |` inline** : préférer la
-  séparation sur des projets multi-équipe.
-- **Précédence** : `group_vars/<grp>/*` > `group_vars/all/*` —
-  `webservers` peut overrider une valeur de `all`.
+- **Convention**: prefix the vault variables with `vault_` to
+  document their sensitivity.
+- **Two files vs one inline `!vault |` file**: prefer the
+  separation on multi-team projects.
+- **Precedence**: `group_vars/<grp>/*` > `group_vars/all/*`,
+  `webservers` can override a value from `all`.

@@ -1,0 +1,32 @@
+---
+id: modules-rhel-parted
+title: "parted module: create a disk partition"
+description: "Create aligned MBR or GPT partitions idempotently, set flags (lvm, boot, esp), and inspect the existing partition table."
+section: modules-rhel
+level: l2
+difficulty: intermediate
+lab_type: lab
+estimated_time: "35m"
+skills:
+  - partitioning
+  - gpt-mbr
+  - partition-flags
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-parted/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

@@ -1,0 +1,33 @@
+---
+id: troubleshooting-verbosite
+title: "Verbosity levels and callback plugins"
+description: "Pick the -v level that matches the symptom, enable profile_tasks and the yaml stdout_callback, and see what a missing no_log leaks."
+section: troubleshooting
+level: l2
+difficulty: intermediate
+lab_type: lab
+estimated_time: "40m"
+skills:
+  - verbosity
+  - callback-plugins
+  - no-log
+  - troubleshooting
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/verbosite-vvv/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

@@ -1,0 +1,4 @@
+---
+id: modules-paquets-dnf-options
+title: "Module dnf : enablerepo, security, exclude, autoremove"
+description: "Activer un repo à la volée, patcher uniquement les CVE, exclure le kernel d'un upgrade massif et nettoyer les dépendances orphelines."

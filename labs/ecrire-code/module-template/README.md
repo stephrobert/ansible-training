@@ -1,59 +1,59 @@
 # Lab 29 — Module `template:` (`validate`, `backup`, `lstrip_blocks`)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Module template Ansible : validate, backup, lstrip_blocks**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/module-template/)
+🔗 [**Ansible template module: validate, backup, lstrip_blocks**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/module-template/)
 
-`ansible.builtin.template:` génère un fichier sur le managed node à partir d'un
-template Jinja2 du control node + variables Ansible. C'est le module **n°1** pour
-les fichiers de configuration : nginx.conf, postgresql.conf, sshd_config,
+`ansible.builtin.template:` generates a file on the managed node from a Jinja2
+template on the control node plus Ansible variables. It is the **number 1** module
+for configuration files: nginx.conf, postgresql.conf, sshd_config,
 prometheus.yml.
 
-Différences clés avec `copy:` :
+Key differences with `copy:`:
 
-- **`template:`** rend le Jinja2 (interpolation, filtres, conditions, boucles).
-- **`copy:`** transfère le contenu **tel quel** (pas d'interpolation).
+- **`template:`** renders the Jinja2 (interpolation, filters, conditions, loops).
+- **`copy:`** transfers the content **as-is** (no interpolation).
 
-Options critiques RHCE :
+Critical RHCE options:
 
-- **`validate:`** : valide la syntaxe **avant** d'écraser la cible.
-- **`backup: true`** : sauvegarde l'ancienne version.
-- **`lstrip_blocks: true`** + **`trim_blocks: true`** : whitespace control.
+- **`validate:`**: validates the syntax **before** overwriting the target.
+- **`backup: true`**: backs up the previous version.
+- **`lstrip_blocks: true`** + **`trim_blocks: true`**: whitespace control.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Générer** un fichier de config depuis un template Jinja2.
-2. **Valider** la syntaxe avant écriture (pattern critique pour `sshd_config`, `nginx.conf`).
-3. **Sauvegarder** automatiquement avec `backup: true`.
-4. **Maîtriser** le whitespace control via `lstrip_blocks` + `trim_blocks`.
-5. **Appliquer** les bonnes pratiques (mode, owner, group) pour des configs déployées.
+1. **Generate** a config file from a Jinja2 template.
+2. **Validate** the syntax before writing (critical pattern for `sshd_config`, `nginx.conf`).
+3. **Back up** automatically with `backup: true`.
+4. **Master** whitespace control via `lstrip_blocks` + `trim_blocks`.
+5. **Apply** best practices (mode, owner, group) for deployed configs.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 mkdir -p labs/ecrire-code/module-template/templates
 ansible db1.lab -b -m shell -a "rm -f /etc/myapp.conf*; rm -f /tmp/lab-template-*"
 ```
 
-## 📚 Exercice 1 — Premier template
+## 📚 Exercise 1 — First template
 
-Créez `templates/myapp.conf.j2` :
+Create `templates/myapp.conf.j2`:
 
 ```jinja
 [server]
@@ -66,7 +66,7 @@ url = {{ database.url }}
 pool_size = {{ database.pool_size }}
 ```
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -91,20 +91,20 @@ Créez `lab.yml` :
         mode: "0644"
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/ecrire-code/module-template/lab.yml
-ssh ansible@db1.lab 'cat /etc/myapp.conf'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'cat /etc/myapp.conf'
 ```
 
-🔍 **Observation** : le template a été **rendu** (variables interpolées, sections
-INI générées). Comparé à `copy:`, vous n'auriez pas pu faire ça avec un fichier
-statique.
+🔍 **Observation**: the template was **rendered** (variables interpolated, INI
+sections generated). Compared to `copy:`, you could not have done that with a
+static file.
 
-## 📚 Exercice 2 — `backup: true` (sauvegarde automatique)
+## 📚 Exercise 2 — `backup: true` (automatic backup)
 
-Modifiez `lab.yml` pour ajouter `backup: true` :
+Modify `lab.yml` to add `backup: true`:
 
 ```yaml
 - name: Generer avec backup
@@ -117,30 +117,30 @@ Modifiez `lab.yml` pour ajouter `backup: true` :
     mode: "0644"
 ```
 
-**Modifiez le template** (changer `port: 8080` → `port: 9090`) puis relancez :
+**Modify the template** (change `port: 8080` to `port: 9090`) then rerun:
 
 ```bash
 ansible-playbook labs/ecrire-code/module-template/lab.yml
-ssh ansible@db1.lab 'ls -la /etc/myapp.conf*'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'ls -la /etc/myapp.conf*'
 ```
 
-🔍 **Observation** : un fichier `myapp.conf.<timestamp>~` est créé avant l'écrasement.
-Format : `<dest>.<YYYY-MM-DD@HH:MM:SS~>`. Pratique pour **rollback rapide** :
+🔍 **Observation**: a `myapp.conf.<timestamp>~` file is created before the overwrite.
+Format: `<dest>.<YYYY-MM-DD@HH:MM:SS~>`. Handy for a **quick rollback**:
 
 ```bash
-ssh ansible@db1.lab 'sudo cp /etc/myapp.conf.2026-04-25@21:00:00~ /etc/myapp.conf'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'sudo cp /etc/myapp.conf.2026-04-25@21:00:00~ /etc/myapp.conf'
 ```
 
-**`backup: true`** est gratuit (juste un cp local) — **toujours** activer sur les
-fichiers de config critiques.
+**`backup: true`** is free (just a local cp), **always** enable it on critical
+config files.
 
-## 📚 Exercice 3 — `validate:` (rejeter une config invalide)
+## 📚 Exercise 3 — `validate:` (reject an invalid config)
 
-Pattern critique pour `sshd_config`, `nginx.conf`, `sudoers` — un fichier mal
-formé verrouille le système.
+Critical pattern for `sshd_config`, `nginx.conf`, `sudoers`: a malformed file
+locks the system.
 
-**Cas SSH** : sshd ne démarre plus si `sshd_config` est invalide → vous perdez
-l'accès SSH au serveur.
+**SSH case**: sshd no longer starts if `sshd_config` is invalid, so you lose SSH
+access to the server.
 
 ```yaml
 - name: Generer sshd_config avec validation
@@ -161,23 +161,23 @@ handlers:
       state: reloaded
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **`validate: 'sshd -t -f %s'`** : Ansible **rend** le template dans un fichier
-  temporaire, lance `sshd -t -f /tmp/<temp>` pour vérifier la syntaxe.
-- Si `sshd -t` retourne **0** (OK) → la config est écrite, le handler est notifié.
-- Si `sshd -t` retourne **!= 0** (invalide) → le fichier temporaire est jeté,
-  `/etc/ssh/sshd_config` reste **intact**, la tâche **failed**.
+- **`validate: 'sshd -t -f %s'`**: Ansible **renders** the template into a
+  temporary file, runs `sshd -t -f /tmp/<temp>` to check the syntax.
+- If `sshd -t` returns **0** (OK), the config is written, the handler is notified.
+- If `sshd -t` returns **!= 0** (invalid), the temporary file is discarded,
+  `/etc/ssh/sshd_config` stays **intact**, the task **fails**.
 
-**Le `%s`** est remplacé par le chemin du fichier temporaire. **Obligatoire** dans
-la commande de validation.
+**The `%s`** is replaced by the path of the temporary file. **Mandatory** in the
+validation command.
 
-**Cas nginx** : `validate: 'nginx -t -c %s'`.
-**Cas sudoers** : `validate: 'visudo -cf %s'`.
+**nginx case**: `validate: 'nginx -t -c %s'`.
+**sudoers case**: `validate: 'visudo -cf %s'`.
 
-## 📚 Exercice 4 — `lstrip_blocks` + `trim_blocks` (whitespace control)
+## 📚 Exercise 4 — `lstrip_blocks` + `trim_blocks` (whitespace control)
 
-Créez `templates/loop.j2` :
+Create `templates/loop.j2`:
 
 ```jinja
 [users]
@@ -188,8 +188,8 @@ Créez `templates/loop.j2` :
 {% endfor %}
 ```
 
-Sans whitespace control, le rendu inclura les indentations et sauts de ligne
-parasites. Avec :
+Without whitespace control, the render will include the stray indentation and
+line breaks. With it:
 
 ```yaml
 - name: Template avec whitespace control
@@ -201,13 +201,13 @@ parasites. Avec :
     trim_blocks: true
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **`lstrip_blocks: true`** : retire les espaces **avant** les blocs `{% %}` en début de ligne.
-- **`trim_blocks: true`** : retire le `\n` **après** les blocs `{% %}`.
+- **`lstrip_blocks: true`**: removes the spaces **before** the `{% %}` blocks at the start of a line.
+- **`trim_blocks: true`**: removes the `\n` **after** the `{% %}` blocks.
 
-Combinés, vous pouvez **indenter votre template** pour la lisibilité sans que
-l'indentation se retrouve dans la sortie. Output propre :
+Combined, you can **indent your template** for readability without the
+indentation ending up in the output. Clean output:
 
 ```text
 [users]
@@ -215,36 +215,36 @@ alice = 1001
 charlie = 1003
 ```
 
-**Convention RHCE** : **toujours** activer ces deux options.
+**RHCE convention**: **always** enable these two options.
 
-## 📚 Exercice 5 — `copy:` + `content:` vs `template:`
+## 📚 Exercise 5 — `copy:` + `content:` vs `template:`
 
-Question : quand préférer l'un ou l'autre ?
+Question: when to prefer one over the other?
 
 ```yaml
-# copy + content : pas d interpolation, pour fichiers TRES courts
+# copy + content: no interpolation, for VERY short files
 - ansible.builtin.copy:
     content: "Static content\n"
     dest: /tmp/static.txt
 
-# template : interpolation, pour fichiers de config
+# template: interpolation, for config files
 - ansible.builtin.template:
     src: templates/dynamic.j2
     dest: /tmp/dynamic.txt
 ```
 
-| Cas | Module recommandé |
+| Case | Recommended module |
 |---|---|
-| Fichier statique court (1-3 lignes, pas de variable) | `copy: content:` |
-| Fichier statique long sans variable | `copy: src:` |
-| Fichier avec **1 variable interpolée** | `template:` |
-| Fichier avec boucles, conditions, filtres | `template:` (obligatoire) |
+| Short static file (1-3 lines, no variable) | `copy: content:` |
+| Long static file without variable | `copy: src:` |
+| File with **1 interpolated variable** | `template:` |
+| File with loops, conditions, filters | `template:` (mandatory) |
 
-🔍 **Observation** : si vous avez **un seul** `{{ var }}`, passer à `template:`. Le
-coût est nul, le bénéfice est **scalability** (plus tard vous ajouterez d'autres
+🔍 **Observation**: if you have **a single** `{{ var }}`, switch to `template:`.
+The cost is nil, the benefit is **scalability** (later you will add other
 interpolations).
 
-## 📚 Exercice 6 — Le piège : variables non définies dans un template
+## 📚 Exercise 6 — The trap: undefined variables in a template
 
 ```jinja
 {# templates/strict.j2 #}
@@ -254,19 +254,19 @@ port = {{ app_port }}
 debug = {{ app_debug }}
 ```
 
-Si une seule variable manque (`app_debug` non défini), Jinja2 **plante** avec :
+If a single variable is missing (`app_debug` undefined), Jinja2 **crashes** with:
 
 ```text
 'app_debug' is undefined
 ```
 
-**Solution 1** : `default()` dans le template.
+**Solution 1**: `default()` in the template.
 
 ```jinja
 debug = {{ app_debug | default(false) }}
 ```
 
-**Solution 2** : `assert:` au début du play pour valider toutes les variables.
+**Solution 2**: `assert:` at the start of the play to validate all the variables.
 
 ```yaml
 - ansible.builtin.assert:
@@ -277,70 +277,68 @@ debug = {{ app_debug | default(false) }}
     fail_msg: "Variables app_* manquantes"
 ```
 
-**Solution 3** : `vars:` du play avec valeurs par défaut.
+**Solution 3**: play-level `vars:` with default values.
 
-🔍 **Observation** : préférer `assert:` + variables explicites — un échec **précoce
-et clair** vaut mieux qu'une erreur cryptique au milieu du template.
+🔍 **Observation**: prefer `assert:` + explicit variables. An **early and clear**
+failure is better than a cryptic error in the middle of the template.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`template:`** rend le Jinja2 ; **`copy:`** transfère sans interprétation.
-- **`backup: true`** = filet de sécurité gratuit, toujours activer sur les configs critiques.
-- **`validate:`** = pattern obligatoire pour `sshd_config`, `nginx.conf`, `sudoers`.
-- **`lstrip_blocks: true`** + **`trim_blocks: true`** = whitespace control standard.
-- **`mode: "0644"`** (avec guillemets) — sinon YAML parse `0644` en décimal.
-- **Variables non définies** dans un template → erreur au rendu — utiliser `default()` ou `assert:`.
+- **`template:`** renders the Jinja2; **`copy:`** transfers without interpretation.
+- **`backup: true`** = free safety net, always enable on critical configs.
+- **`validate:`** = mandatory pattern for `sshd_config`, `nginx.conf`, `sudoers`.
+- **`lstrip_blocks: true`** + **`trim_blocks: true`** = standard whitespace control.
+- **`mode: "0644"`** (with quotes), otherwise YAML parses `0644` as decimal.
+- **Undefined variables** in a template lead to a render error. Use `default()` or `assert:`.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous générez `/etc/sshd_config` via `template:`. Pourquoi `validate: 'sshd -t -f
-   %s'` est-il **plus important** ici que sur `/etc/motd` ?
+1. You generate `/etc/sshd_config` via `template:`. Why is `validate: 'sshd -t -f
+   %s'` **more important** here than on `/etc/motd`?
 
-2. `template:` réécrit le fichier **complètement** à chaque run. Quel est le
-   risque sur un fichier que **l'utilisateur** modifie manuellement (config user
-   vs config managée) ?
+2. `template:` rewrites the file **completely** on every run. What is the risk on
+   a file that the **user** modifies manually (user config vs managed config)?
 
-3. `lstrip_blocks: true` + `trim_blocks: true` peuvent-ils introduire un bug si
-   votre template a **volontairement** des espaces / `\n` significatifs ? Donner
-   un exemple.
+3. Can `lstrip_blocks: true` + `trim_blocks: true` introduce a bug if your
+   template has **deliberately** significant spaces / `\n`? Give an example.
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`block_start_string` / `block_end_string`** : changer les délimiteurs `{% %}`
-  pour générer un fichier qui contient **lui-même** du jinja2 (ex : un Helm chart).
-- **`force: false`** : ne réécrit pas si le fichier existe déjà — pour des config
-  initiales que l'opérateur peut modifier.
-- **Pattern `template + lineinfile`** : `template:` pour la base, `lineinfile:`
-  pour des overrides ponctuels que l'opérateur peut ajouter — ne pas mélanger
-  sinon `template:` écrase tout.
-- **`vault_decrypt` au runtime** : un template peut contenir
-  `{{ lookup('vault_password_files', 'mypassword') }}` pour injecter un secret
-  Vault déchiffré au rendu.
-- **Lab 30 (lineinfile vs template)** : comparaison détaillée des deux approches.
+- **`block_start_string` / `block_end_string`**: change the `{% %}` delimiters to
+  generate a file that **itself** contains jinja2 (e.g. a Helm chart).
+- **`force: false`**: does not rewrite if the file already exists, for initial
+  configs the operator may modify.
+- **`template + lineinfile` pattern**: `template:` for the base, `lineinfile:`
+  for one-off overrides the operator may add. Do not mix them, otherwise
+  `template:` overwrites everything.
+- **`vault_decrypt` at runtime**: a template can contain
+  `{{ lookup('vault_password_files', 'mypassword') }}` to inject a decrypted
+  Vault secret at render time.
+- **Lab 30 (lineinfile vs template)**: detailed comparison of the two approaches.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/ecrire-code/module-template/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/ecrire-code/module-template/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/ecrire-code/module-template/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

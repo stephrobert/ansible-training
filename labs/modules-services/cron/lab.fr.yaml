@@ -1,0 +1,4 @@
+---
+id: modules-services-cron
+title: "Module cron : planifier des jobs idempotents"
+description: "Planifier des jobs cron idempotents via crontab user ou /etc/cron.d, avec variables d'environnement et désactivation propre."

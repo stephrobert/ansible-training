@@ -1,61 +1,60 @@
-# Lab 90 — Débogueur Ansible interactif (`debugger: on_failed`)
+# Lab 90 — Interactive Ansible debugger (`debugger: on_failed`)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Débogueur Ansible interactif**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/debugger-interactif/)
+🔗 [**Interactive Ansible debugger**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/debugger-interactif/)
 
-Quand une tâche échoue dans un playbook long, **relancer tout depuis le début** est lent et frustrant. Ansible fournit un **débogueur interactif** qui ouvre un **REPL** au moment de l'échec : on inspecte les variables, on **modifie les arguments à chaud** (`task.args['name'] = 'nginx'`), on **rejoue** la tâche modifiée (`redo`), on **continue** le playbook (`continue`).
+When a task fails in a long playbook, **rerunning everything from the start** is slow and frustrating. Ansible provides an **interactive debugger** that opens a **REPL** at the moment of failure: you inspect variables, **change arguments on the fly** (`task.args['name'] = 'nginx'`), **replay** the modified task (`redo`), and **continue** the playbook (`continue`).
 
-Activable au niveau task ou play avec `debugger: on_failed`. **Indispensable** pour itérer rapidement sur un bug sans relancer 100 tâches.
+Enabled at task or play level with `debugger: on_failed`. **Essential** for iterating quickly on a bug without rerunning 100 tasks.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Activer** le débogueur via `debugger: on_failed` au niveau play/task.
-2. **Inspecter** les variables (`p task`, `p task.args`, `p task_vars['x']`, `p result`).
-3. **Modifier** les args d'une tâche à chaud (`task.args['name'] = 'httpd'`).
-4. **Rejouer** la tâche modifiée (`redo`).
-5. **Continuer** le playbook (`continue`) ou abandonner (`quit`).
-6. Comprendre **quand** le débogueur n'est PAS pertinent (CI, productions automatisées).
+1. **Enable** the debugger via `debugger: on_failed` at play/task level.
+2. **Inspect** variables (`p task`, `p task.args`, `p task_vars['x']`, `p result`).
+3. **Change** a task's args on the fly (`task.args['name'] = 'nginx'`).
+4. **Replay** the modified task (`redo`).
+5. **Continue** the playbook (`continue`) or abort (`quit`).
+6. Understand **when** the debugger is NOT relevant (CI, automated production).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible all -m ansible.builtin.ping
 ansible db1.lab -b -m ansible.builtin.file -a "path=/tmp/lab90-debug.txt state=absent" 2>&1 | tail -2
 ```
 
-## ⚙️ Arborescence cible
+## ⚙️ Target tree layout
 
 ```text
 labs/troubleshooting/debugger/
-├── README.md                       ← tuto guidé
-├── Makefile                        ← cible clean
+├── README.md                       ← guided tutorial
 └── challenge/
-    ├── README.md                   ← consigne challenge
+    ├── README.md                   ← challenge brief
     └── tests/
-        └── test_debugger.py        ← tests pytest+testinfra
+        └── test_debugger.py        ← pytest+testinfra tests
 ```
 
-L'apprenant écrit lui-même `lab.yml` (au fil des exercices) et `challenge/solution.yml`.
+The learner writes `lab.yml` (over the exercises) and `challenge/solution.yml` themselves.
 
-## 📚 Exercice 1 — Activer `debugger: on_failed`
+## 📚 Exercise 1 — Enable `debugger: on_failed`
 
-Créer `lab.yml` qui **échoue volontairement** (paquet inexistant) :
+Create a `lab.yml` that **fails on purpose** (nonexistent package):
 
 ```yaml
 ---
@@ -63,21 +62,21 @@ Créer `lab.yml` qui **échoue volontairement** (paquet inexistant) :
   hosts: db1.lab
   become: true
   gather_facts: false
-  debugger: on_failed                # ← active le REPL en cas d'échec
+  debugger: on_failed                # ← enables the REPL on failure
   tasks:
     - name: Installer un paquet inexistant
       ansible.builtin.dnf:
-        name: nginx-impossible-2026  # ← n'existe pas
+        name: nginx-impossible-2026  # ← does not exist
         state: present
 ```
 
-Lancer :
+Run:
 
 ```bash
 ansible-playbook labs/troubleshooting/debugger/lab.yml
 ```
 
-Sortie typique :
+Typical output:
 
 ```text
 TASK [Installer un paquet inexistant] ***
@@ -86,11 +85,11 @@ fatal: [db1.lab]: FAILED! => {"msg": "...nginx-impossible-2026..."}
 [db1.lab] TASK: Installer un paquet inexistant (debug)>
 ```
 
-🔍 **Observation** : le prompt **`(debug)>`** indique que vous êtes dans le REPL. La tâche n'a pas relancé tout le play, elle s'est arrêtée **précisément** sur l'échec. Tapez `help` pour la liste des commandes.
+🔍 **Observation**: the **`(debug)>`** prompt indicates you are in the REPL. The task did not rerun the whole play, it stopped **exactly** at the failure. Type `help` for the command list.
 
-## 📚 Exercice 2 — Inspecter les variables au runtime
+## 📚 Exercise 2 — Inspect variables at runtime
 
-Au prompt `(debug)>` :
+At the `(debug)>` prompt:
 
 ```text
 (debug)> p task
@@ -103,11 +102,11 @@ TASK: Installer un paquet inexistant
 {'failed': True, 'msg': '...nginx-impossible-2026...', ...}
 ```
 
-🔍 **Observation** : `p` (print) accepte n'importe quelle expression Python. `task_vars` contient **toutes** les variables résolues pour le host (group_vars, host_vars, facts, vars du play). Permet de répondre à « quelle valeur la variable a-t-elle au moment de l'échec ? ».
+🔍 **Observation**: `p` (print) accepts any Python expression. `task_vars` contains **all** the resolved variables for the host (group_vars, host_vars, facts, play vars). It answers "what value does the variable have at the moment of failure?".
 
-## 📚 Exercice 3 — Modifier les args à chaud + redo
+## 📚 Exercise 3 — Change args on the fly + redo
 
-Toujours au prompt `(debug)>` :
+Still at the `(debug)>` prompt:
 
 ```text
 (debug)> task.args['name'] = 'nginx'
@@ -116,11 +115,11 @@ ok: [db1.lab]
 [db1.lab] TASK: Tâche suivante (debug)>
 ```
 
-🔍 **Observation** : on a **modifié** la tâche au runtime, **rejoué**, et la tâche est passée. **Pas besoin de relancer le playbook** ni d'éditer le YAML. Pour une fleet de 50 hôtes où une seule tâche plante, c'est inestimable. **`continue`** fait passer à la tâche suivante, **`quit`** abandonne.
+🔍 **Observation**: you **changed** the task at runtime, **replayed** it, and the task passed. **No need to rerun the playbook** or edit the YAML. For a fleet of 50 hosts where a single task breaks, this is invaluable. **`continue`** moves to the next task, **`quit`** aborts.
 
-## 📚 Exercice 4 — `task_vars` modifiable
+## 📚 Exercise 4 — `task_vars` is modifiable
 
-Si l'erreur vient d'une variable :
+If the error comes from a variable:
 
 ```yaml
 - ansible.builtin.copy:
@@ -129,7 +128,7 @@ Si l'erreur vient d'une variable :
     mode: "0644"
 ```
 
-Au prompt `(debug)>` :
+At the `(debug)>` prompt:
 
 ```text
 (debug)> task_vars['undef_var'] = 'world'
@@ -138,60 +137,60 @@ Au prompt `(debug)>` :
 ok: [db1.lab]
 ```
 
-🔍 **Observation** : `task_vars['x'] = 'y'` injecte la variable, **`update_task`** (raccourci `u`) recrée la tâche avec les nouveaux vars, puis `redo` rejoue. Workflow puissant pour résoudre des `undefined variable`.
+🔍 **Observation**: `task_vars['x'] = 'y'` injects the variable, **`update_task`** (shortcut `u`) recreates the task with the new vars, then `redo` replays. A powerful workflow to resolve `undefined variable` errors.
 
-## 📚 Exercice 5 — Stratégie `linear` vs `free` en debug
+## 📚 Exercise 5 — Strategy `linear` vs `free` in debug
 
 ```yaml
 - hosts: webservers
-  strategy: free       # ← tâches indépendantes par host
+  strategy: free       # ← independent tasks per host
   debugger: on_failed
 ```
 
-🔍 **Observation cruciale** : avec **`strategy: free`**, pendant que vous êtes au prompt `(debug)>` sur web1.lab, **les tâches de web2.lab continuent à tourner**. Préférer **`strategy: linear`** (default) en debug — pause synchrone sur tous les hosts.
+🔍 **Crucial observation**: with **`strategy: free`**, while you are at the `(debug)>` prompt on web1.lab, **web2.lab's tasks keep running**. Prefer **`strategy: linear`** (default) in debug: a synchronous pause across all hosts.
 
-## 📚 Exercice 6 — Quand NE PAS utiliser le débogueur
+## 📚 Exercise 6 — When NOT to use the debugger
 
-Le débogueur est **interactif**. À ne pas activer :
+The debugger is **interactive**. Do not enable it:
 
-- En **CI/CD** : aucun stdin, le pipeline freeze indéfiniment.
-- Sur **AWX / AAP** : les jobs n'ont pas de prompt utilisateur.
-- En cron / systemd timer : pareil.
+- In **CI/CD**: no stdin, the pipeline freezes indefinitely.
+- On **AWX / AAP**: jobs have no user prompt.
+- In cron / systemd timer: same.
 
-Pour ces contextes, préférer :
+For these contexts, prefer:
 
-- **`ANSIBLE_KEEP_REMOTE_FILES=1`** + **artefacts `ansible-navigator`** (lab 91 + EE).
-- **Logs détaillés** avec **`-vv` ou `-vvv`** (lab 89).
-- **Tests** Molecule sur des scénarios reproductibles (labs roles 62-65).
+- **`ANSIBLE_KEEP_REMOTE_FILES=1`** + **`ansible-navigator` artifacts** (lab 91 + EE).
+- **Detailed logs** with **`-vv` or `-vvv`** (lab 89).
+- **Molecule tests** on reproducible scenarios (roles labs 62-65).
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`debugger: on_failed`** au niveau play ou task — pas global.
-- **`p`** print, accepte n'importe quelle expression Python.
-- **`task.args['x'] = ...`** + **`redo`** modifie + rejoue.
-- **`task_vars['x'] = ...`** + **`update_task`** (`u`) + **`redo`** modifie une variable.
-- **`strategy: linear`** mandatory en debug (sinon free crée des races).
-- **Pas de débogueur en CI** — interactivité requise.
+- **`debugger: on_failed`** at play or task level, not global.
+- **`p`** print, accepts any Python expression.
+- **`task.args['x'] = ...`** + **`redo`** changes + replays.
+- **`task_vars['x'] = ...`** + **`update_task`** (`u`) + **`redo`** changes a variable.
+- **`strategy: linear`** mandatory in debug (otherwise free creates races).
+- **No debugger in CI**: interactivity required.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Quelles autres valeurs prend `debugger:` ? (Indice : `always`, `never`, `on_failed`, `on_unreachable`, `on_skipped`).
-2. Comment activer le débogueur **globalement** sans le mettre dans le YAML ? (Indice : `ANSIBLE_ENABLE_TASK_DEBUGGER=True`).
-3. Pourquoi `strategy: free` est-il **dangereux** avec un débogueur ?
-4. Le débogueur ouvre-t-il un prompt sur **chaque host** qui échoue, ou un seul ?
+1. Which other values does `debugger:` take? (Hint: `always`, `never`, `on_failed`, `on_unreachable`, `on_skipped`).
+2. How do you enable the debugger **globally** without putting it in the YAML? (Hint: `ANSIBLE_ENABLE_TASK_DEBUGGER=True`).
+3. Why is `strategy: free` **dangerous** with a debugger?
+4. Does the debugger open a prompt on **each host** that fails, or just one?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) — utiliser le débogueur pour **fix une variable manquante** au runtime et déposer un fichier sur `db1.lab`.
+See [`challenge/README.md`](challenge/README.md): use the debugger to **fix a missing variable** at runtime and drop a file on `db1.lab`.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`debugger: always`** : ouvre le REPL **après chaque tâche** (lent mais utile en TDD).
-- **`ANSIBLE_DISPLAY_TRACEBACK`** (2.18+) : trace Python complète sur exception.
-- **Lab 91** : idempotence cassée + tuning.
-- **AAP** : pas de débogueur, mais artefacts JSON `ansible-navigator replay`.
+- **`debugger: always`**: opens the REPL **after each task** (slow but useful in TDD).
+- **`ANSIBLE_DISPLAY_TRACEBACK`** (2.18+): full Python traceback on exception.
+- **Lab 91**: broken idempotence + tuning.
+- **AAP**: no debugger, but `ansible-navigator replay` JSON artifacts.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint labs/troubleshooting/debugger/lab.yml
@@ -199,5 +198,5 @@ ansible-lint labs/troubleshooting/debugger/challenge/solution.yml
 ansible-lint --profile production labs/troubleshooting/debugger/challenge/solution.yml
 ```
 
-> ⚠️ **Note** : `debugger:` n'est pas signalé par ansible-lint mais reste un
-> outil de **dev/debug**, jamais à laisser en prod ou CI/CD.
+> ⚠️ **Note**: `debugger:` is not flagged by ansible-lint but remains a
+> **dev/debug** tool, never to leave in prod or CI/CD.

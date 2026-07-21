@@ -1,0 +1,22 @@
+---
+# Mise en place du lab failed-when-changed-when : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup failed-when-changed-when lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (failed-when-changed-when)
+      ansible.builtin.file:
+        path: "/tmp/failed-when-result.txt"
+        state: "absent"
+
+- name: Brief the learner (failed-when-changed-when)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Neutralise changed on read-only commands, define changed_when from output and accept some return codes as success
+      run_once: true

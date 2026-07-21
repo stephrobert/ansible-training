@@ -1,0 +1,10 @@
+---
+# tasks/stamp.yml — entry point alternatif (tasks_from: stamp.yml).
+# Trace COMMENT le rôle a été consommé : l'appelant fournit
+# `webserver_invocation` (ex : import, include) et le fichier posé sur la
+# cible devient la preuve observable que cette invocation a eu lieu.
+- name: Tracer l'invocation du rôle
+  ansible.builtin.copy:
+    dest: "/tmp/consommer-{{ webserver_invocation }}.txt"
+    content: "webserver consommé via {{ webserver_invocation }}\n"
+    mode: "0644"

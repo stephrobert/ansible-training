@@ -1,57 +1,56 @@
 # Lab 66 — Molecule + testinfra
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Pré-requis : Molecule installé (cf. [lab 62](../62-roles-molecule-introduction/))
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Prerequisites: Molecule installed (see [lab 62](../../molecule/introduction/))
 > + `pipx inject molecule pytest-testinfra`.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Tests Molecule avec testinfra**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-roles/molecule-testinfra/)
+🔗 [**Molecule tests with testinfra**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/tests-testinfra/)
 
-Le `verifier: ansible` (lab 62-65) écrit les assertions en **YAML**, ce qui
-est OK mais limité. Le `verifier: testinfra` les écrit en **Python** :
+The `verifier: ansible` (lab 62-65) writes assertions in **YAML**, which
+is OK but limited. The `verifier: testinfra` writes them in **Python**:
 
-| Approche | Forme | Force |
+| Approach | Form | Strength |
 | --- | --- | --- |
-| `verifier: ansible` | YAML + `ansible.builtin.assert` | Simple, pas de dépendance Python |
-| `verifier: testinfra` | Python + `pytest-testinfra` | Riche, idiomatique, fixtures, paramétrage |
+| `verifier: ansible` | YAML + `ansible.builtin.assert` | Simple, no Python dependency |
+| `verifier: testinfra` | Python + `pytest-testinfra` | Rich, idiomatic, fixtures, parametrization |
 
-testinfra fournit une **API Python idiomatique** :
+testinfra provides an **idiomatic Python API**:
 
 ```python
 def test_nginx_running(host):
     assert host.package("nginx").is_installed
     assert host.service("nginx").is_running
-    assert host.socket("tcp://0.0.0.0:80").is_listening
+    assert host.socket("tcp://0.0.0.0:8080").is_listening
     assert host.file("/etc/nginx/nginx.conf").exists
 ```
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Configurer Molecule pour utiliser **`verifier: testinfra`**.
-2. Écrire des tests Python avec la fixture **`host`** de testinfra.
-3. Utiliser les **inspecteurs** : `host.package`, `host.service`,
+1. Configure Molecule to use **`verifier: testinfra`**.
+2. Write Python tests with testinfra's **`host`** fixture.
+3. Use the **inspectors**: `host.package`, `host.service`,
    `host.file`, `host.socket`, `host.user`, `host.group`, `host.process`.
-4. Paramétrer un test avec **`@pytest.mark.parametrize`** (équivalent
-   `loop` Ansible).
-5. Choisir entre `verifier: ansible` (rapide) et `verifier: testinfra`
-   (puissant).
+4. Parametrize a test with **`@pytest.mark.parametrize`** (the Ansible
+   `loop` equivalent).
+5. Choose between `verifier: ansible` (fast) and `verifier: testinfra`
+   (powerful).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
 pipx inject molecule pytest-testinfra
 pipx inject molecule pytest
 ```
 
-## ⚙️ Arborescence
+## ⚙️ Tree layout
 
 ```text
 labs/tests/testinfra/
 ├── README.md
-├── Makefile
 ├── roles/
 │   └── webserver/
 └── molecule/
@@ -59,10 +58,10 @@ labs/tests/testinfra/
         ├── molecule.yml          ← verifier: testinfra
         ├── converge.yml
         └── tests/
-            └── test_webserver.py ← assertions Python (≥4)
+            └── test_webserver.py ← Python assertions (≥4)
 ```
 
-## 📚 Exercice 1 — `molecule.yml` avec `verifier: testinfra`
+## 📚 Exercise 1 — `molecule.yml` with `verifier: testinfra`
 
 ```yaml
 verifier:
@@ -71,10 +70,10 @@ verifier:
     v: 1                           # verbose
 ```
 
-🔍 **Observation** : pas de `verify.yml` — les tests sont en Python dans
+🔍 **Observation**: no `verify.yml`, the tests are in Python in
 `molecule/default/tests/`.
 
-## 📚 Exercice 2 — Premier test testinfra
+## 📚 Exercise 2 — First testinfra test
 
 ```python
 # molecule/default/tests/test_webserver.py
@@ -92,7 +91,7 @@ def test_nginx_running(host):
 
 
 def test_port_80_listening(host):
-    sock = host.socket("tcp://0.0.0.0:80")
+    sock = host.socket("tcp://0.0.0.0:8080")
     assert sock.is_listening
 
 
@@ -103,10 +102,10 @@ def test_nginx_conf_owned_by_root(host):
     assert f.mode == 0o644
 ```
 
-🔍 **Observation** : la fixture **`host`** est injectée automatiquement
-par pytest-testinfra. Elle représente l'instance Molecule.
+🔍 **Observation**: the **`host`** fixture is injected automatically
+by pytest-testinfra. It represents the Molecule instance.
 
-## 📚 Exercice 3 — Inspecteurs avancés
+## 📚 Exercise 3 — Advanced inspectors
 
 ```python
 def test_nginx_user_exists(host):
@@ -116,66 +115,66 @@ def test_nginx_user_exists(host):
 
 
 def test_no_default_index_page(host):
-    """L'apache par défaut ne doit plus être là."""
+    """The default apache must no longer be there."""
     cmd = host.run("curl -s http://localhost")
     assert "Welcome to nginx" not in cmd.stdout
 
 
 @pytest.mark.parametrize("port", [80, 443])
 def test_ports_listening(host, port):
-    """Test paramétré : 80 et 443 doivent être ouverts."""
+    """Parametrized test: 80 and 443 must be open."""
     sock = host.socket(f"tcp://0.0.0.0:{port}")
     assert sock.is_listening
 ```
 
-## 📚 Exercice 4 — Lancer
+## 📚 Exercise 4 — Run
 
 ```bash
 cd labs/tests/testinfra
 molecule test
 ```
 
-🔍 La phase `verify` lance maintenant les tests Python.
+🔍 The `verify` phase now runs the Python tests.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`verifier: testinfra`** = puissance Python (fixtures, paramétrage,
-  héritage). À privilégier pour des tests complexes.
-- **`verifier: ansible`** = simplicité YAML. Bon pour des assertions de
-  base. N'a pas besoin d'env Python supplémentaire.
-- **Inspecteurs testinfra** : `host.package`, `host.service`, `host.file`,
+- **`verifier: testinfra`** = Python power (fixtures, parametrization,
+  inheritance). Prefer it for complex tests.
+- **`verifier: ansible`** = YAML simplicity. Good for basic assertions.
+  Needs no extra Python env.
+- **testinfra inspectors**: `host.package`, `host.service`, `host.file`,
   `host.socket`, `host.user`, `host.group`, `host.process`,
-  `host.command`, `host.run`, `host.system_info`. Couvre 95 % des
-  besoins.
-- **Le helper `lab_host`** que ce repo utilise pour les challenges est
-  basé sur testinfra — vous le connaissez déjà.
+  `host.command`, `host.run`, `host.system_info`. Covers 95% of
+  needs.
+- **The `lab_host` helper** this repo uses for challenges is based on
+  testinfra, so you already know it.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Comment adapter votre solution si la cible passait de **1 host** à un
-   parc de **50 serveurs** ? Quels paramètres (`forks`, `serial`, `strategy`)
-   faudrait-il ajuster pour conserver des temps d'exécution acceptables ?
+1. How would you adapt your solution if the target went from **1 host** to
+   a fleet of **50 servers**? Which parameters (`forks`, `serial`, `strategy`)
+   would you need to tune to keep execution times acceptable?
 
-2. Quels modules Ansible alternatifs auriez-vous pu utiliser pour atteindre
-   le même résultat ? Quels sont leurs trade-offs (idempotence garantie,
-   performance, dépendances de collection externe) ?
+2. Which alternative Ansible modules could you have used to reach the same
+   result? What are their trade-offs (guaranteed idempotence, performance,
+   external collection dependencies)?
 
-3. Si une étape du playbook échoue en cours d'exécution, quel est l'impact
-   sur les hôtes déjà traités ? Comment rendre le scénario reprenable
-   (`block/rescue/always`, `--start-at-task`, `serial`) ?
+3. If a playbook step fails mid-run, what is the impact on the hosts already
+   processed? How do you make the scenario resumable
+   (`block/rescue/always`, `--start-at-task`, `serial`)?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md).
+See [`challenge/README.md`](challenge/README.md).
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`host.iptables`** : valider des règles netfilter spécifiques.
-- **`host.mount_point`** : valider des montages NFS/iSCSI.
-- **`host.docker(name)`** : si l'instance fait tourner Docker.
-- **Markers pytest** : skip selon OS (`@pytest.mark.skipif(host.system_info.distribution == 'debian'`).
+- **`host.iptables`**: validate specific netfilter rules.
+- **`host.mount_point`**: validate NFS/iSCSI mounts.
+- **`host.docker(name)`**: if the instance runs Docker.
+- **pytest markers**: skip depending on OS (`@pytest.mark.skipif(host.system_info.distribution == 'debian'`).
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint labs/tests/testinfra/

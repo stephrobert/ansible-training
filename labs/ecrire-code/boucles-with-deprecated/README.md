@@ -1,47 +1,47 @@
-# Lab 22 — Boucles legacy `with_*` (à migrer vers `loop:`)
+# Lab 22 — Legacy `with_*` loops (to migrate to `loop:`)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Boucles legacy Ansible : with_items, with_dict, migration vers loop:**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/boucles-with-deprecated/)
+🔗 [**Legacy Ansible loops: with_items, with_dict, migration to loop:**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/boucles-with-deprecated/)
 
-Avant Ansible 2.5, on utilisait `with_items:`, `with_dict:`, `with_subelements:`,
-`with_fileglob:`, `with_nested:`, etc. Depuis 2.5, **`loop:`** couplé à des **filtres
-Jinja2** (`dict2items`, `subelements`, `product`) couvre tous les cas. Les `with_*`
-**continuent de fonctionner** mais sont considérés **legacy** par Ansible et la
-RHCE 2026. Ce lab montre les **équivalences** pour migrer un code existant.
+Before Ansible 2.5, you used `with_items:`, `with_dict:`, `with_subelements:`,
+`with_fileglob:`, `with_nested:`, etc. Since 2.5, **`loop:`** combined with **Jinja2
+filters** (`dict2items`, `subelements`, `product`) covers all cases. The `with_*`
+**still work** but are considered **legacy** by Ansible and the
+RHCE 2026. This lab shows the **equivalences** to migrate existing code.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Reconnaître** les principales formes `with_items`, `with_dict`, `with_subelements`,
+1. **Recognize** the main forms `with_items`, `with_dict`, `with_subelements`,
    `with_fileglob`, `with_nested`.
-2. **Migrer** chaque forme vers son équivalent `loop:` + filtre Jinja2.
-3. **Utiliser** `ansible-lint --fix` pour automatiser la migration sur du code existant.
-4. **Diagnostiquer** les rares cas où la migration change la sémantique.
-5. **Appliquer** la table de correspondance sur un code legacy fourni.
+2. **Migrate** each form to its `loop:` + Jinja2 filter equivalent.
+3. **Use** `ansible-lint --fix` to automate the migration on existing code.
+4. **Diagnose** the rare cases where the migration changes the semantics.
+5. **Apply** the mapping table to a provided legacy code.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 ansible db1.lab -b -m shell -a "rm -f /tmp/withloop-*.txt /tmp/legacy-*.txt"
 ```
 
-## 📚 Exercice 1 — `with_items` → `loop:` (le plus simple)
+## 📚 Exercise 1 — `with_items` → `loop:` (the simplest)
 
 ```yaml
 ---
@@ -64,16 +64,16 @@ ansible db1.lab -b -m shell -a "rm -f /tmp/withloop-*.txt /tmp/legacy-*.txt"
       loop: [pomme, banane, cerise]
 ```
 
-**Lancez** :
+**Run it**:
 
 ```bash
 ansible-playbook labs/ecrire-code/boucles-with-deprecated/lab.yml
 ```
 
-🔍 **Observation** : les **deux formes** produisent **les mêmes fichiers**.
-Comportement strictement équivalent. La différence est purement syntaxique.
+🔍 **Observation**: the **two forms** produce **the same files**.
+Strictly equivalent behavior. The difference is purely syntactic.
 
-## 📚 Exercice 2 — `with_dict` → `loop: + dict2items`
+## 📚 Exercise 2 — `with_dict` → `loop: + dict2items`
 
 ```yaml
 - name: with_dict legacy
@@ -91,11 +91,11 @@ Comportement strictement équivalent. La différence est purement syntaxique.
   loop: "{{ {'nginx': 80, 'redis': 6379} | dict2items }}"
 ```
 
-🔍 **Observation** : `with_dict:` consomme un **dict directement** ; `loop:` veut
-une **liste** donc on passe par `dict2items` qui produit
-`[{key: nginx, value: 80}, ...]`. Output identique.
+🔍 **Observation**: `with_dict:` consumes a **dict directly**; `loop:` wants
+a **list** so you go through `dict2items`, which produces
+`[{key: nginx, value: 80}, ...]`. Identical output.
 
-## 📚 Exercice 3 — `with_fileglob` → `loop: + query('fileglob')`
+## 📚 Exercise 3 — `with_fileglob` → `loop: + query('fileglob')`
 
 ```yaml
 - name: with_fileglob legacy
@@ -112,11 +112,11 @@ une **liste** donc on passe par `dict2items` qui produit
   loop: "{{ query('fileglob', 'files/*.conf') }}"
 ```
 
-🔍 **Observation** : `with_fileglob:` est remplacé par **`query('fileglob', ...)`**
-qui retourne une liste de chemins. **`query`** est préféré à **`lookup`** ici parce
-qu'il retourne **toujours une liste** (même vide), idéal pour `loop:`.
+🔍 **Observation**: `with_fileglob:` is replaced by **`query('fileglob', ...)`**
+which returns a list of paths. **`query`** is preferred over **`lookup`** here because
+it **always returns a list** (even an empty one), ideal for `loop:`.
 
-## 📚 Exercice 4 — `with_subelements` → `loop: + subelements`
+## 📚 Exercise 4 — `with_subelements` → `loop: + subelements`
 
 ```yaml
 - name: Demo subelements
@@ -143,7 +143,7 @@ qu'il retourne **toujours une liste** (même vide), idéal pour `loop:`.
       loop: "{{ users | subelements('ssh_keys') }}"
 ```
 
-🔍 **Observation** : `subelements` produit une **liste de paires `(parent, child)`** :
+🔍 **Observation**: `subelements` produces a **list of pairs `(parent, child)`**:
 
 ```
 [
@@ -153,10 +153,10 @@ qu'il retourne **toujours une liste** (même vide), idéal pour `loop:`.
 ]
 ```
 
-Pattern essentiel pour : **users + leurs clés SSH**, **services + leurs ports**,
-**fichiers + leurs templates**.
+Essential pattern for: **users + their SSH keys**, **services + their ports**,
+**files + their templates**.
 
-## 📚 Exercice 5 — `with_nested` → `loop: + product | list`
+## 📚 Exercise 5 — `with_nested` → `loop: + product | list`
 
 ```yaml
 - name: with_nested legacy
@@ -173,13 +173,13 @@ Pattern essentiel pour : **users + leurs clés SSH**, **services + leurs ports**
   loop: "{{ ['a', 'b'] | product([1, 2]) | list }}"
 ```
 
-🔍 **Observation** : `product` (filtre Jinja2) produit le **produit cartésien** —
-toutes les combinaisons. Pratique pour : **users × hosts**, **services × environments**.
+🔍 **Observation**: `product` (Jinja2 filter) produces the **cartesian product**:
+all the combinations. Handy for: **users × hosts**, **services × environments**.
 
-## 📚 Exercice 6 — Migration automatique avec `ansible-lint`
+## 📚 Exercise 6 — Automatic migration with `ansible-lint`
 
-Sur du code legacy existant, **`ansible-lint --fix`** peut migrer automatiquement
-la plupart des `with_*`.
+On existing legacy code, **`ansible-lint --fix`** can automatically migrate
+most of the `with_*`.
 
 ```bash
 # Reperer les with_* dans le repo
@@ -192,20 +192,20 @@ ansible-lint labs/ecrire-code/boucles-with-deprecated/lab.yml --offline
 ansible-lint --fix labs/ecrire-code/boucles-with-deprecated/lab.yml
 ```
 
-🔍 **Observation** : `ansible-lint --fix` détecte la rule **`use-loop`** et propose
-la migration. Sur des cas simples (`with_items`, `with_dict`), la migration est
-exacte. Sur `with_subelements` ou `with_nested`, la migration peut nécessiter une
-relecture humaine.
+🔍 **Observation**: `ansible-lint --fix` detects the **`use-loop`** rule and offers
+the migration. On simple cases (`with_items`, `with_dict`), the migration is
+exact. On `with_subelements` or `with_nested`, the migration may require a
+human review.
 
-**Toujours** :
+**Always**:
 
-- **Backup** avant `--fix` (commit git intermédiaire).
-- **Tests** après pour vérifier l'équivalence sémantique.
+- **Backup** before `--fix` (intermediate git commit).
+- **Tests** afterwards to check the semantic equivalence.
 
-## 📚 Exercice 7 — Le piège : `with_random_choice` n'a pas d'équivalent direct
+## 📚 Exercise 7 — The trap: `with_random_choice` has no direct equivalent
 
-`with_random_choice:` retourne **un** élément aléatoire d'une liste, **pas** une
-itération sur la liste.
+`with_random_choice:` returns **one** random element of a list, **not** an
+iteration over the list.
 
 ```yaml
 # Legacy : retourne UN element aleatoire
@@ -222,52 +222,52 @@ itération sur la liste.
   loop: "{{ ['a', 'b', 'c', 'd'] | random | list }}"
 ```
 
-🔍 **Observation** : la migration nécessite de comprendre **l'intention** du `with_random_choice` (1 itération sur 1 élément aléatoire) — pas d'équivalent
-syntaxiquement direct, on enveloppe dans une liste.
+🔍 **Observation**: the migration requires understanding the **intent** of the `with_random_choice` (1 iteration over 1 random element): there is no
+syntactically direct equivalent, so you wrap it in a list.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`loop:` remplace tous les `with_*`** depuis Ansible 2.5.
+- **`loop:` replaces all the `with_*`** since Ansible 2.5.
 - **`with_dict:`** → **`loop: + dict2items`**.
 - **`with_fileglob:`** → **`loop: + query('fileglob', ...)`**.
-- **`with_subelements:`** → **`loop: + subelements`** (filtre Jinja2).
+- **`with_subelements:`** → **`loop: + subelements`** (Jinja2 filter).
 - **`with_nested:`** → **`loop: + product | list`**.
-- **`ansible-lint --fix`** automatise la migration sur les cas simples.
-- **Pas de migration directe** pour `with_random_choice`, `with_first_found`, etc.
+- **`ansible-lint --fix`** automates the migration on simple cases.
+- **No direct migration** for `with_random_choice`, `with_first_found`, etc.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Pourquoi Ansible n'a-t-il **pas déprécié** les `with_*` (juste "legacy") ? Quel
-   serait le coût d'un retrait pur et simple ?
+1. Why did Ansible **not deprecate** the `with_*` (just "legacy")? What
+   would be the cost of a plain and simple removal?
 
-2. La forme `with_items: "{{ packages }}"` (avec interpolation) marche depuis
-   longtemps. La forme `loop: "{{ packages }}"` aussi. Quelle est la **différence
-   technique** entre les deux ? (indice : voir le concept de `lookup` plugin).
+2. The form `with_items: "{{ packages }}"` (with interpolation) has worked for a
+   long time. The form `loop: "{{ packages }}"` too. What is the **technical
+   difference** between the two? (hint: see the `lookup` plugin concept).
 
-3. Vous reprenez un playbook avec 50 `with_*`. Vous lancez `ansible-lint --fix`.
-   Quels sont les **3 contrôles à faire** avant de commit ?
+3. You pick up a playbook with 50 `with_*`. You run `ansible-lint --fix`.
+   What are the **3 checks to do** before committing?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Performance** : aucune différence mesurable entre `with_*` et `loop:` —
-  l'argument "loop est plus rapide" est faux. La vraie différence est sémantique
-  et standardisation.
-- **Migration de code legacy** : combiner `ansible-lint --fix` + tests fonctionnels
-  + Molecule. Pour un repo de 100 rôles, prévoir 1-2 jours de validation.
-- **`use_loop` rule** : règle ansible-lint qui détecte les `with_*` (sauf
-  `with_first_found` et `with_random_choice` qui sont conservés pour leur sémantique
-  particulière).
-- **RHCE 2026** : préférer `loop:` sur tout nouveau code. Les `with_*` ne sont **pas
-  pénalisés** sur l'examen mais le **style attendu** est `loop:`.
+- **Performance**: no measurable difference between `with_*` and `loop:`.
+  The "loop is faster" argument is false. The real difference is semantic
+  and standardization.
+- **Legacy code migration**: combine `ansible-lint --fix` + functional tests
+  + Molecule. For a repo of 100 roles, plan 1-2 days of validation.
+- **`use_loop` rule**: ansible-lint rule that detects the `with_*` (except
+  `with_first_found` and `with_random_choice`, which are kept for their
+  particular semantics).
+- **RHCE 2026**: prefer `loop:` on all new code. The `with_*` are **not
+  penalized** on the exam but the **expected style** is `loop:`.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 # Lint de votre fichier de lab (tutoriel guidé)
@@ -280,9 +280,9 @@ ansible-lint labs/ecrire-code/boucles-with-deprecated/challenge/solution.yml
 ansible-lint --profile production labs/ecrire-code/boucles-with-deprecated/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

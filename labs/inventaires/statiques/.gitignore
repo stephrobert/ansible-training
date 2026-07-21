@@ -1,0 +1,5 @@
+# Le travail de l'apprenant : l'inventaire qu'il écrit de zéro. Ne jamais le
+# committer (la référence du formateur vit dans solution/inventaires/statiques/,
+# chiffrée via ansible-vault). Sans cette règle, un `git add` emporterait la
+# réponse et spoilerait le lab.
+inventory/

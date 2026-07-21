@@ -1,0 +1,22 @@
+---
+# Mise en place du lab lookups : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup lookups lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (lookups)
+      ansible.builtin.file:
+        path: "/tmp/lookups-challenge.txt"
+        state: "absent"
+
+- name: Brief the learner (lookups)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Read a file, an environment variable or a command output on the control node, generate a password and tell lookup from query
+      run_once: true

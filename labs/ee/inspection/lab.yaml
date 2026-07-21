@@ -1,0 +1,25 @@
+---
+id: ee-inspection
+title: "Inspect an Execution Environment and pick the right one"
+description: "List an EE's contents with ansible-navigator, compare creator-ee, awx-ee and community-ee-minimal, then pick one per use case."
+section: ee
+level: l2
+difficulty: intermediate
+lab_type: lab
+estimated_time: "30m"
+skills:
+  - execution-environment
+  - image-inspection
+  - navigator
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/lookup-doc/
+track:
+  - au-dela-ex294
+runtime:
+  type: shell
+  workdir: challenge/work
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

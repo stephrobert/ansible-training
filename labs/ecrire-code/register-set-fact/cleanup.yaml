@@ -1,0 +1,12 @@
+---
+# Reset du lab register-set-fact : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup register-set-fact lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (register-set-fact)
+      ansible.builtin.file:
+        path: "/tmp/system-id.txt"
+        state: "absent"

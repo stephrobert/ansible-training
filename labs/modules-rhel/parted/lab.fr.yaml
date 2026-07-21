@@ -1,0 +1,4 @@
+---
+id: modules-rhel-parted
+title: "Module parted : créer une partition disque"
+description: "Créer des partitions alignées en MBR ou GPT de façon idempotente, poser des flags (lvm, boot, esp) et inspecter la table existante."

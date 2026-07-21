@@ -1,0 +1,12 @@
+---
+# Reset du lab facts-magic-vars : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup facts-magic-vars lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (facts-magic-vars)
+      ansible.builtin.file:
+        path: "/tmp/facts-summary.txt"
+        state: "absent"

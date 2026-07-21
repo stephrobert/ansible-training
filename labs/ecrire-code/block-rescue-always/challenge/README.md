@@ -1,16 +1,16 @@
-# 🎯 Challenge — `block` + `rescue` + `always` sur erreur volontaire
+# 🎯 Challenge — `block` + `rescue` + `always` on a deliberate error
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `challenge/solution.yml` qui sur **db1.lab** :
+Write `challenge/solution.yml` that, on **db1.lab**:
 
-1. Lance dans un `block:` une commande **qui échoue volontairement**.
-2. Capture l'échec dans `rescue:` qui pose `/tmp/challenge-rescue.txt` avec le
-   contenu `rescue triggered (block failed)`.
-3. Pose **toujours** `/tmp/challenge-always.txt` avec `always executed` dans
+1. Launches inside a `block:` a command that **fails deliberately**.
+2. Catches the failure in `rescue:` which lays down `/tmp/challenge-rescue.txt` with the
+   content `rescue triggered (block failed)`.
+3. **Always** lays down `/tmp/challenge-always.txt` with `always executed` in
    `always:`.
-4. Le `PLAY RECAP` final doit afficher **`failed=0`** — le rescue a rattrapé
-   l'erreur et le play termine en **succès**.
+4. The final `PLAY RECAP` must show **`failed=0`**: the rescue caught
+   the error and the play ends in **success**.
 
 ## 🧩 Pattern
 
@@ -24,9 +24,9 @@
     - <tâche toujours exécutée, succès ou échec>
 ```
 
-Analogie Python : `try / except / finally`.
+Python analogy: `try / except / finally`.
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -56,38 +56,38 @@ Analogie Python : `try / except / finally`.
             mode: "0644"
 ```
 
-> 💡 **Indice commande qui échoue** : `/bin/false` retourne toujours rc=1. Vous
-> pouvez aussi utiliser `command: /bin/sh -c 'exit 1'`.
+> 💡 **Hint for the failing command**: `/bin/false` always returns rc=1. You
+> can also use `command: /bin/sh -c 'exit 1'`.
 
-## 🚀 Lancement
+## 🚀 Launch
 
 ```bash
 ansible-playbook labs/ecrire-code/block-rescue-always/challenge/solution.yml
 ```
 
-🔍 **Sortie attendue** :
+🔍 **Expected output**:
 
 - `TASK [Tâche qui échoue volontairement]` → `FAILED!`
 - `TASK [Marqueur rescue]` → `changed`
 - `TASK [Marqueur always]` → `changed`
-- `PLAY RECAP` : `failed=0` (le rescue a rattrapé)
+- `PLAY RECAP`: `failed=0` (the rescue caught it)
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **`block:` + `rescue:` + `always:`** : structure try/except/finally
->   d'Ansible. `rescue` ne tourne que si une tâche du `block` échoue.
->   `always` tourne **toujours**, succès ou échec.
-> - **`ignore_errors:` dans un `block`** : ignore l'erreur ET ne déclenche
->   pas le `rescue`. À utiliser avec parcimonie — préférer `rescue` qui
->   est plus explicite.
-> - **`failed_when:` au niveau d'une tâche** : permet de **forcer** un
->   échec sur une condition custom. Combiné avec `block`, ça donne un
->   contrôle fin du flux.
-> - **Variables disponibles dans `rescue`** : `ansible_failed_task` et
->   `ansible_failed_result` pour debug. Ne pas les confondre avec
->   `ansible_failed_handler` (handlers échoués).
+> - **`block:` + `rescue:` + `always:`**: Ansible's try/except/finally
+>   structure. `rescue` only runs if a task in the `block` fails.
+>   `always` runs **always**, on success or failure.
+> - **`ignore_errors:` in a `block`**: ignores the error AND does not trigger
+>   the `rescue`. Use it sparingly: prefer `rescue`, which
+>   is more explicit.
+> - **`failed_when:` at the task level**: lets you **force** a
+>   failure on a custom condition. Combined with `block`, it gives you
+>   fine-grained control of the flow.
+> - **Variables available in `rescue`**: `ansible_failed_task` and
+>   `ansible_failed_result` for debugging. Do not confuse them with
+>   `ansible_failed_handler` (failed handlers).
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/block-rescue-always/challenge/tests/
@@ -96,20 +96,20 @@ pytest -v labs/ecrire-code/block-rescue-always/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/ecrire-code/block-rescue-always clean
+dsoxlab clean ecrire-code-block-rescue-always
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`ansible_failed_task` / `ansible_failed_result`** : variables magiques
-  disponibles dans `rescue:` qui exposent la tâche qui a échoué et son
-  résultat. Utile pour logger ou notifier.
-- **Blocks imbriqués** : un `block:` peut contenir un autre `block:` avec son
-  propre `rescue:`. Pattern de fallback en cascade.
-- **Différence avec `ignore_errors`** (lab 25) : `ignore_errors` ignore
-  silencieusement l'échec ; `block/rescue` permet une **action de
-  rattrapage** explicite (rollback, log, notification).
-- **Lint** :
+- **`ansible_failed_task` / `ansible_failed_result`**: magic variables
+  available in `rescue:` that expose the task that failed and its
+  result. Useful for logging or notifying.
+- **Nested blocks**: a `block:` can contain another `block:` with its
+  own `rescue:`. A cascading fallback pattern.
+- **Difference with `ignore_errors`** (lab 25): `ignore_errors` silently
+  ignores the failure; `block/rescue` allows an explicit **catch
+  action** (rollback, log, notification).
+- **Lint**:
 
    ```bash
    ansible-lint labs/ecrire-code/block-rescue-always/challenge/solution.yml

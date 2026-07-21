@@ -1,0 +1,32 @@
+---
+id: ecrire-code-precedence-variables
+title: "Variable precedence: the 22 levels"
+description: "Stack the same variable at several levels to demonstrate which one wins, from role defaults up to --extra-vars."
+section: ecrire-code
+level: l3
+difficulty: advanced
+lab_type: lab
+estimated_time: "55m"
+skills:
+  - variable-precedence
+  - extra-vars
+  - role-defaults
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/precedence-variables/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

@@ -1,22 +1,22 @@
-# 🎯 Challenge — `ansible.cfg` projet avec `profile_tasks` actif
+# 🎯 Challenge — Project `ansible.cfg` with `profile_tasks` enabled
 
-## ✅ Objectif
+## ✅ Objective
 
-Créer un `ansible.cfg` au niveau du lab qui active **`profile_tasks`** + force **`forks=20`** + utilise **`stdout_callback = yaml`**, puis lancer un playbook qui dépose **la sortie de `ansible-config dump --only-changed`** dans un fichier sur `db1.lab`.
+Create a lab-level `ansible.cfg` that enables **`profile_tasks`** + forces **`forks=20`** + uses **`stdout_callback = yaml`**, then run a playbook that drops **the output of `ansible-config dump --only-changed`** into a file on `db1.lab`.
 
-| Élément | Valeur attendue |
+| Item | Expected value |
 | --- | --- |
-| Hôte cible | `db1.lab` |
-| Fichier produit | `/tmp/lab03a-config.txt` |
+| Target host | `db1.lab` |
+| Produced file | `/tmp/lab03a-config.txt` |
 | Permissions | `0644`, owner `root` |
-| Contenu | Sortie de `ansible-config dump --only-changed` (≥3 lignes non vides) |
-| `ansible.cfg` doit contenir | `forks = 20`, `stdout_callback = yaml`, `callbacks_enabled = ansible.posix.profile_tasks` |
+| Content | Output of `ansible-config dump --only-changed` (≥3 non-empty lines) |
+| `ansible.cfg` must contain | `forks = 20`, `stdout_callback = yaml`, `callbacks_enabled = ansible.posix.profile_tasks` |
 
-## 🧩 Indices
+## 🧩 Hints
 
-### Étape 1 — `ansible.cfg`
+### Step 1 — `ansible.cfg`
 
-Créer `labs/decouvrir/configuration-ansible/ansible.cfg` avec a minima :
+Create `labs/decouvrir/configuration-ansible/ansible.cfg` with at least:
 
 ```ini
 [defaults]
@@ -26,7 +26,7 @@ callbacks_enabled = ???
 host_key_checking = False
 ```
 
-### Étape 2 — Squelette `solution.yml`
+### Step 2 — `solution.yml` skeleton
 
 ```yaml
 ---
@@ -39,7 +39,7 @@ host_key_checking = False
     - name: Capturer la config active
       ansible.builtin.command: ansible-config dump --only-changed
       register: ???
-      changed_when: ???                # ← lecture seule
+      changed_when: ???                # ← read-only
       delegate_to: localhost
       become: false
 
@@ -52,38 +52,45 @@ host_key_checking = False
         mode: ???
 ```
 
-> 💡 **Pièges** :
-> - **`delegate_to: localhost`** + **`become: false`** sur la première task car `ansible-config` tourne sur le **control node** (le poste de l'apprenant), pas sur la cible.
-> - **`changed_when: false`** sur la commande de lecture pour préserver l'idempotence.
-> - **Lancer depuis le dossier du lab** (`cd labs/03a-...`) pour qu'`ansible.cfg` soit pris en compte automatiquement.
+> 💡 **Pitfalls**:
+> - **`delegate_to: localhost`** + **`become: false`** on the first task because `ansible-config` runs on the **control node** (the learner's machine), not on the target.
+> - **`changed_when: false`** on the read command to preserve idempotence.
+> - **`cd` is NOT enough, and that is the lab's trap.** Your playbook lives in
+>   `challenge/`, yet a `delegate_to: localhost` task runs with the PLAYBOOK's
+>   folder as the current directory. From `challenge/`, Ansible therefore never
+>   sees the `ansible.cfg` you just wrote at the lab root.
+>   Measured: `ansible-config dump` does not mention it, and the test fails.
+>   You must explicitly designate the file, for example with an
+>   `environment: ANSIBLE_CONFIG: ...` at the play level. This is exactly
+>   exercise 1: `ANSIBLE_CONFIG` is the HIGHEST precedence source.
 
-## 🚀 Lancement
+## 🚀 Launch
 
 ```bash
 cd labs/decouvrir/configuration-ansible/
 ansible-playbook challenge/solution.yml
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/decouvrir/configuration-ansible/challenge/tests/
 ```
 
-Le test pytest valide :
+The pytest test validates:
 
-- `/tmp/lab03a-config.txt` existe sur `db1.lab` avec mode `0644`, owner `root`.
-- ≥3 lignes non vides dans le contenu.
-- L'`ansible.cfg` du lab contient bien `forks = 20`, `stdout_callback = yaml`, `callbacks_enabled = ansible.posix.profile_tasks`.
+- `/tmp/lab03a-config.txt` exists on `db1.lab` with mode `0644`, owner `root`.
+- ≥3 non-empty lines in the content.
+- The lab's `ansible.cfg` does contain `forks = 20`, `stdout_callback = yaml`, `callbacks_enabled = ansible.posix.profile_tasks`.
 
 ## 🧹 Reset
 
 ```bash
-make -C labs/decouvrir/configuration-ansible/ clean
+dsoxlab clean decouvrir-configuration-ansible
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`ansible-config init --disabled > ansible.cfg`** : génère un fichier de config exhaustif documenté.
-- **Variables d'env** : `ANSIBLE_FORKS=50` surcharge sans toucher au fichier.
-- **`ansible-lint`** ne vérifie pas le contenu d'`ansible.cfg`. Pour valider la syntaxe : `ansible-config view`.
+- **`ansible-config init --disabled > ansible.cfg`**: generates an exhaustive documented config file.
+- **Env variables**: `ANSIBLE_FORKS=50` overrides without touching the file.
+- **`ansible-lint`** does not check the content of `ansible.cfg`. To validate the syntax: `ansible-config view`.

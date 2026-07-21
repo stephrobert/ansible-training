@@ -1,0 +1,23 @@
+---
+# Mise en place du lab yum-repository : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup yum-repository lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (yum-repository)
+      ansible.builtin.shell: |
+        rm -f /etc/yum.repos.d/local-test.repo /etc/yum.repos.d/epel-test.repo
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (yum-repository)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Declare a yum/dnf repository with gpgcheck, import its GPG key via rpm_key, and disable a repo without removing it
+      run_once: true

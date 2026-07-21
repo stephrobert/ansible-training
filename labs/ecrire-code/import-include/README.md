@@ -1,66 +1,65 @@
 # Lab 30a — Import vs Include (`import_tasks`, `include_tasks`, `import_role`, `include_role`, `import_playbook`)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo.
+> If it fails, run `mise install && dsoxlab provision` at the repo root.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Import vs Include : les 5 directives Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/import-include/)
+🔗 [**Import vs Include: the 5 Ansible directives**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/import-include/)
 
-Ansible offre **5 directives** pour découper un playbook en fichiers réutilisables :
+Ansible offers **5 directives** to split a playbook into reusable files:
 
-- **`import_tasks`** / **`include_tasks`** — inclure un fichier de tâches.
-- **`import_role`** / **`include_role`** — inclure un rôle.
-- **`import_playbook`** — inclure un autre playbook (au niveau plays).
+- **`import_tasks`** / **`include_tasks`**: include a tasks file.
+- **`import_role`** / **`include_role`**: include a role.
+- **`import_playbook`**: include another playbook (at the plays level).
 
-La distinction **`import_*` (static) vs `include_*` (dynamic)** est **fondamentale** et **testée à l'EX294** : elles n'ont **pas le même comportement** vis-à-vis des **tags**, **conditions**, **variables runtime**, **handlers**, et **`--list-tasks`**. Confondre les deux casse silencieusement vos playbooks.
+The distinction **`import_*` (static) vs `include_*` (dynamic)** is **fundamental** and **tested on the EX294**: they do **not behave the same** regarding **tags**, **conditions**, **runtime variables**, **handlers**, and **`--list-tasks`**. Confusing the two silently breaks your playbooks.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Distinguer** `import_*` (static, parsé au start) vs `include_*` (dynamic, parsé au runtime).
-2. **Choisir** la bonne directive selon le cas (boucle ? conditionnel ? variables runtime ?).
-3. **Découper** un playbook avec `import_tasks` pour la lisibilité.
-4. **Appeler** un rôle dynamiquement avec `include_role` (utile pour `loop:`).
-5. **Orchestrer** plusieurs plays avec `import_playbook`.
-6. **Comprendre** comment `tags:` et `when:` se comportent différemment selon import vs include.
+1. **Distinguish** `import_*` (static, parsed at start) vs `include_*` (dynamic, parsed at runtime).
+2. **Choose** the right directive depending on the case (loop? conditional? runtime variables?).
+3. **Split** a playbook with `import_tasks` for readability.
+4. **Call** a role dynamically with `include_role` (useful for `loop:`).
+5. **Orchestrate** several plays with `import_playbook`.
+6. **Understand** how `tags:` and `when:` behave differently depending on import vs include.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible all -m ansible.builtin.ping
 ansible db1.lab -b -m ansible.builtin.shell -a "rm -f /tmp/lab30a-*" 2>&1 | tail -2
 ```
 
-## ⚙️ Arborescence cible
+## ⚙️ Target tree
 
 ```text
 labs/ecrire-code/import-include/
-├── README.md                       ← ce fichier (tuto guidé)
-├── Makefile                        ← cible clean
+├── README.md                       ← this file (guided tutorial)
 └── challenge/
-    ├── README.md                   ← consigne du challenge
+    ├── README.md                   ← challenge instructions
     └── tests/
         └── test_import_include.py
 ```
 
-L'apprenant écrit lui-même `lab.yml` + les fichiers `tasks/*.yml` + `challenge/solution.yml`.
+The learner writes `lab.yml` + the `tasks/*.yml` files + `challenge/solution.yml` themselves.
 
-## 📚 Exercice 1 — `import_tasks` static vs `include_tasks` dynamic
+## 📚 Exercise 1 — `import_tasks` static vs `include_tasks` dynamic
 
-Créer 2 fichiers de tâches :
+Create 2 tasks files:
 
-`tasks/install.yml` :
+`tasks/install.yml`:
 
 ```yaml
 ---
@@ -71,7 +70,7 @@ Créer 2 fichiers de tâches :
     mode: "0644"
 ```
 
-`tasks/configure.yml` :
+`tasks/configure.yml`:
 
 ```yaml
 ---
@@ -82,7 +81,7 @@ Créer 2 fichiers de tâches :
     mode: "0644"
 ```
 
-Dans `lab.yml` :
+In `lab.yml`:
 
 ```yaml
 ---
@@ -99,11 +98,11 @@ Dans `lab.yml` :
       ansible.builtin.include_tasks: tasks/configure.yml
 ```
 
-🔍 **Observation** : à l'œil, **rien ne distingue** les 2 directives à l'exécution. Mais ce qui change est **interne** : `import_*` est **résolu au démarrage** (avant exécution), `include_*` au **runtime** (au moment où la tâche est rencontrée).
+🔍 **Observation**: to the eye, **nothing distinguishes** the 2 directives at run time. But what changes is **internal**: `import_*` is **resolved at startup** (before execution), `include_*` at **runtime** (when the task is reached).
 
-## 📚 Exercice 2 — Différence VRAIE : variables runtime
+## 📚 Exercise 2 — The REAL difference: runtime variables
 
-Cas où la différence saute aux yeux : **variable définie au runtime** dans une boucle.
+Case where the difference is obvious: **a variable defined at runtime** in a loop.
 
 ```yaml
 - hosts: db1.lab
@@ -116,15 +115,15 @@ Cas où la différence saute aux yeux : **variable définie au runtime** dans un
       loop: [1, 2, 3]
 
     # - name: Import static dans une loop (NE FONCTIONNE PAS)
-    #   ansible.builtin.import_tasks: tasks/install.yml   ← boucle KO
+    #   ansible.builtin.import_tasks: tasks/install.yml   ← loop KO
     #   vars:
     #     marker_path: "..."
     #   loop: [1, 2, 3]
 ```
 
-🔍 **Observation cruciale** : `import_*` **n'accepte pas `loop:`** car résolu au démarrage (la variable de boucle n'existe pas encore). `include_*` accepte `loop:`. **Règle** : pour boucler sur un fichier de tâches, c'est **`include_tasks`**.
+🔍 **Crucial observation**: `import_*` **does not accept `loop:`** because it is resolved at startup (the loop variable does not exist yet). `include_*` accepts `loop:`. **Rule**: to loop over a tasks file, use **`include_tasks`**.
 
-## 📚 Exercice 3 — Différence sur `tags:`
+## 📚 Exercise 3 — Difference on `tags:`
 
 ```yaml
 - hosts: db1.lab
@@ -138,17 +137,17 @@ Cas où la différence saute aux yeux : **variable définie au runtime** dans un
       tags: [setup]
 ```
 
-Lancer avec `--tags setup` :
+Run with `--tags setup`:
 
 ```bash
 ansible-playbook lab.yml --tags setup
 ```
 
-🔍 **Observation** :
-- `import_tasks` propage **`setup`** à **toutes** les tâches du fichier importé. `--tags setup` les exécute.
-- `include_tasks` **n'applique pas le tag** aux tâches **internes** au fichier inclus. Pour qu'elles soient taggées, il faut taguer **chaque tâche** dans `configure.yml`. Source de bug fréquent.
+🔍 **Observation**:
+- `import_tasks` propagates **`setup`** to **all** the tasks of the imported file. `--tags setup` runs them.
+- `include_tasks` **does not apply the tag** to the tasks **internal** to the included file. For them to be tagged, you must tag **each task** in `configure.yml`. A frequent source of bugs.
 
-## 📚 Exercice 4 — Différence sur `when:` conditionnel
+## 📚 Exercise 4 — Difference on the `when:` conditional
 
 ```yaml
 - hosts: db1.lab
@@ -162,9 +161,9 @@ ansible-playbook lab.yml --tags setup
       when: inventory_hostname == "db1.lab"
 ```
 
-🔍 **Observation** : sémantique **subtilement différente**. `import_*` propage le `when:` à chaque tâche → évaluation par tâche. `include_*` évalue le `when:` **une seule fois** au moment du include (avant d'exécuter le contenu).
+🔍 **Observation**: **subtly different** semantics. `import_*` propagates the `when:` to each task → per-task evaluation. `include_*` evaluates the `when:` **only once** at the moment of the include (before running the content).
 
-## 📚 Exercice 5 — `import_role` vs `include_role`
+## 📚 Exercise 5 — `import_role` vs `include_role`
 
 ```yaml
 - hosts: db1.lab
@@ -176,67 +175,67 @@ ansible-playbook lab.yml --tags setup
     - name: Include role dynamic (utilisable dans une loop, conditionnel runtime)
       ansible.builtin.include_role:
         name: my_role
-      loop: [1, 2, 3]                       # ← boucle OK avec include_role
+      loop: [1, 2, 3]                       # ← loop OK with include_role
 ```
 
-🔍 **Observation** : `import_role` ≈ `roles:` du play classique. `include_role` permet de **boucler sur un rôle** ou d'appliquer un rôle **conditionnellement au runtime** — usage rare mais puissant pour des patterns dynamiques.
+🔍 **Observation**: `import_role` ≈ the classic play's `roles:`. `include_role` lets you **loop over a role** or apply a role **conditionally at runtime**, a rare but powerful use for dynamic patterns.
 
-## 📚 Exercice 6 — `import_playbook` pour orchestrer
+## 📚 Exercise 6 — `import_playbook` to orchestrate
 
-Un seul fichier d'orchestration `site.yml` qui chaîne plusieurs playbooks :
+A single orchestration file `site.yml` that chains several playbooks:
 
 ```yaml
 ---
-# site.yml — orchestrateur
+# site.yml: orchestrator
 - ansible.builtin.import_playbook: playbooks/install_db.yml
 - ansible.builtin.import_playbook: playbooks/install_web.yml
 - ansible.builtin.import_playbook: playbooks/configure_app.yml
 ```
 
-🔍 **Observation** : **`import_playbook`** est **uniquement static** (pas de `include_playbook`). À utiliser au **niveau plays** (pas dans `tasks:`). Pattern standard pour découper un gros déploiement en sous-playbooks réutilisables.
+🔍 **Observation**: **`import_playbook`** is **static only** (there is no `include_playbook`). Use it at the **plays level** (not in `tasks:`). Standard pattern to split a large deployment into reusable sub-playbooks.
 
-## 📚 Exercice 7 — Tableau de décision
+## 📚 Exercise 7 — Decision table
 
-| Cas d'usage | Directive |
+| Use case | Directive |
 |-------------|-----------|
-| Découper un playbook en fichiers `tasks/*.yml` (pas de loop) | **`import_tasks`** (static, plus rapide, supporte `--list-tasks`) |
-| Boucler sur un fichier de tâches (`loop: [...]`) | **`include_tasks`** (only) |
-| Tagger un bloc entier de tâches incluses | **`import_tasks` + `tags:`** (propage automatiquement) |
-| Appeler un rôle classiquement | **`import_role`** ou directive `roles:` du play |
-| Boucler sur un rôle | **`include_role`** + `loop:` |
-| Orchestrer plusieurs plays | **`import_playbook`** (only) |
-| Variable de runtime pas encore connue au start | **`include_*`** (any) |
+| Split a playbook into `tasks/*.yml` files (no loop) | **`import_tasks`** (static, faster, supports `--list-tasks`) |
+| Loop over a tasks file (`loop: [...]`) | **`include_tasks`** (only) |
+| Tag a whole block of included tasks | **`import_tasks` + `tags:`** (propagates automatically) |
+| Call a role classically | **`import_role`** or the play's `roles:` directive |
+| Loop over a role | **`include_role`** + `loop:` |
+| Orchestrate several plays | **`import_playbook`** (only) |
+| Runtime variable not yet known at start | **`include_*`** (any) |
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`import_*`** = **static**, parsé au démarrage. Plus rapide. Tags + when propagés.
-- **`include_*`** = **dynamic**, parsé au runtime. Supporte `loop:`. Tags + when **non propagés**.
-- **`import_playbook`** existe, **`include_playbook` n'existe PAS**.
-- **Boucle sur tâches/rôles** → **`include_*`** obligatoire.
-- **`--list-tasks`** ne voit que les tâches **importées** (static), pas les incluses (dynamic).
+- **`import_*`** = **static**, parsed at startup. Faster. Tags + when propagated.
+- **`include_*`** = **dynamic**, parsed at runtime. Supports `loop:`. Tags + when **not propagated**.
+- **`import_playbook`** exists, **`include_playbook` does NOT exist**.
+- **Loop over tasks/roles** → **`include_*`** mandatory.
+- **`--list-tasks`** only sees the **imported** tasks (static), not the included ones (dynamic).
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Pourquoi `import_*` est-il **plus rapide au start** que `include_*` ?
-2. Que retourne `ansible-playbook --list-tasks` pour un `include_tasks` ?
-3. Si vous taguez `import_tasks: ... tags: [setup]`, faut-il aussi tagger les tâches **dans** le fichier importé ?
-4. Quelle directive choisir pour **importer un playbook entier** : `import_playbook` ou `include_playbook` ?
+1. Why is `import_*` **faster at start** than `include_*`?
+2. What does `ansible-playbook --list-tasks` return for an `include_tasks`?
+3. If you tag `import_tasks: ... tags: [setup]`, do you also need to tag the tasks **inside** the imported file?
+4. Which directive should you choose to **import an entire playbook**: `import_playbook` or `include_playbook`?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) — combiner `import_tasks` (avec tag) + `include_tasks` (avec loop) + `import_playbook` (orchestrateur).
+See [`challenge/README.md`](challenge/README.md): combine `import_tasks` (static) + `include_tasks` (with a loop) + a separate task, dropping the marker files that prove each mechanism ran.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Lab 11** : `delegate_to`, qui peut s'utiliser au niveau task ou block.
-- **Lab 23** : `block/rescue/always`, alternative pour grouper des tâches.
-- **`apply:`** sur `include_tasks` : applique des tags / become / when à toutes les tâches **internes**. Exemple : `include_tasks: ... apply: { tags: [setup] }`.
+- **Lab 11**: `delegate_to`, which can be used at the task or block level.
+- **Lab 23**: `block/rescue/always`, an alternative to group tasks.
+- **`apply:`** on `include_tasks`: applies tags / become / when to all the **internal** tasks. Example: `include_tasks: ... apply: { tags: [setup] }`.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint labs/ecrire-code/import-include/lab.yml
 ansible-lint --profile production labs/ecrire-code/import-include/challenge/solution.yml
 ```
 
-> 💡 **Astuce** : `ansible-lint` détecte le module **non-FQCN** (`include_tasks:` au lieu de `ansible.builtin.include_tasks:`) avec la règle `fqcn-builtins`. Toujours utiliser le FQCN complet.
+> 💡 **Tip**: `ansible-lint` detects the **non-FQCN** module (`include_tasks:` instead of `ansible.builtin.include_tasks:`) with the `fqcn-builtins` rule. Always use the full FQCN.

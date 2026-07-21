@@ -1,0 +1,16 @@
+---
+# Reset du lab dnf-options : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup dnf-options lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset name, state (dnf-options)
+      ansible.builtin.dnf:
+        name: "htop,ncdu"
+        state: "absent"
+    - name: Reset name, state (dnf-options)
+      ansible.builtin.dnf:
+        name: "epel-release"
+        state: "absent"

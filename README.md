@@ -1,426 +1,229 @@
-# Ansible Training — RHCE 2026
+# Ansible Training — RHCE EX294
 
-Bienvenue ! Ce dépôt est le **lab pédagogique public** de la formation Ansible
-[RHCE EX294 (2026)](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/)
-du blog [blog.stephane-robert.info](https://blog.stephane-robert.info).
+[![CI](https://github.com/stephrobert/ansible-training/actions/workflows/ci.yml/badge.svg)](https://github.com/stephrobert/ansible-training/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/stephrobert/ansible-training?label=OpenSSF%20Scorecard)](https://securityscorecards.dev/viewer/?uri=github.com/stephrobert/ansible-training)
+[![Plumber compliance](https://score.getplumber.io/github.com/stephrobert/ansible-training.svg)](https://score.getplumber.io/github.com/stephrobert/ansible-training)
+[![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
+[![License: CC BY-SA 4.0](https://img.shields.io/badge/License-CC%20BY--SA%204.0-lightgrey.svg)](./LICENSE)
 
-Vous y trouverez :
+Formation **Ansible** pratique, pilotée par la CLI
+[`dsoxlab`](https://github.com/stephrobert/dsoxlab). Ce dépôt est le **catalogue
+de labs** de la formation Ansible de
+[blog.stephane-robert.info](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/),
+orientée certification **RHCE (EX294)**, avec l'idempotence comme fil rouge.
 
-- Une **infra reproductible** (4 VMs AlmaLinux 10 sur KVM/libvirt) provisionnée
-  en une commande, prête à recevoir vos playbooks.
-- **103 labs progressifs** répartis en 23 sections (découvrir, premiers pas,
-  écrire du code, modules incontournables, rôles, Molecule, CI/CD, Galaxy,
-  Vault, Execution Environments, troubleshooting, collections, mock RHCE).
-- Des **tests automatisés** (pytest + testinfra) pour chaque challenge —
-  vous savez immédiatement si votre solution est correcte.
-- Un **Makefile par lab** pour réinitialiser l'état des managed nodes entre
-  deux essais.
+## Ce que c'est
 
----
+`ansible-training` est un **dépôt de contenu**, pas une application. Il fournit :
 
-## 🧭 Sommaire
+- des **labs guidés**, avec des instructions précises,
+- des **challenges** sans pas-à-pas, pour vérifier l'autonomie,
+- un **examen blanc** EX294 qui synthétise l'ensemble,
+- une **validation automatisée** qui prouve l'état des managed nodes (et non
+  qu'un playbook a été écrit),
+- un **scoring** avec des indices à coût variable.
 
-- [Démarrage rapide](#-démarrage-rapide)
-- [Topologie du lab](#-topologie-du-lab)
-- [Structure du dépôt](#-structure-du-dépôt)
-- [Comment fonctionne un lab](#-comment-fonctionne-un-lab)
-- [Lancer les tests pytest](#-lancer-les-tests-pytest)
-- [Reset d'un lab](#-reset-dun-lab)
-- [Suivi de progression](#-suivi-de-progression)
-- [Linter avec `ansible-lint`](#-linter-avec-ansible-lint)
-- [Liste des labs](#-liste-des-labs)
-- [Pré-requis poste de travail](#-pré-requis-poste-de-travail)
-- [Dépannage](#-dépannage)
+La CLI `dsoxlab` est le point d'entrée unique : elle prépare un lab, affiche la
+mission, valide, note et rend compte. Elle vit dans **son propre dépôt** et
+s'installe **séparément** : elle ne fait pas partie de ce dépôt.
 
----
+## Pré-requis
 
-## 🚀 Démarrage rapide
+- Python 3.11+ et [`uv`](https://docs.astral.sh/uv/)
+- [`mise`](https://mise.jdx.dev/) pour la chaîne Ansible (voir ci-dessous)
+- `git`
+- **KVM/libvirt** : les labs ont besoin de 4 VMs AlmaLinux 9 (1 control node,
+  3 managed nodes). Comptez ~6 Go de RAM et ~55 Go de disque.
 
-Si votre poste est déjà équipé (cf. [Pré-requis](#-pré-requis-poste-de-travail)) :
+## Installation
 
 ```bash
+# 1. La CLI dsoxlab (outil externe, hors de ce dépôt)
+uv tool install dsoxlab        # ou : pipx install dsoxlab
+
+# 2. Ce catalogue de labs
 git clone https://github.com/stephrobert/ansible-training.git
 cd ansible-training
 
-# 1. Installer les outils (1ʳᵉ fois uniquement, ~3 min)
-make bootstrap
+# 3. La chaîne Ansible, aux versions de l'examen
+mise install                   # ansible-core 2.18, ansible-lint, molecule, yamllint
 
-# 2. Créer les 4 VMs + préparer les managed nodes (~5 min)
-make provision
+# 4. Les 4 VMs, préparées (~5 min)
+mise run provision
 
-# 3. Rendre les hostnames du lab résolvables localement
-make hosts-add        # → ssh web1.lab fonctionne, plus besoin d'IPs
-
-# 4. Configurer SSH pour utiliser la clé du repo automatiquement
-make ssh-config-add   # → ssh ansible@web1.lab fonctionne sans -i
-
-# 5. Vérifier la connectivité Ansible (4 "pong" attendus)
-make verify-conn
-
-# 6. Voir le prochain lab à attaquer
-dsoxlab next          # ou : make dsoxlab-next
+# 5. Parcourir et jouer
+dsoxlab list-labs
+dsoxlab run <id-du-lab>
+dsoxlab check <id-du-lab>
 ```
 
-À ce stade, vos 4 VMs tournent, leurs hostnames sont résolvables, et
-Ansible les voit. **Vous pouvez commencer n'importe quel lab** — pas
-besoin de les faire dans l'ordre.
+> ⚠️ **`mise run provision`, et non `dsoxlab provision` seul.** La CLI monte les
+> VMs, mais elle les livre **nues** : cloud-init pose le compte et la clé, rien
+> de plus. Les labs, eux, ciblent des managed nodes équipés (`firewalld`,
+> `python3-firewall`, `chrony`). Sans cette préparation, tout lab touchant au
+> pare-feu échoue sur « Failed to import the required Python library (firewall) ».
+> La tâche `mise` enchaîne le provisioning et l'amorçage.
+>
+> Pour rejouer la seule préparation : `mise run bootstrap-nodes`.
 
-### Cycle de vie complet
+`dsoxlab doctor` vérifie l'environnement (Python, pytest, runtimes, labs
+détectés). `mise run setup-hosts` et `mise run setup-ssh` rendent les noms du lab
+résolvables et configurent SSH pour utiliser la clé du dépôt.
 
-| Action | Commande | Quand ? |
-| --- | --- | --- |
-| Installer les outils | `make bootstrap` | 1ʳᵉ fois uniquement |
-| Créer les VMs | `make provision` | Au début, après chaque `destroy` |
-| Résoudre les hostnames | `make hosts-add` | Après `provision` (ajout `/etc/hosts`) |
-| Configurer SSH (clé du repo) | `make ssh-config-add` | Après `provision` (`ssh ansible@web1.lab` sans `-i`) |
-| Tester la connectivité | `make verify-conn` | Vérification rapide à tout moment |
-| Voir l'avancement | `dsoxlab show` / `dsoxlab next` | Pendant la formation |
-| Snapshot (avant lab risqué) | `make snapshot` | Avant un lab destructif |
-| Restaurer le snapshot | `make restore` | Après un crash de lab |
-| Détruire les VMs | `make destroy` | Fin de formation ou reset complet |
-| Nettoyer `/etc/hosts` | `make hosts-remove` | Après `destroy` (cleanup symétrique) |
-| Nettoyer la config SSH | `make ssh-config-remove` | Après `destroy` (cleanup symétrique) |
+**Pourquoi `mise` en plus de `dsoxlab`** : la version d'`ansible-core` fait
+partie de l'exercice. Un playbook qui passe en 2.18 peut échouer en 2.19, et
+l'EX294 se passe sur une version précise. `mise` la pin, avec la chaîne de lint
+qui va avec. `dsoxlab`, lui, ne pilote que les labs.
 
-> 💡 **Vous arrivez directement à un lab précis sans avoir fait les
-> précédents ?** C'est OK. La seule chose qui compte, c'est que les 4 VMs
-> répondent au ping (`make verify-conn`). Chaque lab est **autonome** :
-> son `README.md` explique ce qu'il faut savoir, et son `Makefile clean`
-> nettoie l'état avant de rejouer.
+### Rester à jour
 
----
+Les labs arrivent dans ce dépôt, la CLI évolue de son côté. Mettez chacun à jour
+séparément :
 
-## 🌐 Topologie du lab
+```bash
+git pull                       # nouveaux labs
+uv tool upgrade dsoxlab        # la CLI (ou : pipx upgrade dsoxlab)
+mise install                   # la chaîne Ansible si les versions ont bougé
+```
 
-| Hôte | IP | Rôle | Groupe(s) |
+Votre travail en cours vit dans le `challenge/` de chaque lab et n'est pas
+versionné : `git pull` apporte les nouveaux labs sans jamais y toucher.
+
+## Comment ça marche
+
+### Le contrat déclaratif (deux niveaux)
+
+Le catalogue est décrit par des données, pas par du code : le moteur `dsoxlab`
+reste neutre vis-à-vis du domaine et lit deux niveaux de fichiers.
+
+- **`meta.yml`** à la racine déclare l'identité du dépôt, la topologie
+  d'infrastructure (réseau, hôtes, provider) et l'**ordre** des sections
+  qu'affiche `list-labs`.
+- **`lab.yaml`** par lab (sous `labs/<section>/<lab>/`) déclare ses `skills`,
+  son `level`, son `runtime` (`vm` ou `shell`, avec les hôtes visés), ses
+  `distros`, son `doc_url` et un bloc `validation`. Un `lab.fr.yaml` optionnel
+  surcharge le `title` et la `description` en français.
+
+`dsoxlab validate-structure` vérifie le contrat des labs **découverts** :
+fichiers requis présents, métadonnées complètes, cohérence des cibles. Attention,
+il ne signale pas un lab déclaré dans `meta.yml` mais absent du disque : la
+découverte se fait par un glob sur `labs/**/lab.yaml`, et un `lab.yaml` invalide
+disparaît **silencieusement** du catalogue. D'où la règle : `dsoxlab list-labs`
+d'abord, `validate-structure` ensuite.
+
+### Le cycle de vie d'un lab
+
+L'apprenant pilote tout par la CLI :
+
+```bash
+dsoxlab doctor                        # vérifier l'environnement
+dsoxlab list-labs                     # parcourir le catalogue
+dsoxlab show <id>                     # métadonnées et statut d'un lab
+dsoxlab run <id>                      # préparer et démarrer l'environnement
+dsoxlab challenge <id>                # lire la mission (sans pas-à-pas)
+dsoxlab hint <id>                     # révéler un indice (déduit du score)
+dsoxlab check <id>                    # jouer les tests, calculer et noter
+dsoxlab submit <id>                   # soumission finale, clôt la session
+dsoxlab progress                      # avancement par section, score moyen
+```
+
+`run` est le moment où l'environnement se monte. Pour un lab **shell**, la CLI
+crée le `workdir` et copie les fixtures déclarées. Pour un lab **vm**, elle joue
+le `setup.yaml` du lab sur les managed nodes et ouvre un accès au control node,
+là où vous écrivez vos playbooks.
+
+### Topologie
+
+Réseau libvirt dédié `lab-ansible` (10.10.20.0/24), pour cohabiter avec les
+autres labs sans collision.
+
+| Hôte | Rôle | RAM | vCPU |
 | --- | --- | --- | --- |
-| `control-node.lab` | 10.10.20.10 | Poste Ansible (push SSH) | `control` |
-| `web1.lab` | 10.10.20.21 | Web 1 | `webservers`, `rhce_lab` |
-| `web2.lab` | 10.10.20.22 | Web 2 | `webservers`, `rhce_lab` |
-| `db1.lab` | 10.10.20.31 | Base de données | `dbservers`, `rhce_lab` |
+| `control-node.lab` | control node : vous y écrivez vos playbooks | 2048 | 2 |
+| `web1.lab` | managed node | 1024 | 1 |
+| `web2.lab` | managed node | 1024 | 1 |
+| `db1.lab` | managed node | 1536 | 1 |
 
-- **Réseau libvirt** : `lab-ansible` (10.10.20.0/24, NAT, baux DHCP statiques par MAC).
-- **Auth** : utilisateur `ansible` avec sudo NOPASSWD, clé SSH `ssh/id_ed25519`
-  (générée localement, jamais commitée).
-- **Provisionning** : cloud-init minimal (user + clé + sudo) ; le reste
-  (firewalld, chrony, SELinux, `/etc/hosts`) est appliqué par Ansible
-  lui-même via [`labs/bootstrap/prepare-managed-nodes/playbook.yml`](./labs/bootstrap/prepare-managed-nodes/playbook.yml)
-  — **« Ansible se prépare lui-même »**.
+Les IP ne sont pas déclarées : Terraform les attribue et l'inventaire les lit.
+`dsoxlab` injecte à l'exécution les groupes que ciblent les playbooks des labs :
+`lab_target` (le control node), `lab_<role>` (un par managed node utilisé) et
+`labenv` (tous). Un lab ne code jamais un FQDN en dur.
 
-Pour la liste complète des hôtes, des groupes et la convention de ciblage
-(quand viser `db1.lab` vs `webservers` vs `all`), voir aussi
-[`meta.yml`](./meta.yml) et la section
-[Liste des labs](#-liste-des-labs).
+### Les comptes : `ansible` (service) et `student` (humain)
 
----
+Le cloud-init pose **deux comptes** sur chaque nœud, tous deux durcis de la même
+façon : connexion par **clé SSH uniquement** (`ssh_pwauth: false`), **aucun mot de
+passe de login**, et `sudo NOPASSWD:ALL`.
 
-## 📂 Structure du dépôt
+- **`ansible`** : le compte de **service** par lequel toute l'automatisation se
+  connecte, dsoxlab comme les playbooks des labs. C'est le `ansible_user` de
+  l'inventaire et l'utilisateur du `ssh_config` généré. Se connecter via un compte
+  de service dédié, distinct de l'humain, est la **bonne pratique** : les actions
+  d'automatisation sont attribuables et le compte se révoque indépendamment. Son
+  `NOPASSWD:ALL` est assumé : une automatisation RHCE touche à tout (dnf, systemd,
+  LVM, SELinux, firewalld) ; la sécurité tient à la **dédicace** du compte, pas à
+  un `sudo` bridé qui casserait l'automatisation.
+- **`student`** : le compte **humain**, celui depuis lequel vous lancez `dsoxlab`
+  et `ansible` sur le control node. Il existe aussi sur les managed nodes pour le
+  debug, mais ce n'est **jamais** lui qui pilote l'automatisation.
 
-```text
-ansible-training/
-├── README.md                    # ce fichier
-├── Makefile                     # bootstrap, provision, destroy, snapshot, restore, test-all
-├── meta.yml                     # source de vérité de l'ordre des labs (23 sections, 103 labs)
-├── ansible.cfg                  # config Ansible (forks, become, result_format=yaml)
-├── conftest.py                  # fixture pytest qui rejoue solution.yml avant les tests
-├── inventory/hosts.yml          # inventaire YAML : control + webservers + dbservers
-├── infra/virt-install/          # provision/destroy + cloud-init templates
-├── ee/                          # Execution Environment (image OCI)
-├── scripts/                     # bootstrap, lint-all, snapshot-vms, restore-vms, hosts/ssh
-├── bin/dsoxlab                  # CLI de suivi de progression
-├── dsoxlab/                     # implémentation Python de la CLI
-├── solution/                    # solutions formateur chiffrées via ansible-vault
-├── ssh/                         # clés SSH générées localement (gitignored)
-├── collected/                   # cible des fetch (gitignored)
-└── labs/
-    ├── bootstrap/prepare-managed-nodes/   # bootstrap système des managed nodes
-    ├── decouvrir/                         # 4 labs (déclaratif/impératif, install, config, CLI)
-    ├── premiers-pas/                      # 2 labs (premier playbook, vault basics)
-    ├── ecrire-code/                       # 28 labs (plays, handlers, vars, Jinja, conditions, …)
-    ├── modules-fichiers/                  # 5 labs (copy, file, blockinfile, fetch, archive)
-    ├── modules-paquets/ modules-services/ # paquets, systemd, cron
-    ├── modules-utilisateurs/ modules-rhel/ modules-reseau/ modules-diagnostic/
-    ├── inventaires/ roles/ molecule/ tests/ ci/ galaxy/
-    ├── vault/ ee/ troubleshooting/ collections/ pratiques/
-    └── rhce/mock-ex294/                   # mock examen EX294 (12 tâches en 4h)
-```
+Conséquence pratique : quand un lab restreint l'accès SSH (`AllowUsers`) ou fixe un
+`remote_user`, c'est **`ansible`** qu'il vise ; restreindre à un autre compte
+couperait la connexion de l'automatisation. Pour inspecter un nœud à la main,
+`dsoxlab ssh <host>` vous y connecte avec le compte `ansible`.
 
-Chaque lab `labs/<section>/<lab>/` est **autonome**. Sa structure type :
+### Runtimes
 
-```text
-labs/<section>/<lab>/
-├── README.md              # tutoriel guidé (objectifs, exercices, observations)
-├── Makefile               # cible `clean` pour reset l'état des managed nodes
-└── challenge/
-    ├── README.md          # consigne du challenge final + squelette à compléter
-    └── tests/
-        └── test_*.py      # pytest+testinfra qui valide la solution écrite
-```
-
-> ⚠️ **Important** : les fichiers `lab.yml` (tutoriel) et
-> `challenge/solution.yml` (challenge) **ne sont pas livrés** — c'est à
-> l'apprenant de les écrire à partir des consignes. C'est le cœur de la
-> pédagogie de ce dépôt.
-
----
-
-## 🎓 Comment fonctionne un lab
-
-Un lab pédagogique se déroule en **2 phases** :
-
-### Phase 1 — Tutoriel guidé (`README.md` du lab)
-
-Le `README.md` à la racine du lab contient un **tuto pas-à-pas** :
-
-- **🧠 Rappel** — concept clé + lien vers la page du blog.
-- **🎯 Objectifs** — ce que vous saurez faire à la fin.
-- **🔧 Préparation** — vérifier que les VMs répondent, nettoyer un état antérieur.
-- **📚 Exercices** — vous écrivez `lab.yml` à la racine du lab, étape par étape,
-  en suivant les snippets fournis dans le README. Chaque exercice se termine
-  par une section **🔍 Observation** qui explique ce que vous devez voir.
-- **🤔 Questions de réflexion** — pour ancrer la compréhension.
-
-### Phase 2 — Challenge final (`challenge/README.md`)
-
-Une fois le tuto digéré, le challenge propose une variation autonome :
-
-- **🎯 Objectif** — ce qu'il faut produire.
-- **🧩 Indices / Squelette** — le squelette `solution.yml` avec des `???` à
-  remplacer par vous.
-- **🚀 Lancement** — la commande `ansible-playbook ...`.
-- **🧪 Validation automatisée** — `pytest` qui vérifie objectivement votre
-  solution.
-- **🧹 Reset** — `make clean` pour rejouer à blanc.
-- **💡 Pour aller plus loin** — concepts avancés + lint avec `ansible-lint`.
-
-> 💡 **Convention** : `lab.yml` (à la racine du lab) = code du tuto.
-> `challenge/solution.yml` = code du challenge. Les deux sont **à écrire par
-> l'apprenant**.
-
-### 💻 Configuration recommandée : terminal en deux colonnes
-
-Pour un confort optimal, **dédiez une colonne à la consigne et une autre
-aux commandes**. Vous lisez le tutoriel à gauche, vous tapez à droite :
-
-```text
-┌─────────────────────────────────┬─────────────────────────────────┐
-│  📖  dsoxlab lab decouvrir/...  │  $ ansible all -m ping          │
-│                                 │  $ vim lab.yml                  │
-│  Lab 01 — Déclaratif vs ...     │  $ ansible-playbook lab.yml     │
-│                                 │  ...                            │
-│  ## 🎯 Objectifs                │                                 │
-│  ...                            │                                 │
-└─────────────────────────────────┴─────────────────────────────────┘
-              consigne                       actions
-```
-
-Au choix selon votre environnement :
-
-| Outil | Comment splitter |
+| Runtime | Ce qu'il apporte |
 | --- | --- |
-| **tmux** *(universel, recommandé)* | `tmux new-session \; split-window -h` puis `Ctrl+b ←/→` pour naviguer |
-| **VS Code terminal** | `Ctrl+Shift+5` (split à droite) |
-| **Terminator** *(GTK)* | `Ctrl+Shift+E` (split vertical) |
-| **Tilix** | `Ctrl+Alt+R` (split à droite) |
-| **Konsole** | `Ctrl+(` |
-| **Windows Terminal** | `Alt+Shift+D` |
-| **iTerm2** *(macOS)* | `Cmd+D` |
+| `vm` | Terraform + libvirt. Les vrais managed nodes : services, paquets, utilisateurs, stockage, et la **persistance après reboot**. 84 labs. |
+| `shell` | Ce qui reste local au poste : écrire du YAML, un template Jinja2, un inventaire, jouer Molecule ou ansible-lint. 24 labs. |
 
-Recette **tmux** prête à coller :
+Les VMs se provisionnent une fois avec `dsoxlab provision` et se détruisent avec
+`dsoxlab destroy`.
 
-```bash
-tmux new-session -d -s lab \; \
-    send-keys 'dsoxlab lab decouvrir/declaratif-vs-imperatif' C-m \; \
-    split-window -h \; \
-    attach
-# Ctrl+b ← / Ctrl+b → pour passer d'une colonne à l'autre
-# Ctrl+b z pour zoomer/dézoomer une colonne
-# Ctrl+b d pour détacher (la session reste vivante)
-# tmux attach -t lab pour reprendre plus tard
-```
+### Le modèle de validation
 
-> 💡 **Astuce** : laissez tourner `dsoxlab lab xxx` à gauche **sans pager**
-> (`--no-pager`) si vous préférez relire le tutoriel en scrollant la sortie
-> du terminal plutôt qu'en restant dans `less`.
+La validation **prouve l'état du système, elle ne fait pas confiance**. Chaque
+lab livre des tests `pytest` / `pytest-testinfra` sous `challenge/tests/` qui
+vérifient des faits sur la machine : le service tourne **et** est activé, le
+fichier déployé a le bon contenu **et** le bon propriétaire. Un test qui se
+contente de vérifier qu'une commande a été tapée est refusé.
 
----
+Deuxième exigence, propre à Ansible : **l'idempotence**. Un lab dont la solution
+rejouée annonce encore des `changed` est un lab faux. C'est le piège qui fait
+échouer les candidats RHCE, donc les tests le prouvent quand le sujet le
+justifie.
 
-## 🧪 Lancer les tests pytest
+- En mode formateur, une fixture du `conftest.py` racine **rejoue la solution de
+  référence** avant les tests, pour prouver que la solution elle-même est juste.
+- Dans `dsoxlab check` (le chemin de l'apprenant), ce rejeu est **désactivé**
+  (`LAB_NO_REPLAY=1`) : les tests valident son propre travail.
 
-Chaque challenge a une suite de tests `pytest + testinfra` qui valide la
-solution sur les managed nodes.
+### Scoring, indices, avancement
 
-```bash
-# Un seul lab
-pytest -v labs/ecrire-code/block-rescue-always/challenge/tests/
+`check` enregistre un score (tests passés sur total, moins le coût des indices
+utilisés). Les indices sont **à coût variable** : en révéler un retire des
+points, d'où leur caractère volontaire. L'historique vit dans une base SQLite
+locale au dépôt (`.dsoxlab.db`, non versionnée) ; `dsoxlab scores` et
+`dsoxlab progress` la lisent.
 
-# Toute une section
-pytest -v labs/vault/
+### Les solutions restent chiffrées
 
-# Tous les labs (long — selon le nombre de challenges écrits)
-pytest -v labs/
-```
-
-### La fixture `_apply_lab_state` (autouse)
-
-Le [`conftest.py`](./conftest.py) racine contient une fixture qui **rejoue
-automatiquement votre `solution.yml`** avant les tests. Cela garantit :
-
-- Que vos tests passent **indépendamment de l'ordre** dans lequel les labs ont
-  été joués manuellement.
-- Que l'état des managed nodes correspond bien à ce que la solution attend.
-
-3 cas pris en compte :
-
-| Type de lab | Comportement de la fixture |
-| --- | --- |
-| Lab démo (Makefile + `playbook.yml` racine) | `make setup` + `ansible-playbook playbook.yml` |
-| Lab pédagogique avec `challenge/solution.yml` écrit | `ansible-playbook challenge/solution.yml` (+ `_EXTRA_ARGS` éventuels) |
-| Lab pédagogique sans solution | `pytest.skip` avec message clair (« écrivez d'abord `solution.yml` ») |
-
-### Désactiver la fixture
-
-Si vous voulez tester à la main sans qu'Ansible ne rejoue :
+Les solutions de référence vivent dans `solution/`, **chiffrées avec
+`ansible-vault`**. Une solution en clair spoile le lab pour tout le monde, et
+l'historique git la garde même après suppression. Un hook `pre-commit` vérifie
+l'en-tête de chiffrement à chaque commit plutôt que de faire confiance.
 
 ```bash
-LAB_NO_REPLAY=1 pytest -v labs/ecrire-code/block-rescue-always/challenge/tests/
+mise run solutions-status      # vérifie que tout est chiffré
+mise run solve <section>/<lab> # pose la solution officielle (formateur)
 ```
 
----
+## Catalogue
 
-## 🧹 Reset d'un lab
-
-Chaque lab a un `Makefile` avec une cible `clean` qui supprime ce qu'il a posé
-sur les managed nodes. Indispensable pour rejouer un scénario à blanc.
-
-```bash
-make -C labs/ecrire-code/block-rescue-always clean
-```
-
-> 💡 **Snapshot global** : si vous voulez revenir à un état VMs neuves :
-> `make snapshot` (avant un lab risqué) puis `make restore` (après) — utile
-> pour explorer un lab destructif.
-
----
-
-## 📊 Suivi de progression
-
-Le repo embarque une **CLI Python** (`bin/dsoxlab`) qui inscrit chaque run
-`pytest` dans une SQLite locale (`~/.local/share/dsoxlab/progress.db`) et affiche
-un dashboard de votre avancement par section/lab.
-
-Le suivi est **automatique** : dès que vous lancez `pytest` sur un lab
-(`pytest labs/<section>/<lab>/challenge/tests/`), un plugin pytest interne
-inscrit le résultat dans la base.
-
-### Installer la CLI dans le `PATH` (recommandé)
-
-Pour pouvoir taper `dsoxlab` ou `lab` depuis n'importe où sans préfixer
-`bin/`, créez un lien symbolique dans un dossier de votre `PATH` :
-
-```bash
-# Option A — lien personnel (~/.local/bin doit être dans votre PATH)
-mkdir -p ~/.local/bin
-ln -sf "$(pwd)/bin/dsoxlab" ~/.local/bin/dsoxlab
-
-# Option B — wrapper qui pointe vers ce repo (utile si plusieurs repos)
-cat > ~/.local/bin/dsoxlab <<'EOF'
-#!/usr/bin/env bash
-exec /home/bob/Projets/ansible-training/bin/dsoxlab "$@"
-EOF
-chmod +x ~/.local/bin/dsoxlab
-```
-
-Vérification :
-
-```bash
-which dsoxlab     # /home/<vous>/.local/bin/dsoxlab
-dsoxlab show      # plus besoin de bin/dsoxlab
-dsoxlab lab decouvrir/installation-ansible
-```
-
-> 💡 Si `~/.local/bin` n'est pas dans votre `PATH`, ajoutez à `~/.bashrc`
-> ou `~/.zshrc` : `export PATH="$HOME/.local/bin:$PATH"`.
-
-### Commandes principales
-
-```bash
-dsoxlab                                          # tableau de bord par section
-dsoxlab next                                     # suggère le prochain lab à attaquer
-dsoxlab stats                                    # % réussite par section
-dsoxlab show --section vault                     # filtrer une section
-dsoxlab show --status completed                  # filtrer par statut
-dsoxlab lab decouvrir/installation-ansible       # 📖 README rendu Markdown riche (80 col par défaut)
-dsoxlab lab vault/introduction --challenge       # 🎯 challenge/README.md rendu
-dsoxlab lab vault/introduction --both            # tutoriel + challenge à la suite
-dsoxlab lab vault/introduction --width 100       # forcer 100 colonnes (défaut 80, 0 = terminal)
-dsoxlab reset --lab vault/introduction -y        # rejouer un lab à blanc
-dsoxlab reset --all                              # reset complet (avec confirmation)
-dsoxlab export -o my-progress.json                # export JSON pour formateur/agrégation
-```
-
-Cibles Make équivalentes (pas besoin du `PATH`) :
-
-```bash
-make dsoxlab / dsoxlab-next / dsoxlab-stats
-make lab LAB=decouvrir/installation-ansible
-make lab LAB=vault/introduction CHALLENGE=1
-make lab LAB=vault/introduction BOTH=1
-```
-
-### Statuts d'un lab
-
-| Icône | Statut | Signification |
-| --- | --- | --- |
-| `✅` | `completed` | Au moins un run avec 100 % de tests passed |
-| `⏳` | `in_progress` | Run(s) existant(s) avec une partie passed/failed |
-| `❌` | `failed` | Tous les tests échouent |
-| `·` | `not_started` | Aucun run inscrit |
-| `⊘` | `skipped` | Run skippé (challenge non écrit, replay désactivé) |
-
-### Désactiver le suivi
-
-```bash
-DSOXLAB_DISABLED=1 pytest …                     # un run sans inscription
-DSOXLAB_DB=/tmp/test.db pytest …                # DB alternative (sandbox)
-```
-
-### Stockage
-
-- **Local par défaut** : `~/.local/share/dsoxlab/progress.db` (gitignored).
-- **Multi-postes** : `bin/dsoxlab export` produit un JSON portable pour
-  archiver sa progression ou la fournir à un formateur.
-- **Aucun service externe** : pas de réseau, pas d'auth, pas de RGPD.
-
----
-
-## 🔍 Linter avec `ansible-lint`
-
-`ansible-lint` détecte les anti-patterns dans vos playbooks (FQCN manquant,
-modules dépréciés, modes en chaîne, idempotence cassée, etc.). Lancez-le
-**systématiquement** avant de commiter ou de lancer pytest :
-
-```bash
-# Lint ciblé sur votre solution d'un lab
-ansible-lint labs/ecrire-code/block-rescue-always/challenge/solution.yml
-
-# Profil production (le plus strict)
-ansible-lint --profile production labs/ecrire-code/block-rescue-always/challenge/solution.yml
-
-# Lint global du dépôt
-make lint-all
-```
-
-Si `ansible-lint` retourne sans erreur (`Passed: 0 failure(s), 0 warning(s)`),
-votre code est conforme aux bonnes pratiques. Vous pouvez aussi utiliser
-**`yamllint`** pour la pure syntaxe YAML :
-
-```bash
-yamllint labs/ecrire-code/block-rescue-always/challenge/solution.yml
-```
-
----
-
-## 📚 Liste des labs
+Les labs vivent sous `labs/` et sont ordonnés par `meta.yml`. La liste ci-dessous
+est générée : lancez `python3 scripts/render-readme.py` pour la rafraîchir.
 
 <!-- LABS_LIST_START -->
 
@@ -428,7 +231,7 @@ yamllint labs/ecrire-code/block-rescue-always/challenge/solution.yml
 
 ### Bootstrap
 
-Préparation système des managed nodes (joué auto par `make provision`).
+Préparation système des managed nodes (jouée par `dsoxlab provision`).
 
 - [`prepare managed nodes`](./labs/bootstrap/prepare-managed-nodes/)
 
@@ -651,118 +454,19 @@ Mock examen complet 4h avec 12 tâches.
 
 <!-- LABS_LIST_END -->
 
----
+## Dépannage
 
-## 🔧 Pré-requis poste de travail
+| Symptôme | Piste |
+| --- | --- |
+| `UNREACHABLE` sur un managed node | `dsoxlab status` ; les VMs tournent-elles (`virsh list --all`) ? |
+| `dsoxlab list-labs` ne montre pas votre lab | son `lab.yaml` lève au parsing : il disparaît sans message |
+| Un test passe « sans raison » | cache de facts : `rm -rf .ansible_facts/` |
+| Un lab échoue après un autre | état hérité : `dsoxlab clean <id-du-lab>` |
+| Lab risqué à jouer | `mise run snapshot` avant, `mise run restore` après |
 
-### Système supporté
+## Contribuer & licence
 
-- **Linux** (Fedora, Ubuntu/Debian, Arch, AlmaLinux/Rocky/RHEL).
-- **macOS** : possible mais non testé pour la partie libvirt (utilisez WSL2
-  ou une VM Linux).
-- **Windows** : non supporté directement (utilisez WSL2 + libvirt sous Linux).
-
-### Outils requis
-
-| Outil | Rôle | Installation rapide |
-| --- | --- | --- |
-| **`pipx`** | Gestionnaire d'apps Python isolées | `sudo dnf install pipx` (Fedora) / `sudo apt install pipx` (Debian) |
-| **`ansible`** | Le moteur | `pipx install --include-deps ansible` |
-| **`ansible-lint`** | Linter | `pipx install ansible-lint` |
-| **`pytest` + `testinfra`** | Tests d'infra | `pipx install pytest && pipx inject pytest pytest-testinfra` |
-| **`libvirt` + `qemu-kvm`** | Virtualisation | `make bootstrap` (couvre tout le reste) |
-
-> 💡 **Tout-en-un** : `make bootstrap` à la racine du repo installe **tous**
-> les outils ci-dessus. C'est l'option recommandée.
-
-### Vérifier l'installation
-
-```bash
-ansible --version          # core 2.18+
-ansible-lint --version     # 25+
-pytest --version           # 8+
-virsh list --all           # libvirt accessible
-```
-
-Si une commande manque, relancez `make bootstrap` ou installez-la
-manuellement. La page MDX [installation-ansible](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/installation-ansible/)
-détaille les 5 méthodes d'installation possibles.
-
----
-
-## 🆘 Dépannage
-
-### `make verify-conn` échoue (UNREACHABLE)
-
-```bash
-# Reset complet du lab
-make destroy
-make provision
-make verify-conn
-```
-
-### Un lab marque tous ses tests pytest en `skipped`
-
-C'est attendu : la fixture `_apply_lab_state` skippe avec un message
-explicite tant que vous n'avez pas écrit votre `challenge/solution.yml`.
-
-```text
-SKIPPED [...] Aucun challenge/solution.yml ni solution.sh trouvé.
-L'apprenant doit l'écrire en suivant challenge/README.md, puis relancer pytest.
-```
-
-### Un lab échoue parce qu'un lab précédent a polluéle système
-
-Lancez la cible `clean` du lab cible :
-
-```bash
-make -C labs/<section>/<lab>/ clean
-```
-
-Pour un reset radical, relancez tout le bootstrap :
-
-```bash
-make destroy && make provision
-```
-
-### `ansible-lint` se plaint de FQCN manquant
-
-Préférez **toujours** `ansible.builtin.copy` à `copy`, `ansible.posix.firewalld`
-à `firewalld`, etc. Le FQCN est obligatoire pour la RHCE 2026 et règle
-~80 % des warnings d'`ansible-lint`.
-
-### Un challenge ne se déclenche pas avec `--extra-vars` ou `--tags`
-
-Le `conftest.py` racine définit deux mappings (`_PRE_CLEANUPS` et
-`_EXTRA_ARGS`) pour gérer les labs qui demandent un setup particulier
-(ex : `--tags configuration`, `--extra-vars service_name=…`). Si un test
-échoue parce qu'une variable manque ou qu'un fichier annexe pollue l'état,
-vérifiez l'entrée correspondante dans [`conftest.py`](./conftest.py).
-
----
-
-## 🤝 Contribuer
-
-Les retours, corrections et suggestions sont les bienvenus !
-
-1. Créez une **issue** pour signaler un bug ou proposer une amélioration.
-2. Forkez le dépôt et ouvrez une **pull request**.
-
-Voir [`contributing.md`](./contributing.md) pour les bonnes pratiques.
-
----
-
-## ☕ Soutenir le projet
-
-Si ce dépôt vous est utile et que vous voulez soutenir l'auteur :
-
-[![Ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/votre-identifiant)
-
----
-
-## © Licence
-
-- **Auteur** : Stéphane Robert (2025-2026)
-- **Licence** : [Creative Commons BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
-
-![Creative Commons BY-SA](https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-sa.png)
+- Contributions : voir [CONTRIBUTING](./CONTRIBUTING.md).
+- Conduite : [Code de conduite](./CODE_OF_CONDUCT.md) · Sécurité : [SECURITY](./SECURITY.md).
+- Publication : [RELEASING](./RELEASING.md) (bundles tar.gz, pas de PyPI).
+- Licence : [CC BY-SA 4.0](./LICENSE).

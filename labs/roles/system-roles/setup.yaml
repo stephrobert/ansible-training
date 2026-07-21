@@ -1,0 +1,110 @@
+---
+# Mise en place du lab « rôles système RHEL » : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+#
+# Ce setup DÉFAIT l'état attendu par les tests. C'est sa raison d'être : sans
+# lui, la configuration produite par le rôle timesync au run précédent reste en
+# place et les tests passent au vert sans que personne n'ait travaillé. On
+# remet donc la configuration chrony livrée par AlmaLinux, et on redémarre
+# chronyd pour que l'état RUNTIME redevienne lui aussi celui du départ. Un
+# fichier restauré sans redémarrage laisserait le démon tourner avec les
+# serveurs du rôle : le contrôle négatif serait faux.
+- name: Setup RHEL system roles lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Restaurer la configuration chrony livrée par la distribution
+      ansible.builtin.copy:
+        dest: /etc/chrony.conf
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          # Use public servers from the pool.ntp.org project.
+          # Please consider joining the pool (https://www.pool.ntp.org/join.html).
+          pool 2.almalinux.pool.ntp.org iburst
+
+          # Use NTP servers from DHCP.
+          sourcedir /run/chrony-dhcp
+
+          # Record the rate at which the system clock gains/losses time.
+          driftfile /var/lib/chrony/drift
+
+          # Allow the system clock to be stepped in the first three updates
+          # if its offset is larger than 1 second.
+          makestep 1.0 3
+
+          # Enable kernel synchronization of the real-time clock (RTC).
+          rtcsync
+
+          # Increase the minimum number of selectable sources required to adjust
+          # the system clock.
+          #minsources 2
+
+          # Save NTS keys and cookies.
+          ntsdumpdir /var/lib/chrony
+
+          # Specify directory for log files.
+          logdir /var/log/chrony
+
+    - name: Restaurer les options de démarrage de chronyd
+      ansible.builtin.copy:
+        dest: /etc/sysconfig/chronyd
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          # Command-line options for chronyd
+          OPTIONS="-F 2"
+
+    - name: Vérifier la présence de /etc/sysconfig/network
+      ansible.builtin.stat:
+        path: /etc/sysconfig/network
+      register: network_sysconfig
+
+    - name: Retirer la directive PEERNTP posée par le rôle timesync
+      ansible.builtin.lineinfile:
+        path: /etc/sysconfig/network
+        regexp: '^PEERNTP='
+        state: absent
+      when: network_sysconfig.stat.exists
+
+    - name: Lister les sauvegardes horodatées laissées par le rôle
+      ansible.builtin.find:
+        paths:
+          - /etc
+          - /etc/sysconfig
+        patterns:
+          - "chrony.conf.*"
+          - "chronyd.*"
+          - "network.*"
+        file_type: file
+        recurse: false
+      register: role_backups
+
+    - name: Supprimer les sauvegardes laissées par le rôle
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ role_backups.files }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: Redémarrer chronyd sur la configuration d'origine
+      ansible.builtin.systemd_service:
+        name: chronyd
+        state: restarted
+        enabled: true
+
+- name: Brief the learner (RHEL system roles)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Converge time synchronisation on db1.lab with the timesync RHEL system
+          role: three NTP servers, a stepping threshold and a minimum number of
+          sources, all driven by role variables. Do not write chrony.conf by hand.
+      run_once: true

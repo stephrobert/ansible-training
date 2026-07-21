@@ -1,59 +1,59 @@
-# Lab 45 — Module `selinux:` et booléens SELinux
+# Lab 45 — Module `selinux:` and SELinux booleans
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Module SELinux Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/rhel-systeme/module-selinux/)
+🔗 [**Ansible SELinux module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-selinux/)
 
-SELinux (Security-Enhanced Linux) est le système de **contrôle d'accès
-obligatoire** activé par défaut sur RHEL/AlmaLinux/Rocky en mode `enforcing`.
-Trois modules Ansible le gèrent :
+SELinux (Security-Enhanced Linux) is the **mandatory access
+control** system enabled by default on RHEL/AlmaLinux/Rocky in `enforcing` mode.
+Three Ansible modules manage it:
 
-- **`ansible.posix.selinux:`** — état global (enforcing / permissive / disabled)
-  + politique active.
-- **`ansible.posix.seboolean:`** — activer/désactiver des **booléens** SELinux
+- **`ansible.posix.selinux:`**: global state (enforcing / permissive / disabled)
+  + active policy.
+- **`ansible.posix.seboolean:`**: enable/disable SELinux **booleans**
   (`httpd_can_network_connect`, etc.).
-- **`community.general.sefcontext:`** — gérer les **contextes** des fichiers
-  (avec `restorecon` pour appliquer).
+- **`community.general.sefcontext:`**: manage file **contexts**
+  (with `restorecon` to apply them).
 
-Ces modules sont dans **`ansible.posix`** et **`community.general`** —
+These modules live in **`ansible.posix`** and **`community.general`**:
 `ansible-galaxy collection install ansible.posix community.general`.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Vérifier** l'état SELinux et le mode (enforcing / permissive).
-2. **Modifier** un **booléen SELinux** avec persistance.
-3. **Définir** un contexte custom sur un dossier (`sefcontext` + `restorecon`).
-4. **Comprendre** pourquoi un reboot peut être nécessaire (changement de mode).
-5. **Diagnostiquer** un service qui plante "à cause de SELinux".
+1. **Check** the SELinux state and mode (enforcing / permissive).
+2. **Modify** a **SELinux boolean** with persistence.
+3. **Define** a custom context on a directory (`sefcontext` + `restorecon`).
+4. **Understand** why a reboot may be necessary (mode change).
+5. **Diagnose** a service that crashes "because of SELinux".
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible-galaxy collection install ansible.posix community.general
 ansible db1.lab -m ping
 
-# Installer les outils Python SELinux (necessaires aux modules)
+# Install the SELinux Python tools (needed by the modules)
 ansible db1.lab -b -m dnf -a "name=python3-libselinux,policycoreutils-python-utils state=present"
 
 ansible db1.lab -b -m shell -a "rm -rf /var/www/myapp; mkdir -p /var/www/myapp"
 ```
 
-## 📚 Exercice 1 — Vérifier l'état SELinux
+## 📚 Exercise 1 — Check the SELinux state
 
 ```yaml
 ---
@@ -74,18 +74,18 @@ ansible db1.lab -b -m shell -a "rm -rf /var/www/myapp; mkdir -p /var/www/myapp"
           policy : {{ ansible_selinux.type | default('unknown') }}
 ```
 
-🔍 **Observation** : `Enforcing` sur AlmaLinux par défaut. Les facts
-`ansible_selinux.*` sont collectés automatiquement (`gather_facts: true`).
+🔍 **Observation**: `Enforcing` on AlmaLinux by default. The
+`ansible_selinux.*` facts are collected automatically (`gather_facts: true`).
 
-**3 modes possibles** :
+**3 possible modes**:
 
-| Mode | Effet |
+| Mode | Effect |
 |---|---|
-| `enforcing` | Contraintes appliquées + violations bloquées (production RHEL) |
-| `permissive` | Violations **loguées** mais **pas bloquées** (debug) |
-| `disabled` | SELinux complètement désactivé (à éviter en prod) |
+| `enforcing` | Constraints enforced + violations blocked (RHEL production) |
+| `permissive` | Violations **logged** but **not blocked** (debug) |
+| `disabled` | SELinux completely disabled (to avoid in prod) |
 
-## 📚 Exercice 2 — Changer le mode SELinux
+## 📚 Exercise 2 — Change the SELinux mode
 
 ```yaml
 - name: Passer en permissive (debug temporaire)
@@ -94,10 +94,10 @@ ansible db1.lab -b -m shell -a "rm -rf /var/www/myapp; mkdir -p /var/www/myapp"
     state: permissive
 ```
 
-🔍 **Observation** : le module modifie `/etc/selinux/config` (effet **après
-reboot**) ET applique le mode **maintenant** (`setenforce 0`).
+🔍 **Observation**: the module modifies `/etc/selinux/config` (effect **after
+reboot**) AND applies the mode **now** (`setenforce 0`).
 
-**Désactiver complètement** (à éviter sauf cas spécial) :
+**Disable completely** (to avoid except in special cases):
 
 ```yaml
 - ansible.posix.selinux:
@@ -105,14 +105,20 @@ reboot**) ET applique le mode **maintenant** (`setenforce 0`).
   notify: Reboot system
 ```
 
-`state: disabled` **nécessite un reboot** pour prendre effet (le kernel doit
-recharger la politique). Le module modifie `/etc/selinux/config` mais
-**`getenforce`** continuera à afficher `Enforcing` jusqu'au reboot.
+`state: disabled` **requires a reboot** to take effect (the kernel must
+reload the policy). The module modifies `/etc/selinux/config` but
+**`getenforce`** will keep showing `Enforcing` until the reboot.
 
-## 📚 Exercice 3 — Booléens SELinux
+## 📚 Exercise 3 — SELinux booleans
 
-Les **booléens** SELinux sont des switches qui activent/désactivent des règles
-de la politique. Ex : autoriser httpd à se connecter au réseau.
+SELinux **booleans** are switches that enable/disable rules
+of the policy. E.g.: allow the web server to connect to the network.
+
+> 💡 The web booleans are prefixed `httpd_` by historical legacy, but they
+> do not target the Apache package: they target the **SELinux domain `httpd_t`**,
+> the one of all web servers in the targeted policy. nginx runs in it too
+> (`ps -eZ | grep nginx` shows `system_u:system_r:httpd_t:s0`), so everything
+> that follows applies to the training, which deploys nginx.
 
 ```yaml
 - name: Lister les booleens HTTPD
@@ -125,41 +131,41 @@ de la politique. Ex : autoriser httpd à se connecter au réseau.
     msg: "{{ bools.stdout_lines | select('search', 'httpd') | list | first(5) }}"
 ```
 
-🔍 **Observation** : sur RHEL 10, on a ~300 booléens. Les plus utiles RHCE :
+🔍 **Observation**: on RHEL 10, there are ~300 booleans. The most useful for RHCE:
 
-| Booléen | Effet |
+| Boolean | Effect |
 |---|---|
-| `httpd_can_network_connect` | httpd peut faire des connexions sortantes |
-| `httpd_can_network_connect_db` | httpd peut se connecter à une DB distante |
-| `httpd_enable_homedirs` | httpd peut servir `~user/public_html/` |
-| `nfs_export_all_rw` | NFS export en read-write |
-| `samba_enable_home_dirs` | Samba peut partager les homes |
+| `httpd_can_network_connect` | the web server can make outbound connections |
+| `httpd_can_network_connect_db` | the web server can connect to a remote DB |
+| `httpd_enable_homedirs` | the web server can serve `~user/public_html/` |
+| `nfs_export_all_rw` | NFS export in read-write |
+| `samba_enable_home_dirs` | Samba can share the homes |
 
-## 📚 Exercice 4 — Modifier un booléen avec persistance
+## 📚 Exercise 4 — Modify a boolean with persistence
 
 ```yaml
-- name: Autoriser httpd a se connecter au reseau (persistant)
+- name: Autoriser le serveur web a se connecter au reseau (persistant)
   ansible.posix.seboolean:
     name: httpd_can_network_connect
     state: true
     persistent: true
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **Sans `persistent: true`** : changement uniquement **runtime** (perdu au
-  reboot, équivalent `setsebool` simple).
-- **Avec `persistent: true`** : changement **persisté** dans la politique
-  (équivalent `setsebool -P`).
+- **Without `persistent: true`**: change only at **runtime** (lost at
+  reboot, equivalent to a plain `setsebool`).
+- **With `persistent: true`**: change **persisted** into the policy
+  (equivalent to `setsebool -P`).
 
-**Pour la production** : **toujours** `persistent: true`. Sans ça, après reboot
-le service replante avec les mêmes erreurs SELinux.
+**For production**: **always** `persistent: true`. Without it, after a reboot
+the service crashes again with the same SELinux errors.
 
-## 📚 Exercice 5 — Contextes de fichiers (`sefcontext`)
+## 📚 Exercise 5 — File contexts (`sefcontext`)
 
-Pattern fréquent : déployer une app web dans un dossier custom (pas
-`/var/www/html/`). SELinux refuse à `httpd` de servir des fichiers qui n'ont
-pas le bon **contexte SELinux**.
+Frequent pattern: deploy a web app in a custom directory (not the default
+web root, `/usr/share/nginx/html/` on RHEL). SELinux forbids the web
+server to serve files that do not have the right **SELinux context**.
 
 ```yaml
 - name: Definir le contexte httpd_sys_content_t pour /var/www/myapp
@@ -174,23 +180,23 @@ pas le bon **contexte SELinux**.
   changed_when: "'relabeled' in restorecon_result.stdout"
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **`sefcontext:`** ajoute la règle dans la politique (`semanage fcontext -a -t
+- **`sefcontext:`** adds the rule into the policy (`semanage fcontext -a -t
   httpd_sys_content_t '/var/www/myapp(/.*)?'`).
-- **`restorecon -R`** applique la règle aux fichiers existants (sinon ils
-  gardent leur ancien contexte).
+- **`restorecon -R`** applies the rule to the existing files (otherwise they
+  keep their old context).
 
-**Convention regex** : `(/.*)?` à la fin pour matcher le dossier ET tous ses
-sous-éléments.
+**Regex convention**: `(/.*)?` at the end to match the directory AND all its
+sub-elements.
 
-## 📚 Exercice 6 — Diagnostiquer une violation SELinux
+## 📚 Exercise 6 — Diagnose a SELinux violation
 
 ```yaml
-- name: Tenter d acceder a /var/www/myapp via httpd
+- name: Tenter d acceder a /var/www/myapp via le serveur web
   ansible.builtin.uri:
     url: http://localhost/myapp/
-    status_code: [200, 403]   # On accepte 403 si SELinux bloque
+    status_code: [200, 403]   # We accept 403 if SELinux blocks
 
 - name: Verifier les violations dans audit.log
   ansible.builtin.command: |
@@ -200,99 +206,105 @@ sous-éléments.
   failed_when: false
 ```
 
-🔍 **Observation** : si SELinux bloque, `audit.log` contient des entries
-`type=AVC msg=audit ... denied`. Outil **`audit2allow`** (paquet
-`policycoreutils-python-utils`) génère un module SELinux qui autorise
-exactement ce qui est bloqué :
+🔍 **Observation**: if SELinux blocks, `audit.log` contains entries
+`type=AVC msg=audit ... denied`. The **`audit2allow`** tool (package
+`policycoreutils-python-utils`) generates a SELinux module that allows
+exactly what is blocked:
 
 ```bash
-ssh ansible@db1.lab 'sudo audit2allow -a -M myapp_local'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'sudo audit2allow -a -M myapp_local'
 sudo semodule -i myapp_local.pp
 ```
 
-**Mais** : ne **jamais** `audit2allow -a -M` aveuglément en prod — c'est
-souvent une mauvaise idée. Préférer corriger le contexte (`sefcontext`) ou
-activer un booléen.
+**But**: **never** run `audit2allow -a -M` blindly in prod, it is
+often a bad idea. Prefer fixing the context (`sefcontext`) or
+enabling a boolean.
 
-## 📚 Exercice 7 — Le piège : SELinux désactivé pendant le développement
+## 📚 Exercise 7 — The trap: SELinux disabled during development
 
-Pattern dangereux observé en prod :
+Dangerous pattern seen in prod:
 
 ```yaml
-# ❌ Mauvaise pratique — desactive SELinux "pour que ca marche"
+# ❌ Bad practice: disables SELinux "to make it work"
 - ansible.posix.selinux:
     state: disabled
 ```
 
-🔍 **Risques** :
+🔍 **Risks**:
 
-- **Surface d'attaque augmentée** : SELinux est une couche de défense critique
-  contre les exploits.
-- **Audit échoué** : RHCE EX294, CIS Benchmark, ANSSI exigent SELinux activé.
-- **Drift dev/prod** : le code marche en dev (SELinux off) mais plante en prod
+- **Increased attack surface**: SELinux is a critical layer of defense
+  against exploits.
+- **Failed audit**: RHCE EX294, CIS Benchmark, ANSSI require SELinux enabled.
+- **Dev/prod drift**: the code works in dev (SELinux off) but crashes in prod
   (SELinux on).
 
-**Bonne pratique** : passer en `permissive` pour debug → identifier les
-contextes/booléens manquants → corriger → revenir en `enforcing`.
+**Good practice**: switch to `permissive` to debug → identify the
+missing contexts/booleans → fix → go back to `enforcing`.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`ansible.posix.selinux:`** = état global (`enforcing`/`permissive`/`disabled`).
-- **`ansible.posix.seboolean:`** = booléens — **toujours `persistent: true`** en prod.
-- **`community.general.sefcontext:`** + **`restorecon -R`** = contextes de fichiers.
-- **Changement vers `disabled`** nécessite un **reboot** pour prendre effet.
-- **`policycoreutils-python-utils`** doit être installé sur le managed node.
-- **Ne jamais désactiver SELinux** sauf cas critique documenté.
+- **`ansible.posix.selinux:`** = global state (`enforcing`/`permissive`/`disabled`).
+- **`ansible.posix.seboolean:`** = booleans, **always `persistent: true`** in prod.
+- **`community.general.sefcontext:`** + **`restorecon -R`** = file contexts.
+- **A change to `disabled`** requires a **reboot** to take effect.
+- **`policycoreutils-python-utils`** must be installed on the managed node.
+- **Never disable SELinux** except in a documented critical case.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous déployez une app dans `/opt/myapp/` qui doit être servie par httpd.
-   `httpd` ne peut pas y accéder. Quel pipeline (booléen, sefcontext,
-   restorecon) ?
+1. You deploy an app in `/opt/myapp/` that must be served by nginx.
+   nginx cannot access it. Which pipeline (boolean, sefcontext,
+   restorecon)?
 
-2. Pourquoi `state: permissive` est-il **plus utile** que `state: disabled`
-   pour le **debug** ? (indice : violations toujours loguées).
+2. Why is `state: permissive` **more useful** than `state: disabled`
+   for **debugging**? (hint: violations still logged).
 
-3. Vous voulez **lister tous les contextes** définis sur un dossier. Quelle
-   commande shell + quel module Ansible ?
+3. You want to **list all the contexts** defined on a directory. Which
+   shell command + which Ansible module?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`ansible.posix.seport:`** : associer un **port** à un type SELinux. Ex :
-  faire tourner httpd sur 8080 (par défaut SELinux n'autorise httpd que sur
-  80, 443, 8080, etc.).
-- **`audit2allow -a`** : générer un **module SELinux custom** depuis les
-  violations loguées. Outil de **dépannage** — pas de production aveugle.
-- **Multi-policy** : RHEL 10 supporte `targeted` (par défaut) et `mls`
-  (Multi-Level Security, secteur défense). Pas dans RHCE.
-- **`semanage` CLI** : commande de référence pour explorer la politique
+- **`community.general.seport:`**: associate a **port** with a SELinux type.
+  The `httpd_t` domain is only allowed to bind to two types: `http_port_t`
+  (80, 81, 443, 488, 8008, 8009, 8443, 9000) and `http_cache_port_t` (8080,
+  8118, 8123, 10001-10010). Any other port must be labeled, otherwise the bind
+  fails with "Permission denied". Beware the trap: **8080 already works
+  out of the box** (it is in `http_cache_port_t`), so it is not a good
+  example. The `premiers-pas/premier-playbook` lab uses 8888, which really is
+  denied by default. Check your machine's policy:
+  `semanage port -l | grep -E '^http_(port|cache_port)_t'`.
+- **`audit2allow -a`**: generate a **custom SELinux module** from the
+  logged violations. A **troubleshooting** tool, not for blind production.
+- **Multi-policy**: RHEL 10 supports `targeted` (default) and `mls`
+  (Multi-Level Security, defense sector). Not in RHCE.
+- **`semanage` CLI**: the reference command to explore the policy
   (`semanage fcontext -l`, `semanage port -l`, `semanage boolean -l`).
-- **Lab 44 (firewalld)** : compléter SELinux par les règles réseau pour une
-  sécurité défense-en-profondeur.
+- **Lab 44 (firewalld)**: complement SELinux with network rules for
+  defense-in-depth security.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/modules-rhel/selinux/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/modules-rhel/selinux/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/modules-rhel/selinux/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task,
+file modes as strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

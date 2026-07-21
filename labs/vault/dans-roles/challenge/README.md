@@ -1,29 +1,29 @@
-# 🎯 Challenge — Pattern `vault.yml` dans un rôle
+# 🎯 Challenge — `vault.yml` pattern in a role
 
-## ✅ Objectif
+## ✅ Objective
 
-Démontrer le pattern de production : un rôle `secured_app` avec
-**`defaults/main.yml`** (variables non sensibles, surchargeables) et
-**`vars/main.yml`** (variables vault, chiffrées). Le test valide qu'un
-override par le play marche, et que les 2 secrets chiffrés sont
-correctement déchiffrés à l'exécution.
+Demonstrate the production pattern: a `secured_app` role with
+**`defaults/main.yml`** (non-sensitive, overridable variables) and
+**`vars/main.yml`** (vault variables, encrypted). The test validates that an
+override by the play works, and that the 2 encrypted secrets are
+correctly decrypted at execution.
 
-| Cible | Fichier produit | Contenu attendu |
+| Target | Produced file | Expected content |
 | --- | --- | --- |
-| `db1.lab` | `/tmp/lab81-secured-app.txt` | `user: appuser`, `port: 9999`, `RoleDBPas…` (8 premiers chars du db_password), `role_api_tok_lab81_xyz` |
+| `db1.lab` | `/tmp/lab81-secured-app.txt` | `user: appuser`, `port: 9999`, `RoleDBPas…` (first 8 chars of the db_password), `role_api_tok_lab81_xyz` |
 
-## 🧩 Indices
+## 🧩 Hints
 
-### Structure attendue du rôle
+### Expected structure of the role
 
 ```text
 roles/secured_app/
-├── defaults/main.yml      ← secured_app_user, secured_app_port (clair, basse précédence)
-├── vars/main.yml          ← vault_secured_app_db_password, vault_secured_app_api_token (chiffré)
-└── tasks/main.yml         ← compose le marqueur final
+├── defaults/main.yml      ← secured_app_user, secured_app_port (cleartext, low precedence)
+├── vars/main.yml          ← vault_secured_app_db_password, vault_secured_app_api_token (encrypted)
+└── tasks/main.yml         ← composes the final marker
 ```
 
-### Étape 1 — Defaults (clair)
+### Step 1 — Defaults (cleartext)
 
 ```yaml
 # roles/secured_app/defaults/main.yml
@@ -32,10 +32,12 @@ secured_app_user: ???       # → "user: appuser"
 secured_app_port: ???       # default à 8080, le play l'override à 9999
 ```
 
-### Étape 2 — Vars (chiffré)
+### Step 2 — Vars (encrypted)
 
 ```bash
-echo "vault-roles-2026" > .vault_password && chmod 0600 .vault_password
+# The lab vault password is generated locally, never committed:
+#   ./scripts/setup-lab-vault-passwords.sh
+# It creates .vault_password at the lab root, with the right permissions.
 
 cat > roles/secured_app/vars/main.yml <<'YAML'
 ---
@@ -48,7 +50,7 @@ YAML
 ansible-vault encrypt roles/secured_app/vars/main.yml --vault-password-file=.vault_password
 ```
 
-### Étape 3 — Tâche du rôle
+### Step 3 — Role task
 
 ```yaml
 # roles/secured_app/tasks/main.yml
@@ -65,7 +67,7 @@ ansible-vault encrypt roles/secured_app/vars/main.yml --vault-password-file=.vau
   no_log: ???
 ```
 
-### Étape 4 — `challenge/solution.yml`
+### Step 4 — `challenge/solution.yml`
 
 ```yaml
 ---
@@ -79,23 +81,23 @@ ansible-vault encrypt roles/secured_app/vars/main.yml --vault-password-file=.vau
         secured_app_port: 9999       # override du default
 ```
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
-> - **`defaults/main.yml`** (priorité 1) vs **`vars/main.yml`** (priorité
->   18) : tout ce qui est dans `vars/` ne peut **pas** être overridé par
->   un `--extra-vars` du play. Les utilisateurs du rôle modifient les
->   `defaults/`, pas les `vars/`.
-> - **Pattern d'indirection** : `vars/main.yml` chiffré contient
->   `vault_*`, puis `defaults/main.yml` clair fait
->   `app_var: "{{ vault_app_var }}"`. Le rôle utilise `app_var`,
->   l'utilisateur ne voit que les `defaults/`.
-> - **`ANSIBLE_ROLES_PATH`** doit pointer sur le dossier parent du rôle.
->   Pas le rôle lui-même.
-> - **Distribution du rôle** : ne jamais inclure le `.vault_password` dans
->   le tarball Galaxy. L'utilisateur fournit le sien via
+> - **`defaults/main.yml`** (priority 2) vs **`vars/main.yml`** (priority
+>   18): everything in `vars/` **cannot** be overridden by
+>   an `--extra-vars` of the play. The users of the role modify the
+>   `defaults/`, not the `vars/`.
+> - **Indirection pattern**: the encrypted `vars/main.yml` contains
+>   `vault_*`, then the cleartext `defaults/main.yml` does
+>   `app_var: "{{ vault_app_var }}"`. The role uses `app_var`,
+>   the user only sees the `defaults/`.
+> - **`ANSIBLE_ROLES_PATH`** must point to the parent folder of the role.
+>   Not the role itself.
+> - **Distribution of the role**: never include the `.vault_password` in
+>   the Galaxy tarball. The user provides their own via
 >   `--vault-password-file`.
 
-## 🚀 Lancement
+## 🚀 Launch
 
 ```bash
 ansible-playbook labs/vault/dans-roles/challenge/solution.yml \
@@ -112,12 +114,12 @@ pytest -v labs/vault/dans-roles/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/vault/dans-roles/ clean
+dsoxlab clean vault-dans-roles
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Convention `vault_*` + alias** : `secured_app_db_password: "{{ vault_secured_app_db_password }}"` permet de chiffrer une seule fois et exposer une variable claire au reste du rôle.
-- **`tags:` sur les rôles** pour skipper les tâches vault en mode `--check`.
-- **Dépendances de rôle** : `meta/main.yml: dependencies` peut référencer
-  un autre rôle qui charge le vault.
+- **`vault_*` convention + alias**: `secured_app_db_password: "{{ vault_secured_app_db_password }}"` lets you encrypt once and expose a cleartext variable to the rest of the role.
+- **`tags:` on the roles** to skip the vault tasks in `--check` mode.
+- **Role dependencies**: `meta/main.yml: dependencies` can reference
+  another role that loads the vault.

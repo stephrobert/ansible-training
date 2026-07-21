@@ -1,0 +1,13 @@
+---
+# Reset du lab playbooks-mixtes : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup playbooks-mixtes lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (playbooks-mixtes)
+      ansible.builtin.file:
+        path: "/tmp/lab80-challenge.txt"
+        state: "absent"
+      failed_when: false

@@ -1,21 +1,21 @@
-# 🎯 Challenge — Initialiser et builder votre collection minimaliste
+# 🎯 Challenge — Initialize and build your minimalist collection
 
-## ✅ Objectif
+## ✅ Objective
 
-Initialiser une collection **`student.rhce.lab95`**, y ajouter **un module Python** qui retourne `"Hello, lab95!"`, builder le tarball, et prouver que la structure passe `ansible-test sanity --docker default --test ansible-doc`.
+Initialize a collection **`student.lab95`**, add **a Python module** to it that returns `"Hello, lab95!"`, build the tarball, and prove that the structure passes `ansible-test sanity --docker default --test ansible-doc`.
 
-| Élément | Valeur attendue |
+| Element | Expected value |
 | --- | --- |
 | Namespace | `student` |
-| Nom collection | `lab95` |
+| Collection name | `lab95` |
 | Version | `1.0.0` |
-| Module custom | `plugins/modules/lab95_hello.py` qui retourne `msg="Hello, lab95!"` |
+| Custom module | `plugins/modules/lab95_hello.py` that returns `msg="Hello, lab95!"` |
 | Tarball | `build/student-lab95-1.0.0.tar.gz` |
-| Tags `galaxy.yml` | au moins `[demo, lab95]` |
+| `galaxy.yml` tags | at least `[demo, lab95]` |
 
-## 🧩 Indices
+## 🧩 Hints
 
-### Étape 1 — Init
+### Step 1 — Init
 
 ```bash
 cd labs/collections/creer-custom/challenge/
@@ -23,9 +23,9 @@ mkdir -p collection_root
 ansible-galaxy collection init student.lab95 --init-path ???
 ```
 
-### Étape 2 — Squelette du module Python
+### Step 2 — Python module skeleton
 
-`collection_root/ansible_collections/student/lab95/plugins/modules/lab95_hello.py` :
+`collection_root/ansible_collections/student/lab95/plugins/modules/lab95_hello.py`:
 
 ```python
 #!/usr/bin/python
@@ -72,9 +72,9 @@ if __name__ == '__main__':
     main()
 ```
 
-### Étape 3 — Compléter `galaxy.yml`
+### Step 3 — Complete `galaxy.yml`
 
-Vérifier la présence de :
+Check the presence of:
 
 ```yaml
 namespace: student
@@ -87,14 +87,14 @@ authors:
   - "???"
 ```
 
-### Étape 4 — Compléter `meta/runtime.yml`
+### Step 4 — Complete `meta/runtime.yml`
 
 ```yaml
 ---
 requires_ansible: ???
 ```
 
-### Étape 5 — Builder
+### Step 5 — Build
 
 ```bash
 cd collection_root/ansible_collections/student/lab95/
@@ -102,43 +102,43 @@ ansible-galaxy collection build --output-path ../../../../build/
 ls ../../../../build/
 ```
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
-> - **Arborescence stricte** : `collection_root/ansible_collections/<namespace>/<name>/`.
->   Pas le bon chemin = collection invalide.
-> - **`namespace.name`** : minuscules, underscores autorisés. Pas de
->   tiret. Pas de point. Validation stricte par Galaxy.
-> - **`galaxy.yml`** obligatoire à la racine. Champs requis : `namespace`,
->   `name`, `version`, `readme`, `authors`. Sinon, `ansible-galaxy build`
->   refuse.
-> - **`build_ignore:`** : exclure des fichiers du tarball (`tests/`,
->   `.git/`, `*.pyc`). Réduit la taille publié sur Galaxy.
-> - **`ansible-galaxy collection install <tarball>`** pour tester
->   localement avant publish.
+> - **Strict tree**: `collection_root/ansible_collections/<namespace>/<name>/`.
+>   Wrong path = invalid collection.
+> - **`namespace.name`**: lowercase, underscores allowed. No
+>   hyphen. No dot. Strict validation by Galaxy.
+> - **`galaxy.yml`** mandatory at the root. Required fields: `namespace`,
+>   `name`, `version`, `readme`, `authors`. Otherwise, `ansible-galaxy build`
+>   refuses.
+> - **`build_ignore:`**: exclude files from the tarball (`tests/`,
+>   `.git/`, `*.pyc`). Reduces the size published on Galaxy.
+> - **`ansible-galaxy collection install <tarball>`** to test
+>   locally before publish.
 
-## 🚀 Lancement
+## 🚀 Launch
 
 ```bash
 cd labs/collections/creer-custom/challenge/
-# Suivez les étapes ci-dessus pour produire build/student-lab95-1.0.0.tar.gz
+# Follow the steps above to produce build/student-lab95-1.0.0.tar.gz
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/collections/creer-custom/challenge/tests/
 ```
 
-Le test pytest valide la **structure générée** : tarball présent, galaxy.yml conforme, module Python avec `DOCUMENTATION` + `RETURN`.
+The pytest test validates the **generated structure**: tarball present, compliant galaxy.yml, Python module with `DOCUMENTATION` + `EXAMPLES` + `RETURN`.
 
 ## 🧹 Reset
 
 ```bash
-make -C labs/collections/creer-custom/ clean
+dsoxlab clean collections-creer-custom
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`ansible-test sanity --docker default --test ansible-doc`** dans la collection.
-- **`ansible-galaxy collection publish ...`** vers Galaxy (token API requis).
-- **`changelogs/fragments/`** : un YAML par PR plutôt qu'un CHANGELOG.rst monolithique.
+- **`ansible-test sanity --docker default --test ansible-doc`** in the collection.
+- **`ansible-galaxy collection publish ...`** to Galaxy (API token required).
+- **`changelogs/fragments/`**: one YAML per PR rather than a monolithic CHANGELOG.rst.

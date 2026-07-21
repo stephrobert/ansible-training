@@ -1,0 +1,52 @@
+---
+# Reset du lab lineinfile : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+#
+# Ce lab touche à sshd_config : un nettoyage qui rate verrouille la VM. D'où le
+# déclaratif (lineinfile state=absent) plutôt que la restauration d'un .bak,
+# dont on ne sait ni ce qu'il contient ni quand il a été pris — la version
+# précédente restaurait un .bak qui pouvait porter un « AllowUsers ansible »
+# pointant un compte inexistant, et rendait db1 injoignable.
+- name: Cleanup lineinfile lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Remove the sysctl line added by the lab
+      ansible.builtin.lineinfile:
+        path: /etc/sysctl.conf
+        regexp: '^net\.ipv4\.ip_forward=1$'
+        state: absent
+
+    # AllowUsers doit disparaître : une valeur restante qui ne nomme pas le
+    # compte du lab rend la VM injoignable au prochain restart de sshd.
+    - name: Remove the AllowUsers restriction
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^\s*AllowUsers\s'
+        state: absent
+        validate: "sshd -t -f %s"
+
+    - name: Restore the sshd defaults touched by the lab
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        validate: "sshd -t -f %s"
+      loop:
+        - { regexp: '^\s*#?\s*PermitRootLogin\s', line: "#PermitRootLogin prohibit-password" }
+        - { regexp: '^\s*#?\s*MaxAuthTries\s', line: "#MaxAuthTries 6" }
+      loop_control:
+        label: "{{ item.line }}"
+      notify: Restart sshd
+
+    - name: Drop the stale backup left by earlier runs of this lab
+      ansible.builtin.file:
+        path: /etc/ssh/sshd_config.bak
+        state: absent
+
+  handlers:
+    - name: Restart sshd
+      ansible.builtin.systemd_service:
+        name: sshd
+        state: restarted

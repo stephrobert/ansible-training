@@ -1,0 +1,26 @@
+---
+id: molecule-tdd-cycle
+title: "Molecule: build a users role test-first"
+description: "Write verify.yml and argument_specs.yml before a single task, then iterate on converge until green and refactor without breaking the tests."
+section: molecule
+level: l3
+difficulty: advanced
+lab_type: lab
+estimated_time: "45m"
+skills:
+  - tdd
+  - molecule-verify
+  - molecule-converge
+  - refactoring
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/molecule-tdd-cycle/
+track:
+  - au-dela-ex294
+runtime:
+  type: shell
+  workdir: challenge/work
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

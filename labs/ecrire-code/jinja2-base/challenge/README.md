@@ -1,25 +1,25 @@
-# 🎯 Challenge — Template MOTD avec `if` + `for`
+# 🎯 Challenge — MOTD template with `if` + `for`
 
-## ✅ Objectif
+## ✅ Objective
 
-Générer **`/etc/motd-challenge`** sur **db1.lab** depuis un template Jinja2,
-avec un bloc conditionnel et une boucle.
+Generate **`/etc/motd-challenge`** on **db1.lab** from a Jinja2 template,
+with a conditional block and a loop.
 
-## 🧩 Fichiers à créer
+## 🧩 Files to create
 
 ### 1) `challenge/templates/motd.j2`
 
-Le template doit utiliser :
+The template must use:
 
-- **`{{ inventory_hostname }}`** pour interpoler le nom de l'hôte
-- **`{% if host_role == "DB" %}` … `{% endif %}`** pour afficher conditionnellement
-  une ligne `Profil : DB`
-- **`{% for s in services %}` … `{% endfor %}`** pour itérer sur la liste des
+- **`{{ inventory_hostname }}`** to interpolate the host name
+- **`{% if host_role == "DB" %}` … `{% endif %}`** to conditionally display
+  a `Profil : DB` line
+- **`{% for s in services %}` … `{% endfor %}`** to iterate over the list of
   services
-- **Whitespace control** : utilisez `{%- ... -%}` ou `{%- ... %}` pour éviter
-  les lignes vides parasites
+- **Whitespace control**: use `{%- ... -%}` or `{%- ... %}` to avoid
+  spurious empty lines
 
-Squelette :
+Skeleton:
 
 ```jinja
 ==========================================
@@ -36,7 +36,7 @@ Services :
 
 ### 2) `challenge/solution.yml`
 
-Squelette :
+Skeleton:
 
 ```yaml
 ---
@@ -59,7 +59,7 @@ Squelette :
         mode: "0644"
 ```
 
-## 🧩 Sortie attendue
+## 🧩 Expected output
 
 ```text
 ==========================================
@@ -72,28 +72,28 @@ Services :
   - firewalld
 ```
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
-> - **`{{ ... }}` vs `{% ... %}`** : `{{ }}` évalue et affiche, `{% %}`
->   contrôle (if, for, set). Confusion classique : utiliser `{{ if }}`
->   au lieu de `{% if %}`.
-> - **`{% for ... %}` ajoute des newlines** : utiliser `{%- for -%}`
->   (avec tirets) pour supprimer les sauts de ligne autour. Attention au
->   formatage du fichier produit.
-> - **`| default(...)`** : indispensable pour rendre un template
->   réutilisable. Sans, une variable absente fait planter le templating.
-> - **Chemin du template** : relatif à `<role>/templates/` pour un rôle,
->   ou `templates/` à côté du playbook sinon. **Pas** `template:
->   src: /chemin/absolu`.
+> - **`{{ ... }}` vs `{% ... %}`**: `{{ }}` evaluates and displays, `{% %}`
+>   controls (if, for, set). Classic confusion: using `{{ if }}`
+>   instead of `{% if %}`.
+> - **`{% for ... %}` adds newlines**: use `{%- for -%}`
+>   (with dashes) to remove the surrounding line breaks. Watch the
+>   formatting of the produced file.
+> - **`| default(...)`**: essential to make a template
+>   reusable. Without it, a missing variable crashes the templating.
+> - **Template path**: relative to `<role>/templates/` for a role,
+>   or `templates/` next to the playbook otherwise. **Not** `template:
+>   src: /absolute/path`.
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/ecrire-code/jinja2-base/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "cat /etc/motd-challenge"
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/jinja2-base/challenge/tests/
@@ -102,14 +102,14 @@ pytest -v labs/ecrire-code/jinja2-base/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/ecrire-code/jinja2-base clean
+dsoxlab clean ecrire-code-jinja2-base
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`trim_blocks` et `lstrip_blocks`** : options du template qui contrôlent les
-  espaces autour des balises `{%- %}`. Activez-les sur le module pour un rendu
-  plus prévisible :
+- **`trim_blocks` and `lstrip_blocks`**: template options that control the
+  spaces around the `{%- %}` tags. Enable them on the module for a rendering
+  that is more predictable:
 
   ```yaml
   ansible.builtin.template:
@@ -117,9 +117,9 @@ make -C labs/ecrire-code/jinja2-base clean
     lstrip_blocks: true
   ```
 
-- **Variables conditionnelles** : `{{ var | default('default_value') }}` dans
-  le template, pour éviter `is undefined` partout.
-- **Lint** :
+- **Conditional variables**: `{{ var | default('default_value') }}` in
+  the template, to avoid `is undefined` everywhere.
+- **Lint**:
 
    ```bash
    ansible-lint labs/ecrire-code/jinja2-base/challenge/solution.yml

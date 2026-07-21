@@ -1,106 +1,116 @@
-# 🎯 Challenge — HashiCorp Vault / OpenBao : lookup KV v2
+# 🎯 Challenge — HashiCorp Vault / OpenBao: KV v2 lookup, proven
 
-## ✅ Objectif
+## ✅ Objective
 
-Vérifier que le projet contient un script de setup d'un Vault local
-(HashiCorp ou OpenBao) **et** un playbook qui consomme les secrets via
-la lookup `community.hashi_vault.vault_kv2_get` — **sans** jamais
-écrire les secrets en clair dans le YAML.
+Write `challenge/solution.yml`: a playbook that retrieves **at runtime**
+the two secrets created in the local Vault (`db_password` and `api_key`,
+path `secret/lab82`) via the `community.hashi_vault.vault_kv2_get` lookup,
+and that deposits the **derived proof** (the lengths, never the values)
+into a local file.
 
-| Fichier | Attente |
-| --- | --- |
-| `setup-vault.sh` | Exécutable. Variable `IMAGE` (toggle Vault ↔ OpenBao). Référence `hashicorp/vault` ou `openbao/openbao`. |
-| `playbook.yml` | Utilise `community.hashi_vault.vault_kv2_get` via `lookup()`. `engine_mount_point` explicite (`secret`). Pas de valeur secrète en dur. |
+The tests require a **running Vault**: they query its
+API themselves to check that what your playbook wrote matches the secrets
+actually stored. Without a server, they `skip` with the steps
+to follow: nothing passes "empty".
 
-## 🧩 Indices
-
-### Étape 1 — Démarrer le Vault local
+## 🔧 Prerequisites (the lab infrastructure)
 
 ```bash
 cd labs/vault/integration-hashicorp/
-./setup-vault.sh                # → container Vault dev sur 127.0.0.1:8200
-export VAULT_ADDR=http://127.0.0.1:8200
-export VAULT_TOKEN=root           # token dev (NE PAS UTILISER EN PROD)
+./setup-vault.sh                          # dev Vault on 127.0.0.1:8200 (podman required)
+ansible-galaxy collection install community.hashi_vault
+pipx inject ansible hvac                  # Python Vault client
 ```
 
-### Étape 2 — Stocker un secret dans le KV v2
+The script creates the demo secrets in `secret/lab82` and displays the dev
+token (`lab82-root`).
 
-```bash
-vault kv put secret/lab82 db_password=??? api_token=???
-vault kv get secret/lab82
-```
+## 🧩 Expected contract
 
-### Étape 3 — Compléter `playbook.yml`
+| Element | Expectation |
+| --- | --- |
+| Target | `localhost`, `connection: local`, without `become` |
+| Address and token | read from the environment (`VAULT_ADDR`, `VAULT_TOKEN`), with `http://127.0.0.1:8200` and `lab82-root` as defaults |
+| Lookup | `community.hashi_vault.vault_kv2_get`, path `lab82`, explicit `engine_mount_point` |
+| Proof | `/tmp/lab82-vault-lookup.txt`, mode `0600`, containing exactly the two lines `db_password length: <n>` and `api_key length: <n>` |
+| Forbidden | any cleartext secret value, in the YAML as in the proof file |
 
-Squelette à remplir :
+## 🧩 Skeleton
 
 ```yaml
 ---
-- name: Lab 82 — récupérer secret depuis HashiCorp Vault
-  hosts: localhost
+- name: Récupérer les secrets depuis Vault et en déposer la preuve
+  hosts: ???
+  connection: ???
   gather_facts: false
-  collections:
-    - community.hashi_vault         # ← obligatoire
+  become: false                        # ansible.cfg l'active globalement : pas ici
 
   vars:
+    ansible_ssh_private_key_file: null   # localhost n'a pas besoin de la clé SSH du lab
+    vault_addr: "{{ lookup('env', 'VAULT_ADDR') | default('???', true) }}"
+    vault_token: "{{ lookup('env', 'VAULT_TOKEN') | default('???', true) }}"
     secrets: "{{ lookup('community.hashi_vault.vault_kv2_get',
-                         '???',                          # path : 'lab82'
-                         engine_mount_point='???',       # 'secret'
-                         url='{{ lookup(\"env\", \"VAULT_ADDR\") }}',
-                         token='{{ lookup(\"env\", \"VAULT_TOKEN\") }}') }}"
+                        '???',
+                        engine_mount_point='???',
+                        url=vault_addr,
+                        token=vault_token).secret }}"
 
   tasks:
-    - name: Afficher la longueur du db_password (preuve de récupération)
-      ansible.builtin.debug:
-        msg: "DB password length: {{ secrets.data.db_password | length }}"
-      no_log: ???
+    - name: Déposer la preuve (longueurs, jamais les valeurs)
+      ansible.builtin.copy:
+        dest: ???
+        content: |
+          db_password length: {{ ??? }}
+          api_key length: {{ ??? }}
+        mode: ???
 ```
 
-## 🚀 Lancement
+> 💡 **Pitfalls**:
+>
+> - **Missing collection**: `couldn't resolve module/action
+>   'community.hashi_vault.vault_kv2_get'` means that
+>   `ansible-galaxy collection install community.hashi_vault` is missing.
+> - **`.secret`**: the lookup returns a dictionary; the key/value
+>   pairs of the KV v2 live under its `secret` key.
+> - **`engine_mount_point`**: in dev mode the KV v2 is mounted on `secret/`.
+>   Without the explicit mount point, the lookup searches in the wrong place.
+> - **Mode `0600`**: the proof only contains lengths, but the
+>   reflex remains: a file derived from a secret is never deposited as `0644`.
+> - **Dev root token**: accepted here only because the server is
+>   disposable. In production: AppRole or JWT/OIDC, never the root token.
+> - **`ansible_ssh_private_key_file: null`**: the lab inventory defines
+>   the SSH key via `inventory_dir`, which the implicit `localhost` cannot
+>   resolve. Without this neutralization, the play crashes before its 1st task.
+
+## 🚀 Launch
 
 ```bash
-cd labs/vault/integration-hashicorp/
-./setup-vault.sh
-ansible-playbook playbook.yml
+ansible-playbook labs/vault/integration-hashicorp/challenge/solution.yml
+cat /tmp/lab82-vault-lookup.txt
 ```
 
 ## 🧪 Validation
-
-Le test pytest est **structurel** (fichiers + leur contenu, pas
-l'exécution). Il marche **sans** lancer le container :
 
 ```bash
 pytest -v labs/vault/integration-hashicorp/challenge/tests/
 ```
 
+The tests read the secrets **directly in Vault** (HTTP API) and
+compare: exact lengths in the proof, no cleartext value either
+in the proof or in your YAML, and idempotence on the second run.
+
 ## 🧹 Reset
 
 ```bash
-make -C labs/vault/integration-hashicorp/ clean
+podman stop vault-lab82
+rm -f /tmp/lab82-vault-lookup.txt
 ```
 
-> 💡 **Pièges** :
->
-> - **Collection requise** : `ansible-galaxy collection install
->   community.hashi_vault` est nécessaire avant le run. Erreur
->   `couldn't resolve module/action 'community.hashi_vault.vault_kv2_get'`
->   = collection absente.
-> - **Token `root` en dev mode uniquement** : Vault dev mode démarre avec
->   `VAULT_TOKEN=root` et les données en mémoire (perdues au stop).
->   **JAMAIS** en prod. Pour la prod, utiliser `approle` ou `JWT/OIDC`.
-> - **`engine_mount_point`** : par défaut le KV v2 est monté sur
->   `secret/` en dev mode (`engine_mount_point: secret`). En prod, c'est
->   souvent `kv/` ou un nom custom.
-> - **Pas de valeur en dur** dans le playbook : le test pytest **scanne**
->   le fichier pour des chaînes interdites (`VaultPassLab82`,
->   `vault_api_xyz_lab82`). Utilisez la lookup, pas une valeur.
-> - **`no_log: true`** sur les tâches qui manipulent le secret — sinon
->   `ansible-playbook -v` affiche tout.
+## 💡 Going further
 
-## 💡 Pour aller plus loin
-
-- **`approle`** auth method (au lieu de `token`) pour CI/CD : token
-  long-vivant remplacé par role_id + secret_id à courte durée.
-- **TLS** : Vault prod en HTTPS avec certificat client.
-- **AppRole + Vault Agent** : sidecar qui injecte les secrets dans
-  l'environnement sans qu'Ansible ait à les chercher.
+- **OpenBao**: `podman stop vault-lab82 && IMAGE=openbao/openbao:latest
+  ./setup-vault.sh`, then run the playbook and tests again: nothing to change,
+  the API is compatible.
+- **AppRole**: replace the token with `auth_method='approle'` with
+  `role_id`/`secret_id` (cf. the lab README, exercise 4).
+- **`ansible-lint --profile production labs/vault/integration-hashicorp/challenge/solution.yml`**.

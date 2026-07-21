@@ -1,52 +1,51 @@
-# Lab 41 — Module `group:` (gérer les groupes Linux)
+# Lab 41 — `group:` module (manage Linux groups)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Module group Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-group/)
+🔗 [**Ansible group module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-group/)
 
-`ansible.builtin.group:` gère les **groupes Linux** : création, suppression,
-forçage du GID. Module compagnon de [`user:`](../40-modules-utilisateurs-user/) —
-on crée d'abord les groupes, puis on rattache les utilisateurs.
+`ansible.builtin.group:` manages **Linux groups**: creation, deletion, forcing
+the GID. Companion module of [`user:`](../user/): you
+first create the groups, then attach the users.
 
-Options principales : **`name:`**, **`state:`**, **`gid:`**, **`system: true`**
-(pour les groupes système avec GID < 1000).
+Main options: **`name:`**, **`state:`**, **`gid:`**, **`system: true`** (for
+system groups with GID < 1000).
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Créer** un groupe simple et un groupe avec **GID forcé** (cohérence
-   multi-hôtes).
-2. **Distinguer** un groupe utilisateur (GID ≥ 1000) d'un groupe système
+1. **Create** a simple group and a group with a **forced GID** (multi-host
+   consistency).
+2. **Distinguish** a user group (GID ≥ 1000) from a system group
    (`system: true`, GID < 1000).
-3. **Supprimer** un groupe avec `state: absent` (et son comportement quand des
-   users en font encore partie).
-4. **Ordonner** les tâches : créer le **groupe avant** l'utilisateur qui le
-   référence.
+3. **Delete** a group with `state: absent` (and its behavior when users are
+   still part of it).
+4. **Order** the tasks: create the **group before** the user that references it.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 ansible db1.lab -b -m shell -a "for g in dev-team ops-team rhce-shared; do groupdel \$g 2>/dev/null; done; true"
 ```
 
-## 📚 Exercice 1 — Création basique
+## 📚 Exercise 1 — Basic creation
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -70,19 +69,19 @@ Créez `lab.yml` :
         # → dev-team:x:1001:
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/modules-utilisateurs/group/lab.yml
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- 1er run : `changed=1` — `groupadd dev-team`.
-- 2ème run : `changed=0` — déjà présent.
-- Le **GID est auto-attribué** (premier libre ≥ 1000).
+- 1st run: `changed=1`, `groupadd dev-team`.
+- 2nd run: `changed=0`, already present.
+- The **GID is auto-assigned** (first free one ≥ 1000).
 
-## 📚 Exercice 2 — GID forcé (cohérence multi-hôtes)
+## 📚 Exercise 2 — Forced GID (multi-host consistency)
 
 ```yaml
 - name: Creer ops-team avec GID 3000 force
@@ -98,18 +97,18 @@ ansible-playbook labs/modules-utilisateurs/group/lab.yml
     state: present
 ```
 
-🔍 **Observation** : sur 50 hôtes, ces groupes auront **toujours le même GID**.
-C'est essentiel pour :
+🔍 **Observation**: on 50 hosts, these groups will **always have the same GID**.
+This is essential for:
 
-- **NFS** : si un fichier appartient à `gid=3001` côté serveur NFS, il faut que
-  le client ait aussi `gid=3001` pour pouvoir l'ouvrir.
-- **Containers** : volumes partagés entre hôte et conteneur.
-- **Audit** : comparer les GIDs entre hôtes pour détecter une divergence.
+- **NFS**: if a file belongs to `gid=3001` on the NFS server side, the client
+  must also have `gid=3001` to be able to open it.
+- **Containers**: volumes shared between host and container.
+- **Audit**: compare the GIDs between hosts to detect a divergence.
 
-**Si le GID est déjà pris** par un autre groupe : la tâche **failed**. Pas de
-collision silencieuse.
+**If the GID is already taken** by another group: the task is **failed**. No
+silent collision.
 
-## 📚 Exercice 3 — Groupe système (GID < 1000)
+## 📚 Exercise 3 — System group (GID < 1000)
 
 ```yaml
 - name: Creer un groupe systeme (GID auto < 1000)
@@ -119,14 +118,14 @@ collision silencieuse.
     state: present
 ```
 
-🔍 **Observation** : `system: true` indique à Ansible de **chercher un GID < 1000**
-(par convention RHEL pour les groupes système). Sans `system:`, le GID
-auto-attribué est ≥ 1000 (groupe utilisateur).
+🔍 **Observation**: `system: true` tells Ansible to **look for a GID < 1000** (by
+RHEL convention for system groups). Without `system:`, the auto-assigned GID is
+≥ 1000 (user group).
 
-**Cas d'usage** : créer un groupe **applicatif** réservé au démon (nginx, postgres,
-etc.) qui ne doit pas être confondu avec un groupe utilisateur.
+**Use case**: create an **application** group reserved for the daemon (nginx,
+postgres, etc.) that must not be confused with a user group.
 
-## 📚 Exercice 4 — Suppression (`state: absent`)
+## 📚 Exercise 4 — Deletion (`state: absent`)
 
 ```yaml
 - name: Supprimer le groupe dev-team
@@ -135,24 +134,24 @@ etc.) qui ne doit pas être confondu avec un groupe utilisateur.
     state: absent
 ```
 
-**Avant la suppression**, créer un user qui utilise ce groupe :
+**Before the deletion**, create a user that uses this group:
 
 ```yaml
 - name: Creer carl dans dev-team (avant la suppression)
   ansible.builtin.user:
     name: carl
-    group: dev-team   # Groupe primaire
+    group: dev-team   # Primary group
 ```
 
-**Si vous tentez de supprimer un groupe qui est encore le groupe primaire** d'un
-utilisateur, la tâche **failed** :
+**If you try to delete a group that is still the primary group** of a user, the
+task is **failed**:
 
 ```text
 groupdel: cannot remove the primary group of user 'carl'
 ```
 
-🔍 **Observation** : protection système. Pour supprimer le groupe, il faut **d'abord
-supprimer ou réassigner le user**.
+🔍 **Observation**: system protection. To delete the group, you must **first
+delete or reassign the user**.
 
 ```yaml
 - name: Reassigner carl a un autre groupe primaire
@@ -166,10 +165,9 @@ supprimer ou réassigner le user**.
     state: absent
 ```
 
-## 📚 Exercice 5 — Ordonnancement : group AVANT user
+## 📚 Exercise 5 — Ordering: group BEFORE user
 
-Pattern classique : créer le **groupe** d'abord, **puis** les users qui le
-référencent.
+Classic pattern: create the **group** first, **then** the users that reference it.
 
 ```yaml
 - name: Step 1 — creer le groupe
@@ -181,23 +179,23 @@ référencent.
 - name: Step 2 — creer alice avec rhce-team comme primaire
   ansible.builtin.user:
     name: alice
-    group: rhce-team   # Le groupe DOIT exister deja
+    group: rhce-team   # The group MUST already exist
     state: present
 ```
 
-🔍 **Observation** : si vous inversez l'ordre, `user:` créerait alice avec un
-groupe `rhce-team` **généré automatiquement** (GID auto-attribué). Puis quand
-`group: gid: 5000` tente de le créer, **conflit** entre le GID demandé (5000)
-et celui généré (1001 ou autre).
+🔍 **Observation**: if you invert the order, `user:` would create alice with a
+`rhce-team` group **generated automatically** (auto-assigned GID). Then when
+`group: gid: 5000` tries to create it, there is a **conflict** between the
+requested GID (5000) and the generated one (1001 or other).
 
-**Convention** : dans un même play, **toujours** ordonner :
+**Convention**: within the same play, **always** order:
 
-1. `group:` (création des groupes)
-2. `user:` (création des users qui les utilisent)
-3. `authorized_key:` (clés SSH des users — voir lab 42)
-4. `lineinfile:` ou autre (config sudo etc.)
+1. `group:` (creation of the groups)
+2. `user:` (creation of the users that use them)
+3. `authorized_key:` (users' SSH keys, see lab 42)
+4. `lineinfile:` or other (sudo config etc.)
 
-## 📚 Exercice 6 — Le piège : modifier le GID d'un groupe existant
+## 📚 Exercise 6 — The trap: modifying the GID of an existing group
 
 ```yaml
 - name: Tenter de changer le GID d ops-team
@@ -206,86 +204,84 @@ et celui généré (1001 ou autre).
     gid: 3500   # Avant : 3000
 ```
 
-🔍 **Observation** : la tâche **réussit** — `groupmod -g 3500 ops-team`. Mais
-**tous les fichiers** appartenant à `gid=3000` sont **maintenant orphelins** :
+🔍 **Observation**: the task **succeeds**, `groupmod -g 3500 ops-team`. But
+**all the files** belonging to `gid=3000` are **now orphaned**:
 
 ```bash
-# Avant changement
+# Before change
 $ ls -la /home/alice/data
 -rw-r--r-- 1 alice ops-team 0 ... data
 $ stat -c '%g' /home/alice/data
 3000  ← OK
 
-# Apres changement
+# After change
 $ ls -la /home/alice/data
--rw-r--r-- 1 alice 3000     0 ... data   # Plus de nom !
+-rw-r--r-- 1 alice 3000     0 ... data   # No more name!
 ```
 
-**Solution** : ne **jamais** modifier un GID d'un groupe en production. Si
-nécessaire :
+**Solution**: **never** modify a group's GID in production. If necessary:
 
-1. Supprimer le groupe.
-2. Recréer avec le nouveau GID.
-3. **`chgrp -R`** sur tous les fichiers concernés.
+1. Delete the group.
+2. Recreate it with the new GID.
+3. **`chgrp -R`** on all the concerned files.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`name:`** = clé d'identification.
-- **`gid:`** forcé pour la **cohérence multi-hôtes** (NFS, containers, audit).
-- **`system: true`** = groupe avec GID < 1000 (convention RHEL).
-- **Suppression d'un groupe primaire** d'un user → **failed**. Réassigner d'abord.
-- **Ordonner** : `group:` AVANT `user:` qui le référence.
-- **Ne pas modifier le GID** d'un groupe existant — fichiers orphelins.
+- **`name:`** = identification key.
+- **`gid:`** forced for **multi-host consistency** (NFS, containers, audit).
+- **`system: true`** = group with GID < 1000 (RHEL convention).
+- **Deleting a user's primary group** → **failed**. Reassign first.
+- **Order**: `group:` BEFORE the `user:` that references it.
+- **Do not modify the GID** of an existing group, orphaned files.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous avez 10 utilisateurs à créer dans `rhce-team`, plus 5 dans `dev-team`,
-   plus 3 dans `ops-team`. Quel pattern (`loop:` sur `users` avec un champ
-   `groups`, ou plays séparés) ?
+1. You have 10 users to create in `rhce-team`, plus 5 in `dev-team`, plus 3 in
+   `ops-team`. Which pattern (`loop:` over `users` with a `groups` field, or
+   separate plays)?
 
-2. Pourquoi `system: true` est-il important pour un groupe applicatif (`nginx`,
-   `postgres`) ? Quel est le **risque concret** d'un groupe applicatif avec
-   GID ≥ 1000 ?
+2. Why is `system: true` important for an application group (`nginx`,
+   `postgres`)? What is the **concrete risk** of an application group with a
+   GID ≥ 1000?
 
-3. Vous voulez **garantir** qu'un groupe a un GID précis sur 50 hôtes. Comment
-   articulez-vous `group: gid:` avec `failed_when:` pour échouer si le GID
-   diffère ?
+3. You want to **guarantee** that a group has a precise GID on 50 hosts. How do
+   you articulate `group: gid:` with `failed_when:` to fail if the GID differs?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`local: true`** : forcer la création dans `/etc/group` même si le système
-  utilise NIS/LDAP. Utile sur des hôtes intégrés à un annuaire mais qui doivent
-  avoir des groupes locaux.
-- **Module `getent:`** : récupérer les infos d'un groupe depuis NSS (LDAP, AD,
-  NIS) sans dépendre de `/etc/group` local.
-- **Pattern `groupinstall`** : pour des groupes liés à des paquets DNF
-  (`@web-server`), c'est `dnf: name: '@web-server'` et pas `group:`.
-- **Combinaison `group:` + `user:` + `authorized_key:`** : pattern d'inscription
-  d'un nouveau membre dans une équipe — voir lab 42.
+- **`local: true`**: force the creation in `/etc/group` even if the system uses
+  NIS/LDAP. Useful on hosts integrated into a directory but that must have local
+  groups.
+- **`getent:` module**: retrieve a group's info from NSS (LDAP, AD, NIS) without
+  depending on the local `/etc/group`.
+- **`groupinstall` pattern**: for groups tied to DNF packages (`@web-server`),
+  it is `dnf: name: '@web-server'` and not `group:`.
+- **`group:` + `user:` + `authorized_key:` combination**: onboarding pattern for
+  a new team member, see lab 42.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/modules-utilisateurs/group/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/modules-utilisateurs/group/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/modules-utilisateurs/group/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

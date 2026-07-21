@@ -40,9 +40,18 @@
     state: "{{ webserver_service_state }}"
     enabled: "{{ webserver_service_enabled }}"
 
+# La trace consigne l'ÉTAT déployé (l'hôte et le port réellement appliqué),
+# pas l'instant du run. C'est ce qui la rend idempotente : tant qu'on redéploie
+# la même chose, le contenu est identique, la tâche rend `ok`, et le handler
+# n'est pas notifié. Qu'on change le port, et la trace change : la tâche rend
+# `changed` et le handler repart.
+#
+# Un `{{ ansible_date_time.iso8601 }}` ici rendrait la tâche `changed` à chaque
+# run, donc le handler aussi : le rôle réagirait sans que rien n'ait bougé,
+# précisément le défaut que ce lab apprend à corriger.
 - name: Tracer le déploiement (handler conditionnel)
   ansible.builtin.copy:
     dest: /var/log/webserver-deploy.log
-    content: "Deployed at {{ ansible_date_time.iso8601 }} on {{ inventory_hostname }}\n"
+    content: "Deployed on {{ inventory_hostname }} (nginx port {{ webserver_listen_port }})\n"
     mode: "0644"
   notify: Notify deployment            # ← handler custom de notification

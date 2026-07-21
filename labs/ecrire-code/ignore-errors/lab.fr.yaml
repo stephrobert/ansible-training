@@ -1,0 +1,4 @@
+---
+id: ecrire-code-ignore-errors
+title: "ignore_errors : usage légitime vs anti-pattern"
+description: "Mesurer l'effet d'ignore_errors sur le PLAY RECAP, identifier ses rares cas légitimes et lui préférer failed_when ou block/rescue."

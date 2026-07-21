@@ -1,0 +1,4 @@
+---
+id: ecrire-code-any-errors-fatal
+title: "any_errors_fatal : arrêter le play à la première erreur"
+description: "Activer any_errors_fatal sur un play multi-hôtes, le comparer au défaut et à max_fail_percentage, et le combiner avec serial."

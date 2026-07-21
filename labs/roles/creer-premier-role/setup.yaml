@@ -1,0 +1,61 @@
+---
+# Mise en place du lab creer-premier-role : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+#
+# Le reset porte sur db1.lab (lab_db1), l'hôte que le challenge déploie et que
+# les tests interrogent. Il ciblait auparavant lab_web1, qui est l'hôte du
+# TUTORIEL : l'état du challenge n'était donc jamais remis à zéro, et un rôle
+# vide passait les tests dès lors qu'un run précédent avait laissé le serveur
+# en place sur db1.
+- name: Setup creer-premier-role lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset name, state, enabled (creer-premier-role)
+      ansible.builtin.systemd_service:
+        name: "nginx"
+        state: "stopped"
+        enabled: "no"
+      failed_when: false
+
+    # Le paquet part vraiment : c'est la tâche `dnf` du rôle que le challenge
+    # demande d'écrire, et elle doit avoir quelque chose à faire.
+    - name: Reset name, state (creer-premier-role)
+      ansible.builtin.dnf:
+        name: "nginx"
+        state: "absent"
+      failed_when: false
+
+    # Ce lab attend nginx sur le port 80 de db1.lab, or premier-playbook l'y
+    # fait écouter sur 8888. Retirer le paquet `nginx` ne suffit PAS à revenir
+    # au port du paquet : /etc/nginx/nginx.conf appartient à `nginx-core`, qui
+    # reste installé (dnf ne retire pas les dépendances sans autoremove). Le
+    # fichier survit donc à la désinstallation, la réinstallation ne le
+    # remplace pas, et nginx redémarrerait sur 8888. Le lab échouait alors
+    # selon l'ordre dans lequel les labs ont été joués, pas selon le rôle écrit
+    # par l'apprenant.
+    - name: Reset path, regexp, line (creer-premier-role)
+      ansible.builtin.lineinfile:
+        path: "/etc/nginx/nginx.conf"
+        regexp: '^(\s*)listen(\s+)[0-9]+;'
+        line: "        listen       80;"
+      failed_when: false
+
+    - name: Reset service, state, permanent, immediate (creer-premier-role)
+      ansible.posix.firewalld:
+        service: "http"
+        state: "disabled"
+        permanent: "yes"
+        immediate: "yes"
+      failed_when: false
+
+- name: Brief the learner (creer-premier-role)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Scaffold a webserver role, fill in tasks, defaults, handlers and meta, then call it from a playbook with roles:
+      run_once: true

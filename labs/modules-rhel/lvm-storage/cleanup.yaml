@@ -1,0 +1,32 @@
+---
+# Reset du lab lvm-storage : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+# Ordre de démontage LVM : exactement l'inverse de la création (montage,
+# LV, VG, PV), sinon vgremove bute sur les LVs encore présents.
+- name: Cleanup lvm-storage lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (lvm-storage)
+      ansible.builtin.shell: |
+        set -o pipefail
+        umount -l /mnt/lvm-data 2>/dev/null || true
+        sed -i -e '\|/mnt/lvm-data|d' -e '\|lab_vg|d' -e '\|/dev/vdb|d' \
+               /etc/fstab 2>/dev/null || true
+        lvremove -f /dev/lab_vg/lab_lv 2>/dev/null || true
+        vgchange -an lab_vg 2>/dev/null || true
+        vgremove -f lab_vg 2>/dev/null || true
+        pvremove -ff -y /dev/vdb 2>/dev/null || true
+        losetup -d /dev/loop10 2>/dev/null || true
+        rm -f /opt/lab-lvm.img
+        rmdir /mnt/lvm-data 2>/dev/null || true
+        wipefs -af /dev/vdb || true
+        sgdisk --zap-all /dev/vdb || true
+        # vgremove laisse derrière lui le répertoire /dev/lab_vg vide, et
+        # vgcreate refuse alors de repartir : /dev/lab_vg already exists
+        # in filesystem. Le lab ne repartait pas sans ce nettoyage.
+        rm -rf /dev/lab_vg || true
+        partprobe /dev/vdb || true
+      changed_when: false
+      failed_when: false

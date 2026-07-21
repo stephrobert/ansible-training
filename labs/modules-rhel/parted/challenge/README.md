@@ -1,25 +1,32 @@
 # Challenge `parted:`
 
-## Énoncé
+## Statement
 
-Sur **db1.lab** avec un disque secondaire **`/dev/vdb`**, écrivez
-`solution.yml` qui :
+On **db1.lab** with a secondary disk **`/dev/vdb`**, write
+`solution.yml` that:
 
-1. Crée 3 partitions GPT sur `/dev/vdb` :
-   - `vdb1` : 500 MiB, flag `[boot, esp]`.
-   - `vdb2` : 4 GiB, sans flag particulier (pour ext4).
-   - `vdb3` : reste du disque, flag `[lvm]`.
-2. Vérifie idempotence avec un 2e run.
-3. Inspecte la table finale et l'affiche via `debug`.
+1. Creates 3 GPT partitions on `/dev/vdb`:
+   - `vdb1`: 500 MiB, flag `[boot, esp]`.
+   - `vdb2`: 4 GiB, no particular flag (for ext4).
+   - `vdb3`: rest of the disk, flag `[lvm]`.
+2. Checks idempotence with a 2nd run.
+3. Inspects the final table and displays it via `debug`.
 
-## Critères de réussite
+> 🎯 **No skeleton here, on purpose.** By this point you have written enough
+> playbooks to start from a blank file, and that is exactly what the EX294
+> asks: the exam hands you no canvas. The hints below target the traps of
+> this module, not the YAML syntax.
 
-- `lsblk /dev/vdb` montre 3 partitions avec les bonnes tailles.
-- 2e run du playbook → **`changed: 0`** (idempotent).
-- Le `debug` affiche les 3 partitions avec leurs flags respectifs.
+## Success criteria
 
-## Indices
+- `lsblk /dev/vdb` shows 3 partitions with the right sizes.
+- 2nd run of the playbook → **`changed: 0`** (idempotent).
+- The `debug` displays the 3 partitions with their respective flags.
 
-- `label: gpt` n'est nécessaire que sur la **première** tâche (création du label).
-- `part_start` de la 2e tâche = `part_end` de la 1re.
-- Pour le LVM final : `part_end: "100%"`.
+## Hints
+
+- `label: gpt` must be repeated on **every** `parted:` task. Without it, the
+  module falls back to its default (`msdos`) and recreates the table on every call:
+  you will get 2 msdos partitions instead of 3 GPT partitions.
+- `part_start` of the 2nd task = `part_end` of the 1st.
+- For the final LVM: `part_end: "100%"`.

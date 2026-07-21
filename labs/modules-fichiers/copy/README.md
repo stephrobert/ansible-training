@@ -1,51 +1,52 @@
-# Lab 31 — Module `copy:` (transfert et contenu inline)
+# Lab 31 — `copy:` module (transfer and inline content)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Module copy Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-copy/)
+🔗 [**Ansible copy module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-copy/)
 
-`ansible.builtin.copy:` est le module de **transfert** par excellence. Il pousse
-un fichier du **control node** vers le **managed node**, ou écrit un **contenu
-inline** via `content:`. Différence clé avec `template:` : `copy:` transfère
-**tel quel**, pas d'interpolation Jinja2.
+`ansible.builtin.copy:` is the **transfer** module par excellence. It pushes a
+file from the **control node** to the **managed node**, or writes **inline
+content** via `content:`. The key difference with `template:`: `copy:` transfers
+**as-is**, no Jinja2 interpolation.
 
-Options critiques pour la production : **`mode:`**, **`owner:`**, **`group:`**,
-**`backup: true`**, **`validate:`**, et le piège du `content:` non terminé par `\n`.
+Critical options for production: **`mode:`**, **`owner:`**, **`group:`**,
+**`backup: true`**, **`validate:`**, and the pitfall of `content:` not
+terminated by `\n`.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Distinguer** `src:` (fichier local) et `content:` (inline) — quand utiliser lequel.
-2. **Maîtriser** les options `mode`, `owner`, `group`, `backup`, `force`, `validate`.
-3. **Identifier** le piège du `content:` sans `\n` final.
-4. **Éviter** le piège YAML sur `mode:` non quoté.
-5. **Choisir** entre `copy:` et `template:` selon que le fichier a besoin d'interpolation.
+1. **Distinguish** `src:` (local file) and `content:` (inline): when to use which.
+2. **Master** the `mode`, `owner`, `group`, `backup`, `force`, `validate` options.
+3. **Identify** the pitfall of `content:` without a trailing `\n`.
+4. **Avoid** the YAML pitfall of an unquoted `mode:`.
+5. **Choose** between `copy:` and `template:` depending on whether the file needs interpolation.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible web1.lab -m ping
 mkdir -p labs/modules-fichiers/copy/files
 ansible web1.lab -b -m shell -a "rm -f /etc/issue.net.* /tmp/lab-copy-*.txt /etc/motd-rhce*"
 ```
 
-## 📚 Exercice 1 — Transfert d'un fichier local (`src:`)
+## 📚 Exercise 1 — Transferring a local file (`src:`)
 
-Créez `files/banner.txt` :
+Create `files/banner.txt`:
 
 ```text
 =====================================
@@ -54,7 +55,7 @@ Créez `files/banner.txt` :
 =====================================
 ```
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -72,21 +73,21 @@ Créez `lab.yml` :
         backup: true
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/modules-fichiers/copy/lab.yml
-ssh ansible@web1.lab 'sudo cat /etc/ssh/banner-rhce && ls -la /etc/ssh/banner-rhce*'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab 'sudo cat /etc/ssh/banner-rhce && ls -la /etc/ssh/banner-rhce*'
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- Premier run : `changed=1`, fichier créé.
-- Deuxième run : `changed=0` (idempotent — checksum SHA1 identique).
-- **Si vous modifiez `files/banner.txt`** et relancez : `changed=1`, et un fichier
-  `banner-rhce.<timestamp>~` apparaît (backup).
+- First run: `changed=1`, file created.
+- Second run: `changed=0` (idempotent, identical SHA1 checksum).
+- **If you modify `files/banner.txt`** and re-run: `changed=1`, and a file
+  `banner-rhce.<timestamp>~` appears (backup).
 
-## 📚 Exercice 2 — Contenu inline (`content:`)
+## 📚 Exercise 2 — Inline content (`content:`)
 
 ```yaml
 - name: Marquer le serveur via content inline
@@ -98,15 +99,15 @@ ssh ansible@web1.lab 'sudo cat /etc/ssh/banner-rhce && ls -la /etc/ssh/banner-rh
     mode: "0644"
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- Pas besoin de créer un fichier source — `content:` injecte la string directement.
-- Le **`\n` final** est crucial : sans lui, `cat /etc/motd-rhce` colle la sortie
-  au prompt suivant.
-- À chaque run, `ansible_date_time.iso8601` change → tâche **toujours `changed`**
-  (perte d'idempotence). À éviter sauf intention explicite.
+- No need to create a source file: `content:` injects the string directly.
+- The **trailing `\n`** is crucial: without it, `cat /etc/motd-rhce` glues the
+  output to the next prompt.
+- On every run, `ansible_date_time.iso8601` changes → task **always `changed`**
+  (loss of idempotence). To be avoided unless explicitly intended.
 
-## 📚 Exercice 3 — Le piège du `\n` manquant
+## 📚 Exercise 3 — The missing `\n` pitfall
 
 ```yaml
 - name: Mauvais (pas de \n final)
@@ -120,26 +121,26 @@ ssh ansible@web1.lab 'sudo cat /etc/ssh/banner-rhce && ls -la /etc/ssh/banner-rh
     dest: /tmp/lab-copy-with-newline.txt
 ```
 
-**Lancez et inspectez** :
+**Run and inspect**:
 
 ```bash
 ansible-playbook labs/modules-fichiers/copy/lab.yml
-ssh ansible@web1.lab 'cat -A /tmp/lab-copy-no-newline.txt'
-ssh ansible@web1.lab 'cat -A /tmp/lab-copy-with-newline.txt'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab 'cat -A /tmp/lab-copy-no-newline.txt'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab 'cat -A /tmp/lab-copy-with-newline.txt'
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- Sans `\n` : `cat -A` montre `ligne sans newline` (sans `$` final). Le shell
-  affichera `ligne sans newlineansible@web1$` (collé au prompt).
-- Avec `\n` : `cat -A` montre `ligne avec newline$` — proprement terminé.
+- Without `\n`: `cat -A` shows `ligne sans newline` (no trailing `$`). The shell
+  will display `ligne sans newlineansible@web1$` (glued to the prompt).
+- With `\n`: `cat -A` shows `ligne avec newline$`, properly terminated.
 
-**Certains parseurs** (cron, systemd, openrc) **refusent** les fichiers sans `\n`
-final. Toujours terminer `content:` par `\n`.
+**Some parsers** (cron, systemd, openrc) **reject** files without a trailing
+`\n`. Always terminate `content:` with `\n`.
 
-## 📚 Exercice 4 — `validate:` (rejeter une config invalide)
+## 📚 Exercise 4 — `validate:` (reject an invalid config)
 
-Pattern critique pour `sshd_config`, `nginx.conf`, `sudoers`.
+Critical pattern for `sshd_config`, `nginx.conf`, `sudoers`.
 
 ```yaml
 - name: Deployer sshd_config (avec validation)
@@ -158,16 +159,16 @@ handlers:
       state: reloaded
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- `%s` est remplacé par le **chemin du fichier temporaire**.
-- Si `sshd -t` retourne `0` → `/etc/ssh/sshd_config` est écrasé, handler notifié.
-- Si `sshd -t` retourne `!= 0` → fichier intact, tâche **failed**.
+- `%s` is replaced by the **path of the temporary file**.
+- If `sshd -t` returns `0` → `/etc/ssh/sshd_config` is overwritten, handler notified.
+- If `sshd -t` returns `!= 0` → file intact, task **failed**.
 
-**Sans `validate:`** un sshd_config cassé pourrait **bloquer SSH** au prochain
-restart — vous perdez l'accès.
+**Without `validate:`** a broken sshd_config could **block SSH** on the next
+restart: you lose access.
 
-## 📚 Exercice 5 — Le piège YAML sur `mode:`
+## 📚 Exercise 5 — The YAML pitfall on `mode:`
 
 ```yaml
 - name: Piege mode non quote
@@ -183,14 +184,14 @@ restart — vous perdez l'accès.
     mode: "0644"        # ✅ String, parse en octal correctement
 ```
 
-🔍 **Observation** : sans guillemets, YAML parse `0644` comme **décimal 644**
-(rien à voir avec l'octal). Ansible essaie de l'appliquer comme mode → permissions
-**aberrantes**.
+🔍 **Observation**: without quotes, YAML parses `0644` as **decimal 644**
+(nothing to do with octal). Ansible tries to apply it as a mode → **aberrant**
+permissions.
 
-**Règle** : **toujours** `mode: "0644"` (avec guillemets) ou `mode: "u=rw,g=r,o=r"`
-(symbolique).
+**Rule**: **always** `mode: "0644"` (quoted) or `mode: "u=rw,g=r,o=r"`
+(symbolic).
 
-## 📚 Exercice 6 — `force: false` (ne pas écraser)
+## 📚 Exercise 6 — `force: false` (do not overwrite)
 
 ```yaml
 - name: Deployer config initiale (sans ecraser)
@@ -201,18 +202,18 @@ restart — vous perdez l'accès.
     mode: "0644"
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- Si `/etc/myapp.conf` n'existe pas → fichier créé (`changed`).
-- Si existe → tâche **`ok`** (pas de modification, même si le contenu local diffère).
+- If `/etc/myapp.conf` does not exist → file created (`changed`).
+- If it exists → task **`ok`** (no modification, even if the local content differs).
 
-**Cas d'usage** : déploiement d'une config initiale qu'on **laisse l'utilisateur
-modifier**. Pratique pour des `motd` ou des templates de config exemple.
+**Use case**: deploying an initial config that you **let the user modify**.
+Handy for `motd` files or example config templates.
 
-## 📚 Exercice 7 — `remote_src: true` (copier depuis le managed node)
+## 📚 Exercise 7 — `remote_src: true` (copy from the managed node)
 
-`copy: remote_src: true` ne transfère **pas** depuis le control node — il copie
-**à l'intérieur du managed node**.
+`copy: remote_src: true` does **not** transfer from the control node: it copies
+**inside the managed node**.
 
 ```yaml
 - name: Sauvegarder /etc/hosts en /tmp avant modification
@@ -223,67 +224,68 @@ modifier**. Pratique pour des `motd` ou des templates de config exemple.
     mode: "0644"
 ```
 
-🔍 **Observation** : `src:` est résolu **côté managed node**, pas côté control
-node. Pratique pour des sauvegardes locales avant modification.
+🔍 **Observation**: `src:` is resolved **on the managed node side**, not the
+control node side. Handy for local backups before modification.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`src:`** = fichier local (control node), **`content:`** = inline.
-- **Toujours `\n`** à la fin du `content:` — piège classique des parseurs stricts.
-- **Toujours `mode: "0644"`** quoté — sinon YAML décimal vs octal.
-- **`backup: true`** = filet de sécurité gratuit, à activer sur configs critiques.
-- **`validate:`** est obligatoire pour `sshd_config`, `nginx.conf`, `sudoers`.
-- **`remote_src: true`** = copie **à l'intérieur** du managed node.
-- **`force: false`** = laisser le fichier existant intact (pour configs initiales).
+- **`src:`** = local file (control node), **`content:`** = inline.
+- **Always `\n`** at the end of `content:`, a classic pitfall of strict parsers.
+- **Always `mode: "0644"`** quoted, otherwise YAML decimal vs octal.
+- **`backup: true`** = free safety net, to enable on critical configs.
+- **`validate:`** is mandatory for `sshd_config`, `nginx.conf`, `sudoers`.
+- **`remote_src: true`** = copy **inside** the managed node.
+- **`force: false`** = leave the existing file intact (for initial configs).
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voulez déployer un fichier de config qui **inclut le hostname du serveur**.
-   Faut-il utiliser `copy: content:` avec `{{ ansible_hostname }}` ou passer à
-   `template:` ? Pourquoi ?
+1. You want to deploy a config file that **includes the server hostname**.
+   Should you use `copy: content:` with `{{ ansible_hostname }}` or switch to
+   `template:`? Why?
 
-2. Avec `backup: true`, où sont créés les backups et comment les nettoyer
-   automatiquement après N jours ?
+2. With `backup: true`, where are the backups created and how do you clean them
+   automatically after N days?
 
-3. Pourquoi `validate: 'sshd -t -f %s'` est **plus sûr** qu'un `validate: 'sshd
-   -t'` (sans `%s`) ? Que se passe-t-il sans `%s` ?
+3. Why is `validate: 'sshd -t -f %s'` **safer** than `validate: 'sshd -t'`
+   (without `%s`)? What happens without `%s`?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`directory_mode:`** : mode des **dossiers parents** créés par `copy:` quand
-  le `dest:` inclut un chemin profond.
-- **`unsafe_writes: true`** : permet l'écriture sur des FS qui ne supportent pas
-  `rename atomique` (NFS sans verrous, certaines images Docker).
-- **`decrypt: true`** : déchiffre le fichier source si chiffré avec **Ansible
-  Vault** — pour pousser des secrets chiffrés en clair sur le managed node.
-- **Pattern multi-fichiers** : `copy: src:` accepte un dossier — Ansible **synchronise**
-  récursivement (préfixe `src: files/`, slash final = contenu, sans slash = dossier).
-- **Lab 32 (file)** : pour gérer **uniquement** les métadonnées (mode, owner,
-  state) sans transférer de contenu.
+- **`directory_mode:`**: mode of the **parent directories** created by `copy:`
+  when the `dest:` includes a deep path.
+- **`unsafe_writes: true`**: allows writing on filesystems that do not support
+  atomic `rename` (NFS without locks, some Docker images).
+- **`decrypt: true`**: decrypts the source file if encrypted with **Ansible
+  Vault**, to push encrypted secrets in cleartext onto the managed node.
+- **Multi-file pattern**: `copy: src:` accepts a directory, Ansible
+  **synchronizes** recursively (prefix `src: files/`, trailing slash = content,
+  no slash = directory).
+- **Lab 32 (file)**: to manage **only** the metadata (mode, owner, state)
+  without transferring any content.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/modules-fichiers/copy/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/modules-fichiers/copy/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, target RHCE 2026)
 ansible-lint --profile production labs/modules-fichiers/copy/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a pre-commit
+> hook to block any commit that would introduce anti-patterns.

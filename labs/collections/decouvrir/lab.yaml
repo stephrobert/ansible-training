@@ -1,0 +1,32 @@
+---
+id: collections-decouvrir
+title: "Explore Ansible collections: FQCN and structure"
+description: "List and inspect installed collections, read a galaxy.yml, walk the plugins/roles/playbooks layout and track down a module by its FQCN."
+section: collections
+level: l3
+difficulty: advanced
+lab_type: lab
+estimated_time: "50m"
+skills:
+  - collection-structure
+  - fqcn
+  - collection-inspect
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/decouvrir-collection/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

@@ -1,25 +1,25 @@
-# 🎯 Challenge — Vault-id séparés `dev` et `prod`
+# 🎯 Challenge — Separate `dev` and `prod` vault-ids
 
-## ✅ Objectif
+## ✅ Objective
 
-Démontrer que **2 vault-id différents** (`dev` et `prod`) déchiffrent
-correctement leurs **propres fichiers** sur leurs **propres hôtes**.
+Demonstrate that **2 different vault-ids** (`dev` and `prod`) decrypt
+correctly their **own files** on their **own hosts**.
 
-| Cible | Fichier produit | Contenu attendu |
+| Target | Produced file | Expected content |
 | --- | --- | --- |
-| `web1.lab` (groupe `dev`) | `/tmp/lab79-challenge-web1.lab.txt` | `dev-db.example.com`, `Environnement: dev`, `length: 12` |
-| `db1.lab` (groupe `prod`) | `/tmp/lab79-challenge-db1.lab.txt` | `prod-db.example.com`, `Environnement: prod`, `length: 26` |
+| `web1.lab` (group `dev`) | `/tmp/lab79-challenge-web1.lab.txt` | `dev-db.example.com`, `Environnement: dev`, `length: 12` |
+| `db1.lab` (group `prod`) | `/tmp/lab79-challenge-db1.lab.txt` | `prod-db.example.com`, `Environnement: prod`, `length: 26` |
 
-## 🧩 Indices
+## 🧩 Hints
 
-### Étape 1 — Préparer 2 mots de passe vault distincts
+### Step 1 — Prepare 2 distinct vault passwords
 
 ```bash
 echo "vault-dev-2026" > .vault_password_dev && chmod 0600 .vault_password_dev
 echo "vault-prod-2026" > .vault_password_prod && chmod 0600 .vault_password_prod
 ```
 
-### Étape 2 — Chiffrer 2 fichiers avec vault-id différents
+### Step 2 — Encrypt 2 files with different vault-ids
 
 ```bash
 mkdir -p group_vars/dev group_vars/prod
@@ -37,7 +37,7 @@ ansible-vault encrypt --vault-id dev@.vault_password_dev group_vars/dev/vault.ym
 ansible-vault encrypt --vault-id prod@.vault_password_prod group_vars/prod/vault.yml
 ```
 
-### Étape 3 — Écrire `challenge/solution.yml`
+### Step 3 — Write `challenge/solution.yml`
 
 ```yaml
 ---
@@ -57,20 +57,20 @@ ansible-vault encrypt --vault-id prod@.vault_password_prod group_vars/prod/vault
       no_log: ???
 ```
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
-> - **Format `--vault-id <label>@<source>`** : `<source>` peut être un
->   fichier (`.vault_password_dev`), un script (`vault-pass.sh` exécutable),
->   ou `prompt` (saisie interactive).
-> - **Cascade de déchiffrement** : Ansible essaie chaque vault-id
->   jusqu'à trouver le bon. Pas de label fixe → ordre essai = ordre CLI.
-> - **Header `$ANSIBLE_VAULT;1.2;AES256;<label>`** : le label est inscrit
->   dans le fichier. Si vous changez le label, vous devez `rekey`.
-> - **Sécurité** : un vault-id `dev` ne peut PAS déchiffrer un fichier
->   chiffré avec `prod`. C'est la garantie cryptographique de la
->   séparation d'environnements.
+> - **Format `--vault-id <label>@<source>`**: `<source>` can be a
+>   file (`.vault_password_dev`), a script (executable `vault-pass.sh`),
+>   or `prompt` (interactive input).
+> - **Decryption cascade**: Ansible tries each vault-id
+>   until it finds the right one. No fixed label → try order = CLI order.
+> - **Header `$ANSIBLE_VAULT;1.2;AES256;<label>`**: the label is written
+>   in the file. If you change the label, you must `rekey`.
+> - **Security**: a `dev` vault-id CANNOT decrypt a file
+>   encrypted with `prod`. This is the cryptographic guarantee of
+>   environment separation.
 
-## 🚀 Lancement
+## 🚀 Launch
 
 ```bash
 ansible-playbook labs/vault/id-multiples/challenge/solution.yml \
@@ -88,13 +88,13 @@ pytest -v labs/vault/id-multiples/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/vault/id-multiples/ clean
+dsoxlab clean vault-id-multiples
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **3+ vault-id** (dev/staging/prod/secret) : Ansible essaie chaque
-  vault-id en cascade jusqu'à trouver le bon.
-- **`@prompt`** au lieu de fichier : `--vault-id prod@prompt` pour
-  saisir interactivement.
-- **`server_list:`** dans `ansible.cfg` pour multi-Galaxy + multi-vault.
+- **3+ vault-ids** (dev/staging/prod/secret): Ansible tries each
+  vault-id in cascade until it finds the right one.
+- **`@prompt`** instead of a file: `--vault-id prod@prompt` to
+  enter it interactively.
+- **`server_list:`** in `ansible.cfg` for multi-Galaxy + multi-vault.

@@ -1,33 +1,33 @@
-# 🎯 Challenge — Handlers et meta du rôle webserver
+# 🎯 Challenge — Handlers and meta of the webserver role
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `challenge/solution.yml` qui sur **db1.lab** utilise le rôle
-`webserver` avec un **port custom** pour démontrer que :
+Write `challenge/solution.yml` that on **db1.lab** uses the `webserver`
+role with a **custom port** to demonstrate that:
 
-1. Les **3 handlers** (`Restart nginx`, `Reload nginx`, `Notify deployment`)
-   sont bien déclenchés au déploiement.
-2. Le `meta/main.yml` du rôle est correctement lu (vérifiable via
+1. The **3 handlers** (`Restart nginx`, `Reload nginx`, `Notify deployment`)
+   are indeed triggered at deployment.
+2. The role's `meta/main.yml` is read correctly (verifiable via
    `ansible-galaxy role list`).
 
-## 🧩 Indices
+## 🧩 Hints
 
-Le rôle accepte des variables (override des `defaults/`) :
+The role accepts variables (override of the `defaults/`):
 
-| Variable | Défaut | À surcharger ? |
+| Variable | Default | Override? |
 | --- | --- | --- |
-| `webserver_listen_port` | `80` | ✅ → **`8080`** (le test attend ce port) |
-| `webserver_index_content` | `<h1>Hello…</h1>` | ✅ → message custom incluant `inventory_hostname` |
+| `webserver_listen_port` | `80` | ✅ → **`8080`** (the test expects this port) |
+| `webserver_index_content` | `<h1>Hello…</h1>` | ✅ → custom message including `inventory_hostname` |
 
-Le challenge vérifie via les tests :
+The challenge checks via the tests:
 
-- `nginx` est `running` et écoute sur **port 8080**
-- `/var/log/webserver-deploy.log` existe et contient `db1.lab`
-- `/var/log/deploy-notification.log` existe et contient `Deployment completed`,
-  `db1.lab`, et **`8080`** (preuve que le handler a bien lu la variable
-  surchargée)
+- `nginx` is `running` and listens on **port 8080**
+- `/var/log/webserver-deploy.log` exists and contains `db1.lab`
+- `/var/log/deploy-notification.log` exists and contains `Deployment completed`,
+  `db1.lab`, and **`8080`** (proof that the handler indeed read the
+  overridden variable)
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -39,75 +39,79 @@ Le challenge vérifie via les tests :
     - role: webserver
       vars:
         webserver_listen_port: ???           # 8080
-        webserver_index_content: "{{ ??? }}"  # message custom avec inventory_hostname
+        webserver_index_content: "{{ ??? }}"  # custom message with inventory_hostname
 ```
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
-> - **Override au niveau rôle** : `vars:` sous `- role: webserver` cible
->   uniquement ce rôle (priorité 13). Pour overrider partout, utiliser
->   `vars:` au niveau play.
-> - **3 handlers attendus** : `Restart nginx`, `Reload nginx`, `Notify
->   deployment`. Le `meta/main.yml` ne peut pas définir de handler — ça
->   reste dans `roles/<role>/handlers/main.yml`.
-> - **Lecture des variables côté handler** : `webserver_listen_port` doit
->   être lisible dans le handler (qui tourne en fin de play). Si vous
->   utilisez `{{ webserver_listen_port }}` dans le handler, il **lit la
->   valeur courante** (post-override) — c'est ce qu'on veut.
-> - **Idempotence** : le handler `Notify deployment` écrit dans le journal
->   à chaque run où le template change. Au 2ème run identique, `changed=0`
->   et le handler ne tourne pas.
+> - **Role-level override**: `vars:` under `- role: webserver` targets
+>   only this role, and it is a **role param** (priority 20), not a
+>   play `vars:` (12). Two indentation lines apart, and the variable
+>   changes category: the role param even beats the role's `vars/main.yml`
+>   (15), where a play `vars:` loses against them.
+> - **3 handlers expected**: `Restart nginx`, `Reload nginx`, `Notify
+>   deployment`. The `meta/main.yml` cannot define a handler: that
+>   stays in `roles/<role>/handlers/main.yml`.
+> - **Reading variables on the handler side**: `webserver_listen_port` must
+>   be readable in the handler (which runs at the end of the play). If you
+>   use `{{ webserver_listen_port }}` in the handler, it **reads the
+>   current value** (post-override): that is what we want.
+> - **Idempotence**: the `Notify deployment` handler is notified by the
+>   "Tracer le déploiement" task, which writes **stable** content (the host and the
+>   applied port). So it only reports `changed` if the deployed state changes
+>   for real. On the identical 2nd run, `changed=0` and no handler runs:
+>   that is what `test_solution_idempotente` checks.
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/roles/handlers-meta/challenge/solution.yml
 ```
 
-🔍 **Sortie attendue** : 3 bandeaux `RUNNING HANDLER` (pour Restart, Reload,
-Notify deployment) au 1er run.
+🔍 **Expected output**: 3 `RUNNING HANDLER` banners (for Restart, Reload,
+Notify deployment) on the 1st run.
 
 ```bash
-# Vérifications
-ssh ansible@db1.lab 'sudo ss -tlnp | grep 8080'
-ssh ansible@db1.lab 'sudo cat /var/log/deploy-notification.log'
+# Checks
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'sudo ss -tlnp | grep 8080'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'sudo cat /var/log/deploy-notification.log'
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/roles/handlers-meta/challenge/tests/
 ```
 
-Le test vérifie sur db1 :
+The test checks on db1:
 
 - `nginx` running.
-- `/var/log/webserver-deploy.log` contient `db1.lab`.
-- `/var/log/deploy-notification.log` contient `Deployment completed` + `db1.lab` + `8080`.
-- `nginx` écoute sur `:8080`.
+- `/var/log/webserver-deploy.log` contains `db1.lab`.
+- `/var/log/deploy-notification.log` contains `Deployment completed` + `db1.lab` + `8080`.
+- `nginx` listens on `:8080`.
 
 ## 🧹 Reset
 
 ```bash
-make -C labs/roles/handlers-meta clean
+dsoxlab clean roles-handlers-meta
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`ansible-galaxy role list`** : valide que le `meta/main.yml` est lisible.
-  Si vous obtenez une erreur de parsing, c'est un problème de YAML.
-- **Inspection du rôle** :
+- **`ansible-galaxy role list`**: validates that the `meta/main.yml` is readable.
+  If you get a parsing error, it is a YAML problem.
+- **Role inspection**:
 
   ```bash
   ansible-doc -t role labs/roles/handlers-meta/roles/webserver
-  # Affiche les variables documentées + plateformes supportées
+  # Displays the documented variables + supported platforms
   ```
 
-- **Lint** :
+- **Lint**:
 
   ```bash
   ansible-lint --profile production labs/roles/handlers-meta/
   ```
 
-  Le profil `production` vérifie en particulier que `meta/main.yml` contient
-  bien `galaxy_info`, `platforms`, et `min_ansible_version`.
+  The `production` profile checks in particular that `meta/main.yml` indeed
+  contains `galaxy_info`, `platforms`, and `min_ansible_version`.

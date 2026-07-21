@@ -1,0 +1,38 @@
+---
+# Mise en place du lab user : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup user lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (user)
+      ansible.builtin.shell: |
+        userdel -r alice 2>/dev/null; userdel -r bob 2>/dev/null; userdel -r deploy 2>/dev/null; rm -rf /opt/deploy; groupdel rhce-team 2>/dev/null
+        # L UID 2001 est PARTAGE : ce lab le donne a bob, le capstone RHCE le
+        # donne a appuser. Sur des VMs partagees, celui qui passe apres tombait
+        # sur "useradd: UID 2001 is not unique" et le lab echouait pour une
+        # raison etrangere a ce qu il enseigne.
+        #
+        # On libere l UID DONT ON A BESOIN, quel que soit le compte qui le
+        # detient : le nettoyage par nom en dur est le defaut lui-meme, un
+        # troisieme lab arrivera avec un quatrieme nom.
+        # (Sans accent ni apostrophe : ce bloc part dans un shell Ansible.)
+        squatteur=$(getent passwd 2001 2>/dev/null | cut -d: -f1)
+        if [ -n "$squatteur" ]; then
+            userdel -r "$squatteur" 2>/dev/null || true
+        fi
+        groupdel "$(getent group 2001 2>/dev/null | cut -d: -f1)" 2>/dev/null || true
+        true
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (user)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Create accounts with home, shell and secondary groups, hash a password, force a specific UID, and remove an account with its home
+      run_once: true

@@ -1,93 +1,95 @@
-# Lab 65 — Molecule : scénarios multi-distro
+# Lab 65 — Molecule: multi-distro scenarios
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Pré-requis : Molecule + Podman/Docker installés (cf. [lab 62](../62-roles-molecule-introduction/)).
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Prerequisite: Molecule + Podman/Docker installed (see [lab 62](../introduction/)).
 
-## 🧠 Rappel
+> **Why AlmaLinux 10 containers while the lab VMs run AlmaLinux 9?** On purpose.
+> Molecule exists to validate a role on distributions *other* than the one you
+> develop on: testing against the next major release before migrating is exactly
+> its job. Do not "align" these images on the VM distribution — that would remove
+> the point of the scenario.
 
-🔗 [**Tester un rôle Ansible sur plusieurs distributions**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-roles/molecule-multi-distro/)
+## 🧠 Recap
 
-Un rôle prêt pour Galaxy doit fonctionner sur **plusieurs OS** : RHEL,
-AlmaLinux, Rocky, Debian, Ubuntu, parfois SUSE. Molecule rend ça **simple**
-en ajoutant des plateformes dans `molecule.yml`.
+🔗 [**Testing an Ansible role on several distributions**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/molecule-scenarios-multi-distro/)
 
-Le **secret de la portabilité** : utiliser des **abstractions par OS** dans
-le rôle :
+A Galaxy-ready role must work on **several OSes**: RHEL,
+AlmaLinux, Rocky, Debian, Ubuntu, sometimes SUSE. Molecule makes this **simple**
+by adding platforms in `molecule.yml`.
 
-| Élément | Pattern multi-OS |
+The **secret of portability**: use **per-OS abstractions** in
+the role:
+
+| Item | Multi-OS pattern |
 | --- | --- |
-| Module paquet | `ansible.builtin.package:` (pas `dnf:` ni `apt:`) |
-| Nom du paquet | Variable `__webserver_package` chargée selon `ansible_os_family` |
-| User système | Variable `__webserver_user` (`nginx` sur RHEL, `www-data` sur Debian) |
-| Dossier HTML | Variable `__webserver_html_dir` (`/usr/share/nginx/html` vs `/var/www/html`) |
-| Service | Variable `__webserver_service` (généralement identique) |
+| Package module | `ansible.builtin.package:` (not `dnf:` or `apt:`) |
+| Package name | `__webserver_package` variable loaded from `ansible_os_family` |
+| System user | `__webserver_user` variable (`nginx` on RHEL, `www-data` on Debian) |
+| HTML folder | `__webserver_html_dir` variable (`/usr/share/nginx/html` vs `/var/www/html`) |
+| Service | `__webserver_service` variable (usually identical) |
 
-Ces variables vivent dans `vars/<OS>.yml` et sont chargées dynamiquement par
-`include_vars` au démarrage du rôle.
+These variables live in `vars/<OS>.yml` and are loaded dynamically by
+`include_vars` at role startup.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Tester un rôle sur **3 distributions** différentes (RHEL/Alma + Debian + Ubuntu).
-2. Charger dynamiquement `vars/{{ ansible_os_family }}.yml`.
-3. Utiliser `ansible.builtin.package:` (agnostique).
-4. Diverger les chemins / noms de paquets / users entre OS.
-5. Vérifier que le **même rôle** fonctionne sur les 3 OS via Molecule.
+1. Test a role on **3 different distributions** (RHEL/Alma + Debian + Ubuntu).
+2. Dynamically load `vars/{{ ansible_os_family }}.yml`.
+3. Use `ansible.builtin.package:` (agnostic).
+4. Diverge paths / package names / users between OSes.
+5. Check that the **same role** works on the 3 OSes via Molecule.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-podman --version  # ou docker
+podman --version  # or docker
 molecule --version
 ```
 
-## ⚙️ Arborescence
+## ⚙️ Tree
 
 ```text
 labs/molecule/scenarios-multi-distro/
 ├── README.md
-├── Makefile
 ├── roles/
 │   └── webserver/
-│       ├── tasks/main.yml          ← include_vars dynamique + package agnostique
+│       ├── tasks/main.yml          ← shipped MONO-DISTRO: to make portable
 │       ├── defaults/main.yml
 │       ├── handlers/main.yml
 │       ├── meta/main.yml
 │       ├── vars/
-│       │   ├── RedHat.yml          ← vars spécifiques RedHat/Alma/Rocky
-│       │   └── Debian.yml          ← vars spécifiques Debian/Ubuntu
+│       │   ├── RedHat.yml          ← skeleton to complete
+│       │   └── Debian.yml          ← skeleton to complete
 │       └── templates/nginx.conf.j2
 └── molecule/
     └── default/
-        ├── molecule.yml            ← ≥3 platforms (RHEL + Debian + Ubuntu)
+        ├── molecule.yml            ← 1 platform shipped: matrix to extend
         ├── converge.yml
         └── verify.yml
 ```
 
-## 📚 Exercice 1 — `vars/RedHat.yml` vs `vars/Debian.yml`
+## 📚 Exercise 1 — `vars/RedHat.yml` vs `vars/Debian.yml`
 
 ```yaml
-# vars/RedHat.yml
-__webserver_package: nginx
+# vars/RedHat.yml (structure example)
+__webserver_package_name: nginx
 __webserver_user: nginx
 __webserver_html_dir: /usr/share/nginx/html
-__webserver_service: nginx
+__webserver_service_name: nginx
 ```
 
-```yaml
-# vars/Debian.yml
-__webserver_package: nginx
-__webserver_user: www-data
-__webserver_html_dir: /var/www/html
-__webserver_service: nginx
-```
+It is up to you to derive `vars/Debian.yml`: same structure, but which
+user runs nginx on Debian? Which directory serves the
+default pages? (A Debian container and `apt show nginx` answer
+in 2 minutes.)
 
-🔍 **Observation** — convention `__nom_de_var` (double underscore préfixe)
-indique : variable **interne au rôle**, ne pas la surcharger côté
-utilisateur.
+🔍 **Observation**: the `__var_name` convention (double underscore prefix)
+indicates a **role-internal** variable, do not override it on the
+user side.
 
-## 📚 Exercice 2 — `tasks/main.yml` avec `include_vars` dynamique
+## 📚 Exercise 2 — `tasks/main.yml` with dynamic `include_vars`
 
 ```yaml
 ---
@@ -107,15 +109,15 @@ utilisateur.
     owner: "{{ __webserver_user }}"
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- `ansible.builtin.package:` choisit `dnf`/`apt`/`zypper` selon l'OS.
-- `{{ ansible_os_family }}` vaut `RedHat` ou `Debian` — match exact avec
-  les fichiers `vars/`.
-- `include_vars` (dynamique) > `vars_files` (statique) car ne marche pas
-  dans un rôle.
+- `ansible.builtin.package:` picks `dnf`/`apt`/`zypper` depending on the OS.
+- `{{ ansible_os_family }}` is `RedHat` or `Debian`: exact match with
+  the `vars/` files.
+- `include_vars` (dynamic) > `vars_files` (static) because the latter does not work
+  in a role.
 
-## 📚 Exercice 3 — `molecule.yml` avec 3 plateformes
+## 📚 Exercise 3 — `molecule.yml` with 3 platforms
 
 ```yaml
 platforms:
@@ -132,57 +134,57 @@ platforms:
     pre_build_image: true
 ```
 
-🔍 **Observation** : Molecule crée **3 conteneurs en parallèle**, applique
-le rôle, vérifie sur chacun. Si l'un des 3 échoue, le test entier échoue.
+🔍 **Observation**: Molecule creates **3 containers in parallel**, applies
+the role, verifies on each. If one of the 3 fails, the whole test fails.
 
-## 📚 Exercice 4 — Lancer
+## 📚 Exercise 4 — Run
 
 ```bash
 cd labs/molecule/scenarios-multi-distro
 molecule test
 ```
 
-🔍 Vous voyez 3 instances `converge` en parallèle, chaque distrib avec son
-chemin/user/paquet propre. La sortie liste les 3 instances dans le PLAY
+🔍 You see 3 instances `converge` in parallel, each distro with its own
+path/user/package. The output lists the 3 instances in the PLAY
 RECAP.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Module `package:`** est l'arme principale du multi-OS. Préférez-le à
-  `dnf:`/`apt:` sauf si vous avez besoin d'options spécifiques.
-- **`vars/<OS_family>.yml`** + `include_vars` = pattern standard. Marche
-  même pour des OS très différents.
-- **3+ plateformes** dans `molecule.yml` = vraie matrice de test.
-- **Convention `__var`** : variables internes du rôle. Ne **pas** mettre
-  dans `defaults/` (que l'utilisateur peut override) — mettre dans `vars/`.
+- **`package:` module** is the main multi-OS weapon. Prefer it over
+  `dnf:`/`apt:` unless you need specific options.
+- **`vars/<OS_family>.yml`** + `include_vars` = standard pattern. Works
+  even for very different OSes.
+- **3+ platforms** in `molecule.yml` = a real test matrix.
+- **`__var` convention**: role-internal variables. Do **not** put them
+  in `defaults/` (which the user can override): put them in `vars/`.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voulez ajouter **SUSE** (`opensuse/leap`) à la matrice. Quelle est
-   la valeur de `ansible_os_family` pour SUSE ? Quel `vars/<OS>.yml`
-   créer ?
+1. You want to add **SUSE** (`opensuse/leap`) to the matrix. What is
+   the value of `ansible_os_family` for SUSE? Which `vars/<OS>.yml`
+   should you create?
 
-2. Sur Debian, le service `nginx` ne démarre pas après installation
-   (différent de RHEL). Comment forcer le démarrage **uniquement sur
-   Debian** ?
+2. On Debian, the `nginx` service does not start after installation
+   (unlike RHEL). How do you force the start **only on
+   Debian**?
 
-3. Vous voulez tester **2 versions** d'AlmaLinux (9 et 10). Combien de
-   plateformes dans `molecule.yml` ? Comment les nommer pour les
-   distinguer ?
+3. You want to test **2 versions** of AlmaLinux (9 and 10). How many
+   platforms in `molecule.yml`? How do you name them to tell them
+   apart?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md).
+See [`challenge/README.md`](challenge/README.md).
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`group_by` Ansible** : créer dynamiquement des groupes basés sur
-  `ansible_os_family`, puis appliquer des tâches `when:` plus simples.
-- **`ansible_distribution_major_version`** : différencier RHEL 9 vs RHEL 10.
-- **Images CI** : `quay.io/jeffwecan/molecule-rhel:9` et autres images
-  optimisées pour Molecule (avec systemd).
+- **Ansible `group_by`**: dynamically create groups based on
+  `ansible_os_family`, then apply simpler `when:` tasks.
+- **`ansible_distribution_major_version`**: distinguish RHEL 9 vs RHEL 10.
+- **CI images**: `quay.io/jeffwecan/molecule-rhel:9` and other images
+  optimized for Molecule (with systemd).
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint --profile production labs/molecule/scenarios-multi-distro/

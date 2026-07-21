@@ -1,26 +1,26 @@
-# 🎯 Challenge — 3 groupes avec GIDs forcés + 1 groupe système
+# 🎯 Challenge — 3 groups with forced GIDs + 1 system group
 
-## ✅ Objectif
+## ✅ Objective
 
-Sur **db1.lab**, créer 4 groupes via `ansible.builtin.group`, dont 3 avec
-**GID explicite** (pour cohérence multi-hôtes) et 1 **système**
-(GID < 1000 auto-attribué par le système).
+On **db1.lab**, create 4 groups via `ansible.builtin.group`, including 3 with an
+**explicit GID** (for multi-host consistency) and 1 **system** group
+(GID < 1000 auto-assigned by the system).
 
-## 🧩 Spécifications
+## 🧩 Specifications
 
-| Nom | GID | Type |
+| Name | GID | Type |
 | --- | --- | --- |
-| `rhce-shared` | **4000** | standard, GID forcé |
-| `rhce-admins` | **4001** | standard, GID forcé |
-| `rhce-readonly` | **4002** | standard, GID forcé |
-| `myapp-system` | (auto < 1000) | **système** |
+| `rhce-shared` | **4000** | standard, forced GID |
+| `rhce-admins` | **4001** | standard, forced GID |
+| `rhce-readonly` | **4002** | standard, forced GID |
+| `myapp-system` | (auto < 1000) | **system** |
 
-> 💡 **Pourquoi forcer les GIDs ?** Sur un parc multi-hôtes (NFS, conteneurs
-> partagés…), les permissions de fichiers sont stockées **par GID**, pas par
-> nom de groupe. Si `rhce-shared` a GID 4000 sur un hôte et 1010 sur un
-> autre, les ACL deviennent incohérentes.
+> 💡 **Why force the GIDs?** On a multi-host fleet (NFS, shared containers…),
+> the file permissions are stored **by GID**, not by group name. If
+> `rhce-shared` has GID 4000 on one host and 1010 on another, the ACLs become
+> inconsistent.
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -38,8 +38,11 @@ Sur **db1.lab**, créer 4 groupes via `ansible.builtin.group`, dont 3 avec
         - { name: rhce-shared, gid: 4000 }
         - { name: rhce-admins, gid: 4001 }
         - { name: rhce-readonly, gid: 4002 }
+      # Already filled in: loop_control only changes what Ansible PRINTS
+      # for each iteration (the item's name rather than the whole
+      # dictionary). It is not the subject of this lab, and no test checks it.
       loop_control:
-        label: ???
+        label: "{{ item.name }}"
 
     - name: Groupe système myapp-system (GID < 1000)
       ansible.builtin.group:
@@ -48,26 +51,26 @@ Sur **db1.lab**, créer 4 groupes via `ansible.builtin.group`, dont 3 avec
         state: present
 ```
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **`system: true`** crée un groupe avec GID < 1000 (range système).
->   Convention pour les groupes liés à des services/daemons.
-> - **`gid:` explicite** : pour reproductibilité, fixer le GID. Sans,
->   `useradd` choisit le prochain disponible — peut varier entre VMs.
-> - **`local: true`** : force la création dans `/etc/group` même si LDAP
->   est configuré comme NSS source. Sinon, le groupe peut "exister" via
->   LDAP mais pas localement.
-> - **Suppression d'un groupe utilisé** : `state: absent` échoue si des
->   users ont ce groupe en primaire. Supprimer les users d'abord.
+> - **`system: true`** creates a group with GID < 1000 (system range).
+>   Convention for groups tied to services/daemons.
+> - **explicit `gid:`**: for reproducibility, fix the GID. Without it,
+>   `useradd` picks the next available one, which can vary between VMs.
+> - **`local: true`**: forces the creation in `/etc/group` even if LDAP
+>   is configured as the NSS source. Otherwise, the group can "exist" via
+>   LDAP but not locally.
+> - **Deleting a group in use**: `state: absent` fails if
+>   users have this group as primary. Delete the users first.
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-utilisateurs/group/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "getent group rhce-shared rhce-admins rhce-readonly myapp-system"
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-utilisateurs/group/challenge/tests/
@@ -76,17 +79,17 @@ pytest -v labs/modules-utilisateurs/group/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/modules-utilisateurs/group clean
+dsoxlab clean modules-utilisateurs-group
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **GID conflict** : si vous lancez sur un hôte où GID 4000 est déjà pris par
-  un autre groupe, la tâche échoue. Démontrez-le en posant manuellement un
-  `groupadd -g 4000 autre-groupe` au préalable.
-- **`local: true`** : crée le groupe en local (`/etc/group`) même si
-  l'hôte utilise un système d'auth distant (LDAP, SSSD).
-- **Lint** :
+- **GID conflict**: if you run on a host where GID 4000 is already taken by
+  another group, the task fails. Demonstrate it by manually placing a
+  `groupadd -g 4000 autre-groupe` beforehand.
+- **`local: true`**: creates the group locally (`/etc/group`) even if the host
+  uses a remote auth system (LDAP, SSSD).
+- **Lint**:
 
    ```bash
    ansible-lint labs/modules-utilisateurs/group/challenge/solution.yml

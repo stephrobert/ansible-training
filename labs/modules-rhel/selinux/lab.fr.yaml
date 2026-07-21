@@ -1,0 +1,4 @@
+---
+id: modules-rhel-selinux
+title: "Module selinux : modes, booléens et contextes"
+description: "Passer SELinux en enforcing, modifier un booléen avec persistance et poser un contexte custom avec sefcontext puis restorecon."

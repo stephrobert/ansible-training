@@ -1,19 +1,19 @@
-# Lab 79 — Vault IDs multiples (dev / prod / staging)
+# Lab 79 — Multiple Vault IDs (dev / prod / staging)
 
-> 💡 **Pré-requis** : `ansible all -m ansible.builtin.ping` répond `pong` sur les 4 VMs.
+> 💡 **Prerequisite**: `ansible all -m ansible.builtin.ping` replies `pong` on the 4 VMs.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Vault IDs multiples**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/vault-id-multiples/)
+🔗 [**Multiple Vault IDs**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/vault-id-multiples/)
 
-**Un mot de passe vault unique** ne suffit pas en équipe : tout le monde a accès aux secrets de **prod** s'il peut déchiffrer **dev**. Solution : **vault-id étiquetés** par environnement.
+**A single vault password** is not enough in a team: everyone has access to the **prod** secrets if they can decrypt **dev**. Solution: **vault-ids labeled** by environment.
 
 ```yaml
-$ANSIBLE_VAULT;1.2;AES256;dev      ← header avec label "dev"
-$ANSIBLE_VAULT;1.2;AES256;prod     ← header avec label "prod"
+$ANSIBLE_VAULT;1.2;AES256;dev      ← header with the "dev" label
+$ANSIBLE_VAULT;1.2;AES256;prod     ← header with the "prod" label
 ```
 
-Chaque fichier porte son **label**. Au runtime, on passe **plusieurs `--vault-id`** :
+Each file carries its **label**. At runtime, you pass **several `--vault-id`**:
 
 ```bash
 ansible-playbook \
@@ -22,40 +22,40 @@ ansible-playbook \
   playbook.yml
 ```
 
-Ansible essaie chaque vault-id sur chaque fichier chiffré et utilise le bon. **Workflow équipe** : les devs n'ont que `.vault_password_dev`, les ops ont les deux.
+Ansible tries each vault-id on each encrypted file and uses the right one. **Team workflow**: the devs only have `.vault_password_dev`, the ops have both.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Chiffrer avec un **vault-id étiqueté** (`--encrypt-vault-id dev`).
-2. Déchiffrer **plusieurs vault-id** dans un même run.
-3. Structurer `inventory/group_vars/<env>/secrets.yml` par environnement.
-4. Comprendre le **header v1.2** (`$ANSIBLE_VAULT;1.2;AES256;<label>`).
-5. **Workflow équipe** : un mot de passe par environnement, distribué selon les rôles.
+1. Encrypt with a **labeled vault-id** (`--encrypt-vault-id dev`).
+2. Decrypt **several vault-ids** in the same run.
+3. Structure `inventory/group_vars/<env>/secrets.yml` per environment.
+4. Understand the **v1.2 header** (`$ANSIBLE_VAULT;1.2;AES256;<label>`).
+5. **Team workflow**: one password per environment, distributed according to roles.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training/labs/vault/id-multiples/
+cd $ANSIBLE_TRAINING/labs/vault/id-multiples/
 ls -la                              # 2 fichiers .vault_password_*
 ls inventory/group_vars/            # dev/  prod/
 ```
 
-## ⚙️ Arborescence cible
+## ⚙️ Target tree
 
 ```text
 labs/vault/id-multiples/
 ├── README.md
-├── .vault_password_dev             ← mot de passe DEV
-├── .vault_password_prod            ← mot de passe PROD
+├── .vault_password_dev             ← DEV password
+├── .vault_password_prod            ← PROD password
 ├── inventory/
-│   ├── hosts.yml                   ← 2 groupes : dev, prod
+│   ├── hosts.yml                   ← 2 groups: dev, prod
 │   └── group_vars/
 │       ├── dev/
-│       │   └── secrets.yml         ← chiffré avec vault-id "dev"
+│       │   └── secrets.yml         ← encrypted with vault-id "dev"
 │       └── prod/
-│           └── secrets.yml         ← chiffré avec vault-id "prod"
+│           └── secrets.yml         ← encrypted with vault-id "prod"
 ├── playbook.yml
 └── challenge/
     ├── solution.yml
@@ -63,7 +63,7 @@ labs/vault/id-multiples/
         └── test_vault_ids.py
 ```
 
-## 📚 Exercice 1 — Inspecter les headers vault-id
+## 📚 Exercise 1 — Inspect the vault-id headers
 
 ```bash
 head -1 inventory/group_vars/dev/secrets.yml
@@ -73,9 +73,9 @@ head -1 inventory/group_vars/prod/secrets.yml
 # → $ANSIBLE_VAULT;1.2;AES256;prod
 ```
 
-🔍 **Observation** : la **version 1.2** du format vault inclut le **label** dans le header. La 1.1 (lab 77/78) ne le fait pas. Le label permet à Ansible de **savoir quel mot de passe utiliser** pour chaque fichier.
+🔍 **Observation**: the **version 1.2** of the vault format includes the **label** in the header. Version 1.1 (labs 77/78) does not. The label lets Ansible **know which password to use** for each file.
 
-## 📚 Exercice 2 — Visualiser un fichier vault-id
+## 📚 Exercise 2 — View a vault-id file
 
 ```bash
 ansible-vault view \
@@ -83,29 +83,29 @@ ansible-vault view \
   inventory/group_vars/dev/secrets.yml
 ```
 
-Sortie :
+Output:
 
 ```yaml
 db_host: dev-db.example.com
 db_password: "DevDBPass123"
 ```
 
-🔍 **Observation** : sans **`dev@`**, Ansible essaie tous les `--vault-id` jusqu'à trouver le bon. Avec le label explicite, la résolution est **immédiate** — utile en debug.
+🔍 **Observation**: without **`dev@`**, Ansible tries all the `--vault-id` until it finds the right one. With the explicit label, resolution is **immediate**, useful when debugging.
 
-## 📚 Exercice 3 — Tester l'isolation dev/prod
+## 📚 Exercise 3 — Test the dev/prod isolation
 
 ```bash
-# Tenter de déchiffrer le fichier prod avec le mot de passe DEV
+# Try to decrypt the prod file with the DEV password
 ansible-vault view \
   --vault-id dev@.vault_password_dev \
   inventory/group_vars/prod/secrets.yml
 ```
 
-**Résultat** : ÉCHEC (`Decryption failed`). Le mot de passe dev **ne déchiffre pas** prod.
+**Result**: FAILURE (`Decryption failed`). The dev password **does not decrypt** prod.
 
-🔍 **Observation** : c'est exactement le bénéfice de cette isolation. Un dev compromis ne donne **pas** accès aux secrets prod.
+🔍 **Observation**: this is exactly the benefit of this isolation. A compromised dev does **not** give access to the prod secrets.
 
-## 📚 Exercice 4 — Lancer le playbook avec les 2 vault-id
+## 📚 Exercise 4 — Run the playbook with the 2 vault-ids
 
 ```bash
 ansible-playbook -i inventory/hosts.yml \
@@ -114,7 +114,7 @@ ansible-playbook -i inventory/hosts.yml \
   playbook.yml
 ```
 
-Sortie :
+Output:
 
 ```text
 PLAY [Démo vault-id multiples] *********
@@ -128,18 +128,18 @@ db1.lab  : ok=1 changed=1 unreachable=0 failed=0
 web1.lab : ok=1 changed=1 unreachable=0 failed=0
 ```
 
-🔍 **Observation** : `web1.lab` reçoit les secrets DEV (groupe dev), `db1.lab` reçoit les secrets PROD (groupe prod). **Un seul run** déchiffre les 2 environnements en utilisant le bon mot de passe pour chaque.
+🔍 **Observation**: `web1.lab` receives the DEV secrets (dev group), `db1.lab` receives the PROD secrets (prod group). **A single run** decrypts both environments using the right password for each.
 
-## 📚 Exercice 5 — Vérifier les fichiers déposés
+## 📚 Exercise 5 — Check the deposited files
 
 ```bash
-ssh ansible@web1.lab "sudo cat /tmp/lab79-web1.lab.txt"
-ssh ansible@db1.lab  "sudo cat /tmp/lab79-db1.lab.txt"
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab "sudo cat /tmp/lab79-web1.lab.txt"
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab  "sudo cat /tmp/lab79-db1.lab.txt"
 ```
 
-`web1` voit `dev-db.example.com`, `db1` voit `prod-db.example.com`. **Pas de fuite** entre environnements.
+`web1` sees `dev-db.example.com`, `db1` sees `prod-db.example.com`. **No leak** between environments.
 
-## 📚 Exercice 6 — Re-chiffrer un environnement seul
+## 📚 Exercise 6 — Re-encrypt a single environment
 
 ```bash
 echo "NouveauMotDePasseDev2026" > .vault_password_dev_new
@@ -150,57 +150,57 @@ ansible-vault rekey \
   --new-vault-id dev@.vault_password_dev_new \
   inventory/group_vars/dev/secrets.yml
 
-# prod n'est PAS impacté !
+# prod is NOT impacted!
 ansible-vault view \
   --vault-id prod@.vault_password_prod \
   inventory/group_vars/prod/secrets.yml
 # → toujours OK
 ```
 
-🔍 **Observation** : la rotation du mot de passe DEV **n'impacte pas** PROD. Pratique pour **rotater régulièrement** les secrets dev sans déranger la prod.
+🔍 **Observation**: rotating the DEV password **does not impact** PROD. Convenient to **rotate the dev secrets regularly** without disturbing prod.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Idempotence** : un second run de votre solution doit afficher `changed=0`
-  partout dans le `PLAY RECAP`. C'est le signal mécanique d'un playbook
-  conforme aux bonnes pratiques.
-- **FQCN explicite** : préférez toujours `ansible.builtin.<module>` (ou la
-  collection appropriée) plutôt que le nom court — `ansible-lint --profile
-  production` le vérifie.
-- **Convention de ciblage** : ce lab cible db1.lab (deux environnements) ; pour adapter à un
-  autre groupe, ajustez `hosts:` dans `lab.yml`/`solution.yml` puis relancez.
-- **Reset isolé** : `make clean` à la racine du lab désinstalle proprement
-  ce que la solution a posé pour pouvoir rejouer le scénario.
+- **Idempotence**: a second run of your solution must display `changed=0`
+  everywhere in the `PLAY RECAP`. This is the mechanical signal of a playbook
+  that follows best practices.
+- **Explicit FQCN**: always prefer `ansible.builtin.<module>` (or the
+  appropriate collection) rather than the short name (`ansible-lint --profile
+  production` checks this).
+- **Targeting convention**: this lab targets db1.lab and web1.lab (two environments); to adapt it to another
+  group, adjust `hosts:` in `lab.yml`/`solution.yml` then run it again.
+- **Isolated reset**: `dsoxlab clean <id-du-lab>` at the lab root cleanly uninstalls
+  what the solution set up so you can replay the scenario.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Quel est le risque concret d'un seul mot de passe vault partagé entre dev et prod ?
+1. What is the concrete risk of a single vault password shared between dev and prod?
 
-2. Si une équipe a 5 environnements (dev, qa, staging, preprod, prod), faut-il **5 vault-id** ?
+2. If a team has 5 environments (dev, qa, staging, preprod, prod), does it need **5 vault-ids**?
 
-3. Comment **distribuer** les fichiers `.vault_password_*` à l'équipe ? (Indice : Vault HashiCorp, OpenBao, gestionnaires de secrets entreprise)
+3. How do you **distribute** the `.vault_password_*` files to the team? (Hint: HashiCorp Vault, OpenBao, enterprise secret managers)
 
-4. Que se passe-t-il si vous oubliez `--vault-id prod@...` ? (Test : retirer et observer)
+4. What happens if you forget `--vault-id prod@...`? (Test: remove it and observe)
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Le challenge ([`challenge/`](challenge/)) prouve que les 2 environnements sont déchiffrés correctement avec leurs mots de passe respectifs. Tests automatisés via `pytest+testinfra` (5 tests, dont une vérification que les passwords ont des **longueurs différentes** — preuve de déchiffrement séparé).
+The challenge ([`challenge/`](challenge/)) proves that both environments are decrypted correctly with their respective passwords. Automated tests via `pytest+testinfra` (5 tests, including a check that the passwords have **different lengths**, proof of separate decryption).
 
 ```bash
 pytest -v challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`vault_identity_list`** dans `ansible.cfg` pour fixer les vault-id par défaut sans les passer en CLI.
-- **Playbook hybride** : variables vault-id `dev` ET vault-id `prod` dans le même fichier (rare mais possible).
-- **CI/CD** : variables d'env `ANSIBLE_VAULT_PASSWORD_FILE_DEV` + `..._PROD` injectées par les secrets GitHub/GitLab.
-- **Lab 82** : externaliser dans HashiCorp Vault au lieu de fichiers `.vault_password_*`.
+- **`vault_identity_list`** in `ansible.cfg` to set the default vault-ids without passing them on the CLI.
+- **Hybrid playbook**: vault-id `dev` AND vault-id `prod` variables in the same file (rare but possible).
+- **CI/CD**: env variables `ANSIBLE_VAULT_PASSWORD_FILE_DEV` + `..._PROD` injected by GitHub/GitLab secrets.
+- **Lab 82**: externalize into HashiCorp Vault instead of `.vault_password_*` files.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint --profile=production .
 ```
 
-Le linter ne touche pas aux `--vault-id` — il vérifie le code Ansible classique.
+The linter does not touch the `--vault-id`: it checks the classic Ansible code.

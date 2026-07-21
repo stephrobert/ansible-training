@@ -1,0 +1,32 @@
+---
+id: vault-dans-roles
+title: "Vault inside a role: plaintext defaults, encrypted vars"
+description: "Expose public variables in defaults/main.yml pointing to vault_* values in an encrypted vars/main.yml, and override them from the playbook."
+section: vault
+level: l2
+difficulty: intermediate
+lab_type: lab
+estimated_time: "50m"
+skills:
+  - vault-in-role
+  - variable-indirection
+  - role-defaults
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/vault-dans-roles/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

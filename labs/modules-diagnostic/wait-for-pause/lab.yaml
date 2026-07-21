@@ -1,0 +1,32 @@
+---
+id: modules-diagnostic-wait-for-pause
+title: "wait_for and pause modules: synchronization"
+description: "Wait for a TCP port to open or close, for a file or a regex to appear, and add a timed or interactive pause."
+section: modules-diagnostic
+level: l2
+difficulty: intermediate
+lab_type: lab
+estimated_time: "35m"
+skills:
+  - wait-for
+  - synchronization
+  - port-check
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/module-wait-for-pause/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

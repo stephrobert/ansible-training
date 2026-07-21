@@ -1,0 +1,4 @@
+---
+id: vault-playbooks-mixtes
+title: "Playbooks mixtes : main.yml et vault.yml par groupe"
+description: "Séparer variables publiques et secrets dans chaque group_vars, adopter la convention vault_*, et vérifier qu'Ansible fusionne les deux fichiers sans effort."

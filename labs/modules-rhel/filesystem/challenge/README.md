@@ -1,32 +1,50 @@
 # Challenge `filesystem:`
 
-## Énoncé
+## Statement
 
-Sur **db1.lab** avec `/dev/vdb` partitionné (lab `parted` complété),
-écrivez `solution.yml` qui :
+On **db1.lab**, the secondary disk `/dev/vdb` is already partitioned into 2
+by the lab setup: `/dev/vdb1` (1 GiB) and `/dev/vdb2` (the rest).
+Write `solution.yml` that brings the machine into this state:
 
-1. Crée un **xfs** sur `/dev/vdb2`.
-2. Crée un **swap** sur `/dev/vdb1` (passé en flag swap par `parted` au
-   préalable, sinon avec `force: true`).
-3. **Active** le swap immédiatement (`swapon`) et ajoute l'entrée dans
-   `/etc/fstab` avec `ansible.posix.mount`.
-4. Monte `/dev/vdb2` sur `/mnt/data` avec entrée fstab.
-5. Vérifie :
-   - `swapon --show` montre `/dev/vdb1`.
-   - `df -hT /mnt/data` montre xfs.
-   - 2e run = `ok` (idempotent).
+1. `/dev/vdb2` carries an **xfs** filesystem.
+2. `/dev/vdb1` is formatted as **swap**.
+3. The swap is **active immediately** (`swapon --show` lists it) and
+   written into `/etc/fstab` to survive a reboot.
+4. `/dev/vdb2` is **mounted on `/mnt/data`**, with its own fstab entry.
+5. A 2nd run of the playbook changes nothing (idempotent).
 
-## Critères de réussite
+> 🎯 **No skeleton here, on purpose.** By this point you have written enough
+> playbooks to start from a blank file, and that is exactly what the EX294
+> asks: the exam hands you no canvas. The hints below target the traps of
+> this module, not the YAML syntax.
 
-- `swapon --show` retourne `/dev/vdb1`.
-- `mount | grep /mnt/data` montre `/dev/vdb2 on /mnt/data type xfs`.
-- `cat /etc/fstab` contient les 2 entrées.
-- 2e run du playbook : `changed: 0`.
+## Success criteria
 
-## Indices
+> ⏱️ **One test reboots db1** (about 90 s). It is marked `slow`, and it is
+> there on purpose: persistence after a restart is the trap that fails RHCSA
+> and RHCE candidates, and reading the config file proves nothing about it.
+> While you iterate, you can leave it out:
+>
+> ```bash
+> pytest -m 'not slow' labs/modules-rhel/filesystem/challenge/tests/
+> ```
+>
+> Run the full suite at least once before considering the challenge done.
 
-- `fstype: swap` lance `mkswap`.
-- `swapon` n'est pas couvert par `filesystem:` directement — utiliser
-  `ansible.posix.mount` avec `path: none, fstype: swap, opts: sw, state: mounted`.
-- Pour `xfs`, le `state: mounted` du module `mount` peut nécessiter le
-  fs créé d'abord.
+- `blkid /dev/vdb1` returns `TYPE="swap"`, `blkid /dev/vdb2` returns `TYPE="xfs"`.
+- `swapon --show` returns `/dev/vdb1`.
+- `mount | grep /mnt/data` shows `/dev/vdb2 on /mnt/data type xfs`.
+- `cat /etc/fstab` contains both entries (mount and swap).
+- 2nd run of the playbook: `changed: 0`.
+
+## Hints
+
+- `fstype: swap` runs `mkswap`: the module that creates filesystems
+  also knows how to prepare a swap.
+- A swap is not mounted on a directory: its fstab entry uses
+  `none` as the mount point (`fstype: swap`, `opts: sw`).
+- Immediate swap activation (`swapon`) is not covered by any declarative
+  state: think of a command conditioned on the current state to
+  stay idempotent.
+- For the xfs mount, a single declarative state produces both the active
+  mount AND the fstab entry.

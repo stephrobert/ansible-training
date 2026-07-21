@@ -32,20 +32,9 @@ def load_meta() -> dict:
         return yaml.safe_load(f)
 
 
-def lab_dirname_from_id(lab_id: str, section_id: str) -> str:
-    """Réplique compute_lab_dirname du script de migration."""
-    prefix = f"{section_id}-"
-    if lab_id.startswith(prefix):
-        stripped = lab_id[len(prefix):]
-        if len(stripped) >= 3:
-            return stripped
-    return lab_id
-
-
-def lab_short_title(lab_id: str, section_id: str) -> str:
-    """Titre humain à partir de l'ID lab (sans préfixe section, espaces, capitalize)."""
-    dirname = lab_dirname_from_id(lab_id, section_id)
-    return dirname.replace("-", " ")
+def lab_short_title(lab_rel: str) -> str:
+    """Titre humain à partir du chemin du lab (dernier segment, tirets en espaces)."""
+    return lab_rel.split("/")[-1].replace("-", " ")
 
 
 def render_section(section: dict) -> list[str]:
@@ -53,7 +42,6 @@ def render_section(section: dict) -> list[str]:
     lines = []
     title = section["title"]
     desc = section.get("description", "")
-    sect_id = section["id"]
 
     lines.append(f"### {title}")
     lines.append("")
@@ -61,11 +49,11 @@ def render_section(section: dict) -> list[str]:
         lines.append(desc)
         lines.append("")
 
-    for lab_id in section["labs"]:
-        dirname = lab_dirname_from_id(lab_id, sect_id)
-        path = f"labs/{sect_id}/{dirname}"
-        title_human = lab_short_title(lab_id, sect_id)
-        lines.append(f"- [`{title_human}`](./{path}/)")
+    # Depuis le passage au contrat dsoxlab 0.1.6, meta.yml porte des chemins
+    # relatifs à labs/ (decouvrir/installation-ansible) et non plus des ids
+    # préfixés : il n'y a plus de nom de répertoire à reconstruire.
+    for lab_rel in section["labs"]:
+        lines.append(f"- [`{lab_short_title(lab_rel)}`](./labs/{lab_rel}/)")
 
     lines.append("")
     return lines
@@ -119,7 +107,7 @@ def update_readme(rendered: str, check_only: bool = False) -> bool:
 
     if new_content != content:
         README_MD.write_text(new_content, encoding="utf-8")
-        print(f"✅ README.md mis à jour.")
+        print("✅ README.md mis à jour.")
         return True
     print("README.md déjà à jour, rien à faire.")
     return False

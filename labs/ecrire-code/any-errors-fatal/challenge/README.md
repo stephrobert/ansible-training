@@ -1,91 +1,127 @@
-# 🎯 Challenge — `any_errors_fatal` sans erreur réelle
+# 🎯 Challenge — Atomic deployment: prove `any_errors_fatal`
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `challenge/solution.yml` qui sur **les 2 webservers** active le mot-clé
-**`any_errors_fatal: true`** au niveau du play et pose un fichier marqueur sur
-chaque hôte.
+Write `challenge/solution.yml`: a **two-step** deployment on the
+2 webservers, with a **health check** between them that can fail
+on a given host. The rule of the game: if the check fails on **a single**
+host, **no** host must activate the release. This is exactly what
+`any_errors_fatal: true` guarantees, and it is what the tests **prove**
+by actually causing the failure.
 
-> 💡 **Pourquoi sans erreur réelle ?** Tester `any_errors_fatal` en provoquant
-> une erreur arrêterait le play sur les 2 hôtes — donc rien ne pourrait être
-> validé par les tests. Ce challenge se contente de **valider la syntaxe** : un
-> play avec `any_errors_fatal: true` qui réussit doit bien poser les fichiers
-> sur **tous** les hôtes.
+## 🧩 Expected contract
 
-## 🧩 Sémantique de `any_errors_fatal`
+The playbook targets `webservers`, with `become: true`, and declares a variable
+`fail_host` valued `"none"` by default (overridden by the tests via
+`-e fail_host=web1.lab` to simulate the incident).
 
-Avec `serial:` (lab 09), si un hôte échoue, seul le batch courant s'arrête.
-Avec **`any_errors_fatal: true`**, **dès qu'un hôte échoue**, **tout le play
-s'arrête** — y compris pour les hôtes encore en cours sur d'autres batches.
+| Step | Task | State produced |
+| --- | --- | --- |
+| 1 | Prepare the release | `/tmp/anyfatal-step1-{{ inventory_hostname }}.txt`, contains `step1 OK on <host>`, mode `0644` |
+| 2 | Health check | `ansible.builtin.command: /bin/false` executed **only** when `inventory_hostname == fail_host` |
+| 3 | Activate the release | `/tmp/anyfatal-release-{{ inventory_hostname }}.txt`, contains `release OK on <host>`, mode `0644` |
 
-C'est le **pattern « ne pas écrire à moitié »** : si la 1ère machine échoue,
-on ne pousse même pas sur les suivantes.
+Behaviors that the tests check on the VMs:
 
-## 🧩 Squelette
+1. **Incident run** (`-e fail_host=web1.lab`): the playbook exits in error,
+   step 1 is laid down on both hosts, and the release file exists
+   **neither on web1** (it failed) **nor on web2** (the play stopped
+   everywhere). Without `any_errors_fatal: true`, web2 would have continued and laid down its
+   release: the test fails.
+2. **Nominal run** (without `-e`): the playbook succeeds and both hosts have
+   step 1 **and** the release.
+3. **Idempotence**: a second nominal run shows `changed=0` everywhere.
+
+## 🧩 Skeleton
 
 ```yaml
 ---
-- name: Challenge - any_errors_fatal
-  hosts: ???                          # webservers
+- name: Déploiement atomique sur les webservers
+  hosts: ???
   become: ???
-  any_errors_fatal: ???
+  gather_facts: false
+  ???: true                          # le mot-clé du lab, au niveau du play
+  vars:
+    fail_host: ???                   # aucun hôte ne doit matcher par défaut
 
   tasks:
-    - name: Marqueur sans erreur sur chaque webserver
+    - name: Préparer la release (étape 1)
       ansible.builtin.copy:
-        dest: "/tmp/anyfatal-{{ ??? }}.txt"
+        dest: ???
+        content: ???
+        mode: "0644"
+
+    - name: Contrôle de santé (échoue sur fail_host)
+      ansible.builtin.command: /bin/false
+      when: ???
+      changed_when: false
+
+    - name: Activer la release (étape 3)
+      ansible.builtin.copy:
+        dest: ???
         content: ???
         mode: "0644"
 ```
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **Mot-clé play-level**, pas task-level : `any_errors_fatal: true` se
->   place **à la racine du play** (au même niveau que `hosts:`,
->   `become:`), pas dans une tâche.
-> - **`inventory_hostname` dans `dest:`** : pour avoir un fichier par
->   hôte. Sinon les 2 webservers écrivent le même fichier — la 2ème
->   écriture écrase la 1ère, et le test cherchera 2 fichiers distincts.
-> - **`any_errors_fatal` arrête TOUT** : différent de `max_fail_percentage`
->   qui tolère un seuil. Lecture officielle :
->   [doc Ansible — error handling](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_error_handling.html).
-> - **Test sans erreur réelle** : ce challenge ne provoque pas d'erreur
->   exprès — tester avec `/bin/false` casserait les 2 hôtes et le test ne
->   pourrait rien valider.
+> - **Play-level keyword, not task-level**: `any_errors_fatal: true` goes
+>   at the root of the play, at the same level as `hosts:` and `become:`.
+> - **`{{ inventory_hostname }}` in `dest:`**: one file per host, otherwise
+>   the 2 webservers overwrite each other.
+> - **`when: inventory_hostname == fail_host`**: the check must only crash
+>   on the designated host. With `fail_host=none`, nobody matches and the
+>   play converges.
+> - **`changed_when: false`** on the `command`: without it, `ansible-lint`
+>   (the `no-changed-when` rule) refuses the playbook, and idempotence is wrong.
 
-## 🚀 Lancement
+## 🚀 Launch
 
 ```bash
+# Run incident : web1 échoue, PERSONNE ne doit poser la release
+ansible-playbook labs/ecrire-code/any-errors-fatal/challenge/solution.yml \
+    -e fail_host=web1.lab
+ansible webservers -b -m ansible.builtin.command -a "ls /tmp/"  # pas de anyfatal-release-*
+
+# Run nominal : tout le monde converge
+ansible webservers -b -m ansible.builtin.shell -a "rm -f /tmp/anyfatal-*.txt"
 ansible-playbook labs/ecrire-code/any-errors-fatal/challenge/solution.yml
 ```
 
-🔍 `PLAY RECAP` : `changed=1` sur **les 2 hôtes**.
+🔍 On the incident run, the `PLAY RECAP` shows `failed=1` on web1 and
+`failed=0` on web2: web2 crashed on nothing, so it is not marked failed. The
+signature of `any_errors_fatal` lies elsewhere: web2 **stops anyway**, its
+remaining tasks never run, and its `ok` counter stays below what a nominal
+run would give. This is the
+signature of `any_errors_fatal`.
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/any-errors-fatal/challenge/tests/
 ```
 
+The tests replay the two runs themselves (incident then nominal) and
+check the state of both VMs, positive **and** negative assertions.
+
 ## 🧹 Reset
 
 ```bash
-make -C labs/ecrire-code/any-errors-fatal clean
+dsoxlab clean ecrire-code-any-errors-fatal
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`any_errors_fatal: true` + erreur** : ajoutez une tâche qui échoue sur
-  web2 (ex: `command: /bin/false` avec `when: inventory_hostname == "web2.lab"`).
-  Observez : l'erreur sur web2 arrête le play **même pour web1** qui n'avait
-  pourtant pas terminé. Sans `any_errors_fatal`, web1 aurait fini son play.
-- **Combinaison `serial: 2 + any_errors_fatal: true`** : sur 10 hôtes, si l'un
-  échoue dans le batch 2 (hôtes 3-4), aucun des batches suivants (5-6, 7-8,
-  9-10) ne tourne.
-- **Différence avec `max_fail_percentage`** : ce dernier permet une
-  **tolérance** (ex: 30 % d'échecs OK). `any_errors_fatal` est tolérance zéro.
-- **Lint** :
+- **Remove `any_errors_fatal: true`** and rerun the incident run: web2
+  lays down its release even though web1 crashed. This is the "half the fleet"
+  drift of the scenario, and it is why the tests forbid it.
+- **`serial: 1` + `any_errors_fatal: true`**: on 10 hosts, a failure in
+  batch 2 prevents batches 3 to 10 from starting.
+- **`max_fail_percentage`**: percentage tolerance, where
+  `any_errors_fatal` is zero tolerance (`max_fail_percentage: 0` is
+  equivalent).
+- **Lint**:
 
    ```bash
-   ansible-lint labs/ecrire-code/any-errors-fatal/challenge/solution.yml
+   ansible-lint --profile production labs/ecrire-code/any-errors-fatal/challenge/solution.yml
    ```

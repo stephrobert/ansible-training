@@ -1,0 +1,22 @@
+---
+# Mise en place du lab precedence-variables : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup precedence-variables lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (precedence-variables)
+      ansible.builtin.file:
+        path: "/tmp/precedence-result.txt"
+        state: "absent"
+
+- name: Brief the learner (precedence-variables)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Stack the same variable at several levels to demonstrate which one wins, from role defaults up to --extra-vars
+      run_once: true

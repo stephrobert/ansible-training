@@ -1,59 +1,58 @@
-# Lab 96 — Pipeline CI matrice `ansible-core` × Python pour une collection
+# Lab 96 — CI matrix pipeline `ansible-core` × Python for a collection
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo.
+> If it fails, run `mise install && dsoxlab provision` at the repo root.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Pipeline CI pour collections**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/pipeline-ci/)
+🔗 [**CI pipeline for collections**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/pipeline-ci/)
 
-Une collection en production se **teste sur plusieurs versions** d'`ansible-core` et de Python pour garantir la **compatibilité descendante**. Le pattern 2026 : **GitHub Actions** avec une **matrice** `ansible-core × python`, exécutant **`ansible-test sanity`** + **`ansible-test units`** + **`ansible-lint --strict`** dans un Docker conforme, avec **SHA pinning** des actions et **`permissions: {}`** au global.
+A production collection is **tested against several versions** of `ansible-core` and Python to guarantee **backward compatibility**. The 2026 pattern: **GitHub Actions** with an `ansible-core × python` **matrix**, running **`ansible-test sanity`** + **`ansible-test units`** + **`ansible-lint --strict`** in a compliant Docker, with action **SHA pinning** and **`permissions: {}`** at the global level.
 
-Ce lab fournit le workflow GitHub Actions complet (et son équivalent GitLab CI), durci selon les pratiques 2026.
+This lab provides the complete GitHub Actions workflow (and its GitLab CI equivalent), hardened according to 2026 practices.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Écrire un **workflow GitHub Actions** pour une collection.
-2. Configurer une **matrice** `ansible-core stable-2.18 × stable-2.19 × devel × Python 3.11 × 3.12`.
-3. Lancer **`ansible-test sanity --docker`** dans la CI.
-4. Lancer **`ansible-test units --docker`** sur les modules Python.
-5. **Pinner** les actions par **SHA** (zizmor compliant).
-6. Ajouter **`permissions: {}`** + **`persist-credentials: false`**.
-7. Écrire l'**équivalent GitLab CI** avec stages `lint`, `sanity`, `units`.
+1. Write a **GitHub Actions workflow** for a collection.
+2. Configure a **matrix** `ansible-core stable-2.18 × stable-2.19 × devel × Python 3.11 × 3.12`.
+3. Run **`ansible-test sanity --docker`** in the CI.
+4. Run **`ansible-test units --docker`** on the Python modules.
+5. **Pin** the actions by **SHA** (zizmor compliant).
+6. Add **`permissions: {}`** + **`persist-credentials: false`**.
+7. Write the **GitLab CI equivalent** with stages `lint`, `sanity`, `units`.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible all -m ansible.builtin.ping
 zizmor --version 2>/dev/null || pipx install zizmor
 ```
 
-## ⚙️ Arborescence cible
+## ⚙️ Target layout
 
 ```text
 labs/collections/ci-tests/
-├── README.md                            ← ce fichier (tuto guidé)
-├── Makefile                             ← cible clean
+├── README.md                            ← this file (guided tutorial)
 └── challenge/
-    ├── README.md                        ← consigne challenge
+    ├── README.md                        ← challenge brief
     └── tests/
-        └── test_ci.py                   ← tests structurels (workflow + .gitlab-ci.yml)
+        └── test_ci.py                   ← structural tests (workflow + .gitlab-ci.yml)
 ```
 
-L'apprenant écrit lui-même les fichiers `.github/workflows/ansible-test.yml` et `.gitlab-ci.yml` dans `challenge/`.
+The learner writes the `.github/workflows/ansible-test.yml` and `.gitlab-ci.yml` files themselves in `challenge/`.
 
-## 📚 Exercice 1 — Anatomie d'un workflow GitHub Actions matrice
+## 📚 Exercise 1 — Anatomy of a matrix GitHub Actions workflow
 
 ```yaml
 # .github/workflows/ansible-test.yml
@@ -63,7 +62,7 @@ on:
     branches: [main]
   pull_request:
 
-permissions: {}                          # ← global = aucune
+permissions: {}                          # ← global = none
 
 jobs:
   sanity:
@@ -72,7 +71,7 @@ jobs:
     permissions:
       contents: read
     strategy:
-      fail-fast: false                   # ← continue même si une combo échoue
+      fail-fast: false                   # ← continue even if a combo fails
       matrix:
         ansible:
           - stable-2.18
@@ -103,30 +102,30 @@ jobs:
           ansible-test sanity --docker default -v --color
 ```
 
-🔍 **Observation** : la **matrice** lance `3 × 2 = 6` jobs en parallèle. **`fail-fast: false`** continue même si une combo casse (utile pour voir lesquelles passent). **`permissions: {}`** au global, élargi par job au strict nécessaire.
+🔍 **Observation**: the **matrix** launches `3 × 2 = 6` jobs in parallel. **`fail-fast: false`** continues even if a combo breaks (useful to see which ones pass). **`permissions: {}`** at the global level, widened per job to the strict minimum.
 
-## 📚 Exercice 2 — Pinning par SHA des actions
+## 📚 Exercise 2 — SHA pinning of actions
 
-Toutes les actions externes **doivent** être pinnées par **SHA 40 caractères** :
+All external actions **must** be pinned by **40-character SHA**:
 
-| Action | SHA (exemple 2026) | Tag équivalent |
+| Action | SHA (2026 example) | Equivalent tag |
 |--------|-------------------|----------------|
 | `actions/checkout` | `b4ffde65f46336ab88eb53be808477a3936bae11` | v4.2.2 |
 | `actions/setup-python` | `a26af69be951a213d495a4c3e4e4022e16d87065` | v5.6.0 |
 
-🔍 **Observation cruciale** : sans SHA pinning, un attaquant qui compromet le repo `actions/checkout` peut **repush** le tag `v4.2.2` sur un commit malicieux. Tous les pipelines `uses: actions/checkout@v4.2.2` exécutent alors le code malicieux. **Zizmor** vérifie ce pattern.
+🔍 **Crucial observation**: without SHA pinning, an attacker who compromises the `actions/checkout` repo can **repush** the `v4.2.2` tag onto a malicious commit. All pipelines `uses: actions/checkout@v4.2.2` then execute the malicious code. **Zizmor** checks this pattern.
 
-## 📚 Exercice 3 — `persist-credentials: false`
+## 📚 Exercise 3 — `persist-credentials: false`
 
 ```yaml
 - uses: actions/checkout@<SHA>
   with:
-    persist-credentials: false           # ← bloque le token Git après le checkout
+    persist-credentials: false           # ← blocks the Git token after the checkout
 ```
 
-🔍 **Observation** : sans cette option, le `GITHUB_TOKEN` reste dans `.git/config` et peut être **exfiltré** par une étape suivante compromise. Pattern **systématique** sur `actions/checkout` en 2026.
+🔍 **Observation**: without this option, the `GITHUB_TOKEN` stays in `.git/config` and can be **exfiltrated** by a later compromised step. **Systematic** pattern on `actions/checkout` in 2026.
 
-## 📚 Exercice 4 — Job `units` (tests Python)
+## 📚 Exercise 4 — `units` job (Python tests)
 
 ```yaml
   units:
@@ -157,9 +156,9 @@ Toutes les actions externes **doivent** être pinnées par **SHA 40 caractères*
           ansible-test units --docker default -v --color --python ${{ matrix.python }}
 ```
 
-🔍 **Observation** : `ansible-test units` lance **pytest** sur les fichiers `tests/unit/plugins/...` de la collection. **Coverage activée** par défaut depuis 2.16. Bloquer la CI si la couverture chute sous un seuil avec `--coverage --coverage-check`.
+🔍 **Observation**: `ansible-test units` runs **pytest** on the collection's `tests/unit/plugins/...` files. **Coverage enabled** by default since 2.16. Block the CI if coverage falls below a threshold with `--coverage --coverage-check`.
 
-## 📚 Exercice 5 — Ajouter `ansible-lint --strict`
+## 📚 Exercise 5 — Add `ansible-lint --strict`
 
 ```yaml
   lint:
@@ -182,25 +181,25 @@ Toutes les actions externes **doivent** être pinnées par **SHA 40 caractères*
         run: ansible-lint --strict --profile production
 ```
 
-🔍 **Observation** : **`--strict`** élève les warnings au rang d'erreurs. **`--profile production`** active toutes les règles strictes (FQCN, `no-changed-when` sur `command`/`shell`, `mode` quoté, etc.). À combiner avec `tox-ansible` pour matrice plus dynamique.
+🔍 **Observation**: **`--strict`** promotes warnings to errors. **`--profile production`** enables all the strict rules (FQCN, `no-changed-when` on `command`/`shell`, quoted `mode`, etc.). Combine with `tox-ansible` for a more dynamic matrix.
 
-## 📚 Exercice 6 — Linter le workflow avec `zizmor`
+## 📚 Exercise 6 — Lint the workflow with `zizmor`
 
 ```bash
 zizmor .github/workflows/ansible-test.yml
 ```
 
-Détecte automatiquement :
+Automatically detects:
 
-- Actions non pinnées par SHA.
-- `permissions:` trop larges.
-- Variables d'env exposées au shell sans escape.
-- Absence de `persist-credentials: false`.
-- Templates avec `${{ ... }}` injectables.
+- Actions not pinned by SHA.
+- `permissions:` too broad.
+- Env variables exposed to the shell without escaping.
+- Absence of `persist-credentials: false`.
+- Templates with injectable `${{ ... }}`.
 
-🔍 **Observation** : **`zizmor`** est l'outil de référence 2026 pour auditer les workflows GitHub. À ajouter en **pre-commit hook** pour bloquer les régressions.
+🔍 **Observation**: **`zizmor`** is the 2026 reference tool to audit GitHub workflows. Add it as a **pre-commit hook** to block regressions.
 
-## 📚 Exercice 7 — Équivalent GitLab CI
+## 📚 Exercise 7 — GitLab CI equivalent
 
 ```yaml
 # .gitlab-ci.yml
@@ -250,37 +249,37 @@ units:
     - ansible-test units --docker default -v --color --python ${PYTHON_VERSION}
 ```
 
-🔍 **Observation** : **`parallel:matrix`** GitLab CI donne le même effet que la matrice GitHub Actions. **`<<: *collection_setup`** factorise le `before_script` partagé. À combiner avec `rules:` pour ne lancer que sur certains paths modifiés.
+🔍 **Observation**: **`parallel:matrix`** in GitLab CI gives the same effect as the GitHub Actions matrix. **`<<: *collection_setup`** factors the shared `before_script`. Combine with `rules:` to run only on certain modified paths.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Matrice ansible-core × Python** = 4-6 combinaisons typiques.
-- **Pinning par SHA** des actions GitHub (40 caractères hex).
-- **`permissions: {}`** au global, **`persist-credentials: false`** sur checkout.
-- **`ansible-test sanity --docker default`** = validation FQCN + doc + types.
-- **`ansible-test units --docker`** = pytest sur les modules Python.
-- **`ansible-lint --strict --profile production`** = qualité maximale.
-- **Zizmor** lint des workflows.
+- **ansible-core × Python matrix** = 4-6 typical combinations.
+- **SHA pinning** of GitHub actions (40 hex characters).
+- **`permissions: {}`** at the global level, **`persist-credentials: false`** on checkout.
+- **`ansible-test sanity --docker default`** = FQCN + doc + types validation.
+- **`ansible-test units --docker`** = pytest on the Python modules.
+- **`ansible-lint --strict --profile production`** = maximum quality.
+- **Zizmor** lints the workflows.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Pourquoi `fail-fast: false` est **recommandé** pour une matrice de tests ?
-2. À quoi sert `path: ansible_collections/student/lab96` dans `actions/checkout` ?
-3. Comment **bloquer** un pipeline GitLab si **`ansible-test units --coverage`** retombe sous 80 % ?
-4. Quel est l'avantage de **`tox-ansible`** vs une matrice GitHub Actions native ?
+1. Why is `fail-fast: false` **recommended** for a test matrix?
+2. What is `path: ansible_collections/student/lab96` used for in `actions/checkout`?
+3. How do you **block** a GitLab pipeline if **`ansible-test units --coverage`** drops below 80%?
+4. What is the advantage of **`tox-ansible`** vs a native GitHub Actions matrix?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) — écrire un workflow GitHub Actions et un `.gitlab-ci.yml` qui passent **`zizmor`** au vert et exécutent `ansible-test sanity` sur 2 versions ansible-core minimum.
+See [`challenge/README.md`](challenge/README.md): write a GitHub Actions workflow and a `.gitlab-ci.yml` that pass **`zizmor`** green and run `ansible-test sanity` on at least 2 ansible-core versions.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Lab 97** : migration rôle standalone → collection.
-- **Renovate** pour bumper auto les SHA des actions.
-- **`ansible-content-actions`** : composite GitHub Action officielle.
-- **`tox-ansible`** : matrice dynamique.
+- **Lab 97**: standalone role → collection migration.
+- **Renovate** to auto-bump the action SHAs.
+- **`ansible-content-actions`**: official composite GitHub Action.
+- **`tox-ansible`**: dynamic matrix.
 
-## 🔍 Linter avec `ansible-lint` + `zizmor`
+## 🔍 Linting with `ansible-lint` + `zizmor`
 
 ```bash
 zizmor labs/collections/ci-tests/challenge/.github/workflows/ansible-test.yml

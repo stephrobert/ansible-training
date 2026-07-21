@@ -1,2 +1,2 @@
 ---
-selinux_state: enforcing
+selinux_setup_state: enforcing

@@ -1,13 +1,13 @@
-# 🎯 Challenge — Bloc d'aliases shell avec `blockinfile`
+# 🎯 Challenge — Shell aliases block with `blockinfile`
 
-## ✅ Objectif
+## ✅ Objective
 
-Sur **db1.lab**, créer le fichier **`/etc/profile.d/aliases-rhce.sh`** et y
-ajouter un **bloc d'aliases délimité par des markers**, idempotent.
+On **db1.lab**, create the file **`/etc/profile.d/aliases-rhce.sh`** and add to
+it a **block of aliases delimited by markers**, idempotent.
 
-## 🧩 Sortie attendue
+## 🧩 Expected output
 
-Le fichier doit ressembler à :
+The file should look like:
 
 ```bash
 # BEGIN ALIASES RHCE
@@ -17,23 +17,23 @@ alias ports='ss -tulpn'
 # END ALIASES RHCE
 ```
 
-Si on relance le playbook, **le bloc reste unique** (pas de duplication).
-C'est le grand atout de `blockinfile` vs `lineinfile` : il gère un **bloc
-complet** au lieu d'une ligne.
+If you re-run the playbook, **the block stays unique** (no duplication).
+This is the great advantage of `blockinfile` over `lineinfile`: it manages a
+**complete block** instead of a single line.
 
-## 🧩 Module à utiliser : `ansible.builtin.blockinfile`
+## 🧩 Module to use: `ansible.builtin.blockinfile`
 
-Options clés :
+Key options:
 
-| Option | Effet |
+| Option | Effect |
 | --- | --- |
-| `path:` | Fichier à modifier. |
-| `create: true` | Crée le fichier s'il n'existe pas (défaut : false). |
-| `block:` | Le contenu du bloc (multi-lignes via `\|`). |
-| `marker:` | Format du marker. **Doit contenir `{mark}`** qui sera remplacé par `BEGIN` ou `END`. |
-| `mode:` | Permissions du fichier. |
+| `path:` | File to modify. |
+| `create: true` | Creates the file if it does not exist (default: false). |
+| `block:` | The content of the block (multi-line via `\|`). |
+| `marker:` | Marker format. **Must contain `{mark}`** which will be replaced by `BEGIN` or `END`. |
+| `mode:` | File permissions. |
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -54,58 +54,57 @@ Options clés :
           ???
 ```
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
-> - **`marker:`** définit les balises de début/fin du bloc. Par défaut
->   `# {mark} ANSIBLE MANAGED BLOCK` où `{mark}` = `BEGIN`/`END`. Si
->   vous appelez 2 fois `blockinfile` sur le même fichier sans changer
->   `marker:`, le 2ᵉ remplace le 1ᵉʳ.
-> - **`marker:` custom** : `marker: "# {mark} aliases-rhce"` pour gérer
->   plusieurs blocs distincts dans le même fichier.
-> - **`create: true`** : crée le fichier s'il n'existe pas. Sans, échec
->   si fichier absent.
-> - **`block:`** accepte une chaîne multi-lignes (`|`) ou une liste de
->   strings. Le contenu est inséré tel quel entre les marqueurs.
+> - **`marker:`** defines the begin/end tags of the block. Default
+>   `# {mark} ANSIBLE MANAGED BLOCK` where `{mark}` = `BEGIN`/`END`. If
+>   you call `blockinfile` twice on the same file without changing
+>   `marker:`, the 2nd one replaces the 1st.
+> - **Custom `marker:`**: `marker: "# {mark} aliases-rhce"` to manage
+>   several distinct blocks in the same file.
+> - **`create: true`**: creates the file if it does not exist. Without it,
+>   failure if the file is absent.
+> - **`block:`** accepts a multi-line string (`|`) or a list of strings.
+>   The content is inserted as-is between the markers.
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-fichiers/blockinfile/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "cat /etc/profile.d/aliases-rhce.sh"
 ```
 
-🔍 **Test idempotence** :
+🔍 **Idempotence test**:
 
 ```bash
 ansible-playbook labs/modules-fichiers/blockinfile/challenge/solution.yml
-# Au 2e run : changed=0 (le bloc est déjà conforme)
+# On the 2nd run: changed=0 (the block is already compliant)
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-fichiers/blockinfile/challenge/tests/
 ```
 
-Le test vérifie en particulier que le marker `# BEGIN ALIASES RHCE` apparaît
-**exactement une fois** dans le fichier (preuve d'idempotence).
+The test checks in particular that the marker `# BEGIN ALIASES RHCE` appears
+**exactly once** in the file (proof of idempotence).
 
 ## 🧹 Reset
 
 ```bash
-make -C labs/modules-fichiers/blockinfile clean
+dsoxlab clean modules-fichiers-blockinfile
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Plusieurs blocs dans un même fichier** : utilisez **des markers
-  différents** pour ne pas qu'ils s'écrasent (`# {mark} BLOC_A`,
-  `# {mark} BLOC_B`).
-- **`insertafter:` / `insertbefore:`** : place le bloc relativement à un motif
-  existant. Ex: `insertafter: '^# Custom config'`.
-- **Suppression du bloc** : `state: absent` enlève le bloc proprement
-  (markers compris).
-- **Lint** :
+- **Several blocks in one file**: use **different markers** so they do not
+  overwrite each other (`# {mark} BLOC_A`, `# {mark} BLOC_B`).
+- **`insertafter:` / `insertbefore:`**: place the block relative to an existing
+  pattern. For example `insertafter: '^# Custom config'`.
+- **Removing the block**: `state: absent` cleanly removes the block
+  (markers included).
+- **Lint**:
 
    ```bash
    ansible-lint labs/modules-fichiers/blockinfile/challenge/solution.yml

@@ -30,7 +30,7 @@ case "$ACTION" in
     add)
         if [ ! -f "$LAB_KEY" ]; then
             echo -e "${RED}[err]${NC} Clé du lab introuvable : ${LAB_KEY}"
-            echo "      Lance 'make bootstrap' à la racine du repo pour la générer."
+            echo "      Lance 'mise install' à la racine du repo pour la générer."
             exit 1
         fi
         mkdir -p "$SSH_CONF_DIR"

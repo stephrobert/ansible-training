@@ -1,6 +1,0 @@
----
-collections:
-  - name: ansible.posix
-    version: 2.0.0
-  - name: kubernetes.core   # ← collection valide
-    version: 5.1.1

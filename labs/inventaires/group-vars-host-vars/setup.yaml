@@ -1,0 +1,23 @@
+---
+# Mise en place du lab group-vars-host-vars : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup group-vars-host-vars lab (lab_web1:lab_web2)
+  hosts: lab_web1:lab_web2
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (group-vars-host-vars)
+      ansible.builtin.shell: |
+        rm -f /tmp/lab55-port-*.txt
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (group-vars-host-vars)
+  hosts: lab_web1:lab_web2
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Spread inventory variables across all, group and host levels, then check the resolved value with ansible-inventory --host
+      run_once: true

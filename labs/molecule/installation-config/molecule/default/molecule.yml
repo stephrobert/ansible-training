@@ -1,58 +1,86 @@
 ---
-# molecule.yml — configuration enrichie du scénario.
-# Démontre :
-# - dependency: galaxy avec requirements.yml
-# - platforms multiples
-# - provisioner config (callbacks, vars)
-# - scenario test_sequence personnalisée
+# Scénario « default » enrichi : la configuration minimale du lab 62 monte
+# ici au niveau de ce qu'on livre en production.
+#
+# Quatre enrichissements, quatre besoins réels :
+#   1. les dépendances du scénario sont déclarées et versionnées,
+#   2. l'instance est paramétrée sans toucher aux defaults du rôle,
+#   3. la séquence de test est explicite et débarrassée de ses trous,
+#   4. on mesure le temps passé par tâche.
 
 dependency:
   name: galaxy
   options:
-    requirements-file: ./molecule/default/requirements.yml
-    role-file: ./molecule/default/requirements.yml
+    # Sans cette option, Molecule cherche ses collections dans
+    # molecule/default/collections.yml, qui n'existe pas : le scénario
+    # dépendrait alors de ce qui traîne sur le poste. En la pointant sur
+    # NOTRE fichier, le scénario devient autoporteur : il déclare ce dont
+    # il dépend, et personne n'a besoin de deviner.
+    # Le chemin est relatif à la racine du projet, d'où molecule s'exécute.
+    requirements-file: molecule/default/requirements.yml
 
 driver:
+  # Driver délégué : ce sont create.yml et destroy.yml (fournis avec le
+  # lab) qui montent réellement l'instance, via containers.podman.
   name: default
+  options:
+    managed: true
+    login_cmd_template: "podman exec -ti {instance} bash"
 
 platforms:
-  - name: instance-rocky9
-    image: docker.io/rockylinux/rockylinux:9
+  - name: instance-alma9
+    # Image « init » : systemd tourne en PID 1, sans quoi le rôle ne peut
+    # pas démarrer nginx. AlmaLinux 9 est la distribution de la formation.
+    image: docker.io/almalinux/10-init:latest
     pre_build_image: true
     privileged: true
     command: /sbin/init
-    groups:
-      - rocky
 
 provisioner:
   name: ansible
+
   config_options:
     defaults:
-      stdout_callback: yaml
-      callback_enabled: profile_tasks, timer
-      forks: 5
-      gathering: smart
-  inventory:
-    host_vars:
-      instance-rocky9:
-        webserver_listen_port: 8080
-  playbooks:
-    converge: ${MOLECULE_PLAYBOOK:-converge.yml}
+      # À COMPLÉTER. Deux réglages attendus :
+      #  - une sortie lisible : une tâche par bloc, pas un JSON sur une ligne ;
+      #  - le temps passé PAR tâche (le coupable quand un converge prend trois
+      #    minutes) ET la durée totale du play. Les deux se cumulent dans une
+      #    seule liste, séparés par une virgule.
+      stdout_callback: ???
+      callback_enabled: ???
 
-verifier:
-  name: ansible
+  inventory:
+    # À COMPLÉTER : surcharger le port d'écoute pour l'instance de test.
+    #
+    # Le paramétrage va ICI, et non dans defaults/main.yml du rôle : le rôle
+    # garde ses valeurs par défaut (port 80), et c'est le scénario qui exprime
+    # le cas de test. Le rôle reste réutilisable, le test reste explicite.
+    # La clé doit porter le nom EXACT de la plateforme déclarée plus haut.
+    host_vars:
+      ???:
+        ???: ???
 
 scenario:
   name: default
+  # Séquence personnalisée. Attention à l'idée reçue : la séquence par
+  # défaut de Molecule joue DÉJÀ prepare, idempotence et verify. La
+  # déclarer soi-même ne sert donc pas à « activer » prepare, mais à :
+  #   - retirer les étapes qu'on n'a pas (cleanup, side_effect), qui
+  #     n'apportent qu'un avertissement « Missing playbook » à chaque run,
+  #   - rendre le contrat du scénario lisible d'un coup d'oeil, au lieu de
+  #     le laisser dépendre d'un défaut qui peut bouger d'une version de
+  #     Molecule à l'autre.
+  # À COMPLÉTER : la séquence du scénario.
+  #
+  # Attention à l'idée reçue : la séquence par défaut de Molecule joue DÉJÀ
+  # prepare, idempotence et verify. La déclarer soi-même ne sert donc pas à
+  # « activer » prepare, mais à :
+  #   - retirer les étapes qu'on n'a pas (cleanup, side_effect), qui n'apportent
+  #     qu'un avertissement « Missing playbook » à chaque run ;
+  #   - rendre le contrat du scénario lisible d'un coup d'oeil, au lieu de le
+  #     laisser dépendre d'un défaut qui peut bouger d'une version à l'autre.
+  #
+  # N'oubliez pas `idempotence` : c'est LE filet de sécurité. Sans lui, un rôle
+  # non idempotent passe tous les autres tests.
   test_sequence:
-    - dependency
-    - cleanup
-    - destroy
-    - syntax
-    - create
-    - prepare
-    - converge
-    - idempotence
-    - verify
-    - cleanup
-    - destroy
+    - ???

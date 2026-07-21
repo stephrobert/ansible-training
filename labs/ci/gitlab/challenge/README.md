@@ -1,26 +1,56 @@
-# 🎯 Challenge — Pipeline GitLab CI (lint + parallel matrix + release Galaxy)
+# 🎯 Challenge — Write the GitLab CI pipeline (lint + matrix + release)
 
-## ✅ Objectif
+## ✅ Mission
 
-Le test pytest valide la structure du fichier CI livré dans le lab :
-**Pipeline GitLab CI (lint + parallel matrix + release Galaxy)**.
+The `.gitlab-ci.yml` file is delivered **incomplete** (some `???` and missing
+jobs). Complete it to get the expected pipeline: you are the one
+writing each job, no ready-to-copy template is provided.
 
-## 🧩 Indices
+Expected state (this is what pytest checks):
 
-C'est un challenge structurel. Posez `solution.sh` minimal :
+| Requirement | Detail |
+| --- | --- |
+| Stages | `lint`, `test` and `release` declared in `stages:` |
+| Job `ansible-lint` | stage `lint`, runs `yamllint` and `ansible-lint --profile=production` |
+| Job `molecule-test` | stage `test`, `needs: ["ansible-lint"]`, `parallel:matrix` of at least 3 DISTRO x ANSIBLE_VERSION combinations |
+| Job `release` | stage `release`, `rules:` with a condition on `$CI_COMMIT_TAG` (triggered only on tag) |
+| Secrets | no token or plaintext password in the file |
+
+## 🧩 Hints
+
+- The GitLab matrix is declared like this:
+
+  ```yaml
+  parallel:
+    matrix:
+      - DISTRO: ...
+        ANSIBLE_VERSION: "..."
+  ```
+
+  Each list entry is a combination (or a cartesian product if
+  a key holds a list).
+
+- `needs: ["ansible-lint"]` short-circuits the stage order and documents the
+  real dependency.
+- For the release, the canonical pattern is:
+
+  ```yaml
+  rules:
+    - if: $CI_COMMIT_TAG
+  ```
+
+- The Galaxy token NEVER goes here: Settings, CI/CD, Variables
+  (masked + protected), then reference `$GALAXY_API_KEY` in the script.
+
+## 📓 Command log
+
+When your pipeline is ready, record in `challenge/solution.sh` the
+commands used to validate it locally (for example
+`python3 -c "import yaml; yaml.safe_load(open('.gitlab-ci.yml'))"` or a
+`gitlab-ci-local` run). This log must exist for pytest to run:
 
 ```bash
-echo "Lab 70 : Pipeline GitLab CI (lint + parallel matrix + release Galaxy) validé par pytest." > challenge/solution.sh
 chmod +x challenge/solution.sh
-```
-
-## 🚀 Lancement (optionnel)
-
-```bash
-# Local : valider la syntaxe avec gitlab-ci-local
-gitlab-ci-local --file labs/ci/gitlab/.gitlab-ci.yml
-
-# Cloud : push sur GitLab → pipeline automatique
 ```
 
 ## 🧪 Validation
@@ -32,23 +62,11 @@ pytest -v labs/ci/gitlab/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/ci/gitlab/ clean
+dsoxlab clean ci-gitlab
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`ansible-lint --profile production`** : validez la qualité de votre solution.
-
-  ```bash
-  ansible-lint --profile production labs/ci/gitlab/challenge/solution.yml
-  ```
-
-  Sortie attendue : `Passed: 0 failure(s), 0 warning(s)`.
-
-- **Idempotence** : relancez la solution une seconde fois — un `PLAY RECAP`
-  avec `changed=0` partout confirme un playbook propre.
-
-- **Cas limites** : pensez aux scénarios d'erreur (host indisponible,
-  dépendance manquante, valeur invalide) que votre solution pourrait
-  rencontrer en production. Comment les gérer (`block/rescue`,
-  `failed_when`, `assert`) ?
+- `gitlab-ci-local`: run the pipeline on your machine before pushing.
+- `include:`: factor this pipeline into a CI templates repo.
+- Pipeline and coverage badges in the role's README.

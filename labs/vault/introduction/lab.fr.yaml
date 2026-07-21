@@ -1,0 +1,4 @@
+---
+id: vault-introduction
+title: "Ansible Vault : chiffrer un premier fichier de secrets"
+description: "Chiffrer un fichier YAML avec ansible-vault, le consulter, l'éditer, le consommer dans un playbook, puis le rekey et le déchiffrer."

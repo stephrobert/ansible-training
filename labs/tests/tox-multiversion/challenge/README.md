@@ -1,25 +1,55 @@
-# 🎯 Challenge — Tester sur 3 versions d'Ansible avec tox
+# 🎯 Challenge: write the multi-version tox.ini
 
-## ✅ Objectif
+## ✅ Mission
 
-Le test pytest valide la **structure** des fichiers livrés dans ce lab :
+The `tox.ini` file is delivered as a **skeleton**. Write the configuration
+that tests the `webserver` role on several ansible-core versions.
 
-- Lab 67 : Tester sur 3 versions d'Ansible avec tox.
+Expected state (this is what pytest checks):
 
-## 🧩 Indices
+| Item | Expectation |
+| --- | --- |
+| `[tox] envlist` | range syntax `ansible-2.{...}` covering at least 3 recent ansible-core versions |
+| `[testenv]` | `commands` runs `molecule test` |
+| `[testenv:ansible-X]` | at least 3 sections, each pinning `ansible-core` in its `deps` |
+| `[testenv:lint]` | a separate environment for yamllint + ansible-lint (fail-fast, without spinning up an instance) |
 
-C'est un challenge structurel. Posez `solution.sh` minimal :
+## 🧩 Hints
+
+- tox's range syntax factorizes the environments:
+
+  ```ini
+  [tox]
+  envlist = ansible-2.{17,18}
+  ```
+
+- Each dedicated section pins its version:
+
+  ```ini
+  [testenv:ansible-2.18]
+  deps =
+      ansible-core==2.18.*
+      ...
+  ```
+
+- Remember `passenv`/`setenv` to propagate `ANSIBLE_ROLES_PATH` and the
+  colors to Molecule.
+- Check your configuration locally:
+
+  ```bash
+  cd labs/tests/tox-multiversion
+  tox --listenvs        # the declared envs
+  tox -e lint           # the fastest env
+  ```
+
+## 📓 Command log
+
+When your configuration is ready, record the tox commands you ran in
+`challenge/solution.sh`. This log must exist for pytest to
+run:
 
 ```bash
-echo "Lab 67 : Tester sur 3 versions d'Ansible avec tox validé par pytest." > challenge/solution.sh
 chmod +x challenge/solution.sh
-```
-
-## 🚀 Lancement (optionnel)
-
-```bash
-cd labs/tests/tox-multiversion/ && tox -e ansible-2.18      # une version
-cd labs/tests/tox-multiversion/ && tox                       # toutes les versions
 ```
 
 ## 🧪 Validation
@@ -28,26 +58,18 @@ cd labs/tests/tox-multiversion/ && tox                       # toutes les versio
 pytest -v labs/tests/tox-multiversion/challenge/tests/
 ```
 
+The test parses your tox.ini (section semantics) and, if tox is
+installed on the machine, runs `tox --listenvs` to prove the
+configuration is accepted by the tool.
+
 ## 🧹 Reset
 
 ```bash
-make -C labs/tests/tox-multiversion/ clean
+dsoxlab clean tests-tox-multiversion
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`ansible-lint --profile production`** : validez la qualité de votre solution.
-
-  ```bash
-  ansible-lint --profile production labs/tests/tox-multiversion/challenge/solution.yml
-  ```
-
-  Sortie attendue : `Passed: 0 failure(s), 0 warning(s)`.
-
-- **Idempotence** : relancez la solution une seconde fois — un `PLAY RECAP`
-  avec `changed=0` partout confirme un playbook propre.
-
-- **Cas limites** : pensez aux scénarios d'erreur (host indisponible,
-  dépendance manquante, valeur invalide) que votre solution pourrait
-  rencontrer en production. Comment les gérer (`block/rescue`,
-  `failed_when`, `assert`) ?
+- `tox -p auto`: run the environments in parallel.
+- `tox-uv`: much faster dependency resolution.
+- Cross it with the CI matrix from lab 69: local tox, remote GitHub matrix.

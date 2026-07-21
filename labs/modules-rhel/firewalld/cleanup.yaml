@@ -1,0 +1,13 @@
+---
+# Reset du lab firewalld : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup firewalld lab (lab_web1)
+  hosts: lab_web1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (firewalld)
+      ansible.builtin.shell: |
+        firewall-cmd --permanent --remove-service=http; firewall-cmd --permanent --remove-service=https; firewall-cmd --permanent --remove-port=8080/tcp; firewall-cmd --permanent --remove-port=8443/tcp; firewall-cmd --reload; true
+      changed_when: false
+      failed_when: false

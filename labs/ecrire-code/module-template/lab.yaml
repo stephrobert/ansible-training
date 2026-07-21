@@ -1,0 +1,33 @@
+---
+id: ecrire-code-module-template
+title: "template module: validate, backup, whitespace"
+description: "Render a config from a Jinja2 template, reject invalid syntax with validate, back up the previous file and set mode, owner and group."
+section: ecrire-code
+level: l2
+difficulty: intermediate
+lab_type: lab
+estimated_time: "45m"
+skills:
+  - template-module
+  - template-validate
+  - backup
+  - file-permissions
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/module-template/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

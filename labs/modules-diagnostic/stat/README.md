@@ -1,49 +1,49 @@
-# Lab 51 — Module `stat:` (info sur fichiers et dossiers)
+# Lab 51 — `stat:` module (info on files and folders)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Module stat Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/module-stat/)
+🔗 [**Ansible stat module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/module-stat/)
 
-`ansible.builtin.stat:` retourne des **informations** sur un fichier ou dossier
-sans le modifier : existence, type, taille, mode, owner, checksum, mtime.
-C'est **le module n°1 de la logique conditionnelle** Ansible — combiné avec
-`register:` + `when:`, il permet de coder des branches sûres.
+`ansible.builtin.stat:` returns **information** about a file or folder without
+modifying it: existence, type, size, mode, owner, checksum, mtime. It is
+**Ansible's number 1 module for conditional logic**: combined with `register:` +
+`when:`, it lets you code safe branches.
 
-`stat:` est **lecture seule** par définition — toujours `changed=0`.
+`stat:` is **read-only** by definition, always `changed=0`.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Vérifier l'existence** d'un fichier avant d'agir dessus.
-2. **Distinguer** les types : fichier régulier, dossier, symlink, hardlink.
-3. **Comparer des checksums** pour détecter une modification (`get_checksum: true`).
-4. **Mesurer** la taille et le mtime pour des contrôles de conformité.
-5. **Diagnostiquer** un fichier symlink qui pointe vers le vide.
+1. **Check the existence** of a file before acting on it.
+2. **Distinguish** the types: regular file, folder, symlink, hardlink.
+3. **Compare checksums** to detect a modification (`get_checksum: true`).
+4. **Measure** the size and the mtime for compliance checks.
+5. **Diagnose** a symlink file pointing to nothing.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 ansible db1.lab -b -m shell -a "rm -f /tmp/lab-stat-*"
 ```
 
-## 📚 Exercice 1 — Existence d'un fichier
+## 📚 Exercise 1 — File existence
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -61,7 +61,7 @@ Créez `lab.yml` :
         var: passwd_stat.stat
 ```
 
-🔍 **Observation** : `passwd_stat.stat` est un dict qui contient :
+🔍 **Observation**: `passwd_stat.stat` is a dict that contains:
 
 ```yaml
 exists: true
@@ -75,12 +75,13 @@ gid: 0
 pw_name: root
 gr_name: root
 mtime: 1234567890
-checksum: <SHA1 du contenu>
+checksum: <SHA1 of the content>
 ```
 
-Note : sur des dossiers, `isdir: true`. Sur des symlinks, `islnk: true` + `lnk_source` pointe vers la cible.
+Note: on folders, `isdir: true`. On symlinks, `islnk: true` + `lnk_source`
+points to the target.
 
-## 📚 Exercice 2 — Conditionner sur l'existence (`when:`)
+## 📚 Exercise 2 — Condition on existence (`when:`)
 
 ```yaml
 - name: Stat sur un fichier optionnel
@@ -103,11 +104,10 @@ Note : sur des dossiers, `isdir: true`. Sur des symlinks, `islnk: true` + `lnk_s
   when: not myapp_conf.stat.exists
 ```
 
-🔍 **Observation** : pattern **branche conditionnelle** classique. Avant
-toute opération sur un fichier qui peut ou non exister, on stat puis on
-décide.
+🔍 **Observation**: a classic **conditional branch** pattern. Before any
+operation on a file that may or may not exist, you stat then decide.
 
-## 📚 Exercice 3 — Distinguer les types
+## 📚 Exercise 3 — Distinguish the types
 
 ```yaml
 - name: Stat sur un dossier
@@ -127,17 +127,17 @@ décide.
       /etc/localtime → exists: {{ localtime_stat.stat.exists }}, islnk: {{ localtime_stat.stat.islnk }}, target: {{ localtime_stat.stat.lnk_source | default('N/A') }}
 ```
 
-🔍 **Observation** : champs disponibles selon le type :
+🔍 **Observation**: fields available depending on the type:
 
-| Type | Champs distinctifs |
+| Type | Distinctive fields |
 |---|---|
-| Fichier régulier | `isfile: true`, `size`, `checksum` |
-| Dossier | `isdir: true` (pas de `size` significatif) |
-| Symlink | `islnk: true`, `lnk_source` (cible), `lnk_target` (chemin résolu) |
-| Hardlink | `nlink > 1` (nombre de liens) |
+| Regular file | `isfile: true`, `size`, `checksum` |
+| Folder | `isdir: true` (no meaningful `size`) |
+| Symlink | `islnk: true`, `lnk_source` (target), `lnk_target` (resolved path) |
+| Hardlink | `nlink > 1` (number of links) |
 | Block/char device | `isblk: true` / `ischr: true` |
 
-## 📚 Exercice 4 — Checksum pour détection de modification
+## 📚 Exercise 4 — Checksum for modification detection
 
 ```yaml
 - name: Stat avec checksum
@@ -152,14 +152,14 @@ décide.
     msg: "SHA256 de /etc/passwd : {{ passwd_check.stat.checksum }}"
 ```
 
-**Attention performance** : `get_checksum: true` calcule le hash en lisant
-tout le fichier. Sur un fichier de 1Go, c'est lent. À utiliser uniquement
-quand vous **avez besoin** du checksum (audit, idempotence custom).
+**Performance warning**: `get_checksum: true` computes the hash by reading the
+whole file. On a 1GB file, it is slow. Use it only when you **need** the
+checksum (audit, custom idempotence).
 
-**Algorithmes supportés** : `sha1` (défaut), `sha256` (recommandé), `sha512`,
-`md5` (déprécié).
+**Supported algorithms**: `sha1` (default), `sha256` (recommended), `sha512`,
+`md5` (deprecated).
 
-## 📚 Exercice 5 — Mtime et tests temporels
+## 📚 Exercise 5 — Mtime and time tests
 
 ```yaml
 - name: Stat avec mtime
@@ -175,13 +175,12 @@ quand vous **avez besoin** du checksum (audit, idempotence custom).
     success_msg: "OK : /etc/passwd stable depuis 24h+"
 ```
 
-🔍 **Observation** : `mtime` est un **timestamp Unix** (secondes depuis
-1970). Pour comparer, soustraire et comparer en secondes.
+🔍 **Observation**: `mtime` is a **Unix timestamp** (seconds since 1970). To
+compare, subtract and compare in seconds.
 
-**Cas d'usage** : audit de sécurité — détecter les modifs récentes sur
-des fichiers sensibles.
+**Use case**: security audit, detect recent modifications on sensitive files.
 
-## 📚 Exercice 6 — Le piège : symlink cassé
+## 📚 Exercise 6 — The trap: broken symlink
 
 ```yaml
 - name: Creer un symlink vers une cible inexistante
@@ -204,23 +203,23 @@ des fichiers sensibles.
       lnk_source: {{ link_stat.stat.lnk_source | default('N/A') }}
 ```
 
-🔍 **Observation** : par défaut, `stat:` ne **suit pas** les symlinks
-(`follow: false`). Le symlink lui-même existe (`exists: true`), mais sa
-cible peut être absente.
+🔍 **Observation**: by default, `stat:` does **not follow** symlinks
+(`follow: false`). The symlink itself exists (`exists: true`), but its target
+may be absent.
 
-**Pour suivre le lien** :
+**To follow the link**:
 
 ```yaml
 - ansible.builtin.stat:
     path: /tmp/lab-stat-broken-link
     follow: true
   register: link_stat_follow
-  failed_when: false   # follow + cible absente = erreur sinon
+  failed_when: false   # follow + missing target = error otherwise
 ```
 
-Avec `follow: true`, `exists: false` si la cible n'existe pas.
+With `follow: true`, `exists: false` if the target does not exist.
 
-## 📚 Exercice 7 — Diff de checksum entre deux fichiers
+## 📚 Exercise 7 — Checksum diff between two files
 
 ```yaml
 - name: Stat sur le fichier source
@@ -246,54 +245,51 @@ Avec `follow: true`, `exists: false` si la cible n'existe pas.
       {% endif %}
 ```
 
-Pattern utile pour **valider** un transfert ou détecter une **dérive** entre
-deux fichiers — sans utiliser de `command: diff`.
+Useful pattern to **validate** a transfer or detect a **drift** between two
+files, without using a `command: diff`.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`stat:`** = lecture seule, toujours `changed=0`.
-- **`register:` puis `when: var.stat.exists`** = pattern de logique
-  conditionnelle de base.
-- **`isfile`, `isdir`, `islnk`** = distinction des types.
-- **`get_checksum: true`** = nécessite la lecture complète du fichier (lent
-  sur gros fichiers).
-- **`follow: false`** (défaut) = stat sur le symlink lui-même, pas sur la
-  cible.
-- **`mtime`** = timestamp Unix, comparer à `ansible_date_time.epoch`.
+- **`stat:`** = read-only, always `changed=0`.
+- **`register:` then `when: var.stat.exists`** = the base conditional logic
+  pattern.
+- **`isfile`, `isdir`, `islnk`** = type distinction.
+- **`get_checksum: true`** = requires reading the whole file (slow on large files).
+- **`follow: false`** (default) = stat on the symlink itself, not on the target.
+- **`mtime`** = Unix timestamp, compare to `ansible_date_time.epoch`.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voulez **copier un fichier seulement s'il n'a pas été modifié**
-   localement par l'utilisateur. Quelle combinaison `stat: + checksum +
-   when:` ?
+1. You want to **copy a file only if it has not been modified** locally by the
+   user. Which `stat: + checksum + when:` combination?
 
-2. Différence sémantique entre `stat: follow: true` et `stat: follow:
-   false` — quand préférer chaque ?
+2. Semantic difference between `stat: follow: true` and `stat: follow: false`,
+   when to prefer each?
 
-3. Vous voulez auditer **tous les binaires setuid** dans `/usr/bin/`. Faut-il
-   `stat:` (avec quoi ?) ou `find:` (lab 52) ? Pourquoi ?
+3. You want to audit **all the setuid binaries** in `/usr/bin/`. Should it be
+   `stat:` (with what?) or `find:` (lab 52)? Why?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`get_md5: false`** (défaut depuis Ansible 2.x) : MD5 est déprécié.
-  Toujours utiliser `sha256`.
-- **`get_attributes: false`** (défaut) : permet de récupérer les attributs
-  étendus (xattr) — coûteux mais utile pour audit SELinux.
-- **`get_mime: false`** (défaut) : MIME-type via `file -i`. Pratique pour
-  des audits de contenu.
-- **Lab 52 (`find:`)** : pour des recherches **multi-fichiers** par
-  pattern, le module `stat:` ne suffit pas (il prend un `path:` unique).
-- **Lab 53 (`assert:`)** : combiner `stat:` + `assert:` pour des
-  validations défensives en début de play.
+- **`get_md5: false`** (default since Ansible 2.x): MD5 is deprecated. Always
+  use `sha256`.
+- **`get_attributes: false`** (default): lets you retrieve the extended
+  attributes (xattr), costly but useful for SELinux audit.
+- **`get_mime: false`** (default): MIME-type via `file -i`. Handy for content
+  audits.
+- **Lab 52 (`find:`)**: for **multi-file** searches by pattern, the `stat:`
+  module is not enough (it takes a single `path:`).
+- **Lab 53 (`assert:`)**: combine `stat:` + `assert:` for defensive validations
+  at the start of a play.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 ansible-lint labs/modules-diagnostic/stat/lab.yml
@@ -301,9 +297,9 @@ ansible-lint labs/modules-diagnostic/stat/challenge/solution.yml
 ansible-lint --profile production labs/modules-diagnostic/stat/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un
-> hook pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

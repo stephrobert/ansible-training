@@ -1,12 +1,12 @@
-# 🎯 Challenge — 4 filtres Jinja2 avancés
+# 🎯 Challenge — 4 advanced Jinja2 filters
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `challenge/solution.yml` qui sur **db1.lab** pose
-`/tmp/filtres-avances.txt` contenant **4 lignes**, chacune produite par un
-filtre Jinja2 avancé.
+Write `challenge/solution.yml` that, on **db1.lab**, writes
+`/tmp/filtres-avances.txt` containing **4 lines**, each produced by an
+advanced Jinja2 filter.
 
-## 🧩 Données d'entrée
+## 🧩 Input data
 
 ```yaml
 fqdn: "web1.lab.example.com"
@@ -15,7 +15,7 @@ nested: [[1, 2], [3, [4, 5]]]
 to_hash: "foobar"
 ```
 
-## 🧩 Sortie attendue
+## 🧩 Expected output
 
 ```text
 prefix=web
@@ -24,16 +24,16 @@ flat=[1, 2, 3, 4, 5]
 sha256=c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2
 ```
 
-## 🧩 4 filtres à utiliser
+## 🧩 4 filters to use
 
-| Filtre | Effet |
+| Filter | Effect |
 | --- | --- |
-| `regex_search('motif')` | Retourne la 1ère sous-chaîne qui matche le motif |
-| `b64encode` | Encode en Base64 (utile pour des `Authorization: Basic`) |
-| `flatten` | Aplatit récursivement une liste de listes |
-| `hash('sha256')` | Empreinte SHA256 hexadécimale d'une string |
+| `regex_search('pattern')` | Returns the 1st substring that matches the pattern |
+| `b64encode` | Encodes to Base64 (useful for `Authorization: Basic`) |
+| `flatten` | Recursively flattens a list of lists |
+| `hash('sha256')` | Hexadecimal SHA256 fingerprint of a string |
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -59,32 +59,32 @@ sha256=c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2
           sha256={{ to_hash | ???(???) }}
 ```
 
-> 💡 **Indice regex** : pour extraire **uniquement** le préfixe `web` de
-> `web1.lab.example.com`, utilisez le motif `^([a-z]+)` (ancré au début, ne
-> capture que des lettres minuscules).
+> 💡 **Regex hint**: to extract **only** the `web` prefix from
+> `web1.lab.example.com`, use the pattern `^([a-z]+)` (anchored at the start,
+> captures only lowercase letters).
 
-**Pièges** :
+**Pitfalls**:
 
-> - **`regex_search` retourne `None`** si pas de match — `default(...)`
->   pour fallback. `regex_findall` retourne une liste (vide si pas de
+> - **`regex_search` returns `None`** if there is no match; use `default(...)`
+>   for a fallback. `regex_findall` returns a list (empty if no
 >   match).
-> - **`b64encode`** : la sortie reste **string** (pas bytes). Pour décoder,
->   `b64decode`. Important : ce **n'est pas du chiffrement** (juste
->   encodage).
-> - **`flatten`** : aplatit une liste de listes. Niveau de profondeur
->   par défaut = 1. Pour aplatir totalement, `flatten(levels=99)`.
-> - **`hash`** filter : SHA1 par défaut. Pour SHA256 :
->   `to_hash | hash('sha256')`. Pour MD5 :  `'md5'`. Ne **jamais**
->   utiliser `hash` sur un secret : c'est un hash, pas une auth.
+> - **`b64encode`**: the output stays a **string** (not bytes). To decode,
+>   `b64decode`. Important: this is **not encryption** (just
+>   encoding).
+> - **`flatten`**: flattens a list of lists. Default depth level
+>   = 1. To flatten completely, `flatten(levels=99)`.
+> - **`hash`** filter: SHA1 by default. For SHA256:
+>   `to_hash | hash('sha256')`. For MD5: `'md5'`. **Never**
+>   use `hash` on a secret: it is a hash, not an auth.
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/ecrire-code/filtres-jinja-avances/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "cat /tmp/filtres-avances.txt"
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/filtres-jinja-avances/challenge/tests/
@@ -93,18 +93,18 @@ pytest -v labs/ecrire-code/filtres-jinja-avances/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/ecrire-code/filtres-jinja-avances clean
+dsoxlab clean ecrire-code-filtres-jinja-avances
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`hash('md5')` / `hash('sha1')` / `hash('sha512')`** : autres algos. Sur
-  les versions récentes d'Ansible, `password_hash('sha512')` génère un hash de
-  password style `/etc/shadow`.
-- **`b64decode`** : décode du Base64 (typiquement pour lire un secret venant
-  d'un Vault/Kubernetes Secret).
-- **`from_yaml` / `from_json`** : parser une string YAML/JSON en dict.
-- **Lint** :
+- **`hash('md5')` / `hash('sha1')` / `hash('sha512')`**: other algorithms. On
+  recent Ansible versions, `password_hash('sha512')` generates a
+  `/etc/shadow`-style password hash.
+- **`b64decode`**: decodes Base64 (typically to read a secret coming
+  from a Vault/Kubernetes Secret).
+- **`from_yaml` / `from_json`**: parse a YAML/JSON string into a dict.
+- **Lint**:
 
    ```bash
    ansible-lint labs/ecrire-code/filtres-jinja-avances/challenge/solution.yml

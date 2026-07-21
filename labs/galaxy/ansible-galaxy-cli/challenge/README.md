@@ -1,58 +1,63 @@
-# 🎯 Challenge — Cheatsheet `ansible-galaxy` couvrant les 7 sous-commandes
+# 🎯 Challenge: really driving the `ansible-galaxy` CLI
 
-## ✅ Objectif
+## ✅ Mission
 
-Le test pytest valide que `cheatsheet.md` (à la racine du lab) couvre les
-**7 sous-commandes essentielles** d'`ansible-galaxy` :
+No more reading the cheatsheet: you write a
+`challenge/solution.sh` script that **runs** the `ansible-galaxy` commands,
+and pytest **runs your script** then checks the effects on disk.
+Everything happens offline (scaffolding, build and install from a local
+archive), no Galaxy account is needed.
 
-| Catégorie | Commandes attendues |
+Your script, launched from the lab root, must produce in
+`challenge/build/`:
+
+| Expected effect | Command family |
 | --- | --- |
-| Initialisation | `ansible-galaxy role init` |
-| Installation | `ansible-galaxy role install`, `ansible-galaxy collection install` |
-| Listing | `ansible-galaxy role list`, `ansible-galaxy collection list` |
-| Build & Publish | `ansible-galaxy collection build`, `ansible-galaxy collection publish` |
-| Vérification | `ansible-galaxy collection verify` |
+| A `demo_web` role scaffolded in `challenge/build/roles/` | `ansible-galaxy role init` |
+| An `acme.tools` collection scaffolded in `challenge/build/collections/` | `ansible-galaxy collection init` |
+| The collection archive in `challenge/build/dist/` | `ansible-galaxy collection build` |
+| The collection installed in `challenge/build/installed/` **from the local archive** | `ansible-galaxy collection install` |
+| The collection visible to `ansible-galaxy collection list -p challenge/build/installed` | `ansible-galaxy collection list` |
 
-Et le binaire `ansible-galaxy` doit répondre à `--version`.
+Constraints:
 
-## 🧩 Indices
+- The script must be **replayable**: pytest deletes `challenge/build/`
+  before running it, your script recreates everything on each run.
+- `set -euo pipefail` at the top: the slightest failing command must make
+  the script fail.
 
-C'est un challenge **documentaire** : `cheatsheet.md` est déjà livré. Vérifiez
-qu'il couvre bien les 7 commandes ci-dessus, ajoutez ce qui manque (rare),
-puis posez `solution.sh` minimal :
+## 🧩 Hints
 
-```bash
-echo "Lab 73 : cheatsheet ansible-galaxy validé par pytest." > challenge/solution.sh
-chmod +x challenge/solution.sh
-```
-
-## 🚀 Lancement
-
-Pas de playbook à lancer — c'est un lab CLI local. Pour exécuter les commandes
-de la cheatsheet manuellement :
-
-```bash
-ansible-galaxy --version
-ansible-galaxy role list
-ansible-galaxy collection list
-```
+- `role init` and `collection init` accept `--init-path <folder>`.
+- `collection init` expects a full name `namespace.name`.
+- `collection build` runs from the collection folder and accepts
+  `--output-path`.
+- `collection install` accepts a `.tar.gz` archive path and `-p` to
+  choose the install folder.
+- The cheatsheet shipped at the root (`cheatsheet.md`) remains your
+  reference: every command you need is in it.
 
 ## 🧪 Validation
 
 ```bash
+chmod +x challenge/solution.sh
 pytest -v labs/galaxy/ansible-galaxy-cli/challenge/tests/
 ```
+
+Pytest runs `challenge/solution.sh` then checks each effect
+(role structure, galaxy.yml, archive, MANIFEST.json of the installed
+collection, output of `collection list`).
 
 ## 🧹 Reset
 
 ```bash
-make -C labs/galaxy/ansible-galaxy-cli/ clean
+dsoxlab clean galaxy-ansible-galaxy-cli
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`ansible-galaxy collection install --upgrade`** : force l'upgrade.
-- **`ansible-galaxy collection install --pre`** : autorise les versions
-  préliminaires.
-- **`~/.ansible/collections/`** : par défaut, où Ansible installe.
-- **`ANSIBLE_COLLECTIONS_PATH`** : variable env pour customiser.
+- `ansible-galaxy collection verify`: compare an installed collection to
+  its Galaxy source (requires the network).
+- `ANSIBLE_COLLECTIONS_PATH`: point Ansible to your custom
+  install folder.
+- `ansible-galaxy collection list --format json`: output parsable in CI.

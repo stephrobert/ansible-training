@@ -1,0 +1,33 @@
+---
+id: collections-requirements
+title: "requirements.yml: multi-source install with GPG signatures"
+description: "Declare four sources in a requirements.yml, pin every version, check integrity with collection verify and target several Galaxy servers."
+section: collections
+level: l2
+difficulty: intermediate
+lab_type: lab
+estimated_time: "45m"
+skills:
+  - requirements
+  - version-pinning
+  - gpg-signatures
+  - supply-chain-security
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/requirements-yml/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

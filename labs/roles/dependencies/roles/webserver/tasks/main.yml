@@ -1,5 +1,12 @@
 ---
 # tasks/main.yml — démontre l'usage des variables defaults/ et vars/
+- name: Tracer l'ordre d'exécution (preuve pour le challenge)
+  ansible.builtin.lineinfile:
+    path: /tmp/deps-order.txt
+    line: webserver
+    create: true
+    mode: "0644"
+
 - name: Installer le paquet nginx
   ansible.builtin.dnf:
     name: "{{ webserver_package }}"
@@ -25,6 +32,21 @@
     dest: "{{ __webserver_html_dir }}/index.html"
     content: "{{ webserver_index_content }}\n"
     mode: "0644"
+
+- name: Étiqueter le port d'écoute côté SELinux
+  # Sans cette étiquette, SELinux refuse le bind sur un port non couvert par
+  # http_port_t (80, 81, 443, 488, 8008, 8009, 8443, 9000) et nginx échoue au
+  # démarrage sur « bind() to 0.0.0.0:<port> failed (13: Permission denied) ».
+  # Ouvrir le pare-feu ne suffit donc pas : les deux verrous sont distincts.
+  # Cette tâche doit rester AVANT le démarrage de nginx (étiqueter après coup
+  # ne répare rien, le service a déjà échoué).
+  # Idempotence : le module compare le port à la politique en vigueur. Un port
+  # déjà couvert (80 par défaut) est laissé tel quel, sans erreur ni changed.
+  community.general.seport:
+    ports: "{{ webserver_listen_port }}"
+    proto: tcp
+    setype: http_port_t
+    state: present
 
 - name: Ouvrir le port HTTP custom dans firewalld
   ansible.posix.firewalld:

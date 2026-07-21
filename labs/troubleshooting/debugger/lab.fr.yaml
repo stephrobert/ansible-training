@@ -1,0 +1,4 @@
+---
+id: troubleshooting-debugger
+title: "Débogueur interactif : debugger: on_failed"
+description: "Activer le débogueur sur échec, inspecter task, task_vars et result dans le REPL, corriger les arguments à chaud puis rejouer la tâche avec redo."

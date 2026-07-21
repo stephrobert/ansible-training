@@ -1,0 +1,4 @@
+---
+id: roles-variables-defaults-vars
+title: "Variables d'un rôle : defaults/ vs vars/ et précédence"
+description: "Répartir les variables entre defaults/ (surchargeables) et vars/ (internes), les brancher aux tâches et à un template Jinja2, puis vérifier la précédence."

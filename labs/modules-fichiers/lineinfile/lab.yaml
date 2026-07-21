@@ -1,0 +1,33 @@
+---
+id: modules-fichiers-lineinfile
+title: "lineinfile module: edit a line in an existing file"
+description: "Add, replace by regexp or remove a line in a config file, using backrefs and syntax validation before the write."
+section: modules-fichiers
+level: l1
+difficulty: beginner
+lab_type: lab
+estimated_time: "25m"
+skills:
+  - lineinfile
+  - regexp
+  - backrefs
+  - idempotence
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-lineinfile/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

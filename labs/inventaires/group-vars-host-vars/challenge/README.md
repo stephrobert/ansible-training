@@ -1,25 +1,25 @@
-# 🎯 Challenge — Démontrer la précédence avec un playbook
+# 🎯 Challenge — Demonstrate precedence with a playbook
 
-Vous avez vu que `ansible-inventory --host` résout correctement les variables. Le challenge consiste à **prouver dynamiquement** la résolution sur les 3 hôtes via un playbook qui pose un fichier marqueur contenant la valeur de `app_port` résolue pour cet hôte.
+You have seen that `ansible-inventory --host` resolves the variables correctly. The challenge is to **prove dynamically** the resolution on the 3 hosts via a playbook that lays down a marker file containing the value of `app_port` resolved for that host.
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `solution.yml` qui :
+Write `solution.yml` that:
 
-1. Cible **tous les hôtes** (`hosts: all`)
-2. Pose un fichier marqueur `/tmp/lab55-port-{{ inventory_hostname }}.txt` qui contient la valeur de `app_port` résolue pour l'hôte courant
-3. Utilise le module `ansible.builtin.copy:` (avec `content:`)
+1. Targets **all the hosts** (`hosts: all`)
+2. Lays down a marker file `/tmp/lab55-port-{{ inventory_hostname }}.txt` that contains the value of `app_port` resolved for the current host
+3. Uses the `ansible.builtin.copy:` module (with `content:`)
 
-L'inventaire à utiliser : **celui du lab parent** (`../inventory/hosts.yml`), pas celui du challenge.
+The inventory to use: **the one of the parent lab** (`../inventory/hosts.yml`), not the one of the challenge.
 
-## 🧩 Consignes
+## 🧩 Instructions
 
-Squelette à compléter :
+Skeleton to complete:
 
 ```yaml
 ---
 - name: Challenge — démontrer la précédence des variables
-  hosts: ???                            # tous les hôtes de l'inventaire
+  hosts: ???                            # all the hosts of the inventory
   become: ???
   gather_facts: false
   tasks:
@@ -30,35 +30,34 @@ Squelette à compléter :
         mode: "0644"
 ```
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **Précédence des variables** (de la plus faible à la plus forte) :
->   `group_vars/all` < `group_vars/<groupe>` < `host_vars/<hôte>`. Donc
->   sur web1, le `host_vars/web1.lab.yml` gagne sur `group_vars/webservers.yml`.
-> - **Inventaire du challenge** : utilisez `-i inventory/hosts.yml` du lab
->   (pas l'inventaire racine du repo). Sinon les `group_vars` ne sont pas
->   chargées.
-> - **`inventory_hostname`** : c'est le nom **dans l'inventaire**
->   (`web1.lab`), pas le hostname système. À privilégier dans les playbooks.
-> - **`become: false`** suffit : `/tmp` est inscriptible par tous, et
->   l'utilisateur `ansible` peut écrire ses propres fichiers.
+> - **Variable precedence** (from weakest to strongest):
+>   `group_vars/all` < `group_vars/<group>` < `host_vars/<host>`. So on
+>   web1, the `host_vars/web1.lab.yml` wins over `group_vars/webservers.yml`.
+> - **Challenge inventory**: use `-i inventory/hosts.yml` of the lab (not the
+>   root inventory of the repo). Otherwise the `group_vars` are not loaded.
+> - **`inventory_hostname`**: it is the name **in the inventory** (`web1.lab`),
+>   not the system hostname. To be preferred in playbooks.
+> - **`become: false`** is enough: `/tmp` is writable by everyone, and the
+>   `ansible` user can write its own files.
 
-Lancez la solution depuis le **dossier du lab** :
+Run the solution from the **lab folder**:
 
 ```bash
 cd labs/inventaires/group-vars-host-vars/
 ansible-playbook -i inventory/hosts.yml challenge/solution.yml
 ```
 
-Vérifier les fichiers sur chaque hôte :
+Check the files on each host:
 
    ```bash
-   ssh ansible@web1.lab cat /tmp/lab55-port-web1.lab.txt
-   ssh ansible@web2.lab cat /tmp/lab55-port-web2.lab.txt
-   ssh ansible@db1.lab  cat /tmp/lab55-port-db1.lab.txt
+   ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab cat /tmp/lab55-port-web1.lab.txt
+   ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web2.lab cat /tmp/lab55-port-web2.lab.txt
+   ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab  cat /tmp/lab55-port-db1.lab.txt
    ```
 
-   Sorties attendues :
+   Expected outputs:
 
    ```text
    port resolu pour web1.lab : 9090
@@ -68,34 +67,34 @@ Vérifier les fichiers sur chaque hôte :
 
 ## 🧪 Validation
 
-Le script `tests/test_precedence.py` vérifie automatiquement :
+The `tests/test_precedence.py` script automatically checks:
 
-- Le fichier `/tmp/lab55-port-web1.lab.txt` existe sur `web1.lab` et contient `9090` (host_vars gagne).
-- Le fichier `/tmp/lab55-port-web2.lab.txt` existe sur `web2.lab` et contient `8080` (group_vars/webservers gagne).
-- Le fichier `/tmp/lab55-port-db1.lab.txt` existe sur `db1.lab` et contient `80` (group_vars/all gagne par défaut).
+- The file `/tmp/lab55-port-web1.lab.txt` exists on `web1.lab` and contains `9090` (host_vars wins).
+- The file `/tmp/lab55-port-web2.lab.txt` exists on `web2.lab` and contains `8080` (group_vars/webservers wins).
+- The file `/tmp/lab55-port-db1.lab.txt` exists on `db1.lab` and contains `80` (group_vars/all wins by default).
 
 ```bash
 pytest -v challenge/tests/
 ```
 
-## 🚀 Pour aller plus loin
+## 🚀 Going further
 
-- Ajoutez `app_port: 5555` dans `--extra-vars` à la ligne de commande et observez : la valeur **écrase** tout (priorité 22 sur 22).
-- Ajoutez un dossier `group_vars/webservers/main.yml` au lieu d'un fichier `webservers.yml` : Ansible accepte les deux formats. Préférer le **dossier** si vous splittez en plusieurs fichiers (`main.yml`, `vault.yml`, `network.yml`).
-- Créez un nouveau host `db2.lab` dans `dbservers` sans aucune variable spécifique : il hérite de `app_port: 80`.
+- Add `app_port: 5555` in `--extra-vars` on the command line and observe: the value **overrides** everything (priority 22 out of 22).
+- Add a `group_vars/webservers/main.yml` folder instead of a `webservers.yml` file: Ansible accepts both formats. Prefer the **folder** if you split into several files (`main.yml`, `vault.yml`, `network.yml`).
+- Create a new host `db2.lab` in `dbservers` without any specific variable: it inherits `app_port: 80`.
 
 ---
 
-Bonne chance ! 🧠
+Good luck! 🧠
 
 ## 🧹 Reset
 
-Pour rejouer le challenge dans un état neutre :
+To replay the challenge in a neutral state:
 
 ```bash
-make -C labs/inventaires/group-vars-host-vars/ clean
+dsoxlab clean inventaires-group-vars-host-vars
 ```
 
-Cette cible désinstalle/supprime ce que la solution a posé sur les managed
-nodes (paquets, fichiers, services, règles firewall) afin que vous puissiez
-relancer la solution from scratch.
+This target uninstalls/removes what the solution set down on the managed nodes
+(packages, files, services, firewall rules) so that you can rerun the solution
+from scratch.

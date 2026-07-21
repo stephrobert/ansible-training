@@ -1,20 +1,21 @@
-# 🎯 Challenge — Builder un EE custom avec `ansible-builder`
+# 🎯 Challenge — Build a custom EE with `ansible-builder`
 
-## ✅ Objectif
+## ✅ Objective
 
-Produire les 5 fichiers requis pour builder un EE custom **schéma v3** :
+Produce the 5 files required to build a custom **v3 schema** EE. A sixth file, `configs/ansible.cfg`, is delivered and must be kept as-is:
 
-| Fichier | Attente |
+| File | Expectation |
 | --- | --- |
-| `execution-environment.yml` | `version: 3`. `images.base_image.name` contient `community-ee-minimal`. `dependencies.ansible_core.package_pip` pinné avec `==`. |
-| `requirements.yml` | Toutes les collections déclarent `version:` (pas de plage `>=` flottante). |
-| `requirements.txt` | Toutes les dépendances Python pinnées avec `==`. |
-| `bindep.txt` | Contient `[platform:rpm]` (system deps RHEL). |
-| `build-ee.sh` | Exécutable. Utilise `--container-runtime podman`. |
+| `execution-environment.yml` | `version: 3`. `images.base_image.name` contains `community-ee-minimal`. `dependencies.ansible_core.package_pip` pinned with `==`. |
+| `requirements.yml` | Every collection declares `version:` (no floating `>=` range). |
+| `requirements.txt` | Every Python dependency pinned with `==`. |
+| `bindep.txt` | Contains `[platform:rpm]` (RHEL system deps). |
+| `build-ee.sh` | Executable. Uses `--container-runtime podman`. |
+| `configs/ansible.cfg` | Delivered. Keep `host_key_checking = False` (injected into the EE). |
 
-## 🧩 Indices
+## 🧩 Hints
 
-### `execution-environment.yml` (schéma v3)
+### `execution-environment.yml` (v3 schema)
 
 ```yaml
 ---
@@ -26,7 +27,7 @@ images:
 
 dependencies:
   ansible_core:
-    package_pip: ???          # ansible-core==2.18.0  (pin strict, pas >=)
+    package_pip: ???          # ansible-core==2.18.0  (strict pin, not >=)
   ansible_runner:
     package_pip: ansible-runner==2.4.0
   galaxy: requirements.yml
@@ -34,30 +35,30 @@ dependencies:
   system: bindep.txt
 ```
 
-### `requirements.yml` (collections pinnées)
+### `requirements.yml` (pinned collections)
 
 ```yaml
 ---
 collections:
   - name: community.docker
-    version: ???              # ex: 3.10.4
+    version: ???              # e.g.: 3.10.4
   - name: ansible.posix
-    version: ???              # ex: 1.5.4
+    version: ???              # e.g.: 1.5.4
 ```
 
-### `requirements.txt` (Python pinné)
+### `requirements.txt` (pinned Python)
 
 ```text
-kubernetes==30.1.0
-hvac==2.3.0
+???==???        # each Python dependency pinned to an exact version
 ```
+
+Check the real versions with `pip index versions <package>`.
 
 ### `bindep.txt` (system deps)
 
 ```text
-[platform:rpm]
-git
-podman
+[platform:???]  # the profile of UBI/RHEL bases
+???             # the binaries your collections need (git...)
 ```
 
 ### `build-ee.sh`
@@ -67,36 +68,45 @@ cat > build-ee.sh <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
 ansible-builder build \
-    --container-runtime ???                  # podman (pas docker)
+    --container-runtime ???                  # podman (not docker)
     --tag ???                                 # localhost/lab86-custom-ee:latest
     --verbosity 2
 SH
 chmod +x build-ee.sh
 ```
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
-> - **Schéma v3 obligatoire** : oublier `version: 3` fait tomber
->   `ansible-builder` sur une erreur cryptique. Le test pytest le
->   vérifie explicitement.
-> - **Pinning `==` strict** : `ansible_core: { package_pip: ansible-core==2.18.0 }`.
->   Une plage `>=2.18.0` peut briser la reproductibilité du build (la
->   version installée dépend de la date du build).
-> - **Collections** : chaque entrée doit avoir `version:` (pas de
->   `latest`). Le test pytest scanne `requirements.yml` et rejette si
+> - **v3 schema mandatory**: forgetting `version: 3` makes
+>   `ansible-builder` fail with a cryptic error. The pytest test
+>   checks it explicitly.
+> - **Strict `==` pinning**: `ansible_core: { package_pip: ansible-core==2.18.0 }`.
+>   A `>=2.18.0` range can break build reproducibility (the
+>   installed version depends on the build date).
+> - **Collections**: every entry must have `version:` (no
+>   `latest`). The pytest test scans `requirements.yml` and rejects if
 >   absent.
-> - **`bindep.txt`** : header `[platform:rpm]` indispensable pour les
->   builds RHEL/AlmaLinux. Pour Debian, ajouter `[platform:dpkg]`.
-> - **`localhost/`** dans le tag : convention pour les images locales
->   non-pushed. Sans ce préfixe, Podman peut tenter de chercher l'image
->   sur Docker Hub.
+> - **`bindep.txt`**: the `[platform:rpm]` header is essential for
+>   RHEL/AlmaLinux builds. For Debian, add `[platform:dpkg]`.
+> - **`localhost/`** in the tag: convention for local images
+>   not pushed. Without this prefix, Podman may try to look for the image
+>   on Docker Hub.
 
-## 🚀 Lancement
+## 🚀 Launch
 
 ```bash
 cd labs/ee/builder-custom/
 ./build-ee.sh
 podman run --rm localhost/lab86-custom-ee:latest ansible --version
+```
+
+## 📓 Command log
+
+Record in `challenge/solution.sh` the commands you ran (build,
+podman checks). This log must exist for pytest to run:
+
+```bash
+chmod +x challenge/solution.sh
 ```
 
 ## 🧪 Validation
@@ -105,17 +115,21 @@ podman run --rm localhost/lab86-custom-ee:latest ansible --version
 pytest -v labs/ee/builder-custom/challenge/tests/
 ```
 
+The tests check the semantics of your 5 files and, if
+ansible-builder is installed, run `ansible-builder create` to
+prove that the definition is accepted by the tool.
+
 ## 🧹 Reset
 
 ```bash
-make -C labs/ee/builder-custom/ clean
+dsoxlab clean ee-builder-custom
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`additional_build_steps`** dans `execution-environment.yml` :
-  injecter des commandes `RUN` arbitraires (custom CA cert, debug tools).
-- **Multi-stage build** : `builder_image` séparée pour réduire la
-  taille de l'image finale.
-- **Signer l'image** : `cosign sign localhost/lab86-custom-ee:latest`
-  après build (cf. lab 87 CI).
+- **`additional_build_steps`** in `execution-environment.yml`:
+  inject arbitrary `RUN` commands (custom CA cert, debug tools).
+- **Multi-stage build**: a separate `builder_image` to reduce the
+  size of the final image.
+- **Sign the image**: `cosign sign localhost/lab86-custom-ee:latest`
+  after build (see lab 87 CI).

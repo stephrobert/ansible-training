@@ -1,0 +1,53 @@
+---
+# Mise en place du lab lineinfile : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+#
+# Même remise à zéro déclarative que cleanup.yaml : ce lab modifie sshd_config,
+# et un état hérité du run précédent (AllowUsers restant, MaxAuthTries abaissé)
+# fausse la validation, voire coupe l'accès à la VM.
+- name: Setup lineinfile lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Remove the sysctl line the learner is expected to add
+      ansible.builtin.lineinfile:
+        path: /etc/sysctl.conf
+        regexp: '^net\.ipv4\.ip_forward=1$'
+        state: absent
+
+    - name: Remove any AllowUsers restriction left behind
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^\s*AllowUsers\s'
+        state: absent
+        validate: "sshd -t -f %s"
+
+    - name: Put the sshd directives back to their commented defaults
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        validate: "sshd -t -f %s"
+      loop:
+        - { regexp: '^\s*#?\s*PermitRootLogin\s', line: "#PermitRootLogin prohibit-password" }
+        - { regexp: '^\s*#?\s*MaxAuthTries\s', line: "#MaxAuthTries 6" }
+      loop_control:
+        label: "{{ item.line }}"
+      notify: Restart sshd
+
+  handlers:
+    - name: Restart sshd
+      ansible.builtin.systemd_service:
+        name: sshd
+        state: restarted
+
+- name: Brief the learner (lineinfile)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Add, replace by regexp or remove a line in a config file, using backrefs and syntax validation before the write
+      run_once: true

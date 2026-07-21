@@ -1,3 +1,4 @@
 ---
-firewall_zones:
-  - public
+# Ports à ouvrir, au format firewalld ("443/tcp"). L'appelant (ou la
+# dépendance qui référence ce rôle) fournit la liste via vars:.
+firewall_setup_open_ports: []

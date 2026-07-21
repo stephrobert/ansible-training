@@ -1,0 +1,33 @@
+---
+# Mise en place du lab tags : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup tags lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (tags)
+      ansible.builtin.file:
+        path: "/tmp/challenge-tag-always.txt"
+        state: "absent"
+      failed_when: false
+    - name: Reset path, state (tags)
+      ansible.builtin.file:
+        path: "/tmp/challenge-tag-configuration.txt"
+        state: "absent"
+      failed_when: false
+    - name: Reset path, state (tags)
+      ansible.builtin.file:
+        path: "/tmp/challenge-tag-reset.txt"
+        state: "absent"
+      failed_when: false
+
+- name: Brief the learner (tags)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Set tags, target with --tags and exclude with --skip-tags, inspect the plan via --list-tasks and use the special always and never tags
+      run_once: true

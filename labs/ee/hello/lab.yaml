@@ -1,0 +1,25 @@
+---
+id: ee-hello
+title: "First run inside an Execution Environment"
+description: "Pull an EE image with Podman, set it as the default in ansible-navigator.yml, run a playbook inside it and compare with a plain ansible-playbook run."
+section: ee
+level: l2
+difficulty: intermediate
+lab_type: lab
+estimated_time: "40m"
+skills:
+  - execution-environment
+  - navigator
+  - container-runtime
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/presentation/
+track:
+  - au-dela-ex294
+runtime:
+  type: shell
+  workdir: challenge/work
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

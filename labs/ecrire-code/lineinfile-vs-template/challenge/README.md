@@ -1,37 +1,37 @@
-# 🎯 Challenge — `lineinfile` vs `template` (les 2 approches)
+# 🎯 Challenge — `lineinfile` vs `template` (the 2 approaches)
 
-## ✅ Objectif
+## ✅ Objective
 
-Sur **db1.lab**, démontrer **deux philosophies opposées** pour gérer un
-fichier de configuration :
+On **db1.lab**, demonstrate **two opposite philosophies** to manage a
+configuration file:
 
-- **`lineinfile`** = **chirurgical**, on touche **une ligne** sans réécrire le
-  reste du fichier (idéal pour `/etc/hosts`, `/etc/sysctl.conf`, etc.).
-- **`template`** = **propriétaire complet**, on **réécrit** tout le fichier
-  depuis un template Jinja2 (idéal pour les configs qu'on génère
-  intégralement, comme `/etc/nginx/nginx.conf` métier).
+- **`lineinfile`** = **surgical**, you touch **one line** without rewriting the
+  rest of the file (ideal for `/etc/hosts`, `/etc/sysctl.conf`, etc.).
+- **`template`** = **full owner**, you **rewrite** the whole file
+  from a Jinja2 template (ideal for configs generated in full, like a business
+  `/etc/nginx/nginx.conf`).
 
-## 🧩 Tâche 1 — `lineinfile` sur `/etc/hosts`
+## 🧩 Task 1 — `lineinfile` on `/etc/hosts`
 
-Ajoutez une **seule ligne** dans `/etc/hosts` :
+Add a **single line** in `/etc/hosts`:
 
 ```text
 192.168.99.99 mon-host.lab
 ```
 
-Sans toucher aux autres lignes existantes.
+Without touching the other existing lines.
 
-Indices :
+Hints:
 
-- `path:` → fichier à modifier.
-- `line:` → contenu de la ligne.
-- `regexp:` → pour rendre l'opération idempotente : si une ligne matchant le
-  motif existe déjà, elle est **remplacée** (pas dupliquée).
-- `state: present` (défaut).
+- `path:` → the file to modify.
+- `line:` → the content of the line.
+- `regexp:` → to make the operation idempotent: if a line matching the
+  pattern already exists, it is **replaced** (not duplicated).
+- `state: present` (default).
 
-## 🧩 Tâche 2 — `template` sur `/etc/myapp.conf`
+## 🧩 Task 2 — `template` on `/etc/myapp.conf`
 
-Créez `challenge/templates/myapp.conf.j2` qui produit :
+Create `challenge/templates/myapp.conf.j2` that produces:
 
 ```ini
 [server]
@@ -44,7 +44,7 @@ url = postgres://db1.lab/myapp
 pool_size = 10
 ```
 
-Variables source (à mettre dans `vars:` du play) :
+Source variables (to put in the play's `vars:`):
 
 ```yaml
 server:
@@ -56,10 +56,10 @@ database:
   pool_size: 10
 ```
 
-Le template doit interpoler **chaque** valeur depuis ces dicts (ex:
+The template must interpolate **each** value from these dicts (e.g.
 `{{ server.host }}`, `{{ database.pool_size }}`).
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -88,21 +88,21 @@ Le template doit interpoler **chaque** valeur depuis ces dicts (ex:
         mode: "0644"
 ```
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
-> - **`lineinfile`** = modifier **une ligne** dans un fichier existant
->   (ex: `/etc/hosts`, `/etc/sshd_config`). Si la ligne n'est pas
->   matchée par `regexp:`, elle est **ajoutée** à la fin.
-> - **`template`** = remplacer **tout le fichier**. Idempotent par
->   checksum, donc pas de drift.
-> - **Quand préférer `lineinfile`** : modifier 1-3 lignes dans un fichier
->   géré par un paquet (ne pas écraser les valeurs par défaut).
-> - **Quand préférer `template`** : on possède le fichier en entier
->   (config app maison, motd, banner). Plus lisible et auditable.
-> - **`blockinfile`** (lab 33) : entre les deux — gère un **bloc
->   marqué** dans un fichier existant.
+> - **`lineinfile`** = modify **one line** in an existing file
+>   (e.g. `/etc/hosts`, `/etc/sshd_config`). If the line is not
+>   matched by `regexp:`, it is **added** at the end.
+> - **`template`** = replace **the whole file**. Idempotent by
+>   checksum, so no drift.
+> - **When to prefer `lineinfile`**: modify 1-3 lines in a file
+>   managed by a package (do not overwrite the default values).
+> - **When to prefer `template`**: you own the whole file
+>   (in-house app config, motd, banner). More readable and auditable.
+> - **`blockinfile`** (lab 33): in between, manages a **marked
+>   block** in an existing file.
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/ecrire-code/lineinfile-vs-template/challenge/solution.yml
@@ -110,7 +110,7 @@ ansible db1.lab -m ansible.builtin.command -a "grep mon-host /etc/hosts"
 ansible db1.lab -m ansible.builtin.command -a "cat /etc/myapp.conf"
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/lineinfile-vs-template/challenge/tests/
@@ -119,20 +119,20 @@ pytest -v labs/ecrire-code/lineinfile-vs-template/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/ecrire-code/lineinfile-vs-template clean
+dsoxlab clean ecrire-code-lineinfile-vs-template
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Quand utiliser `lineinfile` vs `template` ?**
-  - **`lineinfile`** : config gérée par plusieurs sources (Ansible + autre
-    outil + admin), ou config par défaut qu'on ne maîtrise pas (ex:
-    `/etc/sshd_config` livré par le paquet).
-  - **`template`** : config 100 % gérée par Ansible (pas d'autre source de
-    vérité). Plus prévisible, plus testable.
-- **`blockinfile`** (lab 33) : entre les deux. Gère un **bloc** délimité par
-  des markers. Idéal quand on veut ajouter une section sans toucher au reste.
-- **Lint** :
+- **When to use `lineinfile` vs `template`?**
+  - **`lineinfile`**: config managed by several sources (Ansible + another
+    tool + admin), or a default config you do not control (e.g.
+    `/etc/sshd_config` shipped by the package).
+  - **`template`**: config 100% managed by Ansible (no other source of
+    truth). More predictable, more testable.
+- **`blockinfile`** (lab 33): in between. Manages a **block** delimited by
+  markers. Ideal when you want to add a section without touching the rest.
+- **Lint**:
 
    ```bash
    ansible-lint labs/ecrire-code/lineinfile-vs-template/challenge/solution.yml

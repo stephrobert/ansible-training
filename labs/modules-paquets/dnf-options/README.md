@@ -1,59 +1,59 @@
-# Lab 37 — Module `dnf:` options spécifiques RHEL
+# Lab 37 — `dnf:` module: RHEL-specific options
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Module dnf Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-dnf/)
+🔗 [**Ansible dnf module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-dnf-options/)
 
-Sur un parc 100% RHEL/RockyLinux/AlmaLinux, **`dnf:` est plus puissant que
-`package:`** parce qu'il expose les options **spécifiques de DNF** :
+On a 100% RHEL/RockyLinux/AlmaLinux fleet, **`dnf:` is more powerful than
+`package:`** because it exposes the **DNF-specific** options:
 
-- **`enablerepo:`** / **`disablerepo:`** : activer / désactiver un repo le temps
-  d'une opération.
-- **`security: true`** / **`bugfix: true`** : limiter aux **errata** de sécurité
-  ou de bugfix.
-- **`exclude:`** : exclure des paquets (patterns wildcards).
-- **`autoremove: true`** : nettoyer les dépendances orphelines.
-- **`update_cache: true`** : forcer un refresh des métadonnées repos.
-- **`download_only: true`** : pré-télécharger sans installer.
+- **`enablerepo:`** / **`disablerepo:`**: enable / disable a repo for the
+  duration of an operation.
+- **`security: true`** / **`bugfix: true`**: limit to security or bugfix
+  **errata**.
+- **`exclude:`**: exclude packages (wildcard patterns).
+- **`autoremove: true`**: clean up orphaned dependencies.
+- **`update_cache: true`**: force a refresh of the repo metadata.
+- **`download_only: true`**: pre-download without installing.
 
-Ces options sont **explicites RHCE 2026** — vous serez testé sur le **patching
-sécurité** (`security: true`) et l'activation temporaire de repos.
+These options are **explicit for RHCE 2026**: you will be tested on
+**security patching** (`security: true`) and temporary repo enablement.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Activer un repo temporairement** avec `enablerepo:` (sans le persister).
-2. **Patcher uniquement les CVE** avec `security: true`.
-3. **Exclure le kernel** d'un upgrade massif (`exclude: kernel*`).
-4. **Nettoyer** les dépendances orphelines avec `autoremove: true`.
-5. **Pré-télécharger** des RPM avec `download_only: true` pour un upgrade
-   air-gapped.
+1. **Enable a repo temporarily** with `enablerepo:` (without persisting it).
+2. **Patch only the CVEs** with `security: true`.
+3. **Exclude the kernel** from a mass upgrade (`exclude: kernel*`).
+4. **Clean up** orphaned dependencies with `autoremove: true`.
+5. **Pre-download** RPMs with `download_only: true` for an air-gapped
+   upgrade.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 ansible db1.lab -b -m shell -a "dnf -y remove htop ncdu epel-release 2>/dev/null; true"
 ```
 
-## 📚 Exercice 1 — `enablerepo: epel` (activer EPEL temporairement)
+## 📚 Exercise 1 — `enablerepo: epel` (enable EPEL temporarily)
 
-EPEL (Extra Packages for Enterprise Linux) contient `htop`, `ncdu`, `iftop`, etc.
-qui ne sont pas dans les repos RHEL de base.
+EPEL (Extra Packages for Enterprise Linux) contains `htop`, `ncdu`, `iftop`, etc.
+which are not in the base RHEL repos.
 
 ```yaml
 ---
@@ -82,21 +82,21 @@ qui ne sont pas dans les repos RHEL de base.
         msg: "{{ htop_version.stdout }}"
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/modules-paquets/dnf-options/lab.yml
 ```
 
-🔍 **Observation** : `htop` est installé via EPEL. **`enablerepo:`** active EPEL
-**uniquement pour cette tâche** — pas de modification persistante. Au prochain
-`dnf list`, EPEL sera **désactivé** par défaut. Utile quand vous ne voulez **pas
-exposer EPEL à des updates automatiques** (paquets pas toujours stables).
+🔍 **Observation**: `htop` is installed via EPEL. **`enablerepo:`** enables EPEL
+**only for this task**: no persistent modification. On the next
+`dnf list`, EPEL will be **disabled** by default. Useful when you do **not
+want to expose EPEL to automatic updates** (packages not always stable).
 
-## 📚 Exercice 2 — `security: true` (patcher uniquement les CVE)
+## 📚 Exercise 2 — `security: true` (patch only the CVEs)
 
-C'est **le pattern le plus utile** en production. Applique **uniquement** les
-errata classés "Security Advisory" par le vendor RHEL.
+This is **the most useful pattern** in production. Applies **only** the
+errata classified as "Security Advisory" by the RHEL vendor.
 
 ```yaml
 - name: Patcher uniquement les CVE
@@ -106,18 +106,18 @@ errata classés "Security Advisory" par le vendor RHEL.
     security: true
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **`name: '*'`** = tous les paquets installés.
-- **`state: latest`** = mettre à jour.
-- **`security: true`** = **filtre** : seulement les paquets avec un errata de
-  sécurité disponible.
+- **`name: '*'`** = all installed packages.
+- **`state: latest`** = update.
+- **`security: true`** = **filter**: only the packages with a security
+  errata available.
 
-**Conséquence** : sur 1000 paquets installés, peut-être 5-10 ont un patch
-sécurité disponible — seuls ceux-là sont touchés. Les autres restent à leur
-version courante.
+**Consequence**: out of 1000 installed packages, maybe 5-10 have a security
+patch available: only those are touched. The others stay at their
+current version.
 
-**Combiner avec `bugfix: true`** pour les bugfixes :
+**Combine with `bugfix: true`** for bugfixes:
 
 ```yaml
 - name: Patcher securite ET bugs
@@ -128,7 +128,7 @@ version courante.
     bugfix: true
 ```
 
-## 📚 Exercice 3 — `exclude: kernel*` (préserver des paquets sensibles)
+## 📚 Exercise 3 — `exclude: kernel*` (preserve sensitive packages)
 
 ```yaml
 - name: Mise a jour complete sauf kernel
@@ -138,12 +138,12 @@ version courante.
     exclude: kernel*
 ```
 
-🔍 **Observation** : un upgrade kernel **nécessite un reboot**. Si vous appliquez
-les patches de sécurité **sans reboot programmé**, `exclude: kernel*` évite de
-mettre la machine en état "kernel staged but not running" (sécurité dégradée
-jusqu'au prochain reboot).
+🔍 **Observation**: a kernel upgrade **requires a reboot**. If you apply
+the security patches **without a scheduled reboot**, `exclude: kernel*` avoids
+putting the machine in a "kernel staged but not running" state (degraded
+security until the next reboot).
 
-**`exclude:` accepte une liste** :
+**`exclude:` accepts a list**:
 
 ```yaml
 exclude:
@@ -152,34 +152,34 @@ exclude:
   - systemd
 ```
 
-**Wildcards** : `kernel*` matche `kernel`, `kernel-headers`, `kernel-modules`,
+**Wildcards**: `kernel*` matches `kernel`, `kernel-headers`, `kernel-modules`,
 `kernel-tools`, etc.
 
-## 📚 Exercice 4 — `autoremove: true` (nettoyer les orphelins)
+## 📚 Exercise 4 — `autoremove: true` (clean up orphans)
 
 ```yaml
 - name: Installer un paquet avec dependances
   ansible.builtin.dnf:
-    name: httpd
+    name: nginx
     state: present
 
-- name: Desinstaller httpd ET ses dependances orphelines
+- name: Desinstaller nginx ET ses dependances orphelines
   ansible.builtin.dnf:
-    name: httpd
+    name: nginx
     state: absent
     autoremove: true
 ```
 
-🔍 **Observation** : quand on désinstalle `httpd`, ses dépendances exclusives
-(`apr`, `apr-util`, `httpd-tools`) deviennent **orphelines**. **`autoremove:
-true`** les supprime automatiquement — comme `dnf autoremove` après un `dnf
-remove`.
+🔍 **Observation**: when you uninstall `nginx`, its exclusive dependencies
+(`nginx-core`, `nginx-filesystem`, `almalinux-logos-httpd`) become
+**orphaned**. **`autoremove: true`** removes them automatically, like
+`dnf autoremove` after a `dnf remove`.
 
-**Sans `autoremove`**, vous accumulez des paquets fantômes au fil des cycles
-install/uninstall. Sur un système long-living, ça peut représenter 100+ paquets
-inutiles.
+**Without `autoremove`**, you accumulate ghost packages over the
+install/uninstall cycles. On a long-living system, that can represent 100+
+useless packages.
 
-## 📚 Exercice 5 — `update_cache: true` (refresh repos)
+## 📚 Exercise 5 — `update_cache: true` (refresh repos)
 
 ```yaml
 - name: Refresh cache puis installer
@@ -189,18 +189,18 @@ inutiles.
     update_cache: true
 ```
 
-🔍 **Observation** : par défaut, DNF utilise un **cache de métadonnées** (TTL ~6h).
-**`update_cache: true`** force un **refresh immédiat** — utile quand vous venez
-de :
+🔍 **Observation**: by default, DNF uses a **metadata cache** (TTL ~6h).
+**`update_cache: true`** forces an **immediate refresh**: useful when you have
+just:
 
-- Modifier un fichier `.repo` (nouveau repo ajouté).
-- Pousser un nouveau paquet dans un **repo interne**.
-- Activer un nouveau channel.
+- Modified a `.repo` file (new repo added).
+- Pushed a new package into an **internal repo**.
+- Enabled a new channel.
 
-**Coût** : le refresh prend 5-30s selon les repos (CDN, network). À mettre **une
-fois** en début de play, pas par tâche.
+**Cost**: the refresh takes 5-30s depending on the repos (CDN, network). Put it
+**once** at the start of the play, not per task.
 
-## 📚 Exercice 6 — `download_only: true` (pré-stage)
+## 📚 Exercise 6 — `download_only: true` (pre-stage)
 
 ```yaml
 - name: Pre-telecharger pour install offline
@@ -213,15 +213,15 @@ fois** en début de play, pas par tâche.
     download_dir: /var/cache/staged-rpms/
 ```
 
-🔍 **Observation** : Ansible télécharge les RPM dans `download_dir` **sans les
-installer**. Pattern utilisé pour :
+🔍 **Observation**: Ansible downloads the RPMs into `download_dir` **without
+installing them**. Pattern used to:
 
-- **Préparer un upgrade air-gapped** : télécharger sur un nœud connecté, pousser
-  sur un nœud isolé via `copy:`.
-- **Réduire la fenêtre de panne** : pré-stager 2h avant la maintenance, installer
-  en 30s pendant la fenêtre.
+- **Prepare an air-gapped upgrade**: download on a connected node, push
+  onto an isolated node via `copy:`.
+- **Reduce the outage window**: pre-stage 2h before maintenance, install
+  in 30s during the window.
 
-## 📚 Exercice 7 — Le piège : `state: absent` + dépendance partagée
+## 📚 Exercise 7 — The trap: `state: absent` + shared dependency
 
 ```yaml
 - name: Desinstaller bind sans autoremove
@@ -231,79 +231,79 @@ installer**. Pattern utilisé pour :
     autoremove: true
 ```
 
-🔍 **Observation** : `bind` dépend de `bind-libs` qui est **aussi utilisé** par
-d'autres paquets (`bind-utils`, parfois `glibc`). `autoremove: true` peut
-**supprimer trop de choses** si DNF estime que la dépendance est orpheline.
+🔍 **Observation**: `bind` depends on `bind-libs` which is **also used** by
+other packages (`bind-utils`, sometimes `glibc`). `autoremove: true` can
+**remove too much** if DNF considers the dependency orphaned.
 
-**Pattern défensif** : tester en `--check` d'abord, ou utiliser
-`autoremove: false` pour ne pas toucher aux dépendances.
+**Defensive pattern**: test in `--check` first, or use
+`autoremove: false` to leave the dependencies untouched.
 
 ```bash
 ansible-playbook labs/modules-paquets/dnf-options/lab.yml --check
-# Verifier ce qui serait desinstalle avant de lancer pour de vrai
+# Check what would be uninstalled before running for real
 ```
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`enablerepo:`** = activation **temporaire** d'un repo (sans modification
-  persistante).
-- **`security: true`** = pattern de **patching de production** (errata CVE
-  uniquement).
-- **`exclude: kernel*`** = éviter de stager un kernel sans reboot programmé.
-- **`autoremove: true`** sur `state: absent` = nettoyage des dépendances
-  orphelines (mais peut être trop agressif).
-- **`update_cache: true`** = forcer refresh, à mettre **une fois** en début de
+- **`enablerepo:`** = **temporary** enablement of a repo (without persistent
+  modification).
+- **`security: true`** = **production patching** pattern (CVE errata
+  only).
+- **`exclude: kernel*`** = avoid staging a kernel without a scheduled reboot.
+- **`autoremove: true`** on `state: absent` = cleanup of orphaned
+  dependencies (but can be too aggressive).
+- **`update_cache: true`** = force refresh, put it **once** at the start of the
   play.
-- **`download_only: true`** = pré-stage pour upgrades air-gapped ou maintenance
-  courte.
+- **`download_only: true`** = pre-stage for air-gapped upgrades or short
+  maintenance.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voulez patcher 50 serveurs avec **uniquement les CVE critiques** sans
-   redémarrer. Quel `dnf:` complet (combinaison `security`, `exclude`, `state`) ?
+1. You want to patch 50 servers with **only the critical CVEs** without
+   rebooting. Which complete `dnf:` (combination of `security`, `exclude`, `state`)?
 
-2. `autoremove: true` peut être dangereux. Quel pattern défensif (combinaison
-   `--check`, `register`, `assert`) pour éviter une suppression inattendue ?
+2. `autoremove: true` can be dangerous. Which defensive pattern (combination
+   `--check`, `register`, `assert`) to avoid an unexpected removal?
 
-3. Quelle différence concrète entre `state: latest` (sans `security:`) et
-   `state: latest + security: true` ? Donnez un exemple où cela change la liste
-   des paquets touchés.
+3. What concrete difference between `state: latest` (without `security:`) and
+   `state: latest + security: true`? Give an example where it changes the list
+   of touched packages.
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`name: '@web-server'`** : installation de **groupes** DNF (`@base`,
-  `@minimal-environment`, `@web-server`). Pratique pour provisionner un rôle
-  métier sans énumérer 30 paquets.
-- **`releasever:`** : installer un paquet d'une **version majeure différente**
-  (ex : RHEL 9 → RHEL 10). Avancé, à réserver aux migrations contrôlées.
-- **`config_file:`** : utiliser un fichier `dnf.conf` custom (différent du
-  défaut). Rare mais utile pour des images Docker.
-- **Combinaison `download_only:` + `copy:`** : pattern d'upgrade air-gapped
-  complet (download d'un côté, transfer SSH, install offline).
+- **`name: '@web-server'`**: installation of DNF **groups** (`@base`,
+  `@minimal-environment`, `@web-server`). Handy to provision a business
+  role without listing 30 packages.
+- **`releasever:`**: install a package from a **different major version**
+  (e.g. RHEL 9 → RHEL 10). Advanced, reserve for controlled migrations.
+- **`config_file:`**: use a custom `dnf.conf` file (different from the
+  default). Rare but useful for Docker images.
+- **Combination `download_only:` + `copy:`**: complete air-gapped upgrade
+  pattern (download on one side, SSH transfer, offline install).
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/modules-paquets/dnf-options/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/modules-paquets/dnf-options/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/modules-paquets/dnf-options/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

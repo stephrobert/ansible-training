@@ -1,66 +1,66 @@
-# Lab 000 — Préparer les managed nodes
+# Lab 000 — Prepare the managed nodes
 
-Ce lab est joué **automatiquement** à la fin de `make provision`. Il prépare les 3 managed nodes (`web1`, `web2`, `db1`) pour qu'ils soient utilisables par tous les playbooks de la formation.
-
----
-
-## 🧠 Rappel et lecture recommandée
-
-🔗 [**Préparer les nœuds gérés Ansible : Python, SSH, sudo, firewall**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas/preparer-noeuds-geres/)
-
-Cette page explique :
-
-- Les **5 prérequis** d'un managed node (Python 3, SSH par clé, sudo NOPASSWD, firewall, NTP)
-- Le pattern **« Ansible se prépare lui-même »** : cloud-init pose le minimum, Ansible converge le reste
-- Le **bootstrap via le module `raw`** quand Python 3 n'est pas disponible côté cible
+This lab runs **automatically** at the end of `dsoxlab provision`. It prepares the 3 managed nodes (`web1`, `web2`, `db1`) so they are usable by all the playbooks of the training.
 
 ---
 
-> Ce lab n'est pas une page de la formation à proprement parler — c'est un **bootstrap idempotent** qui matérialise le principe **Ansible se prépare lui-même**. Cloud-init ne pose que le minimum (user `ansible` + clé SSH + sudo NOPASSWD). Tout le reste — chrony, paquets utiles, /etc/hosts, SELinux, timezone — est appliqué par ce playbook.
+## 🧠 Recap and recommended reading
 
-## Ce que fait `playbook.yml`
+🔗 [**Prepare Ansible managed nodes: Python, SSH, sudo, firewall**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas/preparer-noeuds-geres/)
 
-| Tâche | Module | Effet |
+This page explains:
+
+- The **5 prerequisites** of a managed node (Python 3, SSH by key, sudo NOPASSWD, firewall, NTP)
+- The **"Ansible prepares itself"** pattern: cloud-init lays down the minimum, Ansible converges the rest
+- The **bootstrap via the `raw` module** when Python 3 is not available on the target
+
+---
+
+> This lab is not a page of the training as such: it is an **idempotent bootstrap** that materializes the **Ansible prepares itself** principle. Cloud-init lays down only the minimum (`ansible` user + SSH key + sudo NOPASSWD). Everything else (chrony, useful packages, /etc/hosts, SELinux, timezone) is applied by this playbook.
+
+## What `playbook.yml` does
+
+| Task | Module | Effect |
 |---|---|---|
-| Installer paquets de base | `ansible.builtin.dnf` | `python3-libselinux`, `python3-firewall`, `chrony`, `bash-completion`, `vim-enhanced`, `tar`, `rsync` |
-| Démarrer chronyd | `ansible.builtin.systemd` | Synchro horaire active (cohérence des facts entre VMs) |
-| Inscrire les hôtes du lab | `ansible.builtin.lineinfile` | `/etc/hosts` contient `web1.lab`, `web2.lab`, `db1.lab`, `control-node.lab` |
-| SELinux enforcing | `ansible.posix.selinux` | Mode `Enforcing`, policy `targeted` (cohérent RHCE) |
+| Install base packages | `ansible.builtin.dnf` | `python3-libselinux`, `python3-firewall`, `chrony`, `bash-completion`, `vim-enhanced`, `tar`, `rsync` |
+| Start chronyd | `ansible.builtin.systemd` | Time sync active (consistency of facts between VMs) |
+| Register the lab hosts | `ansible.builtin.lineinfile` | `/etc/hosts` contains `web1.lab`, `web2.lab`, `db1.lab`, `control-node.lab` |
+| SELinux enforcing | `ansible.posix.selinux` | `Enforcing` mode, `targeted` policy (consistent with RHCE) |
 | Timezone | `community.general.timezone` | `Europe/Paris` |
 
-## Lancer manuellement
+## Run manually
 
-Depuis la racine du lab :
+From the root of the lab:
 
 ```bash
 ansible-playbook labs/bootstrap/prepare-managed-nodes/playbook.yml
 ```
 
-ou via le squelette Makefile standard :
+or via the CLI, which lays down the starting state then validates:
 
 ```bash
-cd labs/bootstrap/prepare-managed-nodes/
-make run verify clean
+dsoxlab run bootstrap-prepare-managed-nodes
+dsoxlab check bootstrap-prepare-managed-nodes
 ```
 
 ## Idempotence
 
-Un second `make run` doit afficher `changed=0` sur tous les nodes — c'est la définition d'un playbook propre. Si ce n'est pas le cas, c'est que le playbook réécrit quelque chose à chaque passage (typique : `lineinfile` avec une regexp non ancrée).
+A second `dsoxlab run <lab-id>` must show `changed=0` on all nodes: this is the definition of a clean playbook. If it is not the case, the playbook rewrites something on every pass (typically: `lineinfile` with an unanchored regexp).
 
 ## Tests
 
-Validation par `pytest + testinfra` dans [`challenge/tests/test_prepare.py`](./challenge/tests/test_prepare.py) — vérifie sur chaque managed node :
+Validation by `pytest + testinfra` in [`challenge/tests/test_functional.py`](./challenge/tests/test_functional.py), which checks on each managed node:
 
-- chrony installé + chronyd actif
-- paquets `python3-libselinux`, `python3-firewall`, `tar`, `rsync` présents
-- `/etc/hosts` contient les 4 entrées
-- SELinux en `Enforcing`
+- chrony installed + chronyd active
+- packages `python3-libselinux`, `python3-firewall`, `tar`, `rsync` present
+- `/etc/hosts` contains the 4 entries
+- SELinux in `Enforcing`
 - timezone `Europe/Paris`
 
 ```bash
 pytest -v labs/bootstrap/prepare-managed-nodes/challenge/tests/
 ```
 
-## Pourquoi ce pattern
+## Why this pattern
 
-L'ancien lab [`ansible-training`](https://github.com/stephrobert/ansible-training) plaçait à la fin de chaque TP un challenge auto-validé par tests `pytest + testinfra`. Ce pattern est repris ici comme **squelette de référence** pour tous les labs unitaires de la formation.
+The old [`ansible-training`](https://github.com/stephrobert/ansible-training) lab placed at the end of each exercise a challenge self-validated by `pytest + testinfra` tests. This pattern is reused here as the **reference skeleton** for all the unit labs of the training.

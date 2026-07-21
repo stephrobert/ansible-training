@@ -1,0 +1,4 @@
+---
+id: modules-services-systemd
+title: "Module systemd_service : gérer les services systemd"
+description: "Démarrer, activer, recharger et masquer des services, déposer un unit file custom avec daemon_reload et notifier un service depuis un handler."

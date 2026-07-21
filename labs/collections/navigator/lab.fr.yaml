@@ -1,0 +1,3 @@
+---
+title: "Automation content navigator : découvrir un module dans une collection et l'utiliser"
+description: "Utiliser ansible-navigator pour trouver un module dans une collection installée, l'appliquer pour produire un état kernel vérifiable sur db1.lab, puis valider un inventaire avec ansible-navigator inventory."

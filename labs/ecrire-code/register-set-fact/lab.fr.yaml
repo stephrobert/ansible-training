@@ -1,0 +1,4 @@
+---
+id: ecrire-code-register-set-fact
+title: "register et set_fact : capturer et créer des variables"
+description: "Capturer la sortie d'un module avec register, la réutiliser dans when et loop, créer un fact au runtime et le persister avec cacheable: true."

@@ -1,49 +1,49 @@
-# Lab 20 — Conditions `when:`
+# Lab 20 — `when:` conditions
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Conditions Ansible : when, opérateurs, multi-conditions**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/conditions-when/)
+🔗 [**Ansible conditions: when, operators, multi-conditions**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/conditions-when/)
 
-`when:` filtre l'exécution d'une tâche selon une **expression booléenne Jinja2**.
-Sans condition, la tâche tourne sur tous les hôtes ciblés. Avec `when:`, elle ne
-tourne que sur ceux qui satisfont l'expression. Les conditions sont l'**outil n°1
-de la programmation Ansible** — multi-OS, déploiement progressif, branches
-conditionnelles. Particularité : pas de `{{ }}` dans `when:` — l'expression est
-**déjà** Jinja2.
+`when:` filters the execution of a task based on a **Jinja2 boolean expression**.
+Without a condition, the task runs on all the targeted hosts. With `when:`, it only
+runs on those that satisfy the expression. Conditions are the **number 1 tool
+of Ansible programming**: multi-OS, progressive deployment, conditional
+branches. Peculiarity: no `{{ }}` in `when:`, the expression is
+**already** Jinja2.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Conditionner** une tâche sur un fact (`ansible_distribution`, version OS).
-2. **Combiner** plusieurs conditions avec `and`, `or`, parenthèses.
-3. **Tester** la définition d'une variable (`is defined`, `is not defined`).
-4. **Utiliser** les tests Jinja2 (`is mapping`, `is sequence`, `is regex`).
-5. **Diagnostiquer** un `when:` qui matche faux (souvent un type bool vs string).
+1. **Condition** a task on a fact (`ansible_distribution`, OS version).
+2. **Combine** several conditions with `and`, `or`, parentheses.
+3. **Test** the definition of a variable (`is defined`, `is not defined`).
+4. **Use** the Jinja2 tests (`is mapping`, `is sequence`, `is regex`).
+5. **Diagnose** a `when:` that matches wrong (often a bool vs string type).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible all -m ping
 ansible all -b -m shell -a "rm -f /tmp/when-*.txt"
 ```
 
-## 📚 Exercice 1 — Condition simple sur un fact
+## 📚 Exercise 1 — Simple condition on a fact
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -67,29 +67,29 @@ Créez `lab.yml` :
       when: ansible_distribution_major_version | int >= 9
 ```
 
-**Lancez** :
+**Run it**:
 
 ```bash
 ansible-playbook labs/ecrire-code/conditions-when/lab.yml
 ```
 
-🔍 **Observation** : sur AlmaLinux 10.1, les **2 tâches s'exécutent**. Les fichiers
-sont créés sur web1, web2, db1. Si vous aviez un Debian dans le lab, **aucune** des
-deux tâches ne tournerait dessus.
+🔍 **Observation**: on AlmaLinux 9, the **2 tasks run**. The files
+are created on web1, web2, db1. If you had a Debian in the lab, **neither** of the
+two tasks would run on it.
 
-**Pas de `{{ }}` dans `when:`** :
+**No `{{ }}` in `when:`**:
 
 ```yaml
 when: ansible_os_family == "RedHat"     # ✅
 when: "{{ ansible_os_family == 'RedHat' }}"   # ❌ Ansible warning
 ```
 
-## 📚 Exercice 2 — Combiner avec `and`, `or`
+## 📚 Exercise 2 — Combine with `and`, `or`
 
 ```yaml
 - name: AlmaLinux ET version 10
   ansible.builtin.copy:
-    content: "AlmaLinux 10\n"
+    content: "AlmaLinux 9\n"
     dest: /tmp/when-and.txt
     mode: "0644"
   when:
@@ -104,18 +104,18 @@ when: "{{ ansible_os_family == 'RedHat' }}"   # ❌ Ansible warning
   when: ansible_distribution == "RedHat" or ansible_distribution == "AlmaLinux"
 ```
 
-🔍 **Observation** : la **liste sous `when:`** (forme YAML avec tirets) est un **AND
-implicite** entre les conditions. Pour faire un `OR`, il faut écrire l'opérateur
-explicitement sur une seule ligne.
+🔍 **Observation**: the **list under `when:`** (YAML form with dashes) is an **implicit
+AND** between the conditions. To do an `OR`, you must write the operator
+explicitly on a single line.
 
-**Parenthèses pour la priorité** :
+**Parentheses for priority**:
 
 ```yaml
 when: (ansible_os_family == "RedHat" and ansible_distribution_major_version | int >= 9) or
       (ansible_os_family == "Debian" and ansible_distribution_major_version | int >= 11)
 ```
 
-## 📚 Exercice 3 — Tester la définition d'une variable
+## 📚 Exercise 3 — Test the definition of a variable
 
 ```yaml
 - name: Tache si optional_var defini
@@ -133,25 +133,25 @@ when: (ansible_os_family == "RedHat" and ansible_distribution_major_version | in
   when: optional_var is not defined
 ```
 
-**Lancez d'abord SANS la variable** :
+**Run it first WITHOUT the variable**:
 
 ```bash
 ansible-playbook labs/ecrire-code/conditions-when/lab.yml
 ```
 
-🔍 **Observation** : seule la deuxième tâche tourne (`/tmp/when-undefined.txt`
-créé, `/tmp/when-defined.txt` skippé).
+🔍 **Observation**: only the second task runs (`/tmp/when-undefined.txt`
+created, `/tmp/when-defined.txt` skipped).
 
-**Relancez AVEC la variable** :
+**Rerun WITH the variable**:
 
 ```bash
 ansible-playbook labs/ecrire-code/conditions-when/lab.yml \
   --extra-vars "optional_var=hello"
 ```
 
-🔍 **Observation** : c'est l'inverse — le fichier `when-defined.txt` est créé.
+🔍 **Observation**: it is the opposite, the `when-defined.txt` file is created.
 
-## 📚 Exercice 4 — Tests sur les types (`is mapping`, `is sequence`)
+## 📚 Exercise 4 — Type tests (`is mapping`, `is sequence`)
 
 ```yaml
 - name: Tester le type de variable
@@ -176,17 +176,17 @@ ansible-playbook labs/ecrire-code/conditions-when/lab.yml \
       when: config_string is string
 ```
 
-🔍 **Observation** : tests utiles pour des **tâches polymorphes** qui acceptent une
-string OU une liste, par exemple. Combiné avec `default`, on peut écrire :
+🔍 **Observation**: useful tests for **polymorphic tasks** that accept a
+string OR a list, for example. Combined with `default`, you can write:
 
 ```yaml
 loop: "{{ packages if packages is sequence else [packages] }}"
 ```
 
-Ce pattern accepte `packages: nginx` (string unique) **ou** `packages: [nginx, redis]`
-(liste).
+This pattern accepts `packages: nginx` (single string) **or** `packages: [nginx, redis]`
+(list).
 
-## 📚 Exercice 5 — Conditionner une boucle (`when:` sur l'item)
+## 📚 Exercise 5 — Condition a loop (`when:` on the item)
 
 ```yaml
 - name: Creer uniquement les services enabled
@@ -199,10 +199,10 @@ Ce pattern accepte `packages: nginx` (string unique) **ou** `packages: [nginx, r
   when: item.enabled
 ```
 
-🔍 **Observation** : `when:` peut référencer **`item`** dans une boucle. La tâche
-saute redis (`enabled: false`) — c'est `skipped`, pas `changed`.
+🔍 **Observation**: `when:` can reference **`item`** in a loop. The task
+skips redis (`enabled: false`), it is `skipped`, not `changed`.
 
-**Combinaison avec un fact** :
+**Combination with a fact**:
 
 ```yaml
 loop: "{{ services }}"
@@ -212,9 +212,9 @@ when:
   - item.os_compatible | default(['all']) | contains(ansible_distribution)
 ```
 
-## 📚 Exercice 6 — Le piège : type bool vs string
+## 📚 Exercise 6 — The trap: bool vs string type
 
-Cas surprenant : `when: app_enabled` peut **toujours être vrai** même quand on attend
+Surprising case: `when: app_enabled` can **always be true** even when you expect
 "false".
 
 ```yaml
@@ -236,60 +236,60 @@ Cas surprenant : `when: app_enabled` peut **toujours être vrai** même quand on
       # OK : ne tourne pas
 ```
 
-🔍 **Observation** : `when: "false"` (string) → **truthy** (toute string non-vide
-est truthy). `when: false` (bool) → falsy.
+🔍 **Observation**: `when: "false"` (string) → **truthy** (any non-empty string
+is truthy). `when: false` (bool) → falsy.
 
-**Source du piège** : `--extra-vars "app_enabled=false"` passe une **string** (la CLI
-ne fait pas de typage YAML). La valeur réelle est `"false"`, pas `False`.
+**Source of the trap**: `--extra-vars "app_enabled=false"` passes a **string** (the CLI
+does no YAML typing). The real value is `"false"`, not `False`.
 
-**Solution** : forcer le bool avec le filtre `bool` :
+**Solution**: force the bool with the `bool` filter:
 
 ```yaml
 when: app_enabled | bool
 ```
 
-`| bool` reconnaît `'true'`, `'yes'`, `'1'` comme vrai et `'false'`, `'no'`, `'0'`
-comme faux.
+`| bool` recognizes `'true'`, `'yes'`, `'1'` as true and `'false'`, `'no'`, `'0'`
+as false.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`when:`** = expression Jinja2 **sans `{{ }}`**.
-- **Liste sous `when:`** = AND implicite entre les éléments.
-- **`is defined` / `is not defined`** = tester l'existence d'une variable.
-- **`is mapping` / `is sequence` / `is string`** = tester le type.
-- **`when: var | bool`** = forcer la conversion en bool (évite le piège string truthy).
-- **`when:` dans un `loop:`** = filtre par item, pas par tâche.
+- **`when:`** = Jinja2 expression **without `{{ }}`**.
+- **List under `when:`** = implicit AND between the elements.
+- **`is defined` / `is not defined`** = test the existence of a variable.
+- **`is mapping` / `is sequence` / `is string`** = test the type.
+- **`when: var | bool`** = force the conversion to bool (avoids the string truthy trap).
+- **`when:` in a `loop:`** = filter by item, not by task.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous avez un playbook qui doit tourner sur **RHEL 9+** **OU** **Debian 11+**.
-   Comment écrivez-vous le `when:` (combinaison `and` / `or` / parenthèses) ?
+1. You have a playbook that must run on **RHEL 9+** **OR** **Debian 11+**.
+   How do you write the `when:` (combination of `and` / `or` / parentheses)?
 
-2. `when: my_dict.field is defined` retourne **vrai** même quand `my_dict.field`
-   est `null`. Quelle est la différence entre "défini" et "non null" ?
+2. `when: my_dict.field is defined` returns **true** even when `my_dict.field`
+   is `null`. What is the difference between "defined" and "not null"?
 
-3. Pourquoi `--extra-vars "app_enabled=false"` peut-il faire **tourner** une tâche
-   conditionnée par `when: app_enabled` ? Quelle est la mitigation propre ?
+3. Why can `--extra-vars "app_enabled=false"` make a task
+   conditioned by `when: app_enabled` **run**? What is the clean mitigation?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`when:` sur un block** : applique la condition à toutes les tâches du block.
-  Plus DRY que de répéter la même condition sur 5 tâches.
-- **`failed_when:` + `when:`** : combiner pour fabriquer une logique d'audit
-  complexe (ex : échouer si un fichier obligatoire est absent ET sur RHEL 9+).
-- **Tests custom** (`is regex`, `is search`) : matcher une regex sur une string.
+- **`when:` on a block**: applies the condition to all the tasks of the block.
+  More DRY than repeating the same condition on 5 tasks.
+- **`failed_when:` + `when:`**: combine to build a complex audit
+  logic (ex: fail if a mandatory file is absent AND on RHEL 9+).
+- **Custom tests** (`is regex`, `is search`): match a regex on a string.
   `when: ansible_kernel is search('5\\.14')`.
-- **Pattern `vars_prompt:` + `when:`** : conditionner sur une réponse interactive
-  utilisateur (rare mais utile pour des plays one-shot).
+- **`vars_prompt:` + `when:` pattern**: condition on an interactive user
+  answer (rare but useful for one-shot plays).
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 # Lint de votre fichier de lab (tutoriel guidé)
@@ -302,9 +302,9 @@ ansible-lint labs/ecrire-code/conditions-when/challenge/solution.yml
 ansible-lint --profile production labs/ecrire-code/conditions-when/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

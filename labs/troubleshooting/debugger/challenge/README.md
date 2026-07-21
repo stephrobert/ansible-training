@@ -1,25 +1,25 @@
-# 🎯 Challenge — Fix d'une variable manquante via le débogueur
+# 🎯 Challenge — Fixing a missing variable with the debugger
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire un playbook qui **échoue volontairement** sur une variable `target_dir` non définie, puis utiliser le **débogueur Ansible** pour **injecter la variable au runtime** (`task_vars['target_dir'] = '/tmp'`) et faire passer la tâche **sans modifier le YAML**.
+Write a playbook that **fails on purpose** on an undefined `target_dir` variable, then use the **Ansible debugger** to **inject the variable at runtime** (`task_vars['target_dir'] = '/tmp'`) and make the task pass **without modifying the YAML**.
 
-| Élément | Valeur attendue |
+| Item | Expected value |
 | --- | --- |
-| Hôte cible | `db1.lab` |
-| Fichier produit | `/tmp/lab90-debug.txt` |
+| Target host | `db1.lab` |
+| Produced file | `/tmp/lab90-debug.txt` |
 | Permissions | `0644`, owner `root` |
-| Contenu | "Debugger fix au runtime — lab 90 OK" |
-| Mécanisme | `debugger: on_failed` activé sur la task qui copie |
+| Content | "Debugger fix au runtime — lab 90 OK" |
+| Mechanism | `debugger: on_failed` enabled on the copy task |
 
-> ⚠️ **Mode interactif** : ce challenge nécessite un terminal interactif.
-> Pour la **validation pytest**, le `solution.yml` final doit avoir
-> `target_dir` correctement défini en `vars:` (pas la version cassée
-> avec débogueur — pytest tournera après votre fix).
+> ⚠️ **Interactive mode**: this challenge requires an interactive terminal.
+> For the **pytest validation**, the final `solution.yml` must have
+> `target_dir` correctly defined in `vars:` (not the broken version
+> with the debugger: pytest runs after your fix).
 
-## 🧩 Indices
+## 🧩 Hints
 
-### Étape 1 — Squelette `solution.yml`
+### Step 1 — `solution.yml` skeleton
 
 ```yaml
 ---
@@ -28,7 +28,7 @@
   become: ???
   gather_facts: false
   vars:
-    target_dir: ???                 # ← après votre debug, fixer ici à /tmp
+    target_dir: ???                 # ← after your debug, set it here to /tmp
 
   tasks:
     - name: Déposer la preuve
@@ -38,53 +38,56 @@
         mode: ???
 ```
 
-### Étape 2 — Workflow recommandé
+### Step 2 — Recommended workflow
 
-1. **Phase 1 (debug interactif)** : commencer **sans** `vars: { target_dir: /tmp }`,
-   activer `debugger: on_failed`, observer l'échec, injecter au runtime via
+1. **Phase 1 (interactive debug)**: start **without** `vars: { target_dir: /tmp }`,
+   enable `debugger: on_failed`, observe the failure, inject at runtime via
    `task_vars['target_dir'] = '/tmp'` + `update_task` + `redo`.
 
-2. **Phase 2 (fix permanent)** : une fois la cause comprise, **éditer le YAML**
-   pour définir `vars: { target_dir: /tmp }` proprement et **retirer**
-   `debugger: on_failed` (qui n'a pas sa place en code de prod).
+2. **Phase 2 (permanent fix)**: once the cause is understood, **edit the YAML**
+   to define `vars: { target_dir: /tmp }` cleanly and **remove**
+   `debugger: on_failed` (which has no place in production code).
 
-### Étape 3 — Commandes du REPL
+### Step 3 — REPL commands
 
-| Commande | Effet |
+| Command | Effect |
 | --- | --- |
-| `p task_vars['target_dir']` | inspecte (devrait dire `undefined`) |
-| `task_vars['target_dir'] = '/tmp'` | injecte la variable |
-| `update_task` ou `u` | recrée la tâche avec les nouvelles vars |
-| `redo` ou `r` | rejoue la tâche |
-| `continue` ou `c` | passe à la suivante |
-| `quit` ou `q` | abandonne |
+| `p task_vars['target_dir']` | inspect (should say `undefined`) |
+| `task_vars['target_dir'] = '/tmp'` | injects the variable |
+| `update_task` or `u` | recreates the task with the new vars |
+| `redo` or `r` | replays the task |
+| `continue` or `c` | moves to the next one |
+| `quit` or `q` | aborts |
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **`debugger: on_failed`** déclenche le debug interactif **seulement
->   si** la tâche échoue. Pour debug même en succès : `debugger:
+> - **`debugger: on_failed`** triggers the interactive debug **only
+>   if** the task fails. To debug even on success: `debugger:
 >   always`.
-> - **Niveau task vs play** : `debugger:` peut être au play-level (toutes
->   les tâches) ou task-level (cette tâche seulement). Préférer
->   task-level — moins intrusif.
-> - **REPL bloqué en CI** : `debugger:` ne fonctionne **que** dans un
->   terminal interactif (TTY). En CI/cron, désactiver via
->   `ANSIBLE_DEBUGGER_IGNORE_ERRORS=true` ou supprimer la directive.
-> - **Variables modifiées via `task_vars[...]`** ne persistent pas
->   au-delà de la tâche. Pour persister : `set_fact` dans une tâche
->   suivante.
+> - **Task vs play level**: `debugger:` can be at play-level (all
+>   tasks) or task-level (this task only). Prefer
+>   task-level: less intrusive.
+> - **REPL blocked in CI**: `debugger:` works **only** in an
+>   interactive terminal (TTY). In CI/cron, disable it via
+>   `ANSIBLE_ENABLE_TASK_DEBUGGER=false`, or remove the directive.
+>   Do not confuse it with `ANSIBLE_TASK_DEBUGGER_IGNORE_ERRORS`, which does the
+>   OPPOSITE: it invokes the debugger even on a task carrying
+>   `ignore_errors: true`.
+> - **Variables modified via `task_vars[...]`** do not persist
+>   beyond the task. To persist them: `set_fact` in a
+>   later task.
 
-## 🚀 Lancement
+## 🚀 Running
 
-Depuis la racine du repo :
+From the repo root:
 
 ```bash
 ansible-playbook labs/troubleshooting/debugger/challenge/solution.yml
 ```
 
-(la version finale **avec** `vars: { target_dir: /tmp }`, sans débogueur).
+(the final version **with** `vars: { target_dir: /tmp }`, without the debugger).
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/troubleshooting/debugger/challenge/tests/
@@ -93,11 +96,11 @@ pytest -v labs/troubleshooting/debugger/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/troubleshooting/debugger/ clean
+dsoxlab clean troubleshooting-debugger
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- Activer le débogueur **globalement** : `ANSIBLE_ENABLE_TASK_DEBUGGER=True ansible-playbook lab.yml`.
-- `debugger: always` : ouvre le REPL **après chaque tâche** (lent, utile en TDD).
-- **`ansible-lint`** : `ansible-lint --profile production challenge/solution.yml` doit retourner vert.
+- Enable the debugger **globally**: `ANSIBLE_ENABLE_TASK_DEBUGGER=True ansible-playbook lab.yml`.
+- `debugger: always`: opens the REPL **after each task** (slow, useful in TDD).
+- **`ansible-lint`**: `ansible-lint --profile production challenge/solution.yml` must return green.

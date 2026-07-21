@@ -1,0 +1,4 @@
+---
+id: bootstrap-prepare-managed-nodes
+title: "Préparer les managed nodes Ansible"
+description: "Converger les 5 prérequis d'un managed node (Python 3, SSH, sudo NOPASSWD, chrony, SELinux) via un playbook de bootstrap idempotent."

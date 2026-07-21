@@ -1,48 +1,48 @@
-# Lab 12 — Variables (déclaration et portées)
+# Lab 12 — Variables (declaration and scopes)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Variables Ansible : déclaration, portées et types simples**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/variables-base/)
+🔗 [**Ansible variables: declaration, scopes and simple types**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/variables-base/)
 
-Ansible offre **5 emplacements principaux** pour déclarer une variable : `vars:` (dans
-le play), `vars_files:` (fichiers externes), `group_vars/`, `host_vars/`, et
-`--extra-vars` (CLI). Chaque emplacement a une **priorité** différente — comprendre
-ces priorités est crucial pour ne pas être surpris quand une variable "ne prend pas
-la valeur attendue".
+Ansible offers **5 main locations** to declare a variable: `vars:` (in the
+play), `vars_files:` (external files), `group_vars/`, `host_vars/`, and
+`--extra-vars` (CLI). Each location has a different **priority**: understanding
+these priorities is crucial to avoid being surprised when a variable "does not
+take the expected value".
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Déclarer** une variable au niveau play (`vars:`).
-2. **Externaliser** des variables dans un fichier (`vars_files:`).
-3. **Surcharger** depuis la CLI avec `--extra-vars` et observer la priorité absolue.
-4. **Distinguer** les types simples (string, int, float, bool) et leurs pièges YAML.
-5. **Diagnostiquer** un cas où une variable ne prend pas la valeur attendue.
+1. **Declare** a variable at play level (`vars:`).
+2. **Externalize** variables into a file (`vars_files:`).
+3. **Override** from the CLI with `--extra-vars` and observe absolute priority.
+4. **Distinguish** simple types (string, int, float, bool) and their YAML pitfalls.
+5. **Diagnose** a case where a variable does not take the expected value.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 mkdir -p labs/ecrire-code/variables-base/vars
 ansible web1.lab -m ping
 ```
 
-## 📚 Exercice 1 — Variable au niveau play (`vars:`)
+## 📚 Exercise 1 — Variable at play level (`vars:`)
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -58,18 +58,18 @@ Créez `lab.yml` :
         msg: "version={{ app_version }} env={{ app_env }}"
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/ecrire-code/variables-base/lab.yml
 ```
 
-🔍 **Observation** : la sortie debug affiche `version=1.0 env=dev`. Ces variables
-n'existent **que pour ce play** — un autre play du même fichier ne les verrait pas.
+🔍 **Observation**: the debug output shows `version=1.0 env=dev`. These variables
+exist **only for this play**: another play in the same file would not see them.
 
-## 📚 Exercice 2 — Externaliser dans `vars_files:`
+## 📚 Exercise 2 — Externalize into `vars_files:`
 
-Créez `vars/app.yml` :
+Create `vars/app.yml`:
 
 ```yaml
 ---
@@ -78,7 +78,7 @@ app_protocol: "http"
 app_replicas: 3
 ```
 
-Modifiez `lab.yml` pour ajouter `vars_files:` :
+Modify `lab.yml` to add `vars_files:`:
 
 ```yaml
 ---
@@ -101,71 +101,72 @@ Modifiez `lab.yml` pour ajouter `vars_files:` :
           replicas={{ app_replicas }}
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/ecrire-code/variables-base/lab.yml
 ```
 
-🔍 **Observation** : les variables de `vars_files:` sont **chargées en plus** des
-`vars:` du play — pas de conflit, complémentarité. **Pourquoi externaliser ?**
+🔍 **Observation**: the variables from `vars_files:` are **loaded in addition** to
+the play's `vars:`: no conflict, complementarity. **Why externalize?**
 
-- Réutiliser le même fichier dans plusieurs plays.
-- Versionner les configs métier (DEV/STAGING/PROD) dans des fichiers séparés.
-- Permettre à un opérateur de modifier `vars/app.yml` sans toucher au playbook.
+- Reuse the same file across multiple plays.
+- Version business configs (DEV/STAGING/PROD) in separate files.
+- Let an operator modify `vars/app.yml` without touching the playbook.
 
-## 📚 Exercice 3 — Override avec `--extra-vars` (priorité absolue)
+## 📚 Exercise 3 — Override with `--extra-vars` (absolute priority)
 
 ```bash
 ansible-playbook labs/ecrire-code/variables-base/lab.yml \
   --extra-vars "app_env=prod app_version=2.0"
 ```
 
-🔍 **Observation** : `app_env` et `app_version` ont changé (`prod`, `2.0`) — mais
-`app_port` reste à `80`, `app_protocol` à `http`, `app_replicas` à `3` (vous ne les
-avez pas surchargés).
+🔍 **Observation**: `app_env` and `app_version` changed (`prod`, `2.0`), but
+`app_port` stays at `80`, `app_protocol` at `http`, `app_replicas` at `3` (you
+did not override them).
 
-**`--extra-vars` (niveau 22)** est la **priorité absolue** dans la précédence Ansible.
-Aucun autre emplacement ne peut le surcharger. C'est l'**arme du dépannage en
-production** : un opérateur force une valeur précise sans modifier le code.
+**`--extra-vars` (level 22)** is the **absolute priority** in Ansible
+precedence. No other location can override it. It is the **production
+troubleshooting weapon**: an operator forces a precise value without modifying
+the code.
 
-**Variantes utiles** de `--extra-vars` :
+**Useful variants** of `--extra-vars`:
 
 ```bash
-# JSON (pour des valeurs complexes)
+# JSON (for complex values)
 --extra-vars '{"app_env":"prod","app_version":"2.0","tags":["v2","stable"]}'
 
-# Depuis un fichier
+# From a file
 --extra-vars "@vars/prod-override.yml"
 ```
 
-## 📚 Exercice 4 — Pièges YAML sur les types
+## 📚 Exercise 4 — YAML pitfalls on types
 
-YAML est strict mais surprend parfois. Créez `vars/types.yml` :
+YAML is strict but sometimes surprising. Create `vars/types.yml`:
 
 ```yaml
 ---
-# String simple
+# Simple string
 app_name: "myapp"
 
-# Integer (pas de guillemets)
+# Integer (no quotes)
 app_port: 8080
 
-# Boolean (yes/no rejetes en YAML 1.2 strict — utiliser true/false)
+# Boolean (yes/no rejected in strict YAML 1.2, use true/false)
 app_debug: true
 
 # Float
 app_ratio: 0.5
 
-# String qui RESSEMBLE a un nombre — guillemets obligatoires sinon perte du 0 leading
+# String that LOOKS LIKE a number, quotes mandatory otherwise the leading 0 is lost
 app_id: "0042"
 
-# String qui ressemble a un boolean (piege classique)
-app_yes_no: "yes"  # Sans guillemets, devient bool true en YAML 1.1
+# String that looks like a boolean (classic trap)
+app_yes_no: "yes"  # Without quotes, becomes bool true in YAML 1.1
 ```
 
-Modifiez `lab.yml` pour charger `vars/types.yml` et afficher les types via le filtre
-`type_debug` :
+Modify `lab.yml` to load `vars/types.yml` and display the types via the
+`type_debug` filter:
 
 ```yaml
 - name: Afficher type Python de chaque variable
@@ -180,28 +181,29 @@ Modifiez `lab.yml` pour charger `vars/types.yml` et afficher les types via le fi
     - app_yes_no
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
 - `app_name` → `str` (string)
-- `app_port` → `int` (entier, pas string !)
+- `app_port` → `int` (integer, not string!)
 - `app_debug` → `bool`
 - `app_ratio` → `float`
-- `app_id` → `str` (les guillemets ont préservé "0042")
-- `app_yes_no` → `str` (parce qu'on a mis des guillemets)
+- `app_id` → `str` (the quotes preserved "0042")
+- `app_yes_no` → `str` (because we used quotes)
 
-**Sans les guillemets** sur `app_id`, vous auriez `int 42` (perte du `00` leading) —
-un classique. Sur `app_yes_no` sans guillemets, `bool True` au lieu de `str "yes"`.
+**Without quotes** on `app_id`, you would get `int 42` (loss of the leading
+`00`): a classic. On `app_yes_no` without quotes, `bool True` instead of
+`str "yes"`.
 
-## 📚 Exercice 5 — Cas réel : pourquoi ma variable n'a pas la bonne valeur ?
+## 📚 Exercise 5 — Real case: why doesn't my variable have the right value?
 
-Reproduire un piège fréquent. Créez `vars/conflict.yml` :
+Reproduce a common pitfall. Create `vars/conflict.yml`:
 
 ```yaml
 ---
 app_env: "from_vars_files"
 ```
 
-Modifiez `lab.yml` :
+Modify `lab.yml`:
 
 ```yaml
 ---
@@ -217,84 +219,96 @@ Modifiez `lab.yml` :
         var: app_env
 ```
 
-**Avant de lancer**, **devinez** : qui gagne, `from_play_vars` ou `from_vars_files` ?
+**Before running**, **guess**: which wins, `from_play_vars` or `from_vars_files`?
 
 ```bash
 ansible-playbook labs/ecrire-code/variables-base/lab.yml
 ```
 
-🔍 **Observation** : `from_play_vars` gagne. Pourquoi ? Parce que dans la précédence
-Ansible, **`vars:` du play (niveau 14)** bat **`vars_files:` (niveau 13)**.
+🔍 **Observation**: `from_vars_files` wins, and that is the **good surprise** of
+this lab. In Ansible precedence, **`vars_files:` (level 14)** beats **the play's
+`vars:` (level 12)**. Intuition says the opposite: `vars:` is written in the
+play, right in front of you, so it should take priority. But level alone
+decides, and the loaded file is higher.
 
-**Lancez maintenant avec `--extra-vars`** :
+**The common pitfall is therefore quite real, it simply goes the other way**: it
+is not your `vars_files:` that is ignored, it is your `vars:`. When a play value
+"does not take", look for a `vars_files:` before blaming Ansible.
+
+**Now run with `--extra-vars`**:
 
 ```bash
 ansible-playbook labs/ecrire-code/variables-base/lab.yml \
   --extra-vars "app_env=from_extra_vars"
 ```
 
-🔍 **Observation** : `from_extra_vars` gagne. **Niveau 22 (`--extra-vars`)** bat tout.
+🔍 **Observation**: `from_extra_vars` wins. **Level 22 (`--extra-vars`)** beats
+everything.
 
-C'est exactement le sujet du **lab 15 (precedence-variables)** qui couvre les 22 niveaux
-en détail.
+This is exactly the topic of **lab 15 (precedence-variables)**, which covers the
+22 levels in detail.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`vars:`** dans le play = portée play, prio moyenne (niveau 14).
-- **`vars_files:`** = idem mais en fichier externe (niveau 13, juste en dessous).
-- **`--extra-vars`** = priorité absolue (niveau 22), surcharge tout.
-- **YAML strict** : `yes/no` interprétés comme booléens — utiliser `true/false`.
-- **Strings numériques** (IDs, numéros de version) : **toujours** entre guillemets.
-- **`type_debug`** est l'outil de diagnostic n°1 quand "ma variable est bizarre".
+- **`vars:`** in the play = play scope, medium priority (level 12).
+- **`vars_files:`** = same but in an external file (level 14, just **above**:
+  the file **beats** the play, against all intuition).
+- **`--extra-vars`** = absolute priority (level 22), overrides everything.
+- **Strict YAML**: `yes/no` interpreted as booleans: use `true/false`.
+- **Numeric strings** (IDs, version numbers): **always** in quotes.
+- **`type_debug`** is the #1 diagnostic tool when "my variable is weird".
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voulez qu'un opérateur puisse forcer `app_env=prod` lors d'un run d'urgence
-   sans toucher au code. Quelle approche : modifier `vars:`, ajouter un `vars_files:`,
-   ou utiliser `--extra-vars` ? Pourquoi ?
+1. You want an operator to be able to force `app_env=prod` during an emergency
+   run without touching the code. Which approach: modify `vars:`, add a
+   `vars_files:`, or use `--extra-vars`? Why?
 
-2. Un collègue pose `app_port: 8080` (sans guillemets) puis utilise cette variable
-   dans une commande `curl http://localhost:{{ app_port }}/health`. Pas de problème.
-   Mais sur `app_id: 0042`, il lit `42` au lieu de `0042` dans son template.
-   Quelle est la différence et comment l'éviter ?
+2. A colleague sets `app_port: 8080` (no quotes) then uses this variable in a
+   `curl http://localhost:{{ app_port }}/health` command. No problem. But on
+   `app_id: 0042`, they read `42` instead of `0042` in their template. What is
+   the difference and how to avoid it?
 
-3. Pourquoi `vars:` du play (niveau 14) bat-il `vars_files:` (niveau 13), alors qu'on
-   pourrait imaginer le contraire (vars_files plus "officiel" car externalisé) ?
+3. Why does `vars_files:` (level 14) beat the play's `vars:` (level 12), when one
+   could imagine the opposite (the `vars:` is written in the play, so "closer")?
+   Hint: which of the two carries an **operational decision**, and which carries
+   a **default**?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`include_vars:`** : charger des vars **dynamiquement** au runtime (selon une condition,
-  selon un OS détecté). Différent de `vars_files:` qui est statique.
-- **`set_fact:`** : créer une variable **côté managed node** pendant le play (niveau 18,
-  bat le play vars). Voir lab 16.
-- **`lookup('env', 'VAR')`** : lire une variable d'environnement du control node.
-  Voir lab 17 (lookups).
-- **Pattern `ansible_<env>.yml`** : un fichier de vars par environnement, chargé via
-  `vars_files: - "vars/{{ env }}.yml"` avec `env` passé en `--extra-vars`.
+- **`include_vars:`**: load vars **dynamically** at runtime (based on a condition,
+  based on a detected OS). Different from `vars_files:` which is static, and
+  stronger than it (level 18 versus 14).
+- **`set_fact:`**: create a variable **on the managed node** during the play
+  (level 19, beats the play vars like vars_files does). See lab 16.
+- **`lookup('env', 'VAR')`**: read an environment variable from the control node.
+  See lab 17 (lookups).
+- **`ansible_<env>.yml` pattern**: one vars file per environment, loaded via
+  `vars_files: - "vars/{{ env }}.yml"` with `env` passed via `--extra-vars`.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/ecrire-code/variables-base/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/ecrire-code/variables-base/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/ecrire-code/variables-base/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

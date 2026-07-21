@@ -1,0 +1,23 @@
+---
+# Mise en place du lab chiffrer-fichier-variable : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup chiffrer-fichier-variable lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (chiffrer-fichier-variable)
+      ansible.builtin.file:
+        path: "/tmp/lab78-challenge.txt"
+        state: "absent"
+      failed_when: false
+
+- name: Brief the learner (chiffrer-fichier-variable)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Encrypt a single value with encrypt_string, mix it with plaintext variables via the !vault tag, and choose between inline and whole-file
+      run_once: true

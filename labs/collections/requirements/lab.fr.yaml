@@ -1,0 +1,4 @@
+---
+id: collections-requirements
+title: "requirements.yml multi-sources et signatures GPG"
+description: "Déclarer quatre sources dans un requirements.yml, épingler chaque version, vérifier l'intégrité et cibler plusieurs serveurs Galaxy."

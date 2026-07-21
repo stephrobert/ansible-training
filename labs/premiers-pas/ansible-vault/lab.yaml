@@ -1,0 +1,32 @@
+---
+id: premiers-pas-ansible-vault
+title: "First steps with ansible-vault"
+description: "Encrypt a secrets file with ansible-vault, consume it through vars_files and protect output with no_log and a 0600 .vault_password."
+section: premiers-pas
+level: l1
+difficulty: beginner
+lab_type: lab
+estimated_time: "45m"
+skills:
+  - vault-encrypt
+  - vault-password-file
+  - no-log
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas/premiers-pas-ansible-vault/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

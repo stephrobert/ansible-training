@@ -1,0 +1,4 @@
+---
+id: collections-decouvrir
+title: "Explorer les collections Ansible : FQCN et structure"
+description: "Lister et inspecter les collections installées, lire un galaxy.yml, parcourir la structure plugins/roles/playbooks et retrouver un module par son FQCN."

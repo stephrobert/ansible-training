@@ -1,30 +1,39 @@
-# 🎯 Challenge — Module `uri:` (appels API + parsing JSON)
+# 🎯 Challenge — Module `uri:` (API calls + JSON parsing)
 
-## ✅ Objectif
+## ✅ Objective
 
-Sur **db1.lab**, faire 2 appels HTTP avec **`ansible.builtin.uri`** :
+On **db1.lab**, make 2 HTTP calls with **`ansible.builtin.uri`** to the internal
+inventory API of the lab, served by **`api-interne.lab:8009`**:
 
-| # | URL | Méthode | Particularité |
+| # | URL | Method | Specificity |
 | --- | --- | --- | --- |
-| 1 | `https://httpbin.org/json` | GET | Capture JSON, écrit vers `/opt/lab-uri-get.json` |
-| 2 | `https://httpbin.org/post` | POST | Body JSON `{name: rhce, version: 2026}`, écrit la réponse vers `/opt/lab-uri-post.json` |
+| 1 | `http://api-interne.lab:8009/api/reference` | GET | Captures JSON, writes to `/opt/lab-uri-get.json` |
+| 2 | `http://api-interne.lab:8009/api/noeuds` | POST | JSON body `{name: rhce, version: 2026}`, writes the response to `/opt/lab-uri-post.json` |
 
-Pas de `command: curl`. Tout via le module Ansible.
+No `command: curl`. Everything through the Ansible module.
 
-## 🧩 Étapes
+> 🔎 **The API runs in the lab, not on the Internet.** `setup.yaml` sets it up
+> (nginx on web2.lab) and publishes the name `api-interne.lab` in the
+> `/etc/hosts` of db1. The lab therefore needs no outbound access. The server
+> **logs every call**: the tests re-read this log, and therefore see whether
+> the request really went out, and with which agent.
 
-1. **GET** `https://httpbin.org/json` :
-   - `return_content: true` pour capturer le body.
+## 🧩 Steps
+
+1. **GET** `http://api-interne.lab:8009/api/reference`:
+   - `return_content: true` to capture the body.
    - `register: get_response`.
-   - **Écrire** `get_response.content` dans `/opt/lab-uri-get.json` via `copy:
+   - **Write** `get_response.content` to `/opt/lab-uri-get.json` via `copy:
      content:`.
-2. **POST** `https://httpbin.org/post` avec body `{name: rhce, version: 2026}` :
-   - `body_format: json`, `body:` un dict YAML.
-   - `status_code: [200, 201]` (httpbin renvoie 200).
+2. **POST** `http://api-interne.lab:8009/api/noeuds` with body
+   `{name: rhce, version: 2026}`:
+   - `body_format: json`, `body:` a YAML dict.
+   - **`status_code: [200, 201]`**: the API answers **201 (Created)**. The
+     module default is `[200]`: without this line, the task **fails**.
    - `register: post_response`.
-   - **Écrire** `post_response.json | to_json` dans `/opt/lab-uri-post.json`.
+   - **Write** `post_response.json | to_nice_json` to `/opt/lab-uri-post.json`.
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -33,7 +42,7 @@ Pas de `command: curl`. Tout via le module Ansible.
   become: true
 
   tasks:
-    - name: GET sur httpbin /json
+    - name: GET sur l endpoint de reference
       ansible.builtin.uri:
         url: ???
         method: ???
@@ -46,7 +55,7 @@ Pas de `command: curl`. Tout via le module Ansible.
         dest: ???
         mode: "0644"
 
-    - name: POST sur httpbin /post avec body JSON
+    - name: POST pour declarer le noeud, avec body JSON
       ansible.builtin.uri:
         url: ???
         method: ???
@@ -65,28 +74,34 @@ Pas de `command: curl`. Tout via le module Ansible.
         mode: "0644"
 ```
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **`return_content: true`** (défaut `false`) : capture le body de la
->   réponse dans `<var>.content`. Sans, vous n'avez que le code HTTP +
+> - **`return_content: true`** (default `false`): captures the body of the
+>   response in `<var>.content`. Without it, you only have the HTTP code +
 >   headers.
-> - **`status_code:`** = liste de codes acceptés. Par défaut `[200]`. Pour
->   accepter 200 ET 201 : `status_code: [200, 201]`.
-> - **`body_format: json`** : sérialise le `body:` en JSON
->   automatiquement et set `Content-Type: application/json`. Sans, le
->   `body:` est traité comme string.
-> - **`validate_certs:`** : `true` par défaut. Pour les certs
->   auto-signés en lab : `false` (anti-pattern en prod).
+> - **`status_code:`** = list of accepted codes. By default `[200]`. The API of
+>   this lab answers **201** on the POST: `status_code: [200, 201]` is not
+>   decorative, it is what makes the task pass.
+> - **`body_format: json`**: serializes the `body:` into JSON automatically and
+>   sets `Content-Type: application/json`. Without it, the `body:` is treated
+>   as a string.
+> - **The responses of this API are deterministic**: two calls return exactly
+>   the same bytes. You can therefore write the entire response without
+>   breaking idempotence. Facing a real public API, beware: a trace identifier
+>   or a timestamp in the response would make the `copy:` `changed` on every
+>   pass.
 
-## 🚀 Lancement
+## 🚀 Launch
 
 ```bash
 ansible-playbook labs/modules-reseau/uri/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "ls -la /opt/lab-uri-*.json"
 ansible db1.lab -m ansible.builtin.command -a "head -5 /opt/lab-uri-get.json"
+# Did the server see your calls go by?
+ansible web2.lab -b -m ansible.builtin.command -a "cat /var/log/nginx/lab-uri-api.log"
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-reseau/uri/challenge/tests/
@@ -99,17 +114,18 @@ ansible db1.lab -b -m file -a "path=/opt/lab-uri-get.json state=absent"
 ansible db1.lab -b -m file -a "path=/opt/lab-uri-post.json state=absent"
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`until:` + `retries:` + `delay:`** : healthcheck applicatif — répéter
-  l'appel jusqu'à ce qu'il réponde correctement (max N fois).
-- **Authentification** : `url_username` / `url_password` (Basic) ou
-  `headers: Authorization: Bearer ...` (OAuth/JWT).
-- **`creates:`** : skip l'appel si un fichier existe déjà côté managed node
-  (idempotence pour les POST de création).
-- **`dest:`** : enregistre la réponse dans un fichier (équivalent à
-  `register:` + `copy: content:`).
-- **Lint** :
+- **`until:` + `retries:` + `delay:`**: application healthcheck, repeat the
+  call until it responds correctly (at most N times).
+- **Authentication**: `url_username` / `url_password` (Basic) or
+  `headers: Authorization: Bearer ...` (OAuth/JWT). The `get-url` lab
+  demonstrates it on a protected internal repo.
+- **`creates:`**: skip the call if a file already exists on the managed node
+  (idempotence for creation POSTs).
+- **`dest:`**: saves the response into a file (equivalent to `register:` +
+  `copy: content:`).
+- **Lint**:
 
    ```bash
    ansible-lint labs/modules-reseau/uri/challenge/solution.yml

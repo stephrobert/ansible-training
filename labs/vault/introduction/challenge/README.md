@@ -1,34 +1,53 @@
-# 🎯 Challenge — combiner 2 fichiers vault différents dans un seul play
+# 🎯 Challenge — combining 2 different vault files in a single play
 
-Ce challenge utilise **deux fichiers chiffrés** (`db_secrets.yml` et
-`api_secrets.yml`, déjà livrés dans `challenge/`) dans un seul playbook.
-Les deux ont été chiffrés avec le **même mot de passe vault**, fourni
-côté formateur dans `solution/77-…/CREDENTIALS.txt`.
+This challenge uses **two encrypted files** (`db_secrets.yml` and
+`api_secrets.yml`, already delivered in `challenge/`) in a single playbook.
+Both were encrypted with the **same vault password**:
+**`lab77-vault-2026`**.
 
-## ✅ Objectif
+This password is **enforced**, not chosen: the delivered files were
+encrypted with it, so it is the only one that opens them.
 
-Sur **`db1.lab`**, déposer `/tmp/lab77-challenge-result.txt` (mode `0600`)
-qui prouve que les **deux** fichiers chiffrés ont été déchiffrés.
+## ✅ Objective
 
-| Marqueur attendu dans le fichier | Vient de |
+On **`db1.lab`**, deposit `/tmp/lab77-challenge-result.txt` (mode `0600`)
+that proves that **both** encrypted files were decrypted.
+
+| Expected marker in the file | Comes from |
 | --- | --- |
 | `db_user: app_admin` | `db_secrets.yml` |
 | `api_endpoint: https://api.example.com/v1` | `api_secrets.yml` |
-| `ChallengeDB2026` (préfixe du `db_password`) | `db_secrets.yml` |
-| `api_key:` suivi d'une valeur | `api_secrets.yml` |
+| `ChallengeDB2026` (prefix of `db_password`) | `db_secrets.yml` |
+| `challenge_api_xyz789` (the `api_key`) | `api_secrets.yml` |
 
-## 🧩 Squelette à compléter
+## 🧩 Skeleton to complete
 
-Étape 1 — créer `.vault_password` à la racine du lab (mot de passe fourni
-par le formateur ou choisi pour vos propres tests) :
+Step 1: check that the lab vault password is in place. The `.vault_password`
+file is gitignored (a password is never committed), so it is absent from a
+fresh clone. The following command creates it for you:
+
+```bash
+scripts/setup-lab-vault-passwords.sh           # creates the lab's .vault_password
+cat labs/vault/introduction/.vault_password    # → lab77-vault-2026
+```
+
+If you prefer to create it by hand:
 
 ```bash
 cd labs/vault/introduction/
-echo "???" > .vault_password
+printf '%s' "lab77-vault-2026" > .vault_password
 chmod 0600 .vault_password
 ```
 
-Étape 2 — écrire `challenge/solution.yml` :
+Step 2: check that you do open the delivered files:
+
+```bash
+ansible-vault view \
+    --vault-password-file labs/vault/introduction/.vault_password \
+    labs/vault/introduction/challenge/db_secrets.yml
+```
+
+Step 3: write `challenge/solution.yml`:
 
 ```yaml
 ---
@@ -53,21 +72,21 @@ chmod 0600 .vault_password
       no_log: ???                      # niveau task — pas dans copy:
 ```
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
-> - **`vars_files:`** charge les fichiers chiffrés ET non chiffrés —
->   Ansible détecte le header `$ANSIBLE_VAULT` automatiquement.
-> - **Chemins relatifs** : `vars_files: [db_secrets.yml]` cherche depuis
->   `playbook_dir`. Comme votre `solution.yml` est dans `challenge/`, le
->   chemin est juste `db_secrets.yml` (les 2 fichiers chiffrés sont
->   livrés dans le même dossier).
-> - **`no_log: true`** est un keyword **task-level**, pas un paramètre du
->   module `copy:`. Le placer au niveau du module donne une erreur
->   `Unsupported parameters`.
-> - **Mode `0600`** indispensable : un fichier qui contient un password
->   doit être lisible uniquement par root.
+> - **`vars_files:`** loads both encrypted AND unencrypted files:
+>   Ansible detects the `$ANSIBLE_VAULT` header automatically.
+> - **Relative paths**: `vars_files: [db_secrets.yml]` looks from
+>   `playbook_dir`. Since your `solution.yml` is in `challenge/`, the
+>   path is simply `db_secrets.yml` (the 2 encrypted files are
+>   delivered in the same folder).
+> - **`no_log: true`** is a **task-level** keyword, not a parameter of the
+>   `copy:` module. Placing it at the module level raises an
+>   `Unsupported parameters` error.
+> - **Mode `0600`** is essential: a file that contains a password
+>   must be readable only by root.
 
-## 🚀 Lancement
+## 🚀 Launch
 
 ```bash
 ansible-playbook \
@@ -75,9 +94,9 @@ ansible-playbook \
     labs/vault/introduction/challenge/solution.yml
 ```
 
-> Le `conftest.py` injecte automatiquement `--vault-password-file` lors
-> du replay pytest — vous n'avez pas besoin de le repasser pour les
-> tests automatisés.
+> The `conftest.py` automatically injects `--vault-password-file` during
+> the pytest replay: you do not need to pass it again for the automated
+> tests.
 
 ## 🧪 Validation
 
@@ -85,19 +104,21 @@ ansible-playbook \
 pytest -v labs/vault/introduction/challenge/tests/
 ```
 
-5 assertions : fichier existant, mode 0600, db_user, api_endpoint,
-db_password préfixe, api_key présent.
+6 tests: file exists, `db_user`, `api_endpoint`, prefix of the
+`db_password`, `api_key` present, and **idempotence** (a second run of the
+playbook must display `changed=0` everywhere in the `PLAY RECAP`, this is the
+RHCE criterion).
 
 ## 🧹 Reset
 
 ```bash
-make -C labs/vault/introduction/ clean
+dsoxlab clean vault-introduction
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`ansible-vault rekey`** : changer le mot de passe vault sans toucher
-  au contenu (rotation périodique).
-- **`--ask-vault-pass`** : saisie interactive plutôt que fichier.
-- **Vérifier que les fichiers chiffrés sont commitable** : `grep
-  app_admin db_secrets.yml` ne doit retourner **aucun** résultat.
+- **`ansible-vault rekey`**: change the vault password without touching
+  the content (periodic rotation).
+- **`--ask-vault-pass`**: interactive input instead of a file.
+- **Check that the encrypted files are committable**: `grep
+  app_admin db_secrets.yml` must return **no** result.

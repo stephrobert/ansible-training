@@ -1,0 +1,12 @@
+---
+# Reset du lab filtres-jinja-avances : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup filtres-jinja-avances lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (filtres-jinja-avances)
+      ansible.builtin.file:
+        path: "/tmp/filtres-avances.txt"
+        state: "absent"

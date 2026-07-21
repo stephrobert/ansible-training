@@ -1,0 +1,4 @@
+---
+id: collections-creer-custom
+title: "Construire sa propre collection avec un module Python custom"
+description: "Initialiser une collection, renseigner galaxy.yml et meta/runtime.yml, y ajouter un rôle et un module Python documenté, puis builder le tarball."

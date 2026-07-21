@@ -1,0 +1,23 @@
+---
+# Mise en place du lab parallelisme-strategies : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup parallelisme-strategies lab (lab_web1:lab_web2)
+  hosts: lab_web1:lab_web2
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (parallelisme-strategies)
+      ansible.builtin.shell: |
+        rm -f /tmp/serial-*.txt
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (parallelisme-strategies)
+  hosts: lab_web1:lab_web2
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Tell forks from serial, run a rolling update with serial: 1, compare the linear and free strategies and rate-limit a single task with throttle
+      run_once: true

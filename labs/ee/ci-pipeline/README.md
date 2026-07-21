@@ -1,40 +1,40 @@
-# Lab 87 — Pipeline CI/CD pour Execution Environments
+# Lab 87 — CI/CD pipeline for Execution Environments
 
-> 💡 **Pré-requis** :
-> - Lab 86 validé (vous savez builder un EE localement).
-> - Compte GitHub ou GitLab pour exécuter le pipeline.
-> - Accès à un registre OCI : **GHCR** (gratuit avec GitHub) ou **GitLab Registry**.
+> 💡 **Prerequisites**:
+> - Lab 86 completed (you know how to build an EE locally).
+> - GitHub or GitLab account to run the pipeline.
+> - Access to an OCI registry: **GHCR** (free with GitHub) or **GitLab Registry**.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Pipeline CI EE — build, scan, sign, push**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/exec-playbook/#cicd)
+🔗 [**CI EE pipeline: build, scan, sign, push**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/exec-playbook/#pipeline-github-actions)
 
-Un EE en production doit être **rebuildé régulièrement** (CVEs des deps), **scanné** (Trivy), **signé** (cosign / Sigstore) et **publié** sur un registre privé. Ce lab fournit **deux pipelines équivalents** : **GitHub Actions** et **GitLab CI**, en mode 2026 (SHA pinning, permissions minimales, scan en mode bloquant).
+An EE in production must be **rebuilt regularly** (deps CVEs), **scanned** (Trivy), **signed** (cosign / Sigstore) and **published** to a private registry. This lab provides **two equivalent pipelines**: **GitHub Actions** and **GitLab CI**, in 2026 mode (SHA pinning, minimal permissions, blocking scan mode).
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Builder** un EE dans un pipeline avec **`ansible-builder`**.
-2. **Scanner** l'image avec **Trivy** en mode bloquant (`exit-code: 1` sur HIGH/CRITICAL).
-3. **Pousser** vers **GHCR** (GitHub) ou **GitLab Registry**.
-4. **Signer** l'image avec **cosign keyless** (Sigstore + OIDC).
-5. **Pinner** les actions GitHub par **SHA** (zizmor compatible).
-6. Configurer **`permissions: {}`** + **`persist-credentials: false`** (durcissement supply-chain).
+1. **Build** an EE in a pipeline with **`ansible-builder`**.
+2. **Scan** the image with **Trivy** in blocking mode (`exit-code: 1` on HIGH/CRITICAL).
+3. **Push** to **GHCR** (GitHub) or **GitLab Registry**.
+4. **Sign** the image with **cosign keyless** (Sigstore + OIDC).
+5. **Pin** GitHub actions by **SHA** (zizmor compatible).
+6. Configure **`permissions: {}`** + **`persist-credentials: false`** (supply-chain hardening).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training/labs/ee/ci-pipeline/
+cd $ANSIBLE_TRAINING/labs/ee/ci-pipeline/
 
-# Vérifier les fichiers du pipeline
+# Check the pipeline files
 ls -la .github/workflows/build-ee.yml .gitlab-ci.yml
 
-# Lint local (optionnel)
+# Local lint (optional)
 zizmor .github/workflows/build-ee.yml
 ```
 
-## ⚙️ Arborescence
+## ⚙️ Tree
 
 ```text
 labs/ee/ci-pipeline/
@@ -45,49 +45,49 @@ labs/ee/ci-pipeline/
 ├── bindep.txt
 ├── .github/
 │   └── workflows/
-│       └── build-ee.yml             ← pipeline GitHub Actions
-├── .gitlab-ci.yml                   ← pipeline GitLab CI
+│       └── build-ee.yml             ← GitHub Actions pipeline
+├── .gitlab-ci.yml                   ← GitLab CI pipeline
 └── challenge/
     └── tests/
-        └── test_ee_ci.py            ← 8 tests structurels
+        └── test_ee_ci.py            ← 11 structural tests
 ```
 
-## 📚 Exercice 1 — Pipeline GitHub Actions
+## 📚 Exercise 1 — GitHub Actions pipeline
 
-Le workflow [`.github/workflows/build-ee.yml`](.github/workflows/build-ee.yml) fait 4 étapes :
+The [`.github/workflows/build-ee.yml`](.github/workflows/build-ee.yml) workflow does 4 steps:
 
-1. **Build** avec `ansible-builder build --tag $SHA --tag latest`.
-2. **Scan Trivy** : `severity HIGH,CRITICAL`, `exit-code: 1` (bloque le pipeline).
-3. **Push** vers GHCR (`ghcr.io/<owner>/lab87-ee:<sha>`).
-4. **Sign cosign** (keyless OIDC, sans clé locale).
+1. **Build** with `ansible-builder build --tag $SHA --tag latest`.
+2. **Trivy scan**: `severity HIGH,CRITICAL`, `exit-code: 1` (blocks the pipeline).
+3. **Push** to GHCR (`ghcr.io/<owner>/lab87-ee:<sha>`).
+4. **cosign sign** (keyless OIDC, without a local key).
 
-🔍 **Bonnes pratiques 2026 visibles** :
+🔍 **Visible 2026 best practices**:
 
-- **`uses:` pinné par SHA** (40 chars hex), pas par tag — protège contre tag mutation.
-- **`permissions: {}`** au niveau workflow, permissions élevées **uniquement** dans les jobs qui en ont besoin.
-- **`persist-credentials: false`** sur `actions/checkout` — bloque l'usage du token Git après le checkout.
-- **`id-token: write`** uniquement pour le job qui signe avec cosign keyless.
+- **`uses:` pinned by SHA** (40 hex chars), not by tag: protects against tag mutation.
+- **`permissions: {}`** at the workflow level, elevated permissions **only** in the jobs that need them.
+- **`persist-credentials: false`** on `actions/checkout`: blocks use of the Git token after checkout.
+- **`id-token: write`** only for the job that signs with cosign keyless.
 
-## 📚 Exercice 2 — Pipeline GitLab CI équivalent
+## 📚 Exercise 2 — Equivalent GitLab CI pipeline
 
-Le fichier [`.gitlab-ci.yml`](.gitlab-ci.yml) fait les **4 mêmes étapes** :
+The [`.gitlab-ci.yml`](.gitlab-ci.yml) file does the **4 same steps**:
 
 ```yaml
 stages:
-  - build       # ansible-builder dans image quay.io/ansible/ansible-builder:3.1.0
-  - scan        # trivy en image aquasec/trivy:0.59.1
-  - push        # podman dans image quay.io/podman/stable
-  - sign        # cosign dans image gcr.io/projectsigstore/cosign:v2.4.1
+  - build       # ansible-builder in image quay.io/ansible/ansible-builder:3.1.0
+  - scan        # trivy in image aquasec/trivy:0.59.1
+  - push        # podman in image quay.io/podman/stable
+  - sign        # cosign in image gcr.io/projectsigstore/cosign:v2.4.1
 ```
 
-Différence : GitLab CI utilise `$CI_REGISTRY_IMAGE` automatique, alors que GHCR demande l'URL complète `ghcr.io/<owner>/<repo>`.
+Difference: GitLab CI uses the automatic `$CI_REGISTRY_IMAGE`, whereas GHCR requires the full URL `ghcr.io/<owner>/<repo>`.
 
-## 📚 Exercice 3 — Lancer le scan Trivy localement
+## 📚 Exercise 3 — Run the Trivy scan locally
 
-Avant de pousser le code en CI, scannez localement :
+Before pushing the code to CI, scan locally:
 
 ```bash
-# Build local
+# Local build
 ansible-builder build --tag local/lab87-ee:dev --container-runtime podman \
   --file execution-environment.yml --context ./context
 
@@ -95,25 +95,25 @@ ansible-builder build --tag local/lab87-ee:dev --container-runtime podman \
 trivy image --severity HIGH,CRITICAL local/lab87-ee:dev
 ```
 
-🔍 **Observation** : Trivy détecte les CVEs **dans les couches de l'image** (system packages + Python deps). Si une CVE HIGH apparaît, le build CI échoue. Solution : bumper la version pinnée du package vulnérable.
+🔍 **Observation**: Trivy detects CVEs **in the image layers** (system packages + Python deps). If a HIGH CVE appears, the CI build fails. Solution: bump the pinned version of the vulnerable package.
 
-## 📚 Exercice 4 — Signature cosign keyless
+## 📚 Exercise 4 — cosign keyless signature
 
 ```bash
-# En local (nécessite COSIGN_EXPERIMENTAL=1 sur anciennes versions)
+# Locally (requires COSIGN_EXPERIMENTAL=1 on older versions)
 cosign sign --yes ghcr.io/myorg/lab87-ee:abc123
 
-# Vérifier la signature
+# Verify the signature
 cosign verify ghcr.io/myorg/lab87-ee:abc123 \
   --certificate-identity-regexp 'https://github.com/.+/lab87' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
-🔍 **Observation** : **keyless** = pas de clé privée à gérer. cosign utilise l'OIDC token du runner GitHub/GitLab pour s'authentifier auprès de Sigstore (`fulcio.sigstore.dev`). La signature est attestée publiquement dans **Rekor** (transparence log).
+🔍 **Observation**: **keyless** = no private key to manage. cosign uses the GitHub/GitLab runner's OIDC token to authenticate with Sigstore (`fulcio.sigstore.dev`). The signature is publicly attested in **Rekor** (transparency log).
 
-## 📚 Exercice 5 — Politique de pull dans Podman
+## 📚 Exercise 5 — Pull policy in Podman
 
-Pour exiger des images **signées** sur le poste de prod :
+To require **signed** images on the production machine:
 
 ```toml
 # /etc/containers/policy.json
@@ -132,66 +132,66 @@ Pour exiger des images **signées** sur le poste de prod :
 }
 ```
 
-🔍 **Observation** : sans cette policy, n'importe qui pousse une image avec le bon nom et elle est exécutée. Avec la policy, **seules les images signées par votre OIDC d'org** sont autorisées.
+🔍 **Observation**: without this policy, anyone pushes an image with the right name and it is run. With the policy, **only images signed by your org's OIDC** are allowed.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Idempotence** : un second run de votre solution doit afficher `changed=0`
-  partout dans le `PLAY RECAP`. C'est le signal mécanique d'un playbook
-  conforme aux bonnes pratiques.
-- **FQCN explicite** : préférez toujours `ansible.builtin.<module>` (ou la
-  collection appropriée) plutôt que le nom court — `ansible-lint --profile
-  production` le vérifie.
-- **Convention de ciblage** : ce lab cible votre poste local + une image OCI buildée par CI ; pour adapter à un
-  autre groupe, ajustez `hosts:` dans `lab.yml`/`solution.yml` puis relancez.
-- **Reset isolé** : `make clean` à la racine du lab désinstalle proprement
-  ce que la solution a posé pour pouvoir rejouer le scénario.
+- **Idempotence**: a second run of your solution must show `changed=0`
+  everywhere in the `PLAY RECAP`. This is the mechanical signal of a playbook
+  compliant with best practices.
+- **Explicit FQCN**: always prefer `ansible.builtin.<module>` (or the
+  appropriate collection) over the short name. `ansible-lint --profile
+  production` checks it.
+- **Targeting convention**: this lab targets your local machine + an OCI image built by CI. To adapt it to
+  another group, adjust `hosts:` in `lab.yml`/`solution.yml` then rerun.
+- **Isolated reset**: `dsoxlab clean <lab-id>` at the lab root cleanly uninstalls
+  what the solution set up so you can replay the scenario.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Pourquoi pinner les actions GitHub par **SHA** plutôt que par tag `@v4.2.2` ?
+1. Why pin GitHub actions by **SHA** rather than by tag `@v4.2.2`?
 
-2. Que fait **`persist-credentials: false`** sur `actions/checkout` ? Quel risque évite-t-il ?
+2. What does **`persist-credentials: false`** do on `actions/checkout`? What risk does it avoid?
 
-3. **Trivy** retourne `exit-code: 1` sur une CVE HIGH d'un package que vous **ne pouvez pas** corriger (pas de patch disponible). Comment réagir ?
+3. **Trivy** returns `exit-code: 1` on a HIGH CVE of a package you **cannot** fix (no patch available). How do you react?
 
-4. **Cosign keyless vs avec clé** : quel modèle de menace privilégie l'un ou l'autre ?
+4. **Cosign keyless vs with a key**: which threat model does each favor?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Le challenge ([`challenge/tests/`](challenge/tests/)) valide via **8 tests pytest** :
+The challenge ([`challenge/tests/`](challenge/tests/)) validates through **11 pytest tests**:
 
-- Workflow GitHub présent + actions pinnées par SHA.
+- GitHub workflow present + actions pinned by SHA.
 - `permissions: {}` + `persist-credentials: false`.
-- Trivy scan bloquant + signature cosign.
-- Pipeline GitLab CI à 4 stages équivalents.
-- `execution-environment.yml` schéma v3.
+- Blocking Trivy scan + cosign signature.
+- Equivalent 4-stage GitLab CI pipeline.
+- `execution-environment.yml` v3 schema.
 
 ```bash
 LAB_NO_REPLAY=1 pytest -v challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Lab 88** : debug d'un EE cassé en CI.
-- **Renovate** : bot qui ouvre des PR pour bumper `ansible-core==2.18.1` → 2.19.0 automatiquement.
-- **OPA / Conftest** : valider `execution-environment.yml` avec des policies (pas de `:latest`, pas de version manquante).
-- **AAP Controller** : importer l'EE depuis le registre signé via le UI.
-- **Multi-arch** : `--platform linux/amd64,linux/arm64` pour ARM Macs.
+- **Lab 88**: debug a broken EE in CI.
+- **Renovate**: bot that opens PRs to bump `ansible-core==2.18.1` -> 2.19.0 automatically.
+- **OPA / Conftest**: validate `execution-environment.yml` with policies (no `:latest`, no missing version).
+- **AAP Controller**: import the EE from the signed registry via the UI.
+- **Multi-arch**: `--platform linux/amd64,linux/arm64` for ARM Macs.
 
-## 🔍 Sécurité — bonnes pratiques 2026
+## 🔍 Security — 2026 best practices
 
-- **Trivy en mode bloquant** : `exit-code: 1` sur HIGH/CRITICAL.
-- **`persist-credentials: false`** systématiquement sur `actions/checkout`.
-- **`permissions: {}`** au workflow, permissions élevées **uniquement** dans les jobs qui en ont besoin.
+- **Trivy in blocking mode**: `exit-code: 1` on HIGH/CRITICAL.
+- **`persist-credentials: false`** systematically on `actions/checkout`.
+- **`permissions: {}`** at the workflow, elevated permissions **only** in the jobs that need them.
 - **Cosign signature** + Rekor transparency log.
-- **Renovate** pour bumper les pinning automatiquement (PR-driven).
-- **zizmor + poutine** lints obligatoires sur les pipelines.
+- **Renovate** to bump the pinnings automatically (PR-driven).
+- **zizmor + poutine** mandatory lints on the pipelines.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 ansible-lint labs/ee/ci-pipeline/lab.yml
@@ -199,9 +199,9 @@ ansible-lint labs/ee/ci-pipeline/challenge/solution.yml
 ansible-lint --profile production labs/ee/ci-pipeline/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task,
+file modes as strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un
-> hook pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

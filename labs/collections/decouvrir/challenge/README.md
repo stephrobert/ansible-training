@@ -1,37 +1,37 @@
-# 🎯 Challenge — Inventaire des collections installées
+# 🎯 Challenge — Inventory of installed collections
 
-## ✅ Objectif
+## ✅ Objective
 
-Déposer sur `db1.lab` un fichier `/tmp/lab93-collections.txt` qui contient l'inventaire des collections installées avec leurs **versions** et leur **path**, généré dynamiquement par Ansible.
+Deposit on `db1.lab` a file `/tmp/lab93-collections.txt` that contains the inventory of the installed collections with their **versions** and their **path**, generated dynamically by Ansible.
 
-| Élément | Valeur attendue |
+| Element | Expected value |
 | --- | --- |
-| Hôte cible | `db1.lab` |
-| Fichier produit | `/tmp/lab93-collections.txt` |
+| Target host | `db1.lab` |
+| Produced file | `/tmp/lab93-collections.txt` |
 | Permissions | `0644`, owner `root` |
-| Contenu | Au moins 3 collections listées (`ansible.posix`, `community.general`, `kubernetes.core` ou autres présentes dans l'EE) |
-| Format | Une collection par ligne, format `<FQCN_namespace.name> <version>` (ex: `community.general 10.5.0`) |
-| Méthode | Utiliser `ansible.builtin.command` pour invoquer `ansible-galaxy collection list` puis `register:` + `copy` |
+| Content | At least 3 collections listed (`ansible.posix`, `community.general`, `kubernetes.core` or others present in the EE) |
+| Format | One collection per line, format `<FQCN_namespace.name> <version>` (e.g. `community.general 10.5.0`) |
+| Method | Use `ansible.builtin.command` to invoke `ansible-galaxy collection list` then `register:` + `copy` |
 
-## 🧩 Indices
+## 🧩 Hints
 
-### Étape 1 — Capturer la liste avec `ansible-galaxy`
+### Step 1 — Capture the list with `ansible-galaxy`
 
 ```yaml
 - name: Lister les collections installées
-  ansible.builtin.command: ???                # ← commande qui liste les collections
+  ansible.builtin.command: ???                # ← command that lists the collections
   register: ???
-  changed_when: ???                            # ← lecture seule
+  changed_when: ???                            # ← read only
 ```
 
-### Étape 2 — Filtrer la sortie pour ne garder que les lignes utiles
+### Step 2 — Filter the output to keep only the useful lines
 
-La sortie brute contient des en-têtes (`Collection`, `-----`) qu'il faut filtrer. Vous pouvez :
+The raw output contains headers (`Collection`, `-----`) that must be filtered. You can:
 
-- Soit utiliser `awk` / `grep` dans un shell (mais alors `ansible.builtin.shell`).
-- Soit utiliser des **filtres Jinja2** Ansible (`split`, `select`, `reject`).
+- Either use `awk` / `grep` in a shell (but then `ansible.builtin.shell`).
+- Or use Ansible **Jinja2 filters** (`split`, `select`, `reject`).
 
-Squelette possible avec filtres Jinja2 :
+Possible skeleton with Jinja2 filters:
 
 ```yaml
 - name: Filtrer pour ne garder que les collections
@@ -41,59 +41,60 @@ Squelette possible avec filtres Jinja2 :
                             | list }}"
 ```
 
-### Étape 3 — Déposer le fichier
+### Step 3 — Deposit the file
 
 ```yaml
 - name: Déposer l'inventaire
   ansible.builtin.copy:
     dest: /tmp/lab93-collections.txt
-    content: "???"                             # ← join les lignes
+    content: "???"                             # ← join the lines
     owner: ???
     group: ???
     mode: ???
 ```
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
-> - **`ansible-galaxy collection list`** affiche TOUTES les collections
->   installées (control node), pas celles **utilisées** par un play.
->   Pour voir les collections utilisées : `ansible-doc -t module -l |
+> - **`ansible-galaxy collection list`** displays ALL the collections
+>   installed (control node), not the ones **used** by a play.
+>   To see the used collections: `ansible-doc -t module -l |
 >   grep <namespace>`.
-> - **FQCN obligatoire** depuis Ansible 2.10+ : `ansible.builtin.copy`,
->   pas juste `copy`. Le profil `ansible-lint production` le vérifie.
-> - **`collections:`** au play-level : permet d'utiliser les modules sans
->   FQCN dans ce play. Pratique mais cache la dépendance — préférer FQCN.
-> - **`~/.ansible/collections/`** : où vont les collections installées
->   par user. Pour install system-wide : `-p /usr/share/ansible/collections`.
+> - **FQCN mandatory** since Ansible 2.10+: `ansible.builtin.copy`,
+>   not just `copy`. The `ansible-lint production` profile checks it.
+> - **`collections:`** at play level: lets you use the modules without
+>   FQCN in this play. Handy but hides the dependency: prefer FQCN.
+> - **`~/.ansible/collections/`**: where the collections installed
+>   per user go. For a system-wide install: `-p /usr/share/ansible/collections`.
 
-## 🚀 Lancement
+## 🚀 Launch
 
-Depuis la racine du repo :
+From the repo root:
 
 ```bash
 ansible-playbook labs/collections/decouvrir/challenge/solution.yml
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/collections/decouvrir/challenge/tests/
 ```
 
-Le test pytest+testinfra valide :
+The pytest+testinfra test validates:
 
-- `/tmp/lab93-collections.txt` existe avec mode `0644`, owner `root`.
-- Au moins 3 lignes non vides.
-- Au moins une ligne contient un FQCN avec un point (ex: `community.general`).
+- `/tmp/lab93-collections.txt` exists with mode `0644`, owner `root`.
+- At least 3 non-empty lines.
+- At least one line contains an FQCN with a dot (e.g. `community.general`).
+- The solution is **idempotent**: a second run reports no change (RHCE criterion).
 
 ## 🧹 Reset
 
 ```bash
-make -C labs/collections/decouvrir/ clean
+dsoxlab clean collections-decouvrir
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Lab 94** : `requirements.yml` pour reproduire l'environnement.
-- **`ansible-galaxy collection list --format json`** : sortie scriptable pour intégration CI.
-- **`ansible-lint --profile production`** : zéro warning attendu.
+- **Lab 94**: `requirements.yml` to reproduce the environment.
+- **`ansible-galaxy collection list --format json`**: scriptable output for CI integration.
+- **`ansible-lint --profile production`**: zero warning expected.

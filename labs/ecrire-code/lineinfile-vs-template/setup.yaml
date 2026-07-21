@@ -1,0 +1,27 @@
+---
+# Mise en place du lab lineinfile-vs-template : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup lineinfile-vs-template lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, regexp, state (lineinfile-vs-template)
+      ansible.builtin.lineinfile:
+        path: "/etc/hosts"
+        regexp: "^192\\.168\\.99\\.99\\s"
+        state: "absent"
+    - name: Reset path, state (lineinfile-vs-template)
+      ansible.builtin.file:
+        path: "/etc/myapp.conf"
+        state: "absent"
+
+- name: Brief the learner (lineinfile-vs-template)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Arbitrate between lineinfile, blockinfile and template, combine base plus overrides and diagnose a lineinfile that stacks for lack of a regexp
+      run_once: true

@@ -1,0 +1,18 @@
+---
+# Reset du lab ansible-vault : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup ansible-vault lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (ansible-vault)
+      ansible.builtin.file:
+        path: "/tmp/db-config.txt"
+        state: "absent"
+      failed_when: false
+    - name: Reset path, state (ansible-vault)
+      ansible.builtin.file:
+        path: "/tmp/db1-app.conf"
+        state: "absent"
+      failed_when: false

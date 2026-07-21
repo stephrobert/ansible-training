@@ -1,51 +1,51 @@
-# Lab 71 — Consommer un rôle : `roles:`, `import_role`, `include_role`
+# Lab 71 — Consume a role: `roles:`, `import_role`, `include_role`
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Pré-requis unique : les 4 VMs du lab répondent au ping (cf. [README racine](../../README.md#-démarrage-rapide)).
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Single prerequisite: the 4 lab VMs respond to the ping (see [root README](../../../README.md#-démarrage-rapide)).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Consommer un rôle Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-roles/consommer-role/)
+🔗 [**Consume an Ansible role**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/consommer-role/)
 
-Il existe **3 façons** d'utiliser un rôle dans un play. Choisir la bonne
-selon le besoin :
+There are **3 ways** to use a role in a play. Choose the right one
+according to the need:
 
-| Forme | Quand l'utiliser | Évaluation |
+| Form | When to use it | Evaluation |
 | --- | --- | --- |
-| **`roles:`** au niveau play | Cas standard, rôle systématique | Statique |
-| **`import_role:`** dans `tasks:` | Rôle conditionnel sur tag, mais évalué au parsing | Statique (tags/when résolus tôt) |
-| **`include_role:`** dans `tasks:` | Rôle conditionnel sur variable runtime, ou loop sur N rôles | Dynamique (when évalué au runtime) |
+| **`roles:`** at play level | Standard case, systematic role | Static |
+| **`import_role:`** in `tasks:` | Role conditional on a tag, but evaluated at parsing | Static (tags/when resolved early) |
+| **`include_role:`** in `tasks:` | Role conditional on a runtime variable, or loop over N roles | Dynamic (when evaluated at runtime) |
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Utiliser **`roles:`** au niveau play (forme standard).
-2. Utiliser **`import_role:`** dans `tasks:` (statique).
-3. Utiliser **`include_role:`** avec **`when:`** (dynamique).
-4. Choisir la bonne forme selon le besoin (statique vs dynamique).
-5. Comprendre pourquoi `import_role + when` ne se comporte **pas** comme
+1. Use **`roles:`** at play level (standard form).
+2. Use **`import_role:`** in `tasks:` (static).
+3. Use **`include_role:`** with **`when:`** (dynamic).
+4. Choose the right form according to the need (static vs dynamic).
+5. Understand why `import_role + when` does **not** behave like
    `include_role + when`.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ansible.builtin.ping
 ```
 
-## ⚙️ Arborescence
+## ⚙️ Tree
 
 ```text
 labs/roles/consommer-role/
 ├── README.md
-├── Makefile
-├── playbook.yml          ← démontre les 3 formes
-└── roles/
-    └── webserver/
+├── roles/
+│   └── webserver/        ← tasks/main.yml (deployment) + tasks/stamp.yml (trace)
+└── challenge/
+    └── solution.yml      ← to write: the 3 forms, proven on db1.lab
 ```
 
-## 📚 Exercice 1 — Forme `roles:` (la plus simple)
+## 📚 Exercise 1 — The `roles:` form (the simplest)
 
 ```yaml
 ---
@@ -59,13 +59,13 @@ labs/roles/consommer-role/
         webserver_listen_port: 8080
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- Tourne **toujours** (pas de conditionnel possible au niveau play).
-- Tourne **avant** `tasks:` du play (`pre_tasks` < `roles:` < `tasks:` < `post_tasks:`).
-- Variables passées via `vars:` du rôle.
+- Always runs (no conditional possible at play level).
+- Runs **before** the play's `tasks:` (`pre_tasks` < `roles:` < `tasks:` < `post_tasks:`).
+- Variables passed via the role's `vars:`.
 
-## 📚 Exercice 2 — `import_role:` (statique)
+## 📚 Exercise 2 — `import_role:` (static)
 
 ```yaml
 - name: Avec import_role
@@ -84,14 +84,14 @@ labs/roles/consommer-role/
         webserver_listen_port: 8081
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- Permet de **placer** le rôle au milieu de tâches (pas seulement avant).
-- **Statique** : les tâches du rôle sont expansées au **parsing**. Un
-  `tags:` posé au-dessus s'applique à toutes les tâches du rôle. Un
-  `when:` pareil mais **évalué pour chaque tâche** (pas globalement).
+- Lets you **place** the role in the middle of tasks (not only before).
+- **Static**: the role's tasks are expanded at **parsing**. A
+  `tags:` set above applies to all the role's tasks. A
+  `when:` the same, but **evaluated for each task** (not globally).
 
-## 📚 Exercice 3 — `include_role:` (dynamique)
+## 📚 Exercise 3 — `include_role:` (dynamic)
 
 ```yaml
 - name: Avec include_role conditionnel
@@ -109,50 +109,53 @@ labs/roles/consommer-role/
       when: deploy_webserver | bool
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **Dynamique** : le rôle n'est chargé **que si** `when:` est vrai au
+- **Dynamic**: the role is loaded **only if** `when:` is true at
   runtime.
-- Permet de **boucler** sur une liste de rôles : `loop: [r1, r2, r3]` avec
+- Lets you **loop** over a list of roles: `loop: [r1, r2, r3]` with
   `include_role: name: "{{ item }}"`.
-- Plus lourd à l'exécution que `import_role` (chargement à la volée).
+- Heavier at execution than `import_role` (loading on the fly).
 
-## 📚 Exercice 4 — Comparer les comportements
+## 📚 Exercise 4 — Compare the behaviors
 
-Lancez :
+Write a `lab.yml` reusing the three forms above, then run:
 
 ```bash
-ansible-playbook labs/roles/consommer-role/playbook.yml
+ANSIBLE_ROLES_PATH=labs/roles/consommer-role/roles \
+  ansible-playbook labs/roles/consommer-role/lab.yml --list-tasks
+ANSIBLE_ROLES_PATH=labs/roles/consommer-role/roles \
+  ansible-playbook labs/roles/consommer-role/lab.yml
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- Au **parsing**, `roles:` et `import_role:` sont déjà expansés. Vous
-  voyez les noms des tâches du rôle dans `--list-tasks`.
-- `include_role:` n'apparaît **pas** dans `--list-tasks` : son contenu
-  est invisible jusqu'au runtime.
+- At **parsing**, `roles:` and `import_role:` are already expanded. You
+  see the names of the role's tasks in `--list-tasks`.
+- `include_role:` does **not** appear in `--list-tasks`: its content
+  is invisible until runtime.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`roles:`** = défaut, le plus simple. Utilisez-le.
-- **`import_role:`** quand vous voulez **placer** le rôle au milieu de
-  tâches.
-- **`include_role:`** quand le rôle doit être **conditionnel runtime**
-  (variable extra-vars) ou **loop**.
-- **Piège `import_role + when:`** : le `when:` s'applique à **chaque
-  tâche** du rôle individuellement, pas globalement. Pour ne pas
-  charger le rôle du tout : `include_role + when:`.
+- **`roles:`** = default, the simplest. Use it.
+- **`import_role:`** when you want to **place** the role in the middle of
+  tasks.
+- **`include_role:`** when the role must be **runtime-conditional**
+  (extra-vars variable) or a **loop**.
+- **`import_role + when:` pitfall**: the `when:` applies to **each
+  task** of the role individually, not globally. To not load the role at
+  all: `include_role + when:`.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous avez 3 rôles `webserver`, `database`, `cache`. Vous voulez
-   exécuter celui correspondant à `var: app_role`. Quelle forme
-   utiliser ? Pourquoi pas `roles:` ?
+1. You have 3 roles `webserver`, `database`, `cache`. You want to
+   run the one matching `var: app_role`. Which form do you
+   use? Why not `roles:`?
 
-2. Vous avez un rôle `firewall` que vous voulez tagger `firewall` pour
-   pouvoir filtrer avec `--tags firewall`. `roles:` ou `import_role:` ?
+2. You have a `firewall` role that you want to tag `firewall` so you
+   can filter with `--tags firewall`. `roles:` or `import_role:`?
 
-3. Quel est le problème avec ce code ? :
+3. What is the problem with this code?:
 
    ```yaml
    - import_role:
@@ -160,27 +163,27 @@ ansible-playbook labs/roles/consommer-role/playbook.yml
      when: ansible_os_family == "RedHat"
    ```
 
-   Spoiler : sur Debian, le `when:` est évalué **par tâche** du rôle, donc
-   chaque tâche est `skipped` — mais le rôle est quand même **chargé**,
-   ce qui peut planter sur des `include_vars` qui n'ont pas le
-   `Debian.yml`. Solution : `include_role + when:`.
+   Spoiler: on Debian, the `when:` is evaluated **per task** of the role, so
+   each task is `skipped`, but the role is still **loaded**,
+   which can crash on `include_vars` that lack the
+   `Debian.yml`. Solution: `include_role + when:`.
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md).
+See [`challenge/README.md`](challenge/README.md).
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`tasks_from:`** sur `import_role`/`include_role` : appeler un
-  entry point alternatif du rôle (ex : `tasks/configure.yml` au lieu
-  de `tasks/main.yml`).
-- **`apply:`** sur `include_role` : forcer des `tags:` ou un `become:`
-  sur l'inclusion.
-- **`public: true`** sur `include_role` : rendre les variables du rôle
-  visibles après inclusion (par défaut elles sont privées).
+- **`tasks_from:`** on `import_role`/`include_role`: call an
+  alternative entry point of the role (e.g. `tasks/configure.yml` instead
+  of `tasks/main.yml`).
+- **`apply:`** on `include_role`: force `tags:` or a `become:`
+  on the inclusion.
+- **`public: true`** on `include_role`: make the role's variables
+  visible after inclusion (by default they are private).
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
-ansible-lint labs/roles/consommer-role/playbook.yml
+ansible-lint labs/roles/consommer-role/challenge/solution.yml
 ```

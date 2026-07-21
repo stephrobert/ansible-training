@@ -1,0 +1,4 @@
+---
+id: ee-builder-custom
+title: "Construire un EE sur mesure avec ansible-builder v3"
+description: "Écrire un execution-environment.yml v3, épingler ansible-core et les dépendances, builder avec Podman, tester l'image et la pousser sur un registre."

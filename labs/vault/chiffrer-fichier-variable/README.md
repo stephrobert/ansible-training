@@ -1,21 +1,21 @@
-# Lab 78 — Chiffrer un fichier OU une variable inline
+# Lab 78 — Encrypt a file OR an inline variable
 
-> 💡 **Pré-requis** : `ansible all -m ansible.builtin.ping` répond `pong` sur les 4 VMs.
+> 💡 **Prerequisite**: `ansible all -m ansible.builtin.ping` replies `pong` on the 4 VMs.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Chiffrer un fichier ou une variable**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/chiffrer-fichier-variable/)
+🔗 [**Encrypt a file or a variable**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/chiffrer-fichier-variable/)
 
-Ansible Vault propose **deux approches** complémentaires de chiffrement :
+Ansible Vault offers **two complementary approaches** to encryption:
 
-| Approche | Commande | Cas d'usage |
+| Approach | Command | Use case |
 |---|---|---|
-| **Fichier complet** | `ansible-vault encrypt fichier.yml` | Plusieurs secrets liés (lab 77) |
-| **Variable inline** | `ansible-vault encrypt_string 'valeur'` | Mélanger valeurs claires + chiffrées dans un même YAML |
+| **Complete file** | `ansible-vault encrypt fichier.yml` | Several related secrets (lab 77) |
+| **Inline variable** | `ansible-vault encrypt_string 'valeur'` | Mix cleartext + encrypted values in the same YAML |
 
-L'**inline (encrypt_string)** est **plus lisible** dans les diffs Git : on voit que la variable change (et le contexte autour reste lisible), sans pour autant exposer la valeur. Idéal pour `group_vars/all.yml` qui contient majoritairement des valeurs publiques (ports, versions) et **quelques** secrets.
+The **inline mode (encrypt_string)** is **more readable** in Git diffs: you see that the variable changes (and the surrounding context stays readable), without exposing the value. Ideal for `group_vars/all.yml` which mostly contains public values (ports, versions) and **a few** secrets.
 
-**Format** d'une variable inline chiffrée dans un YAML :
+**Format** of an encrypted inline variable in a YAML:
 
 ```yaml
 admin_username: lab78_admin                  # ← clair (lisible dans le diff)
@@ -25,51 +25,51 @@ admin_password: !vault |                     # ← VALEUR seulement chiffrée
           6265336366626535...
 ```
 
-Le **tag YAML `!vault |`** signale à Ansible que la valeur multi-ligne qui suit doit être déchiffrée au runtime.
+The **YAML tag `!vault |`** signals to Ansible that the multi-line value that follows must be decrypted at runtime.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Chiffrer **une seule valeur** avec `ansible-vault encrypt_string`.
-2. **Mélanger** valeurs en clair et valeurs chiffrées dans un même fichier YAML.
-3. Comprendre **quand préférer** `encrypt_string` à `encrypt` complet.
-4. **Re-chiffrer** une variable existante.
-5. Utiliser le tag YAML **`!vault |`** dans `group_vars/`/`host_vars/`.
+1. Encrypt **a single value** with `ansible-vault encrypt_string`.
+2. **Mix** cleartext values and encrypted values in the same YAML file.
+3. Understand **when to prefer** `encrypt_string` over a full `encrypt`.
+4. **Re-encrypt** an existing variable.
+5. Use the YAML tag **`!vault |`** in `group_vars/`/`host_vars/`.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training/labs/vault/chiffrer-fichier-variable/
+cd $ANSIBLE_TRAINING/labs/vault/chiffrer-fichier-variable/
 ls -la inventory/group_vars/
 cat .vault_password
 ```
 
-## ⚙️ Arborescence cible
+## ⚙️ Target tree
 
 ```text
 labs/vault/chiffrer-fichier-variable/
 ├── README.md
-├── .vault_password               ← mot de passe vault (mode 0600)
+├── .vault_password               ← vault password (mode 0600)
 ├── inventory/
-│   ├── hosts.yml                 ← inventaire local du lab
+│   ├── hosts.yml                 ← the lab's local inventory
 │   └── group_vars/
-│       └── all.yml               ← MIXTE : clair + encrypt_string
-├── playbook.yml                  ← consomme admin_username + admin_password
+│       └── all.yml               ← MIXED: cleartext + encrypt_string
+├── playbook.yml                  ← consumes admin_username + admin_password
 └── challenge/
     ├── README.md
-    ├── solution.yml              ← challenge sur db1.lab
+    ├── solution.yml              ← challenge on db1.lab
     └── tests/
         └── test_encrypt_string.py
 ```
 
-## 📚 Exercice 1 — Lire le fichier mixte clair/chiffré
+## 📚 Exercise 1 — Read the mixed cleartext/encrypted file
 
 ```bash
 cat inventory/group_vars/all.yml
 ```
 
-Sortie :
+Output:
 
 ```yaml
 ---
@@ -79,17 +79,17 @@ admin_password: !vault |                     # ← inline encrypt_string
           30613465643765383...
 ```
 
-🔍 **Observation** : seule la **valeur** de `admin_password` est chiffrée. Le **nom de la variable** reste lisible dans Git, ce qui facilite les revues de code (« Ah, on ajoute admin_password ») sans pour autant exposer le secret.
+🔍 **Observation**: only the **value** of `admin_password` is encrypted. The **name of the variable** stays readable in Git, which makes code reviews easier ("Ah, we are adding admin_password") without exposing the secret.
 
-## 📚 Exercice 2 — Visualiser une variable inline
+## 📚 Exercise 2 — View an inline variable
 
 ```bash
 ansible-vault view inventory/group_vars/all.yml --vault-password-file=.vault_password
 ```
 
-🔍 **Observation** : `view` fonctionne aussi sur les fichiers à **chiffrement mixte** — il déchiffre uniquement les valeurs `!vault |` et laisse le reste tel quel.
+🔍 **Observation**: `view` also works on files with **mixed encryption**: it decrypts only the `!vault |` values and leaves the rest as is.
 
-## 📚 Exercice 3 — Créer une nouvelle variable chiffrée
+## 📚 Exercise 3 — Create a new encrypted variable
 
 ```bash
 ansible-vault encrypt_string \
@@ -98,7 +98,7 @@ ansible-vault encrypt_string \
   'MonNouveauSecretDB2026'
 ```
 
-Sortie : un bloc YAML prêt à coller dans `inventory/group_vars/all.yml` :
+Output: a YAML block ready to paste into `inventory/group_vars/all.yml`:
 
 ```yaml
 db_password: !vault |
@@ -106,9 +106,9 @@ db_password: !vault |
           ...
 ```
 
-🔍 **Observation** : pas de saisie interactive du secret — il est passé en argument CLI. **Attention** : ce secret apparaît dans `bash_history`. Mieux : utiliser `--encrypt-vault-id default` + saisie via stdin.
+🔍 **Observation**: no interactive input of the secret, it is passed as a CLI argument. **Warning**: this secret appears in `bash_history`. Better: use `--encrypt-vault-id default` + input via stdin.
 
-## 📚 Exercice 4 — Saisie via stdin (plus sécurisé)
+## 📚 Exercise 4 — Input via stdin (more secure)
 
 ```bash
 echo -n 'MonSecretViaStdin' | ansible-vault encrypt_string \
@@ -117,9 +117,9 @@ echo -n 'MonSecretViaStdin' | ansible-vault encrypt_string \
   --stdin-name api_key
 ```
 
-🔍 **Observation** : la valeur n'apparaît **pas** dans `bash_history`. Pour des automatisations (CI/CD), c'est le pattern recommandé.
+🔍 **Observation**: the value does **not** appear in `bash_history`. For automation (CI/CD), this is the recommended pattern.
 
-## 📚 Exercice 5 — Lancer le playbook
+## 📚 Exercise 5 — Run the playbook
 
 ```bash
 ansible-playbook -i inventory/hosts.yml \
@@ -127,13 +127,13 @@ ansible-playbook -i inventory/hosts.yml \
   playbook.yml
 ```
 
-Sortie attendue : `changed=1`. Le playbook utilise `admin_password` comme une variable normale — déchiffrement transparent.
+Expected output: `changed=1`. The playbook uses `admin_password` as a normal variable, transparent decryption.
 
 ```bash
-ssh ansible@web1.lab "sudo cat /tmp/lab78-encryptstring.txt"
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab "sudo cat /tmp/lab78-encryptstring.txt"
 ```
 
-Sortie :
+Output:
 
 ```text
 username: lab78_admin
@@ -141,59 +141,59 @@ password length: 17
 password starts: Admin
 ```
 
-## 📚 Exercice 6 — Différence inline vs fichier complet
+## 📚 Exercise 6 — Difference inline vs complete file
 
-| Critère | Fichier complet (`encrypt`) | Inline (`encrypt_string`) |
+| Criterion | Complete file (`encrypt`) | Inline (`encrypt_string`) |
 |---|---|---|
-| Lisibilité du diff Git | ❌ Tout le fichier change | ✅ Seul le bloc concerné change |
-| Granularité | Tous les secrets d'un fichier | Une seule valeur à la fois |
-| Mélange clair + chiffré | ❌ Tout chiffré | ✅ Clair + chiffré ensemble |
-| Édition interactive | `ansible-vault edit` | Manuelle (re-générer encrypt_string) |
-| Performance | Une seule passe de déchiffrement | N passes (une par variable) |
+| Git diff readability | ❌ The whole file changes | ✅ Only the concerned block changes |
+| Granularity | All the secrets of a file | A single value at a time |
+| Mix cleartext + encrypted | ❌ Everything encrypted | ✅ Cleartext + encrypted together |
+| Interactive editing | `ansible-vault edit` | Manual (re-generate encrypt_string) |
+| Performance | A single decryption pass | N passes (one per variable) |
 
-**Recommandation** : `encrypt_string` pour `group_vars/all.yml` (mixte), `encrypt` pour `vars/secrets.yml` dédié aux secrets purs.
+**Recommendation**: `encrypt_string` for `group_vars/all.yml` (mixed), `encrypt` for a `vars/secrets.yml` dedicated to pure secrets.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Idempotence** : un second run de votre solution doit afficher `changed=0`
-  partout dans le `PLAY RECAP`. C'est le signal mécanique d'un playbook
-  conforme aux bonnes pratiques.
-- **FQCN explicite** : préférez toujours `ansible.builtin.<module>` (ou la
-  collection appropriée) plutôt que le nom court — `ansible-lint --profile
-  production` le vérifie.
-- **Convention de ciblage** : ce lab cible db1.lab ; pour adapter à un
-  autre groupe, ajustez `hosts:` dans `lab.yml`/`solution.yml` puis relancez.
-- **Reset isolé** : `make clean` à la racine du lab désinstalle proprement
-  ce que la solution a posé pour pouvoir rejouer le scénario.
+- **Idempotence**: a second run of your solution must display `changed=0`
+  everywhere in the `PLAY RECAP`. This is the mechanical signal of a playbook
+  that follows best practices.
+- **Explicit FQCN**: always prefer `ansible.builtin.<module>` (or the
+  appropriate collection) rather than the short name (`ansible-lint --profile
+  production` checks this).
+- **Targeting convention**: this lab targets db1.lab; to adapt it to another
+  group, adjust `hosts:` in `lab.yml`/`solution.yml` then run it again.
+- **Isolated reset**: `dsoxlab clean <id-du-lab>` at the lab root cleanly uninstalls
+  what the solution set up so you can replay the scenario.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Pourquoi `encrypt_string` est-il préférable pour `group_vars/all.yml` qui contient majoritairement des valeurs publiques ?
+1. Why is `encrypt_string` preferable for `group_vars/all.yml` which mostly contains public values?
 
-2. Que se passe-t-il si vous **éditez manuellement** un bloc `!vault |` (ex: changer un caractère hex) ?
+2. What happens if you **edit manually** a `!vault |` block (e.g. change one hex character)?
 
-3. Comment **rotater** une seule variable inline sans toucher aux autres ?
+3. How do you **rotate** a single inline variable without touching the others?
 
-4. Pourquoi `--stdin-name` est-il préférable au passage de la valeur en argument CLI ?
+4. Why is `--stdin-name` preferable to passing the value as a CLI argument?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Le challenge ([`challenge/README.md`](challenge/README.md)) cible `db1.lab` et démontre que les variables `admin_username` (clair) + `admin_password` (chiffré inline) sont déchiffrées correctement. Tests automatisés via `pytest+testinfra` (4 tests).
+The challenge ([`challenge/README.md`](challenge/README.md)) targets `db1.lab` and demonstrates that the variables `admin_username` (cleartext) + `admin_password` (inline encrypted) are decrypted correctly. Automated tests via `pytest+testinfra` (4 tests).
 
 ```bash
 pytest -v challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Multi vault-id** (lab 79) : encrypt_string avec différents vault-id pour dev/prod.
-- **`!vault |` dans les rôles** : utilisable dans `defaults/main.yml` ou `vars/main.yml` (lab 81).
-- **Re-chiffrer toutes les variables** : `ansible-vault rekey inventory/group_vars/all.yml`.
+- **Multi vault-id** (lab 79): encrypt_string with different vault-ids for dev/prod.
+- **`!vault |` in roles**: usable in `defaults/main.yml` or `vars/main.yml` (lab 81).
+- **Re-encrypt all the variables**: `ansible-vault rekey inventory/group_vars/all.yml`.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint --profile=production .
 ```
 
-Le linter ne touche pas aux blocs `!vault |` — il vérifie uniquement la qualité du code Ansible classique autour.
+The linter does not touch the `!vault |` blocks: it only checks the quality of the classic Ansible code around them.

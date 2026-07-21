@@ -1,0 +1,136 @@
+# Outillage du lab, géré par mise (https://mise.jdx.dev).
+#
+# Deux périmètres, à ne pas confondre :
+#
+#   mise    → la CHAÎNE ANSIBLE. Sa version fait partie de l'exercice : le RHCE
+#             EX294 se passe sur une version précise d'ansible-core, et un
+#             playbook qui passe en 2.18 peut échouer en 2.19.
+#   dsoxlab → les LABS (provision, run, check, scores). Installé à part :
+#             `uv tool install dsoxlab`. Il embarque déjà pytest et testinfra,
+#             qui n'ont donc rien à faire ici.
+#
+# Ce que mise ne peut PAS gérer, et qui reste à la charge de la distribution :
+# libvirt, qemu-kvm, virt-install (daemons + appartenance au groupe libvirt).
+# Voir scripts/bootstrap.sh.
+#
+#   mise install     # installe toute la chaîne, versions pinées
+#   mise tasks       # liste les tâches
+#   mise run <tâche>
+
+[tools]
+# ansible-core, pas ansible : le paquet « ansible » tire ~800 collections dont
+# l'examen n'a que faire, et masque la version réelle du moteur.
+"pipx:ansible-core" = "2.18"
+
+# Chaîne qualité. Le profil production d'ansible-lint est ce que la CI exige :
+# une montée de version change ce qui passe, d'où le pin sur la mineure.
+"pipx:ansible-lint" = "25"
+"pipx:yamllint" = "1.35"
+
+# Molecule et ansible-navigator servent les sections molecule/ et ee/.
+# molecule-plugins apporte les drivers docker et libvirt.
+# La 25 était épinglée, la 26 est installée : le pin ne tenait pas, et la
+# différence n'est pas cosmétique (molecule 6+ a retiré les drivers podman et
+# docker intégrés, les scénarios passent par le driver `default` + create.yml).
+"pipx:molecule" = "26"
+"pipx:ansible-navigator" = "25"
+
+# Construit les execution environments : les 5 labs de la section ee en
+# dépendent. Il était absent de ce fichier alors qu'ils l'exigent : chez un
+# contributeur neuf, ces labs skippaient sans que rien ne le signale.
+"pipx:ansible-builder" = "3"
+
+# Exigés par les tests de labs, et absents de ce fichier : ils skippaient donc
+# chez tout contributeur neuf, en silence. actionlint n'était installé ici que
+# par chance ; tox ne l'était pas du tout.
+#   tox        -> tests/tox-multiversion
+#   actionlint -> ci/github-actions, ee/ci-pipeline (il lint réellement les
+#                 workflows GitHub, c'est la seule preuve de comportement de
+#                 ces labs)
+"pipx:tox" = "4"
+"aqua:rhysd/actionlint" = "1"
+
+[env]
+# ansible.cfg vit à la racine : mise garantit qu'on le trouve quel que soit le
+# répertoire depuis lequel on lance une tâche.
+ANSIBLE_CONFIG = "{{ config_root }}/ansible.cfg"
+
+# Les README des labs référencent la racine du dépôt sous ce nom.
+ANSIBLE_TRAINING = "{{ config_root }}"
+
+# ─────────────────────────── Tâches ───────────────────────────
+# Ne sont listées ici QUE les tâches sans équivalent dsoxlab. Pour tout ce qui
+# touche aux labs eux-mêmes, la CLI est la référence :
+#   dsoxlab provision / destroy / status / list-labs / run / check / progress
+# Ne pas réintroduire de wrapper autour d'elle : un alias qui prend du retard
+# sur la CLI ment au lecteur.
+
+[tasks.provision]
+description = "Monte les 4 VMs et prépare les managed nodes (dsoxlab + bootstrap)"
+# `dsoxlab provision` crée des VMs NUES : cloud-init pose le compte et la clé,
+# rien de plus. Or les labs ciblent des managed nodes équipés — sans
+# python3-firewall, tout lab touchant au pare-feu échoue sur « Failed to import
+# the required Python library (firewall) ». Mesuré : 133 tests en échec sans
+# cette étape, 17 avec.
+#
+# Le contrat dsoxlab n'a pas de crochet post-provision : le dépôt enchaîne donc
+# lui-même. `dsoxlab provision` seul reste valide, il laisse juste les nodes
+# nus.
+run = [
+    "dsoxlab provision",
+    "ansible-playbook -i inventory/hosts.yml labs/bootstrap/prepare-managed-nodes/playbook.yml",
+]
+
+[tasks.bootstrap-nodes]
+description = "Rejoue seulement la préparation des managed nodes (sans re-provisionner)"
+run = "ansible-playbook -i inventory/hosts.yml labs/bootstrap/prepare-managed-nodes/playbook.yml"
+
+[tasks.setup-hosts]
+description = "Rend les noms du lab résolvables (/etc/hosts)"
+run = "./scripts/manage-hosts.sh add"
+
+[tasks.remove-hosts]
+description = "Retire les noms du lab de /etc/hosts"
+run = "./scripts/manage-hosts.sh remove"
+
+[tasks.setup-ssh]
+description = "Ajoute le fragment SSH du lab (~/.ssh/config.d)"
+run = "./scripts/manage-ssh-config.sh add"
+
+[tasks.remove-ssh]
+description = "Retire le fragment SSH du lab"
+run = "./scripts/manage-ssh-config.sh remove"
+
+[tasks.snapshot]
+description = "Snapshot des 4 VMs (avant un lab destructif)"
+run = "./scripts/snapshot-vms.sh"
+
+[tasks.restore]
+description = "Restaure les VMs depuis le dernier snapshot"
+run = "./scripts/restore-vms.sh"
+
+[tasks.lint]
+description = "yamllint + ansible-lint sur tout le dépôt"
+run = "./scripts/lint-all.sh"
+
+[tasks.test-all]
+description = "Rejoue les tests de TOUS les labs (formateur : exige .vault-pass)"
+run = "./scripts/test-all.sh"
+
+# ── Solutions formateur : chiffrées via ansible-vault, jamais en clair ──
+
+[tasks.solutions-lock]
+description = "Chiffre toutes les solutions (ansible-vault)"
+run = "./scripts/lock-solutions.sh"
+
+[tasks.solutions-unlock]
+description = "Déchiffre les solutions (formateur uniquement)"
+run = "./scripts/unlock-solutions.sh"
+
+[tasks.solutions-status]
+description = "Vérifie que chaque solution est bien chiffrée"
+run = "./scripts/check-solutions-encrypted.sh"
+
+[tasks.solve]
+description = "Pose la solution officielle d'un lab (usage : mise run solve <section>/<lab>)"
+run = "./scripts/solve.sh"

@@ -1,0 +1,53 @@
+# OpenSSF Scorecard: measures the repository's supply-chain security posture
+# (branch protection, pinned dependencies, token permissions, code review, …)
+# and publishes the result to the public Scorecard viewer and the README badge.
+name: OpenSSF Scorecard
+
+on:
+  push:
+    branches: [main]
+  branch_protection_rule:
+  schedule:
+    - cron: '30 1 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    # Scorecard needs a public repository (commit-graph API + result
+    # publication). Skips while private (pre-launch); activates once public.
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write   # upload SARIF to Code Scanning
+      id-token: write          # publish results to the OpenSSF Scorecard API
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Run Scorecard
+        uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true # publish to the OpenSSF viewer (drives the README badge)
+
+      - name: Upload SARIF to Code Scanning
+        uses: github/codeql-action/upload-sarif@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
+        with:
+          sarif_file: results.sarif

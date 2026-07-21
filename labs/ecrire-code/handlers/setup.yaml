@@ -1,0 +1,52 @@
+---
+# Mise en place du lab handlers : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup handlers lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    # Les labs de la section roles (argument-specs, dependencies) templatent
+    # nginx.conf sur un port non standard. db1 hérite alors d'un nginx qui
+    # n'écoute plus sur 80, et le test HTTP de ce lab-ci échoue pour une raison
+    # étrangère à son sujet. On rétablit le port 80 du paquet.
+    - name: Reset path, regexp, line (handlers)
+      ansible.builtin.lineinfile:
+        path: "/etc/nginx/nginx.conf"
+        regexp: '^(\s*)listen(\s+)[0-9]+;'
+        line: "        listen       80;"
+      failed_when: false
+
+    # Le DÉCLENCHEUR doit être remis à zéro, pas seulement sa trace.
+    #
+    # Un handler ne part que si sa tâche rapporte `changed`. Ce setup effaçait
+    # le journal mais laissait les directives de durcissement déjà posées par le
+    # run précédent : la tâche ne changeait rien, le handler ne partait pas, et
+    # le journal restait absent. Le lab n'était donc jouable qu'une seule fois,
+    # sur une VM neuve. Les retirer rend l'état de départ vrai, et c'est de
+    # toute façon ce que le challenge demande d'ajouter.
+    - name: Reset server_tokens et add_header (déclencheurs des handlers)
+      ansible.builtin.lineinfile:
+        path: "/etc/nginx/nginx.conf"
+        regexp: "{{ item }}"
+        state: absent
+      loop:
+        - '^\s*server_tokens\s+'
+        - '^\s*add_header\s+X-Content-Type-Options\s+'
+      failed_when: false
+
+    - name: Reset path, state (handlers)
+      ansible.builtin.file:
+        path: "/var/log/ansible-handlers.log"
+        state: "absent"
+      failed_when: false
+
+- name: Brief the learner (handlers)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Notify several handlers, decouple them with listen, force meta: flush_handlers and pair validate so an invalid config is never applied
+      run_once: true

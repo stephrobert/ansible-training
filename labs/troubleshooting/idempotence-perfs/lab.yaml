@@ -1,0 +1,33 @@
+---
+id: troubleshooting-idempotence-perfs
+title: "Fix broken idempotence and tune performance"
+description: "Make a shell task idempotent with creates or changed_when, measure a baseline with profile_tasks, then enable pipelining, forks and ControlPersist."
+section: troubleshooting
+level: l3
+difficulty: advanced
+lab_type: lab
+estimated_time: "50m"
+skills:
+  - idempotence
+  - changed-when
+  - pipelining
+  - performance-tuning
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/idempotence-cassee/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

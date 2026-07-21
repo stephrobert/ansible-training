@@ -1,0 +1,41 @@
+---
+# Mise en place du lab handlers-meta : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup handlers-meta lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset name, state, enabled (handlers-meta)
+      ansible.builtin.systemd_service:
+        name: "nginx"
+        state: "stopped"
+        enabled: "no"
+      failed_when: false
+    - name: Reset name, state (handlers-meta)
+      ansible.builtin.dnf:
+        name: "nginx"
+        state: "absent"
+      failed_when: false
+    - name: Reset state (handlers-meta)
+      ansible.builtin.shell: |
+        rm -f /var/log/webserver-deploy.log /var/log/deploy-notification.log
+      changed_when: false
+      failed_when: false
+    - name: Reset port, state, permanent, immediate (handlers-meta)
+      ansible.posix.firewalld:
+        port: "8080/tcp"
+        state: "disabled"
+        permanent: "yes"
+        immediate: "yes"
+      failed_when: false
+
+- name: Brief the learner (handlers-meta)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Write several handlers (service and non-service), trigger them with notify, choose between restarted and reloaded, then complete meta/main.yml for Galaxy
+      run_once: true

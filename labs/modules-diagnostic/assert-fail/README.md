@@ -1,43 +1,43 @@
-# Lab 53 — Modules `assert:` et `fail:` (validation défensive)
+# Lab 53 — `assert:` and `fail:` modules (defensive validation)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Modules assert et fail Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/assert-fail/)
+🔗 [**Ansible assert and fail modules**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/module-assert-fail/)
 
-Deux modules complémentaires pour la **programmation défensive** :
+Two complementary modules for **defensive programming**:
 
-- **`ansible.builtin.assert:`** valide une **condition** ; si elle est fausse, le
-  play échoue avec un message clair. Pattern de **précondition** en début de play.
-- **`ansible.builtin.fail:`** échoue **explicitement** avec un message custom.
-  Pattern de **branche d'erreur** dans une logique conditionnelle.
+- **`ansible.builtin.assert:`** validates a **condition**; if it is false, the
+  play fails with a clear message. **Precondition** pattern at the start of a play.
+- **`ansible.builtin.fail:`** fails **explicitly** with a custom message.
+  **Error branch** pattern inside conditional logic.
 
-Différence sémantique : `assert:` exprime "ça **doit** être vrai" ; `fail:`
-exprime "j'arrête **maintenant** parce que telle condition est rencontrée".
+Semantic difference: `assert:` expresses "this **must** be true"; `fail:`
+expresses "I stop **now** because such a condition is met".
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Valider** des **prérequis** en début de play avec `assert:`.
-2. **Personnaliser** les messages avec `fail_msg:` / `success_msg:`.
-3. **Échouer explicitement** avec `fail:` + `when:` (branche d'erreur).
-4. **Combiner** `assert:` avec **tests Jinja2** (`is defined`, `is integer`).
-5. **Choisir** entre `assert:`, `fail:`, et `failed_when:` selon le contexte.
+1. **Validate** **prerequisites** at the start of a play with `assert:`.
+2. **Customize** messages with `fail_msg:` / `success_msg:`.
+3. **Fail explicitly** with `fail:` + `when:` (error branch).
+4. **Combine** `assert:` with **Jinja2 tests** (`is defined`, `is integer`).
+5. **Choose** between `assert:`, `fail:`, and `failed_when:` depending on context.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 ```
 
-## 📚 Exercice 1 — `assert:` simple
+## 📚 Exercise 1 — Simple `assert:`
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -57,18 +57,18 @@ Créez `lab.yml` :
         success_msg: "Validation OK : app_port = {{ app_port }}"
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/modules-diagnostic/assert-fail/lab.yml
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- Si **toutes les conditions** sont vraies → `success_msg` affiché, play continue.
-- Si **une condition échoue** → `fail_msg` affiché, play **failed**.
+- If **all conditions** are true → `success_msg` is displayed, the play continues.
+- If **one condition fails** → `fail_msg` is displayed, the play is **failed**.
 
-**Tester l'échec** :
+**Test the failure**:
 
 ```bash
 ansible-playbook labs/modules-diagnostic/assert-fail/lab.yml \
@@ -76,7 +76,7 @@ ansible-playbook labs/modules-diagnostic/assert-fail/lab.yml \
 # → fail_msg : app_port doit etre un entier entre 1024 et 65535 (recu : 42)
 ```
 
-## 📚 Exercice 2 — Variables magiques `that:`
+## 📚 Exercise 2 — Magic variables in `that:`
 
 ```yaml
 - name: Valider plusieurs aspects de l environnement
@@ -92,10 +92,10 @@ ansible-playbook labs/modules-diagnostic/assert-fail/lab.yml \
       - Memoire min : 1Go (vu : {{ ansible_memtotal_mb }} Mo)
 ```
 
-🔍 **Observation** : `that:` accepte une **liste** de conditions = AND
-implicite. **`fail_msg:`** peut être multi-ligne pour un diagnostic complet.
+🔍 **Observation**: `that:` accepts a **list** of conditions = implicit AND.
+**`fail_msg:`** can be multi-line for a complete diagnostic.
 
-## 📚 Exercice 3 — `fail:` (échec explicite avec when)
+## 📚 Exercise 3 — `fail:` (explicit failure with when)
 
 ```yaml
 - name: Detecter un environnement non supporte
@@ -109,11 +109,10 @@ implicite. **`fail_msg:`** peut être multi-ligne pour un diagnostic complet.
         or ansible_distribution_major_version | int < 9
 ```
 
-🔍 **Observation** : **`fail:`** est une tâche qui **échoue toujours** (quand
-elle s'exécute). `when:` la conditionne. Pattern de **branche d'erreur**
-explicite.
+🔍 **Observation**: **`fail:`** is a task that **always fails** (when it runs).
+`when:` conditions it. Explicit **error branch** pattern.
 
-**`assert:` vs `fail:` + `when:`** :
+**`assert:` vs `fail:` + `when:`**:
 
 ```yaml
 # Equivalent fonctionnel
@@ -126,11 +125,11 @@ explicite.
   when: ansible_distribution_major_version | int < 9
 ```
 
-**Préférer `assert:`** quand la **condition est positive** ("ça doit être vrai").
-**Préférer `fail:`** quand la logique est **branche d'erreur** explicite (ex :
-"si l'OS est X, on ne supporte pas").
+**Prefer `assert:`** when the **condition is positive** ("this must be true").
+**Prefer `fail:`** when the logic is an explicit **error branch** (e.g. "if the
+OS is X, we do not support it").
 
-## 📚 Exercice 4 — Pattern précondition de play
+## 📚 Exercise 4 — Play precondition pattern
 
 ```yaml
 - name: Deploy myapp
@@ -157,14 +156,14 @@ explicite.
         timeout: 5
 
   tasks:
-    # ... vraies taches de deploy
+    # ... real deploy tasks
 ```
 
-🔍 **Observation** : `pre_tasks:` est une section dédiée aux **préconditions**.
-Si une `assert:` failed dedans, les `tasks:` ne tournent **pas**. Pattern
-**fail-fast** propre.
+🔍 **Observation**: `pre_tasks:` is a section dedicated to **preconditions**.
+If an `assert:` fails inside it, the `tasks:` do **not** run. A clean
+**fail-fast** pattern.
 
-## 📚 Exercice 5 — Tests Jinja2 dans `assert:`
+## 📚 Exercise 5 — Jinja2 tests in `assert:`
 
 ```yaml
 - name: Valider la structure d une variable complexe
@@ -176,7 +175,7 @@ Si une `assert:` failed dedans, les `tasks:` ne tournent **pas**. Pattern
   ansible.builtin.assert:
     that:
       - db_config is defined
-      - db_config is mapping              # est un dict
+      - db_config is mapping              # is a dict
       - db_config.host is defined
       - db_config.host is string
       - db_config.port is defined
@@ -188,19 +187,18 @@ Si une `assert:` failed dedans, les `tasks:` ne tournent **pas**. Pattern
     fail_msg: "Structure de db_config invalide — voir les conditions ci-dessus"
 ```
 
-🔍 **Observation** : pattern **schema validation** à la main. Pour des cas
-complexes, on combine **plusieurs tests** (`is defined`, `is mapping`, `is
-integer`). Voir [Lab 28 — Tests Jinja2](../28-ecrire-code-tests-jinja/) pour la liste
-complète.
+🔍 **Observation**: manual **schema validation** pattern. For complex cases, you
+combine **several tests** (`is defined`, `is mapping`, `is integer`). See
+[Lab 28 — Jinja2 tests](../../ecrire-code/tests-jinja/) for the full list.
 
-## 📚 Exercice 6 — Le piège : `assert:` après `register:`
+## 📚 Exercise 6 — The trap: `assert:` after `register:`
 
 ```yaml
 - name: Capturer le rc de openssl
   ansible.builtin.command: openssl version
   register: openssl_check
   changed_when: false
-  failed_when: false   # Capturer meme en cas d echec
+  failed_when: false   # Capture even on failure
 
 - name: Valider que la version est >= 3
   ansible.builtin.assert:
@@ -210,15 +208,14 @@ complète.
     fail_msg: "OpenSSL 3+ requis (vu : {{ openssl_check.stdout | default('non installe') }})"
 ```
 
-🔍 **Observation** : pattern **command + register + assert** très courant pour
-valider une version de binaire avant utilisation. Le `failed_when: false` sur
-le `command:` permet à `assert:` de générer le **message d'erreur clair** au
-lieu de l'erreur brute du module.
+🔍 **Observation**: the **command + register + assert** pattern is very common to
+validate a binary version before use. The `failed_when: false` on the `command:`
+lets `assert:` produce the **clear error message** instead of the raw module error.
 
-## 📚 Exercice 7 — `quiet: true` pour les asserts en cascade
+## 📚 Exercise 7 — `quiet: true` for cascading asserts
 
-Sur des dizaines d'assertions, le bruit dans la sortie est gênant. **`quiet:
-true`** affiche **uniquement** les `fail_msg:` (pas les success).
+With dozens of assertions, the noise in the output is annoying. **`quiet:
+true`** displays **only** the `fail_msg:` (not the successes).
 
 ```yaml
 - name: 50 validations silencieuses
@@ -230,55 +227,51 @@ true`** affiche **uniquement** les `fail_msg:` (pas les success).
     quiet: true
 ```
 
-🔍 **Observation** : avec `quiet: true`, l'assert ne pollue les logs que si
-elle échoue. Sortie console plus lisible sur les playbooks de **conformité**
-(CIS Benchmark, audit RGS).
+🔍 **Observation**: with `quiet: true`, the assert only pollutes the logs if it
+fails. Cleaner console output on **compliance** playbooks (CIS Benchmark, RGS audit).
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`assert: that:`** = liste de conditions, AND implicite.
-- **`fail_msg:`** / **`success_msg:`** pour personnaliser les messages.
-- **`fail:`** = échec explicite, à combiner avec `when:`.
-- **Préférer `assert:`** pour les **préconditions** ("ça doit être vrai").
-- **Préférer `fail:`** pour les **branches d'erreur** ("si X alors abort").
-- **`pre_tasks:`** est la section idiomatique pour les `assert:` de
-  validation.
-- **`quiet: true`** sur assert pour éviter la pollution sur les playbooks
-  d'audit.
+- **`assert: that:`** = list of conditions, implicit AND.
+- **`fail_msg:`** / **`success_msg:`** to customize the messages.
+- **`fail:`** = explicit failure, to be combined with `when:`.
+- **Prefer `assert:`** for **preconditions** ("this must be true").
+- **Prefer `fail:`** for **error branches** ("if X then abort").
+- **`pre_tasks:`** is the idiomatic section for validation `assert:`.
+- **`quiet: true`** on assert to avoid pollution on audit playbooks.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voulez **valider 10 conditions** en parallèle. Préférez-vous un
-   `assert: that: [c1, c2, ..., c10]` ou 10 `assert:` séparés ? Quel
-   compromis ?
+1. You want to **validate 10 conditions** in parallel. Do you prefer a
+   `assert: that: [c1, c2, ..., c10]` or 10 separate `assert:`? What is the
+   trade-off?
 
-2. Différence sémantique entre `failed_when: rc != 0` (sur un `command:`) et
-   `assert: that: rc == 0` (en tâche suivante) ?
+2. Semantic difference between `failed_when: rc != 0` (on a `command:`) and
+   `assert: that: rc == 0` (in the next task)?
 
-3. Vous voulez **continuer le play** même si l'assert échoue (pour collecter
-   tous les warnings). Quel pattern (`ignore_errors:`, `block/rescue`, ou
-   custom) ?
+3. You want to **continue the play** even if the assert fails (to collect all
+   the warnings). Which pattern (`ignore_errors:`, `block/rescue`, or custom)?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`debug: msg:`** pour afficher sans échouer (équivalent `print` Python).
-- **`pause: prompt:`** pour demander une **confirmation interactive** avant
-  une opération critique.
-- **`meta: end_play`** pour terminer le play **proprement** sans erreur quand
-  une condition est rencontrée (différent de `fail:` qui retourne `failed=1`).
-- **Pattern `assert + when`** : `when: var | bool` sur une `assert:` pour la
-  conditionner aux runs où elle est pertinente.
-- **Lab 51 (`stat:`) + `assert:`** : combinaison puissante — vérifier
-  l'existence + valider les attributs.
+- **`debug: msg:`** to display without failing (equivalent of Python `print`).
+- **`pause: prompt:`** to ask for an **interactive confirmation** before a
+  critical operation.
+- **`meta: end_play`** to end the play **cleanly** without error when a
+  condition is met (different from `fail:` which returns `failed=1`).
+- **`assert + when` pattern**: `when: var | bool` on an `assert:` to condition
+  it to the runs where it is relevant.
+- **Lab 51 (`stat:`) + `assert:`**: powerful combination, check existence +
+  validate the attributes.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 ansible-lint labs/modules-diagnostic/assert-fail/lab.yml
@@ -286,9 +279,9 @@ ansible-lint labs/modules-diagnostic/assert-fail/challenge/solution.yml
 ansible-lint --profile production labs/modules-diagnostic/assert-fail/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un
-> hook pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

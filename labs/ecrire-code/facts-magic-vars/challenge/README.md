@@ -1,43 +1,43 @@
-# 🎯 Challenge — Synthèse des facts via `hostvars`
+# 🎯 Challenge — Facts summary via `hostvars`
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `challenge/solution.yml` qui sur **db1.lab** pose un fichier
-`/tmp/facts-summary.txt` contenant 5 informations agrégées **depuis 2 hôtes
-différents** : facts locaux de db1 + IP de web1 lue via `hostvars`.
+Write `challenge/solution.yml` that, on **db1.lab**, places a file
+`/tmp/facts-summary.txt` containing 5 pieces of information aggregated **from 2
+different hosts**: db1's local facts + web1's IP read via `hostvars`.
 
-Contenu attendu :
+Expected content:
 
 ```text
 db1_hostname=db1.lab
 db1_os=AlmaLinux
 db1_memory=<entier>
 webservers_count=2
-web1_ip=10.10.20.21
+web1_ip=<web1 real IPv4, read from its facts>
 ```
 
-## 🧩 Pièce-clé : `hostvars`
+## 🧩 Key piece: `hostvars`
 
-`hostvars` est un dictionnaire **global** qui contient les variables (et facts)
-de **tous** les hôtes que Ansible a déjà *gathered* dans le run courant.
+`hostvars` is a **global** dictionary that contains the variables (and facts)
+of **all** the hosts that Ansible has already *gathered* in the current run.
 
-> ⚠️ **Pour lire `hostvars['web1.lab'].ansible_default_ipv4.address`**, il faut
-> que web1 ait été **gathered au préalable**. Sinon, `hostvars['web1.lab']`
-> ne contient que les vars statiques de l'inventaire — pas les facts.
+> ⚠️ **To read `hostvars['web1.lab'].ansible_default_ipv4.address`**, web1 must
+> have been **gathered beforehand**. Otherwise, `hostvars['web1.lab']`
+> only contains the static vars of the inventory: not the facts.
 
-## 🧩 Pattern à utiliser : 2 plays
+## 🧩 Pattern to use: 2 plays
 
-Le solution.yml contient **deux plays consécutifs** :
+The solution.yml contains **two consecutive plays**:
 
 ```yaml
 ---
-# Play 1 : pre-gather sur web1 (rend ses facts visibles dans hostvars)
+# Play 1: pre-gather on web1 (makes its facts visible in hostvars)
 - name: Pre-gather web1
   hosts: web1.lab
   gather_facts: true
   tasks: []
 
-# Play 2 : synthèse sur db1
+# Play 2: summary on db1
 - name: Synthèse sur db1
   hosts: db1.lab
   become: true
@@ -55,40 +55,40 @@ Le solution.yml contient **deux plays consécutifs** :
           web1_ip={{ ??? }}
 ```
 
-## 🧩 Variables magiques à utiliser
+## 🧩 Magic variables to use
 
-| Champ | Variable Ansible |
+| Field | Ansible variable |
 | --- | --- |
-| `db1_hostname` | `inventory_hostname` (variable magique, le nom court depuis l'inventaire) |
-| `db1_os` | `ansible_distribution` (fact, ex: `AlmaLinux`) |
-| `db1_memory` | `ansible_memtotal_mb` (fact, entier) |
-| `webservers_count` | `groups['webservers'] \| length` (variable magique : liste des hôtes du groupe) |
+| `db1_hostname` | `inventory_hostname` (magic variable, the short name from the inventory) |
+| `db1_os` | `ansible_distribution` (fact, e.g. `AlmaLinux`) |
+| `db1_memory` | `ansible_memtotal_mb` (fact, integer) |
+| `webservers_count` | `groups['webservers'] \| length` (magic variable: list of the group's hosts) |
 | `web1_ip` | `hostvars['web1.lab'].ansible_default_ipv4.address` |
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **`gather_facts: true`** obligatoire pour utiliser `ansible_*`. S'il
->   est `false`, les facts sont absents et le templating crash sur
+> - **`gather_facts: true`** mandatory to use `ansible_*`. If it
+>   is `false`, the facts are absent and templating crashes on
 >   `'ansible_distribution' is undefined`.
-> - **`hostvars[...]`** : pour accéder aux facts d'un autre hôte, l'autre
->   hôte doit déjà avoir gather_facts. Si pas dans le play actuel,
->   utiliser `delegate_to: <hôte>` + `delegate_facts: true` au préalable.
-> - **`groups[]`** retourne une **liste**, pas un dict. `length` filtre
->   pour compter, `[0]` pour prendre le premier.
-> - **`ansible_default_ipv4.address`** vs `ansible_all_ipv4_addresses` :
->   le premier est l'IP de la route par défaut, le second la liste
->   complète. Choisir selon le contexte.
+> - **`hostvars[...]`**: to access another host's facts, the other
+>   host must already have gathered facts. If not in the current play,
+>   use `delegate_to: <host>` + `delegate_facts: true` beforehand.
+> - **`groups[]`** returns a **list**, not a dict. `length` filters
+>   to count, `[0]` to take the first.
+> - **`ansible_default_ipv4.address`** vs `ansible_all_ipv4_addresses`:
+>   the first is the IP of the default route, the second the full
+>   list. Choose depending on the context.
 
-## 🚀 Lancement
+## 🚀 Launch
 
 ```bash
 ansible-playbook labs/ecrire-code/facts-magic-vars/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "cat /tmp/facts-summary.txt"
 ```
 
-🔍 Vérifiez que les 5 lignes sont présentes avec les bonnes valeurs.
+🔍 Check that the 5 lines are present with the right values.
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/facts-magic-vars/challenge/tests/
@@ -97,18 +97,18 @@ pytest -v labs/ecrire-code/facts-magic-vars/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/ecrire-code/facts-magic-vars clean
+dsoxlab clean ecrire-code-facts-magic-vars
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Cache des facts** : si vous avez configuré un fact cache (`fact_caching:
-  jsonfile` dans `ansible.cfg` — c'est le cas dans ce repo), le pre-gather de
-  web1 n'est plus nécessaire au 2ème run, les facts sont **lus depuis le
-  cache**. Démontrez-le en supprimant le 1er play et en relançant.
-- **`magic_variables`** : `ansible_play_hosts`, `play_hosts`, `groups['all']`,
-  `inventory_hostname_short`. Inspectez-les avec `debug: var=...`.
-- **Lint** :
+- **Fact cache**: if you have configured a fact cache (`fact_caching:
+  jsonfile` in `ansible.cfg`, which is the case in this repo), the pre-gather of
+  web1 is no longer necessary on the 2nd run, the facts are **read from the
+  cache**. Demonstrate it by removing the 1st play and rerunning.
+- **`magic_variables`**: `ansible_play_hosts`, `play_hosts`, `groups['all']`,
+  `inventory_hostname_short`. Inspect them with `debug: var=...`.
+- **Lint**:
 
    ```bash
    ansible-lint labs/ecrire-code/facts-magic-vars/challenge/solution.yml

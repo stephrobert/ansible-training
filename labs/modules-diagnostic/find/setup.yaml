@@ -1,0 +1,23 @@
+---
+# Mise en place du lab find : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup find lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (find)
+      ansible.builtin.file:
+        path: "/tmp/lab-find-cleanup"
+        state: "absent"
+      failed_when: false
+
+- name: Brief the learner (find)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Search files by glob, regex, age, size and type, then chain loop and file for a targeted, idempotent cleanup
+      run_once: true

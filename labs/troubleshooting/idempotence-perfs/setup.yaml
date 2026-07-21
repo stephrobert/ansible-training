@@ -1,0 +1,23 @@
+---
+# Mise en place du lab idempotence-perfs : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup idempotence-perfs lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (idempotence-perfs)
+      ansible.builtin.shell: |
+        rm -f /tmp/lab91-*
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (idempotence-perfs)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Make a shell task idempotent with creates or changed_when, measure a baseline with profile_tasks, then enable pipelining, forks and ControlPersist
+      run_once: true

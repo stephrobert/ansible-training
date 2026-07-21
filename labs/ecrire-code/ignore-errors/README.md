@@ -1,49 +1,49 @@
-# Lab 25 — `ignore_errors:` (usage légitime vs anti-pattern)
+# Lab 25 — `ignore_errors:` (legitimate use vs anti-pattern)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**ignore_errors Ansible : usage légitime vs anti-pattern**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/ignore-errors/)
+🔗 [**ignore_errors in Ansible: legitimate use vs anti-pattern**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/ignore-errors/)
 
-`ignore_errors: true` permet à une tâche d'**échouer** sans **arrêter le play**. La
-tâche reste marquée `failed`, mais Ansible passe à la suivante. C'est l'**équivalent
-du `try: ... except: pass`** Python — pratique mais souvent un anti-pattern parce
-qu'il **masque les vraies erreurs**.
+`ignore_errors: true` lets a task **fail** without **stopping the play**. The
+task stays marked `failed`, but Ansible moves to the next one. It is the
+**equivalent of Python's `try: ... except: pass`**: handy but often an anti-pattern
+because it **hides the real errors**.
 
-Dans 99% des cas, **`failed_when:`** (lab 24) ou **`block/rescue`** (lab 23) sont
-préférables. `ignore_errors:` reste utile dans **3 cas légitimes** spécifiques.
+In 99% of cases, **`failed_when:`** (lab 24) or **`block/rescue`** (lab 23) are
+preferable. `ignore_errors:` remains useful in **3 specific legitimate cases**.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Comprendre** l'effet de `ignore_errors: true` sur le PLAY RECAP.
-2. **Identifier** les **3 cas légitimes** où `ignore_errors` est acceptable.
-3. **Préférer** `failed_when:` ou `block/rescue` dans tous les autres cas.
-4. **Combiner** `ignore_errors:` avec `register:` pour conditionner la suite.
-5. **Diagnostiquer** un playbook qui masque silencieusement des erreurs.
+1. **Understand** the effect of `ignore_errors: true` on the PLAY RECAP.
+2. **Identify** the **3 legitimate cases** where `ignore_errors` is acceptable.
+3. **Prefer** `failed_when:` or `block/rescue` in all other cases.
+4. **Combine** `ignore_errors:` with `register:` to condition what follows.
+5. **Diagnose** a playbook that silently hides errors.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 ```
 
-## 📚 Exercice 1 — Le comportement par défaut (sans `ignore_errors:`)
+## 📚 Exercise 1 — The default behavior (without `ignore_errors:`)
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -63,18 +63,18 @@ Créez `lab.yml` :
         msg: "tache 3"
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/ecrire-code/ignore-errors/lab.yml
 ```
 
-🔍 **Observation** : la **tâche 2 plante**, le play **s'arrête**, **tâche 3 jamais
-exécutée**. PLAY RECAP : `failed=1`. C'est le comportement standard.
+🔍 **Observation**: **task 2 crashes**, the play **stops**, **task 3 never
+runs**. PLAY RECAP: `failed=1`. This is the standard behavior.
 
-## 📚 Exercice 2 — Avec `ignore_errors: true`
+## 📚 Exercise 2 — With `ignore_errors: true`
 
-Modifiez la tâche 2 :
+Modify task 2:
 
 ```yaml
 - name: Tache 2 - echec mais on continue
@@ -82,25 +82,25 @@ Modifiez la tâche 2 :
   ignore_errors: true
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/ecrire-code/ignore-errors/lab.yml
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- Sortie console : `TASK [Tache 2 - echec mais on continue] : FAILED!` puis
+- Console output: `TASK [Tache 2 - echec mais on continue] : FAILED!` then
   `...ignoring`.
-- **Tâche 3 s'exécute**.
-- PLAY RECAP : **`failed=0` mais `ignored=1`**.
+- **Task 3 runs**.
+- PLAY RECAP: **`failed=0` but `ignored=1`**.
 
-C'est le **silencement contrôlé** : l'erreur est loguée mais n'arrête pas le play.
-Le PLAY RECAP affiche `ignored=1` pour visibilité.
+This is the **controlled silencing**: the error is logged but does not stop the play.
+The PLAY RECAP shows `ignored=1` for visibility.
 
-## 📚 Exercice 3 — Cas légitime n°1 : nettoyage opportuniste
+## 📚 Exercise 3 — Legitimate case #1: opportunistic cleanup
 
-Pattern : supprimer un fichier qui peut ou non exister, sans condition `stat:` préalable.
+Pattern: delete a file that may or may not exist, without a prior `stat:` condition.
 
 ```yaml
 - name: Nettoyer un eventuel lock orphelin
@@ -110,19 +110,19 @@ Pattern : supprimer un fichier qui peut ou non exister, sans condition `stat:` p
   ignore_errors: true
 ```
 
-🔍 **Observation** : si `/var/run/myapp.lock` existe → supprimé. S'il n'existe pas
-→ tâche `ok` (pas d'erreur). **Si le module échoue pour une autre raison** (permission,
-filesystem read-only), `ignore_errors:` masque cette erreur. **Mauvais usage**.
+🔍 **Observation**: if `/var/run/myapp.lock` exists → deleted. If it does not exist
+→ task `ok` (no error). **If the module fails for another reason** (permission,
+read-only filesystem), `ignore_errors:` hides that error. **Bad usage**.
 
-**Mieux** : utiliser `state: absent` directement sur le module `file:` (qui est
-**idempotent** et ne fail pas sur fichier absent). **Pas besoin de `ignore_errors:`**.
+**Better**: use `state: absent` directly on the `file:` module (which is
+**idempotent** and does not fail on a missing file). **No need for `ignore_errors:`**.
 
-→ Ce cas n'est en fait **pas légitime** parce que le module gère déjà l'absence.
+→ This case is in fact **not legitimate** because the module already handles the absence.
 
-## 📚 Exercice 4 — Cas légitime n°2 : audit / collecte d'info
+## 📚 Exercise 4 — Legitimate case #2: audit / info gathering
 
-Pattern : un play d'**audit** où on collecte de l'info sur N hôtes, et on accepte
-que certains soient injoignables ou aient des facts manquants.
+Pattern: an **audit** play where you collect info on N hosts and accept that
+some are unreachable or have missing facts.
 
 ```yaml
 - name: Audit des services
@@ -139,11 +139,11 @@ que certains soient injoignables ou aient des facts manquants.
         msg: "nginx sur {{ inventory_hostname }} : {{ 'installe' if nginx_check.rc == 0 else 'absent' }}"
 ```
 
-🔍 **Observation** : `rpm -q` retourne `rc=1` si le paquet n'est pas installé. Avec
-`ignore_errors: true`, on capture le rc dans `register:` et on l'utilise plus tard.
+🔍 **Observation**: `rpm -q` returns `rc=1` if the package is not installed. With
+`ignore_errors: true`, you capture the rc in `register:` and use it later.
 
-**Mais !** Cette tâche serait mieux écrite avec `failed_when: false` (équivalent
-fonctionnel mais sémantiquement plus clair pour un audit) :
+**But!** This task would be better written with `failed_when: false` (functionally
+equivalent but semantically clearer for an audit):
 
 ```yaml
 - name: Tester si nginx est installe (audit-style)
@@ -153,12 +153,12 @@ fonctionnel mais sémantiquement plus clair pour un audit) :
   changed_when: false
 ```
 
-→ Ce cas est **un cas où `failed_when: false` est préférable à `ignore_errors:`**.
+→ This case is **a case where `failed_when: false` is preferable to `ignore_errors:`**.
 
-## 📚 Exercice 5 — Cas légitime n°3 : tâche optionnelle non critique
+## 📚 Exercise 5 — Legitimate case #3: non-critical optional task
 
-Pattern : envoyer une notification Slack en fin de deploy. Si Slack est down, le
-deploy est quand même un succès.
+Pattern: send a Slack notification at the end of a deploy. If Slack is down, the
+deploy is still a success.
 
 ```yaml
 - name: Notifier Slack (best effort)
@@ -170,11 +170,11 @@ deploy est quand même un succès.
   ignore_errors: true
 ```
 
-🔍 **Observation** : si Slack répond `500` ou est injoignable, le play continue.
-C'est légitime parce que la notification n'est **pas critique**.
+🔍 **Observation**: if Slack responds `500` or is unreachable, the play continues.
+This is legitimate because the notification is **not critical**.
 
-**Variante préférable** : `block/rescue` qui **log le fail** dans un fichier sans
-arrêter le play.
+**Preferable variant**: `block/rescue` that **logs the failure** to a file without
+stopping the play.
 
 ```yaml
 block:
@@ -188,92 +188,91 @@ rescue:
       create: true
 ```
 
-→ Ce cas est **acceptable avec `ignore_errors:`** mais `block/rescue` est plus
-visible et permet de tracer l'échec.
+→ This case is **acceptable with `ignore_errors:`** but `block/rescue` is more
+visible and lets you trace the failure.
 
-## 📚 Exercice 6 — Le danger : `ignore_errors:` masque tout
+## 📚 Exercise 6 — The danger: `ignore_errors:` hides everything
 
 ```yaml
-# ❌ TRES dangereux
+# ❌ VERY dangerous
 - name: Configurer la base de donnees
   ansible.builtin.shell: |
     /opt/app/setup-db.sh
   ignore_errors: true
 ```
 
-🔍 **Observation** : si `setup-db.sh` plante (SQL invalide, password incorrect, disque
-plein), Ansible **continue** le play comme si tout allait bien. La suite du déploiement
-peut **réussir** alors que la **base de données est cassée**.
+🔍 **Observation**: if `setup-db.sh` crashes (invalid SQL, wrong password, full
+disk), Ansible **continues** the play as if everything was fine. The rest of the
+deployment may **succeed** while the **database is broken**.
 
-C'est l'**anti-pattern n°1** d'Ansible : `ignore_errors:` sur des opérations critiques
-**masque** des erreurs majeures.
+This is Ansible's **number one anti-pattern**: `ignore_errors:` on critical operations
+**hides** major errors.
 
-**Mitigation** :
+**Mitigation**:
 
-- **Préférer `failed_when:`** avec une expression précise sur ce qui constitue un échec
-  acceptable.
-- **Utiliser `block/rescue`** pour rattraper et logger.
-- **Ne jamais `ignore_errors:`** sur une opération qui modifie des données.
+- **Prefer `failed_when:`** with a precise expression on what constitutes an acceptable
+  failure.
+- **Use `block/rescue`** to catch and log.
+- **Never `ignore_errors:`** on an operation that modifies data.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`ignore_errors: true`** ne masque **pas** l'erreur — elle est dans `failed=N` du
-  PLAY RECAP en mode standard, mais comptée en `ignored=N` avec ignore_errors.
-- **3 cas légitimes** (et tous mieux servis par d'autres outils) :
-  1. Nettoyage opportuniste → utiliser `state: absent` du module (idempotent par défaut).
-  2. Audit / collecte → utiliser `failed_when: false` (sémantique plus claire).
-  3. Notification non critique → utiliser `block/rescue` pour logger l'échec.
-- **Anti-pattern** : `ignore_errors:` sur des opérations critiques (DB, deploy, secrets).
-- **`register:` + `ignore_errors:`** = pattern d'audit classique mais à remplacer par `failed_when:`.
+- **`ignore_errors: true`** does **not** hide the error: it is in `failed=N` of the
+  PLAY RECAP in standard mode, but counted as `ignored=N` with ignore_errors.
+- **3 legitimate cases** (all better served by other tools):
+  1. Opportunistic cleanup → use the module's `state: absent` (idempotent by default).
+  2. Audit / gathering → use `failed_when: false` (clearer semantics).
+  3. Non-critical notification → use `block/rescue` to log the failure.
+- **Anti-pattern**: `ignore_errors:` on critical operations (DB, deploy, secrets).
+- **`register:` + `ignore_errors:`** = classic audit pattern, but replace it with `failed_when:`.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voyez `ignore_errors: true` 30 fois dans un repo legacy. Quelle est votre
-   **première action** : remplacer par quoi, et dans quel ordre de priorité ?
+1. You see `ignore_errors: true` 30 times in a legacy repo. What is your
+   **first action**: replace it with what, and in what priority order?
 
-2. Pourquoi `ignored=1` dans le PLAY RECAP est **plus dangereux** que `failed=1` ?
-   (indice : penser à un opérateur qui scanne le PLAY RECAP en mode rapide).
+2. Why is `ignored=1` in the PLAY RECAP **more dangerous** than `failed=1`?
+   (hint: think of an operator scanning the PLAY RECAP quickly).
 
-3. Un collègue dit "j'utilise `ignore_errors: true` parce que c'est plus court que
-   `failed_when: false`". Quels sont les **3 arguments** pour le faire changer
-   d'avis ?
+3. A colleague says "I use `ignore_errors: true` because it is shorter than
+   `failed_when: false`". What are the **3 arguments** to change their mind?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`any_errors_fatal: true`** au niveau du play (lab 25) : à l'inverse de
-  `ignore_errors`, force l'échec du play entier dès la première erreur — utile
-  pour les opérations cluster qui doivent être atomiques.
-- **`failed_when: false`** (lab 23) : équivalent fonctionnel de `ignore_errors:`
-  mais plus expressif (on indique **explicitement** qu'on ne considère pas l'erreur
-  comme un échec).
-- **`block/rescue`** (lab 23) : la **vraie** alternative pour rattraper et **agir**
-  sur l'erreur (notification, rollback, log).
-- **Ansible Lint rule `ignore-errors`** : règle qui flag tous les `ignore_errors: true`
-  comme **warning**. À activer en CI pour forcer une review humaine.
+- **`any_errors_fatal: true`** at the play level (lab 25): the opposite of
+  `ignore_errors`, it forces the failure of the whole play from the first error,
+  useful for cluster operations that must be atomic.
+- **`failed_when: false`** (lab 23): a functional equivalent of `ignore_errors:`
+  but more expressive (you **explicitly** state that you do not consider the error
+  a failure).
+- **`block/rescue`** (lab 23): the **real** alternative to catch and **act**
+  on the error (notification, rollback, log).
+- **Ansible Lint rule `ignore-errors`**: a rule that flags every `ignore_errors: true`
+  as a **warning**. Enable it in CI to force a human review.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/ecrire-code/ignore-errors/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/ecrire-code/ignore-errors/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/ecrire-code/ignore-errors/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

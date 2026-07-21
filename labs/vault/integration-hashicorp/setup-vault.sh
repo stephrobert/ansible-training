@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # setup-vault.sh — démarre HashiCorp Vault en mode dev local pour le lab.
-# Compatible avec OpenBao : remplacer 'hashicorp/vault' par 'openbao/openbao'.
+# Compatible avec OpenBao : IMAGE=docker.io/openbao/openbao:latest ./setup-vault.sh
+# (image pleinement qualifiée : podman n'a pas de registre par défaut).
 set -euo pipefail
 
 CONTAINER_NAME="${CONTAINER_NAME:-vault-lab82}"
 VAULT_TOKEN="${VAULT_TOKEN:-lab82-root}"
 VAULT_PORT="${VAULT_PORT:-8200}"
-IMAGE="${IMAGE:-hashicorp/vault:latest}"
+IMAGE="${IMAGE:-docker.io/hashicorp/vault:latest}"
 
 echo "[setup-vault] Lancement de $IMAGE..."
 podman run -d --rm \

@@ -1,21 +1,21 @@
-# 🎯 Challenge — Lancer un premier playbook dans un EE
+# 🎯 Challenge — Run a first playbook inside an EE
 
-## ✅ Objectif
+## ✅ Objective
 
-À la racine du lab, produire 4 fichiers qui démontrent l'utilisation
-d'`ansible-navigator` avec un Execution Environment officiel
+At the lab root, produce 4 files that demonstrate the use of
+`ansible-navigator` with an official Execution Environment
 (`creator-ee`).
 
-| Fichier | Attente |
+| File | Expectation |
 | --- | --- |
-| `setup-ee.sh` | Exécutable. Vérifie/installe `podman` et `ansible-navigator`. |
-| `inventory.yml` | YAML valide. Hôtes `web1.lab` et `db1.lab` dans le groupe `all`. |
-| `ping.yml` | Module FQCN `ansible.builtin.ping`. |
-| `ansible-navigator.yml` | Référence l'image `creator-ee` dans `execution-environment.image:`. |
+| `setup-ee.sh` | Executable. Checks/installs `podman` and `ansible-navigator`. |
+| `inventory.yml` | Valid YAML. Hosts `web1.lab` and `db1.lab` in the `all` group, each declaring its `ansible_host` (reachable IP). |
+| `ping.yml` | FQCN module `ansible.builtin.ping`. |
+| `ansible-navigator.yml` | References the `creator-ee` image in `execution-environment.image:`. |
 
-## 🧩 Indices
+## 🧩 Hints
 
-### Étape 1 — `setup-ee.sh` (script à compléter)
+### Step 1 — `setup-ee.sh` (script to complete)
 
 ```bash
 cat > setup-ee.sh <<'SH'
@@ -23,22 +23,22 @@ cat > setup-ee.sh <<'SH'
 set -euo pipefail
 command -v ??? >/dev/null || sudo dnf install -y ???
 command -v ??? >/dev/null || pipx install ???
-podman pull ???                            # image creator-ee officielle
+podman pull ???                            # official creator-ee image
 SH
 chmod +x setup-ee.sh
 ```
 
-### Étape 2 — `inventory.yml`
+### Step 2 — `inventory.yml`
 
 ```yaml
 ---
 all:
   hosts:
-    ???:                                   # web1.lab et db1.lab
+    ???:                                   # web1.lab and db1.lab
     ???:
 ```
 
-### Étape 3 — `ping.yml`
+### Step 3 — `ping.yml`
 
 ```yaml
 ---
@@ -50,41 +50,47 @@ all:
       ansible.builtin.???:
 ```
 
-### Étape 4 — `ansible-navigator.yml`
+### Step 4 — `ansible-navigator.yml`
 
 ```yaml
 ---
 ansible-navigator:
   execution-environment:
     image: ???                  # ghcr.io/ansible/creator-ee:latest
-    container-engine: ???       # podman (pas docker — convention RHCE 2026)
+    container-engine: ???       # podman (not docker — RHCE 2026 convention)
     pull:
-      policy: ???                # 'missing' (pull si absent), 'always' (CI), 'never'
+      policy: ???                # 'missing' (pull if absent), 'always' (CI), 'never'
   mode: ???                      # 'stdout' (CI), 'interactive' (TUI)
   logging:
     level: info
 ```
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
-> - **`podman` vs `docker`** : Red Hat préconise Podman (rootless, pas de
->   daemon). À l'EX294 2026, c'est `podman` partout. Docker fonctionne
->   mais reste un anti-pattern dans l'éco RHEL.
-> - **`pull.policy: missing`** : pull seulement si l'image absente
->   localement. **`always`** force un pull (utile en CI), **`never`**
->   exige que l'image soit déjà présente (utile offline).
-> - **`mode: stdout`** indispensable pour CI/scripts. Le défaut
->   `interactive` (TUI) bloque dans un script non-tty.
-> - **Test structurel** : le test ne lance pas Podman. Il valide juste
->   que les fichiers existent et contiennent les bons mots-clés. Vous
->   pouvez passer le test sans avoir Podman installé.
+> - **`podman` vs `docker`**: Red Hat recommends Podman (rootless, no
+>   daemon). At the EX294 2026, it is `podman` everywhere. Docker works
+>   but remains an anti-pattern in the RHEL ecosystem.
+> - **`pull.policy: missing`**: pull only if the image is absent
+>   locally. **`always`** forces a pull (useful in CI), **`never`**
+>   requires the image to be already present (useful offline).
+> - **`mode: stdout`** is essential for CI/scripts. The default
+>   `interactive` (TUI) blocks in a non-tty script.
 
-## 🚀 Lancement
+## 🚀 Launch
 
 ```bash
 cd labs/ee/hello/
 ./setup-ee.sh
 ansible-navigator run ping.yml -i inventory.yml --mode stdout
+```
+
+## 📓 Command log
+
+Record in `challenge/solution.sh` the commands you ran (setup,
+navigator run). This log must exist for pytest to run:
+
+```bash
+chmod +x challenge/solution.sh
 ```
 
 ## 🧪 Validation
@@ -93,19 +99,21 @@ ansible-navigator run ping.yml -i inventory.yml --mode stdout
 pytest -v labs/ee/hello/challenge/tests/
 ```
 
-Le test est **structurel** : il valide les fichiers ci-dessus sans
-exécuter Podman.
+The tests actually run `bash -n` on your script,
+`ansible-inventory` on your inventory and `ansible-playbook
+--syntax-check` on your playbook. Only the run inside the EE (Podman + pull
+of creator-ee) stays manual.
 
 ## 🧹 Reset
 
 ```bash
-make -C labs/ee/hello/ clean
+dsoxlab clean ee-hello
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- `ansible-navigator --mode interactive` : interface TUI navigable au
-  clavier (`:run`, `:doc`, `:collections`).
-- `--pp always` : force un pull à chaque exécution (utile en CI quand
-  on push souvent l'EE).
-- `~/.ansible-navigator.yml` : config globale au lieu de par-projet.
+- `ansible-navigator --mode interactive`: keyboard-navigable TUI interface
+  (`:run`, `:doc`, `:collections`).
+- `--pp always`: forces a pull on every run (useful in CI when
+  you push the EE often).
+- `~/.ansible-navigator.yml`: global config instead of per-project.

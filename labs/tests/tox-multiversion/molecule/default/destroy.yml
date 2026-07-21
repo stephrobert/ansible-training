@@ -1,0 +1,42 @@
+---
+# destroy.yml : le pendant de create.yml, et la raison pour laquelle un
+# lab Molecule ne laisse rien derrière lui.
+#
+# Le driver « default » étant délégué, Molecule ne sait pas davantage
+# détruire une instance qu'il ne sait la créer : c'est ce playbook qui
+# s'en charge. Sans lui, chaque « molecule test » abandonnerait ses
+# conteneurs derrière lui.
+#
+# Ce playbook est fourni avec le lab : c'est le banc de test, pas
+# l'exercice. Il est identique dans les quatre labs de la section.
+
+- name: Destroy
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+
+  vars:
+    molecule_file: "{{ lookup('env', 'MOLECULE_FILE') }}"
+    molecule_instance_config: "{{ lookup('env', 'MOLECULE_INSTANCE_CONFIG') }}"
+    molecule_yml: "{{ lookup('file', molecule_file) | from_yaml }}"
+
+  tasks:
+    # state: absent est idempotent : détruire une instance déjà absente
+    # n'est pas une erreur. C'est indispensable, car « molecule test »
+    # commence par un destroy, avant même que quoi que ce soit existe.
+    - name: Supprimer les conteneurs de la matrice
+      containers.podman.podman_container:
+        name: "{{ item.name }}"
+        state: absent
+      loop: "{{ molecule_yml.platforms }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    # Remettre le fichier d'instances à zéro : le laisser garni ferait
+    # croire à Molecule que des instances joignables subsistent.
+    - name: Vider le fichier d'instances lu par Molecule
+      ansible.builtin.copy:
+        dest: "{{ molecule_instance_config }}"
+        content: "{{ [] | to_nice_yaml }}"
+        mode: "0644"

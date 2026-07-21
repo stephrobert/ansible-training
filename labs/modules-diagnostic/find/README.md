@@ -1,45 +1,45 @@
-# Lab 52 — Module `find:` (recherche multi-fichiers)
+# Lab 52 — `find:` module (multi-file search)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Module find Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/module-find/)
+🔗 [**Ansible find module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/module-find/)
 
-`ansible.builtin.find:` recherche **plusieurs fichiers** par pattern (glob ou regex),
-âge, taille, type. C'est l'équivalent de la commande `find` Unix mais avec
-résultat **structuré** (liste de dicts) consommable par `loop:` ensuite.
+`ansible.builtin.find:` searches for **multiple files** by pattern (glob or regex),
+age, size, type. It is the equivalent of the Unix `find` command but with a
+**structured** result (a list of dicts) that `loop:` can then consume.
 
-Là où `stat:` traite **un fichier**, `find:` en parcourt **plusieurs**. Cas
-d'usage typiques RHCE 2026 : nettoyer les vieux logs (>7 jours), lister les
-binaires setuid, supprimer les fichiers temporaires de plus de 100Mo.
+Where `stat:` handles **one file**, `find:` walks through **several**. Typical
+RHCE 2026 use cases: clean up old logs (>7 days), list setuid binaries, delete
+temporary files larger than 100MB.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Rechercher** par **pattern** (`patterns:` glob ou `use_regex: true`).
-2. **Filtrer par âge** (`age: 7d`, `age_stamp: mtime`).
-3. **Filtrer par taille** (`size: +100m`).
-4. **Filtrer par type** (`file_type: file/directory/link`).
-5. **Combiner** `find:` + `loop: + file: state: absent` pour un cleanup ciblé.
+1. **Search** by **pattern** (`patterns:` glob or `use_regex: true`).
+2. **Filter by age** (`age: 7d`, `age_stamp: mtime`).
+3. **Filter by size** (`size: 100m`).
+4. **Filter by type** (`file_type: file/directory/link`).
+5. **Combine** `find:` + `loop: + file: state: absent` for a targeted cleanup.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 ansible db1.lab -b -m shell -a "rm -rf /tmp/lab-find-test; mkdir -p /tmp/lab-find-test"
 ```
 
-## 📚 Exercice 1 — Setup : créer des fichiers de test
+## 📚 Exercise 1 — Setup: create test files
 
 ```yaml
 ---
@@ -61,9 +61,9 @@ ansible db1.lab -b -m shell -a "rm -rf /tmp/lab-find-test; mkdir -p /tmp/lab-fin
         var: setup_output.stdout_lines
 ```
 
-🔍 **Observation** : 5 fichiers `app1.log` (5M) à `app5.log` (25M).
+🔍 **Observation**: 5 files `app1.log` (5M) to `app5.log` (25M).
 
-## 📚 Exercice 2 — Recherche par pattern (glob)
+## 📚 Exercise 2 — Search by pattern (glob)
 
 ```yaml
 - name: Trouver tous les .log
@@ -77,17 +77,16 @@ ansible db1.lab -b -m shell -a "rm -rf /tmp/lab-find-test; mkdir -p /tmp/lab-fin
     msg: "{{ log_files.files | map(attribute='path') | list }}"
 ```
 
-🔍 **Observation** : `log_files.files` est une **liste de dicts** (un par fichier
-trouvé) avec : `path`, `size`, `mode`, `mtime`, `uid`, `gid`, etc. — comme un
-`stat:` par fichier.
+🔍 **Observation**: `log_files.files` is a **list of dicts** (one per file found)
+with: `path`, `size`, `mode`, `mtime`, `uid`, `gid`, etc., like a `stat:` per file.
 
-**Champs utiles du registre** :
+**Useful register fields**:
 
-- **`log_files.files`** : liste des fichiers trouvés (dicts).
-- **`log_files.matched`** : nombre total trouvé.
-- **`log_files.examined`** : nombre de fichiers parcourus avant filtrage.
+- **`log_files.files`**: list of files found (dicts).
+- **`log_files.matched`**: total number found.
+- **`log_files.examined`**: number of files scanned before filtering.
 
-## 📚 Exercice 3 — Filtrer par taille
+## 📚 Exercise 3 — Filter by size
 
 ```yaml
 - name: Trouver les .log de plus de 10Mo
@@ -103,17 +102,17 @@ trouvé) avec : `path`, `size`, `mode`, `mtime`, `uid`, `gid`, etc. — comme un
     # → app3.log (15M), app4.log (20M), app5.log (25M)
 ```
 
-**Format `size:`** :
+**`size:` format**:
 
-- **`10m`** = au moins 10 mégaoctets (sans préfixe = `>= 10m`).
-- **`-100k`** = moins de 100 kilooctets (préfixe `-` uniquement).
-- **`1g`** = au moins 1 gigaoctet.
-- Suffixes : `b` (bytes), `k`, `m`, `g`, `t`.
+- **`10m`** = at least 10 megabytes (no prefix = `>= 10m`).
+- **`-100k`** = less than 100 kilobytes (`-` prefix only).
+- **`1g`** = at least 1 gigabyte.
+- Suffixes: `b` (bytes), `k`, `m`, `g`, `t`.
 
-> ⚠️ **Pas de préfixe `+`** comme avec la commande `find` Unix — Ansible
-> rejette `+10m`. Sans préfixe = supérieur ou égal.
+> ⚠️ **No `+` prefix** like with the Unix `find` command: Ansible rejects
+> `+10m`. No prefix = greater than or equal.
 
-## 📚 Exercice 4 — Filtrer par âge
+## 📚 Exercise 4 — Filter by age
 
 ```yaml
 - name: Trouver les fichiers modifies depuis plus de 7 jours
@@ -131,19 +130,19 @@ trouvé) avec : `path`, `size`, `mode`, `mtime`, `uid`, `gid`, etc. — comme un
   register: recent_logs
 ```
 
-**Format `age:`** :
+**`age:` format**:
 
-- **`7d`** = 7 jours ou plus (par défaut basé sur `mtime`).
-- **`-1h`** = moins d'1 heure (signe `-` = inférieur).
-- Suffixes : `s` (secondes), `m` (minutes), `h` (heures), `d` (jours), `w` (semaines).
+- **`7d`** = 7 days or more (by default based on `mtime`).
+- **`-1h`** = less than 1 hour (`-` sign = less than).
+- Suffixes: `s` (seconds), `m` (minutes), `h` (hours), `d` (days), `w` (weeks).
 
-**`age_stamp:`** : choisir le timestamp à comparer.
+**`age_stamp:`**: choose the timestamp to compare.
 
-- **`mtime`** (défaut) : dernière modification.
-- **`atime`** : dernier accès.
-- **`ctime`** : dernier changement de métadonnée.
+- **`mtime`** (default): last modification.
+- **`atime`**: last access.
+- **`ctime`**: last metadata change.
 
-## 📚 Exercice 5 — Filtrer par type
+## 📚 Exercise 5 — Filter by type
 
 ```yaml
 - name: Trouver tous les dossiers
@@ -160,9 +159,9 @@ trouvé) avec : `path`, `size`, `mode`, `mtime`, `uid`, `gid`, etc. — comme un
   register: symlinks
 ```
 
-**Valeurs `file_type:`** : `file` (défaut), `directory`, `link`, `any`.
+**`file_type:` values**: `file` (default), `directory`, `link`, `any`.
 
-## 📚 Exercice 6 — `recurse: true` (descente récursive)
+## 📚 Exercise 6 — `recurse: true` (recursive descent)
 
 ```yaml
 - name: Trouver TOUS les .conf dans /etc et sous-dossiers
@@ -177,22 +176,22 @@ trouvé) avec : `path`, `size`, `mode`, `mtime`, `uid`, `gid`, etc. — comme un
     msg: "{{ all_conf.matched }} fichiers .conf trouves dans /etc/"
 ```
 
-🔍 **Observation** : sans `recurse: true`, `find:` ne regarde que **`/etc/*.conf`**.
-Avec, il descend dans `/etc/sysconfig/`, `/etc/sysctl.d/`, etc.
+🔍 **Observation**: without `recurse: true`, `find:` only looks at **`/etc/*.conf`**.
+With it, it descends into `/etc/sysconfig/`, `/etc/sysctl.d/`, etc.
 
-**Performance** : `recurse: true` sur `/` peut prendre des heures sur un système
-chargé. **Toujours** scoper avec `paths:` précis.
+**Performance**: `recurse: true` on `/` can take hours on a loaded system.
+**Always** scope with a precise `paths:`.
 
-## 📚 Exercice 7 — `find:` + cleanup automatique
+## 📚 Exercise 7 — `find:` + automatic cleanup
 
-Pattern classique : **supprimer** tous les fichiers matching un pattern.
+Classic pattern: **delete** all the files matching a pattern.
 
 ```yaml
 - name: Trouver les .log > 1Mo et plus de 0 jours
   ansible.builtin.find:
     paths: /tmp/lab-find-test
     patterns: '*.log'
-    size: +1m
+    size: 1m
   register: logs_to_clean
 
 - name: Supprimer ces fichiers
@@ -204,13 +203,13 @@ Pattern classique : **supprimer** tous les fichiers matching un pattern.
     label: "{{ item.path }}"
 ```
 
-🔍 **Observation** : pattern `find` + `loop: + file: state: absent`. Idempotent
-(un 2e run trouve 0 fichier → `loop:` 0 itération).
+🔍 **Observation**: the `find` + `loop: + file: state: absent` pattern. Idempotent
+(a 2nd run finds 0 files → `loop:` 0 iterations).
 
-**Alternative shell** : `find /tmp/lab-find-test -name '*.log' -size +1M -delete`.
-Moins lisible, moins idempotent, mais plus rapide sur **gros volumes**.
+**Shell alternative**: `find /tmp/lab-find-test -name '*.log' -size +1M -delete`.
+Less readable, less idempotent, but faster on **large volumes**.
 
-## 📚 Exercice 8 — Le piège : `find:` sur une partition NFS lente
+## 📚 Exercise 8 — The trap: `find:` on a slow NFS partition
 
 ```yaml
 - name: Find sur NFS (lent)
@@ -219,56 +218,54 @@ Moins lisible, moins idempotent, mais plus rapide sur **gros volumes**.
     patterns: '*.dump'
     recurse: true
   register: nfs_dumps
-  timeout: 60   # Tuer apres 60s
+  timeout: 60   # Kill after 60s
 ```
 
-🔍 **Observation** : sur un NFS lent ou un FS très grand, `find:` peut bloquer
-le play. **`timeout:`** au niveau task limite la durée.
+🔍 **Observation**: on a slow NFS or a very large FS, `find:` can block the play.
+**`timeout:`** at the task level limits the duration.
 
-**Mitigation** :
+**Mitigation**:
 
-- **Scoper** par sous-dossier précis (pas `/`).
-- **Limiter** la profondeur via `depth:` (Ansible 2.10+, sinon shell).
+- **Scope** by a precise subfolder (not `/`).
+- **Limit** the depth via `depth:` (Ansible 2.10+, otherwise shell).
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`find:`** retourne `<reg>.files` (liste de dicts) + `<reg>.matched` (count).
-- **`patterns:`** = glob par défaut, `use_regex: true` pour regex Python.
-- **`size: +10m`** / **`age: 7d`** = filtres standards.
-- **`recurse: true`** = descente récursive (attention performance).
-- **`file_type:`** : `file` / `directory` / `link` / `any`.
-- **Pattern `find + loop + file: state: absent`** = cleanup idempotent.
+- **`find:`** returns `<reg>.files` (list of dicts) + `<reg>.matched` (count).
+- **`patterns:`** = glob by default, `use_regex: true` for Python regex.
+- **`size: 10m`** / **`age: 7d`** = standard filters.
+- **`recurse: true`** = recursive descent (mind the performance).
+- **`file_type:`**: `file` / `directory` / `link` / `any`.
+- **`find + loop + file: state: absent` pattern** = idempotent cleanup.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voulez **archiver** tous les `.log` de plus de 7 jours dans
-   `/var/backups/` avant de les supprimer. Pipeline complet (modules + ordre) ?
+1. You want to **archive** all the `.log` older than 7 days into
+   `/var/backups/` before deleting them. Full pipeline (modules + order)?
 
-2. Différence entre `patterns: '*.log'` (glob) et `patterns: '\\.log$'` avec
-   `use_regex: true` ?
+2. Difference between `patterns: '*.log'` (glob) and `patterns: '\\.log$'` with
+   `use_regex: true`?
 
-3. Sur 100 hôtes, `find:` recursif sur `/var/log/` prend 30s par hôte. Comment
-   **paralléliser** sans saturer ?
+3. On 100 hosts, a recursive `find:` on `/var/log/` takes 30s per host. How do
+   you **parallelize** without saturating?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`get_checksum: true`** : calcule le hash de chaque fichier trouvé. Lent
-  mais utile pour audit.
-- **`hidden: true`** : inclut les fichiers `.<dotfile>`. Désactivé par défaut.
-- **`excludes:`** : liste de patterns à **exclure** du résultat.
-- **`depth:`** : profondeur maximale (Ansible 2.10+) — utile sur arborescences
-  profondes.
-- **Lab 51 (`stat:`)** = stat sur **un** fichier ; **Lab 52 (`find:`)** = sur
-  plusieurs.
+- **`get_checksum: true`**: computes the hash of each file found. Slow but
+  useful for audit.
+- **`hidden: true`**: includes `.<dotfile>` files. Disabled by default.
+- **`excludes:`**: list of patterns to **exclude** from the result.
+- **`depth:`**: maximum depth (Ansible 2.10+), useful on deep trees.
+- **Lab 51 (`stat:`)** = stat on **one** file; **Lab 52 (`find:`)** = on several.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 ansible-lint labs/modules-diagnostic/find/lab.yml
@@ -276,9 +273,9 @@ ansible-lint labs/modules-diagnostic/find/challenge/solution.yml
 ansible-lint --profile production labs/modules-diagnostic/find/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un
-> hook pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

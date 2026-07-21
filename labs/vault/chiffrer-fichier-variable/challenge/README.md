@@ -1,22 +1,22 @@
-# 🎯 Challenge — Mixer variables chiffrées et claires sur `db1.lab`
+# 🎯 Challenge — Mix encrypted and cleartext variables on `db1.lab`
 
-## ✅ Objectif
+## ✅ Objective
 
-Reproduire la mécanique d'`encrypt_string` du lab démo, mais cette fois
-sur **`db1.lab`** avec un fichier produit **`/tmp/lab78-challenge.txt`**
-contenant 3 lignes attendues.
+Reproduce the `encrypt_string` mechanics of the demo lab, but this time
+on **`db1.lab`** with a produced file **`/tmp/lab78-challenge.txt`**
+containing 3 expected lines.
 
-| Élément | Valeur attendue |
+| Element | Expected value |
 | --- | --- |
-| Hôte cible | `db1.lab` |
-| Fichier produit | `/tmp/lab78-challenge.txt` |
-| Variable `admin_username` | clair, valeur exacte `lab78_admin` |
-| Variable `admin_password` | chiffrée via `encrypt_string`, doit commencer par `Admin…` |
-| Le fichier doit afficher | `starts: Admin…`, `length: <N>` |
+| Target host | `db1.lab` |
+| Produced file | `/tmp/lab78-challenge.txt` |
+| Variable `admin_username` | cleartext, exact value `lab78_admin` |
+| Variable `admin_password` | encrypted via `encrypt_string`, must start with `Admin…` |
+| The file must display | `starts: Admin…`, `length: <N>` |
 
-## 🧩 Indices
+## 🧩 Hints
 
-### Étape 1 — Définir les variables dans `host_vars/db1.lab.yml`
+### Step 1 — Define the variables in `host_vars/db1.lab.yml`
 
 ```bash
 mkdir -p host_vars/
@@ -29,16 +29,16 @@ admin_password: !vault |                # CHIFFRÉ inline
 YAML
 ```
 
-### Étape 2 — Générer la valeur chiffrée
+### Step 2 — Generate the encrypted value
 
 ```bash
 ansible-vault encrypt_string --vault-password-file=.vault_password \
     'AdminP@ss-2026!' --name admin_password
 ```
 
-→ Copier la sortie dans `host_vars/db1.lab.yml`.
+→ Copy the output into `host_vars/db1.lab.yml`.
 
-### Étape 3 — Écrire `challenge/solution.yml`
+### Step 3 — Write `challenge/solution.yml`
 
 ```yaml
 ---
@@ -58,19 +58,19 @@ ansible-vault encrypt_string --vault-password-file=.vault_password \
       no_log: ???
 ```
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
-> - **`encrypt_string`** chiffre une **valeur**, pas un fichier complet.
->   Le tag `!vault |` Yaml indique à Ansible de la déchiffrer au runtime.
-> - **`encrypt_string --stdin-name <var>`** pour saisir la valeur via
->   stdin (pas dans l'historique shell). Plus propre.
-> - **Indentation du `!vault |`** : critique en YAML — la valeur chiffrée
->   doit être indentée sous le tag. Copier la sortie d'`ansible-vault
->   encrypt_string` telle quelle.
-> - **`no_log: true`** au niveau task. Sans, `ansible-playbook -v` peut
->   afficher la valeur déchiffrée dans le résultat de la tâche.
+> - **`encrypt_string`** encrypts a **value**, not a complete file.
+>   The `!vault |` YAML tag tells Ansible to decrypt it at runtime.
+> - **`encrypt_string --stdin-name <var>`** to enter the value via
+>   stdin (not in the shell history). Cleaner.
+> - **Indentation of `!vault |`**: critical in YAML, the encrypted value
+>   must be indented under the tag. Copy the output of `ansible-vault
+>   encrypt_string` as is.
+> - **`no_log: true`** at the task level. Without it, `ansible-playbook -v` may
+>   display the decrypted value in the task result.
 
-## 🚀 Lancement
+## 🚀 Launch
 
 ```bash
 ansible-playbook labs/vault/chiffrer-fichier-variable/challenge/solution.yml \
@@ -86,12 +86,12 @@ pytest -v labs/vault/chiffrer-fichier-variable/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/vault/chiffrer-fichier-variable/ clean
+dsoxlab clean vault-chiffrer-fichier-variable
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- `ansible-vault encrypt_string --stdin-name admin_password` pour saisir
-  la valeur via stdin (pas dans l'historique shell).
-- Re-chiffrer la valeur sans changer de mot de passe : éditer le YAML et
-  régénérer.
+- `ansible-vault encrypt_string --stdin-name admin_password` to enter
+  the value via stdin (not in the shell history).
+- Re-encrypt the value without changing the password: edit the YAML and
+  regenerate.

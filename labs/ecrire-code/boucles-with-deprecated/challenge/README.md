@@ -1,19 +1,19 @@
-# 🎯 Challenge — Migrer des boucles `with_*` vers `loop:`
+# 🎯 Challenge — Migrate `with_*` loops to `loop:`
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `challenge/solution.yml` qui sur **db1.lab** utilise **uniquement la
-forme moderne `loop:`** (jamais `with_items:` ni `with_dict:`) pour deux
-itérations différentes :
+Write `challenge/solution.yml` that on **db1.lab** uses **only the
+modern `loop:` form** (never `with_items:` nor `with_dict:`) for two
+different iterations:
 
-| Itération | Source | Sortie attendue |
+| Iteration | Source | Expected output |
 | --- | --- | --- |
-| Liste simple | `[apple, banana, cherry]` | 3 fichiers `/tmp/withitems-<fruit>.txt` |
-| Dict (clé→valeur) | `{nginx: 80, redis: 6379}` | `/tmp/withdict-nginx.txt` (contenu `80`), `/tmp/withdict-redis.txt` (contenu `6379`) |
+| Simple list | `[apple, banana, cherry]` | 3 files `/tmp/withitems-<fruit>.txt` |
+| Dict (key→value) | `{nginx: 80, redis: 6379}` | `/tmp/withdict-nginx.txt` (content `80`), `/tmp/withdict-redis.txt` (content `6379`) |
 
-## 🧩 Indices
+## 🧩 Hints
 
-### Boucle sur liste simple
+### Loop over a simple list
 
 ```yaml
 loop:
@@ -21,21 +21,21 @@ loop:
   - element2
 ```
 
-L'item courant est accessible via `{{ item }}`.
+The current item is accessible via `{{ item }}`.
 
-### Boucle sur dict
+### Loop over a dict
 
-Un dict ne s'itère pas directement. Il faut le **convertir en liste de paires**
-avec le filtre **`dict2items`** :
+A dict does not iterate directly. You have to **convert it into a list of pairs**
+with the **`dict2items`** filter:
 
 ```yaml
 loop: "{{ mon_dict | dict2items }}"
 ```
 
-Chaque item devient un dict `{ key: ..., value: ... }`. Vous accédez aux deux
-champs via `{{ item.key }}` et `{{ item.value }}`.
+Each item becomes a dict `{ key: ..., value: ... }`. You access the two
+fields via `{{ item.key }}` and `{{ item.value }}`.
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -69,35 +69,35 @@ champs via `{{ item.key }}` et `{{ item.value }}`.
         label: "{{ item.key }}"
 ```
 
-> ⚠️ **Quote le `name:`** quand il contient `loop:` à la fin (sinon YAML le
-> lit comme un mapping clé-valeur). D'où les guillemets dans le squelette.
+> ⚠️ **Quote the `name:`** when it ends with `loop:` (otherwise YAML reads
+> it as a key-value mapping). Hence the quotes in the skeleton.
 
-**Pièges supplémentaires** :
+**Additional traps**:
 
-> - **`with_items`** est **déprécié** depuis Ansible 2.5 mais fonctionne
->   encore. À l'EX294, utilisez **`loop:`** (lab 21).
-> - **`with_dict`** convertit un dict en liste de dicts `{key, value}`.
->   Migration vers `loop:` : `dict | dict2items` puis `item.key` /
+> - **`with_items`** is **deprecated** since Ansible 2.5 but still
+>   works. On the EX294, use **`loop:`** (lab 21).
+> - **`with_dict`** converts a dict into a list of dicts `{key, value}`.
+>   Migration to `loop:`: `dict | dict2items` then `item.key` /
 >   `item.value`.
-> - **`with_subelements`** : pour itérer sur une sous-liste de chaque dict.
->   Migration vers `loop:` : `subelements()` filter.
-> - **Pas de double-loop** : `loop:` n'accepte qu'une dimension. Pour 2
->   dimensions, utiliser `subelements` ou `product` filter.
+> - **`with_subelements`**: to iterate over a sub-list of each dict.
+>   Migration to `loop:`: `subelements()` filter.
+> - **No double-loop**: `loop:` accepts only one dimension. For 2
+>   dimensions, use the `subelements` or `product` filter.
 
-## 🚀 Lancement
+## 🚀 Launch
 
 ```bash
 ansible-playbook labs/ecrire-code/boucles-with-deprecated/challenge/solution.yml
 ```
 
-🔍 Vérifiez :
+🔍 Check:
 
 ```bash
 ansible db1.lab -m ansible.builtin.command -a "ls /tmp/withitems-*.txt /tmp/withdict-*.txt"
 ansible db1.lab -m ansible.builtin.command -a "cat /tmp/withdict-nginx.txt"
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/boucles-with-deprecated/challenge/tests/
@@ -106,16 +106,16 @@ pytest -v labs/ecrire-code/boucles-with-deprecated/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/ecrire-code/boucles-with-deprecated clean
+dsoxlab clean ecrire-code-boucles-with-deprecated
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`with_items` → `loop`** (1-to-1) ; **`with_dict` → `loop: dict | dict2items`** ;
-  **`with_subelements` → `subelements` filter**. La doc Ansible liste toutes
-  les conversions [ici](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_loops.html#migrating-from-with-x-to-loop).
-- **`loop_control: index_var: i`** : exposer l'index courant.
-- **Lint** : `ansible-lint` signale `with_items` comme `deprecation`.
+- **`with_items` → `loop`** (1-to-1); **`with_dict` → `loop: dict | dict2items`**;
+  **`with_subelements` → `subelements` filter**. The Ansible docs list all
+  the conversions [here](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_loops.html#migrating-from-with-x-to-loop).
+- **`loop_control: index_var: i`**: expose the current index.
+- **Lint**: `ansible-lint` flags `with_items` as `deprecation`.
 
    ```bash
    ansible-lint labs/ecrire-code/boucles-with-deprecated/challenge/solution.yml

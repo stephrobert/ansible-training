@@ -1,40 +1,40 @@
-# 🎯 Challenge — `requirements.yml` multi-sources
+# 🎯 Challenge — Multi-source `requirements.yml`
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire un **`requirements.yml`** qui combine **3 sources** différentes, l'installer dans `local_collections/`, et déposer la liste des collections installées sur `db1.lab`.
+Write a **`requirements.yml`** that combines **3 different sources**, install it into `local_collections/`, and deposit the list of installed collections on `db1.lab`.
 
-| Élément | Valeur attendue |
+| Element | Expected value |
 | --- | --- |
-| Hôte cible | `db1.lab` |
-| Fichier produit | `/tmp/lab94-collections.txt` |
+| Target host | `db1.lab` |
+| Produced file | `/tmp/lab94-collections.txt` |
 | Permissions | `0644`, owner `root` |
-| Nombre de collections installées | **≥ 3** |
-| Sources requises | Galaxy + Git + (URL **ou** dir) |
-| Pinning | **Strict** (semver `version: "X.Y.Z"` ou tag Git) |
+| Number of installed collections | **≥ 3** |
+| Required sources | Galaxy + Git + (URL **or** dir) |
+| Pinning | **Strict** (semver `version: "X.Y.Z"` or Git tag) |
 
-## 🧩 Indices
+## 🧩 Hints
 
-### Étape 1 — `requirements.yml` (à créer dans `challenge/`)
+### Step 1 — `requirements.yml` (to create in `challenge/`)
 
 ```yaml
 ---
 collections:
-  # Source 1 : Galaxy
+  # Source 1: Galaxy
   - name: ???
     version: ???
 
-  # Source 2 : Git (avec tag)
+  # Source 2: Git (with tag)
   - name: https://github.com/ansible-collections/community.docker.git
     type: ???
     version: ???
 
-  # Source 3 : URL ou dir (au choix)
+  # Source 3: URL or dir (your choice)
   - name: ???
     type: ???
 ```
 
-### Étape 2 — `solution.yml` qui orchestre l'installation
+### Step 2 — `solution.yml` that orchestrates the installation
 
 ```yaml
 ---
@@ -45,14 +45,14 @@ collections:
 
   tasks:
     - name: Installer les collections du requirements.yml
-      ansible.builtin.command: >-
-        ansible-galaxy collection install
-        -r {{ playbook_dir }}/requirements.yml
-        -p {{ playbook_dir }}/../local_collections
-        --force
+      ansible.builtin.command:
+        cmd: >-
+          ansible-galaxy collection install
+          -r {{ playbook_dir }}/requirements.yml
+          -p {{ playbook_dir }}/../local_collections
+        creates: ???              # ← the marker of an already-done install
       delegate_to: localhost
       become: false
-      changed_when: ???
 
     - name: Lister les collections installées localement
       ansible.builtin.command: >-
@@ -72,50 +72,60 @@ collections:
         mode: ???
 ```
 
-### Étape 3 — Lancement
+### Step 3 — Launch
 
 ```bash
 ansible-playbook labs/collections/requirements/challenge/solution.yml
 ```
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
 > - **`requirements.yml`** (collections) ≠ **`requirements.txt`**
->   (Python). Convention historique : les deux peuvent coexister dans
->   un projet Ansible.
-> - **Pinning `version:`** : sans, vous risquez un build cassé quand la
->   collection bumpe en major (breaking change). Toujours pin en prod.
-> - **`-r requirements.yml`** vs **`collections:`** dans `ansible-galaxy
->   install` : la 2ᵉ syntaxe (clé YAML) est moderne. Ne pas mélanger.
-> - **`signatures:`** sur les collections (Ansible 2.13+) : vérification
->   GPG. Renforce la supply chain. Format : URLs vers fichier `.sig`.
+>   (Python). Historical convention: both can coexist in
+>   an Ansible project.
+> - **Pinning `version:`**: without it, you risk a broken build when the
+>   collection bumps to a major (breaking change). Always pin in prod.
+> - **`-r requirements.yml`** vs **`collections:`** in `ansible-galaxy
+>   install`: the 2nd syntax (YAML key) is modern. Do not mix them.
+> - **`signatures:`** on the collections (Ansible 2.13+): GPG
+>   verification. Strengthens the supply chain. Format: URLs to a `.sig` file.
+> - **`--force` breaks idempotence**: it reinstalls on each pass, so
+>   the playbook never converges. And even without it, a collection pulled
+>   from a **Git** repo is always reinstalled: galaxy cannot compare
+>   a tag to what is already on disk. Hence `creates:` on the command,
+>   which really skips the task. Declaring `changed_when: false` would make
+>   the idempotence test pass without making anything idempotent: it is the
+>   playbook that would be lying.
+> - **Internet access required**: this lab installs from `galaxy.ansible.com`
+>   **and** clones from GitHub. Offline or behind a closed proxy, it
+>   cannot pass: this is assumed, the topic is about external sources.
 
-## 🚀 Lancement
+## 🚀 Launch
 
 ```bash
 ansible-playbook labs/collections/requirements/challenge/solution.yml
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/collections/requirements/challenge/tests/
 ```
 
-Le test pytest valide :
+The pytest test validates:
 
-- `/tmp/lab94-collections.txt` existe avec mode `0644` et owner `root`.
-- Au moins 3 collections listées dans le fichier.
-- Au moins une collection avec un FQCN (point dans le namespace).
+- `/tmp/lab94-collections.txt` exists with mode `0644` and owner `root`.
+- At least 3 collections listed in the file.
+- At least one collection with an FQCN (dot in the namespace).
 
 ## 🧹 Reset
 
 ```bash
-make -C labs/collections/requirements/ clean
+dsoxlab clean collections-requirements
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Signatures GPG** : ajouter `signatures:` à une collection + `--keyring` au lancement.
-- **Renovate** : configurer un bot pour bumper auto `version: "X.Y.Z"` à chaque release upstream.
-- **`ansible-lint --profile production`** : zéro warning attendu.
+- **GPG signatures**: add `signatures:` to a collection + `--keyring` at launch.
+- **Renovate**: configure a bot to auto-bump `version: "X.Y.Z"` on each upstream release.
+- **`ansible-lint --profile production`**: zero warning expected.

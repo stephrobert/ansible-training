@@ -1,25 +1,25 @@
-# Lab 81 — Vault dans un rôle (defaults clair + vars chiffré)
+# Lab 81 — Vault in a role (cleartext defaults + encrypted vars)
 
-> 💡 **Pré-requis** : `ansible all -m ansible.builtin.ping` répond `pong` sur les 4 VMs.
+> 💡 **Prerequisite**: `ansible all -m ansible.builtin.ping` replies `pong` on the 4 VMs.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Vault dans les rôles**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/vault-dans-roles/)
+🔗 [**Vault in roles**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/vault-dans-roles/)
 
-Un rôle Ansible peut contenir ses **propres secrets**, chiffrés avec Vault. Le **pattern standard 2026** :
+An Ansible role can contain its **own secrets**, encrypted with Vault. The **standard 2026 pattern**:
 
 ```text
 roles/secured_app/
 ├── defaults/
-│   └── main.yml            ← variables PUBLIQUES override-ables (clair)
-│                              référencent les vault_* via Jinja indirect
+│   └── main.yml            ← PUBLIC overridable variables (cleartext)
+│                              reference the vault_* via indirect Jinja
 ├── vars/
-│   └── main.yml            ← secrets CHIFFRÉS (vault_*)
+│   └── main.yml            ← ENCRYPTED secrets (vault_*)
 └── tasks/
-    └── main.yml            ← utilise les variables publiques
+    └── main.yml            ← uses the public variables
 ```
 
-**Pattern d'indirection** : `defaults/main.yml` expose `secured_app_db_password` (clair) qui pointe vers `vault_secured_app_db_password` (chiffré dans `vars/`) via Jinja :
+**Indirection pattern**: `defaults/main.yml` exposes `secured_app_db_password` (cleartext) which points to `vault_secured_app_db_password` (encrypted in `vars/`) via Jinja:
 
 ```yaml
 # defaults/main.yml (clair)
@@ -31,49 +31,49 @@ secured_app_db_password: "{{ vault_secured_app_db_password }}"
 vault_secured_app_db_password: "RoleDBPasswordLab81!"
 ```
 
-L'utilisateur du rôle peut **override** `secured_app_db_password` dans son playbook (priorité haute) sans devoir déchiffrer/modifier `vars/main.yml`. **Best of both worlds** : secrets distribués, override possible.
+The user of the role can **override** `secured_app_db_password` in their playbook (high priority) without having to decrypt/modify `vars/main.yml`. **Best of both worlds**: distributed secrets, override possible.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Structurer **`defaults/main.yml` + `vars/main.yml` chiffré** dans un rôle.
-2. Utiliser le **pattern d'indirection** `secured_app_X = vault_secured_app_X`.
-3. Comprendre pourquoi **`vars/main.yml`** (priorité 18) est un bon emplacement pour les secrets.
-4. **Override** une variable de defaults/ depuis le playbook utilisateur.
-5. Convention de nommage **`vault_<role>_<var>`**.
+1. Structure **`defaults/main.yml` + encrypted `vars/main.yml`** in a role.
+2. Use the **indirection pattern** `secured_app_X = vault_secured_app_X`.
+3. Understand why **`vars/main.yml`** (priority 15) is a good place for secrets.
+4. **Override** a defaults/ variable from the user playbook.
+5. Naming convention **`vault_<role>_<var>`**.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training/labs/vault/dans-roles/
+cd $ANSIBLE_TRAINING/labs/vault/dans-roles/
 tree roles/secured_app/
 cat roles/secured_app/defaults/main.yml
 ansible-vault view roles/secured_app/vars/main.yml --vault-password-file=.vault_password
 ```
 
-## ⚙️ Arborescence cible
+## ⚙️ Target tree
 
 ```text
 labs/vault/dans-roles/
 ├── README.md
-├── .vault_password                    ← mot de passe vault (mode 0600)
-├── playbook.yml                       ← consomme le rôle
+├── .vault_password                    ← vault password (mode 0600)
+├── playbook.yml                       ← consumes the role
 └── roles/
     └── secured_app/
-        ├── defaults/main.yml          ← variables publiques (CLAIR)
-        ├── vars/main.yml              ← secrets (CHIFFRÉ vault)
-        ├── tasks/main.yml             ← logique du rôle
+        ├── defaults/main.yml          ← public variables (CLEARTEXT)
+        ├── vars/main.yml              ← secrets (ENCRYPTED vault)
+        ├── tasks/main.yml             ← role logic
         └── meta/main.yml              ← metadata
 ```
 
-## 📚 Exercice 1 — Inspecter le pattern d'indirection
+## 📚 Exercise 1 — Inspect the indirection pattern
 
 ```bash
 cat roles/secured_app/defaults/main.yml
 ```
 
-Sortie :
+Output:
 
 ```yaml
 secured_app_user: appuser                                              # ← clair
@@ -81,24 +81,24 @@ secured_app_db_password: "{{ vault_secured_app_db_password }}"         # ← ind
 secured_app_api_token: "{{ vault_secured_app_api_token }}"
 ```
 
-🔍 **Observation** : `defaults/main.yml` ne contient **aucun secret en clair**. Il **pointe** vers les variables `vault_*` qui sont chiffrées dans `vars/main.yml`.
+🔍 **Observation**: `defaults/main.yml` contains **no cleartext secret**. It **points** to the `vault_*` variables that are encrypted in `vars/main.yml`.
 
-## 📚 Exercice 2 — Voir le contenu chiffré
+## 📚 Exercise 2 — See the encrypted content
 
 ```bash
 ansible-vault view roles/secured_app/vars/main.yml --vault-password-file=.vault_password
 ```
 
-Sortie :
+Output:
 
 ```yaml
 vault_secured_app_db_password: "RoleDBPasswordLab81!"
 vault_secured_app_api_token: "role_api_tok_lab81_xyz"
 ```
 
-🔍 **Observation** : `vars/main.yml` contient les **vraies valeurs**, chiffrées. Le préfixe `vault_*` est convention pour distinguer ces variables internes.
+🔍 **Observation**: `vars/main.yml` contains the **real values**, encrypted. The `vault_*` prefix is a convention to distinguish these internal variables.
 
-## 📚 Exercice 3 — Lancer le playbook
+## 📚 Exercise 3 — Run the playbook
 
 ```bash
 ansible-playbook --vault-password-file=.vault_password \
@@ -106,15 +106,15 @@ ansible-playbook --vault-password-file=.vault_password \
   playbook.yml
 ```
 
-Sortie : `changed=1` sur web1.lab. Le rôle a déchiffré et utilisé les secrets.
+Output: `changed=1` on web1.lab. The role decrypted and used the secrets.
 
 ```bash
-ssh ansible@web1.lab "sudo cat /tmp/lab81-secured-app.txt"
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab "sudo cat /tmp/lab81-secured-app.txt"
 ```
 
-## 📚 Exercice 4 — Override d'une variable defaults/
+## 📚 Exercise 4 — Override a defaults/ variable
 
-Dans `playbook.yml`, ajouter :
+In `playbook.yml`, add:
 
 ```yaml
 - name: Démo override
@@ -125,56 +125,56 @@ Dans `playbook.yml`, ajouter :
         secured_app_port: 12345
 ```
 
-🔍 **Observation** : `secured_app_port` est override sans toucher au rôle. **`secured_app_db_password`** (qui pointe sur `vault_*`) **ne peut pas** être override aussi facilement (`vault_*` est dans `vars/main.yml` priorité 18).
+🔍 **Observation**: `secured_app_port` is overridden without touching the role. **`secured_app_db_password`** (which points to `vault_*`) **cannot** be overridden as easily (`vault_*` is in `vars/main.yml` priority 15).
 
-## 📚 Exercice 5 — Pourquoi vars/ et pas defaults/ pour le secret ?
+## 📚 Exercise 5 — Why vars/ and not defaults/ for the secret?
 
-Si on mettait `vault_secured_app_db_password` dans `defaults/main.yml` (priorité 2), un utilisateur pourrait le **override silencieusement** depuis son playbook (priorité 13) — risque de fuite si la valeur override est mal gérée.
+If we put `vault_secured_app_db_password` in `defaults/main.yml` (priority 2), a user could **override it silently** from their playbook (priority 12), a leak risk if the override value is poorly managed.
 
-En le mettant dans `vars/main.yml` (priorité 18), seul `--extra-vars` (priorité 22) peut l'override — comportement **explicite et controllé**.
+By putting it in `vars/main.yml` (priority 15), a play `vars:` (12) cannot override it; `--extra-vars` (22) and a role param (20) can, an **explicit and controlled** behavior.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Idempotence** : un second run de votre solution doit afficher `changed=0`
-  partout dans le `PLAY RECAP`. C'est le signal mécanique d'un playbook
-  conforme aux bonnes pratiques.
-- **FQCN explicite** : préférez toujours `ansible.builtin.<module>` (ou la
-  collection appropriée) plutôt que le nom court — `ansible-lint --profile
-  production` le vérifie.
-- **Convention de ciblage** : ce lab cible db1.lab ; pour adapter à un
-  autre groupe, ajustez `hosts:` dans `lab.yml`/`solution.yml` puis relancez.
-- **Reset isolé** : `make clean` à la racine du lab désinstalle proprement
-  ce que la solution a posé pour pouvoir rejouer le scénario.
+- **Idempotence**: a second run of your solution must display `changed=0`
+  everywhere in the `PLAY RECAP`. This is the mechanical signal of a playbook
+  that follows best practices.
+- **Explicit FQCN**: always prefer `ansible.builtin.<module>` (or the
+  appropriate collection) rather than the short name (`ansible-lint --profile
+  production` checks this).
+- **Targeting convention**: this lab targets db1.lab; to adapt it to another
+  group, adjust `hosts:` in `lab.yml`/`solution.yml` then run it again.
+- **Isolated reset**: `dsoxlab clean <id-du-lab>` at the lab root cleanly uninstalls
+  what the solution set up so you can replay the scenario.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Pourquoi le **pattern d'indirection** (defaults clair → vars chiffré) plutôt que tout directement dans `vars/` ?
+1. Why the **indirection pattern** (cleartext defaults → encrypted vars) rather than everything directly in `vars/`?
 
-2. Comment **rotater** `vault_secured_app_db_password` sans casser le rôle pour les utilisateurs ?
+2. How do you **rotate** `vault_secured_app_db_password` without breaking the role for the users?
 
-3. Si un utilisateur veut **override** le password en CLI, comment fait-il ? (Indice : `--extra-vars` priorité 22)
+3. If a user wants to **override** the password on the CLI, how do they do it? (Hint: `--extra-vars` priority 22)
 
-4. Pourquoi **convention `vault_<role>_<var>`** ? Que se passe-t-il si 2 rôles utilisent `vault_db_password` ?
+4. Why the **`vault_<role>_<var>` convention**? What happens if 2 roles use `vault_db_password`?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Le challenge ([`challenge/solution.yml`](challenge/solution.yml)) déploie sur `db1.lab` avec un override de `secured_app_port: 9999`. Tests automatisés (5 tests dont vérification que les secrets vault sont bien déchiffrés).
+The challenge ([`challenge/solution.yml`](challenge/solution.yml)) deploys on `db1.lab` with an override of `secured_app_port: 9999`. Automated tests (5 tests including a check that the vault secrets are correctly decrypted).
 
 ```bash
 pytest -v challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`vars/<distro>.yml` chiffré** : secrets différents par OS (mandatory rare).
-- **Multi vault-id dans un rôle** : un mot de passe par environnement même au sein du rôle.
-- **Externaliser dans HashiCorp Vault** (lab 82) : éviter de stocker les secrets en repo.
-- **Passbolt** (lab 83) : alternative team-friendly pour secrets équipe.
+- **Encrypted `vars/<distro>.yml`**: different secrets per OS (mandatory, rare).
+- **Multi vault-id in a role**: one password per environment even within the role.
+- **Externalize into HashiCorp Vault** (lab 82): avoid storing secrets in the repo.
+- **Passbolt** (lab 83): a team-friendly alternative for team secrets.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint --profile=production roles/
 ```
 
-Le linter vérifie le pattern (FQCN, no_log si nécessaire). Il ne touche pas aux secrets vault.
+The linter checks the pattern (FQCN, no_log if needed). It does not touch the vault secrets.

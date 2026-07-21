@@ -1,0 +1,32 @@
+---
+id: ecrire-code-custom-facts
+title: "Custom facts: facts.d and ansible_local"
+description: "Drop an INI custom fact then an executable script returning JSON into /etc/ansible/facts.d, and read them back through ansible_local."
+section: ecrire-code
+level: l2
+difficulty: intermediate
+lab_type: lab
+estimated_time: "40m"
+skills:
+  - custom-facts
+  - facts-d
+  - fact-scripts
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/custom-facts/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

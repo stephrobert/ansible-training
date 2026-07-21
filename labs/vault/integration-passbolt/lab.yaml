@@ -1,0 +1,25 @@
+---
+id: vault-integration-passbolt
+title: "Fetch secrets from Passbolt"
+description: "Start a local Passbolt CE, authenticate with an OpenPGP key, read a secret from Ansible and compare the Passbolt model with HashiCorp Vault."
+section: vault
+level: l3
+difficulty: intermediate
+lab_type: lab
+estimated_time: "40m"
+skills:
+  - passbolt-lookup
+  - openpgp-auth
+  - secret-management
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/integration-passbolt/
+certification_tags:
+  - rhce
+runtime:
+  type: shell
+  workdir: challenge/work
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

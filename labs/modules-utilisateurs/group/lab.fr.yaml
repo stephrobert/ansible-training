@@ -1,0 +1,4 @@
+---
+id: modules-utilisateurs-group
+title: "Module group : gérer les groupes Linux"
+description: "Créer des groupes avec GID forcé, distinguer groupe système et groupe utilisateur, et créer le groupe avant les utilisateurs qui le référencent."

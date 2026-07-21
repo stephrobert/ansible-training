@@ -1,0 +1,25 @@
+---
+id: molecule-introduction
+title: "Molecule: anatomy of a test scenario"
+description: "Read a molecule/default/ scenario: molecule.yml, converge.yml, verify.yml, driver, platforms, verifier, then run the full cycle."
+section: molecule
+level: l2
+difficulty: advanced
+lab_type: lab
+estimated_time: "45m"
+skills:
+  - molecule-scenario
+  - molecule-driver
+  - role-testing
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/tdd-molecule-introduction/
+track:
+  - au-dela-ex294
+runtime:
+  type: shell
+  workdir: challenge/work
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

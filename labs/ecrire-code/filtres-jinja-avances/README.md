@@ -1,54 +1,54 @@
-# Lab 27 — Filtres Jinja2 avancés (`regex`, `b64`, `password_hash`, `json_query`)
+# Lab 27 — Advanced Jinja2 filters (`regex`, `b64`, `password_hash`, `json_query`)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Filtres Jinja2 avancés Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/filtres-jinja/)
+🔗 [**Advanced Jinja2 filters in Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/filtres-jinja/)
 
-Au-delà des **filtres essentiels** vus au lab 19 (`default`, `combine`, `selectattr`,
-`map`), Ansible expose des **filtres avancés** pour des cas spécialisés :
+Beyond the **essential filters** seen in lab 19 (`default`, `combine`, `selectattr`,
+`map`), Ansible exposes **advanced filters** for specialized cases:
 
-- **`regex_search` / `regex_findall` / `regex_replace`** : extraction et
-  substitution par regex.
-- **`b64encode` / `b64decode`** : encodage base64 (pour headers HTTP, secrets
-  Kubernetes).
-- **`hash` / `password_hash`** : hachage (SHA, MD5, bcrypt).
-- **`json_query`** : extractions complexes type `jq`.
-- **`ipaddr`** (collection ansible.utils) : manipulation d'IPs et CIDR.
+- **`regex_search` / `regex_findall` / `regex_replace`**: extraction and
+  substitution by regex.
+- **`b64encode` / `b64decode`**: base64 encoding (for HTTP headers, Kubernetes
+  secrets).
+- **`hash` / `password_hash`**: hashing (SHA, MD5, bcrypt).
+- **`json_query`**: complex `jq`-style extractions.
+- **`ipaddr`** (ansible.utils collection): manipulation of IPs and CIDR.
 
-Ces filtres sont les outils qui permettent de **se passer de scripts Python externes**
-dans des cas non triviaux.
+These filters are the tools that let you **avoid external Python scripts**
+in non-trivial cases.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Extraire** une partie d'une string avec `regex_search`.
-2. **Encoder** un secret en base64 pour un manifest Kubernetes ou un header.
-3. **Hacher** un mot de passe utilisateur (`password_hash('sha512')`).
-4. **Filtrer** un JSON complexe avec `json_query` (syntaxe JMESPath).
-5. **Manipuler** des IPs et CIDR avec `ipaddr`.
+1. **Extract** part of a string with `regex_search`.
+2. **Encode** a secret in base64 for a Kubernetes manifest or a header.
+3. **Hash** a user password (`password_hash('sha512')`).
+4. **Filter** complex JSON with `json_query` (JMESPath syntax).
+5. **Manipulate** IPs and CIDR with `ipaddr`.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 ansible-galaxy collection install community.general ansible.utils
 ```
 
-## 📚 Exercice 1 — `regex_search` : extraire une partie d'une string
+## 📚 Exercise 1 — `regex_search`: extract part of a string
 
 ```yaml
 ---
@@ -72,16 +72,16 @@ ansible-galaxy collection install community.general ansible.utils
         msg: "IPs : {{ log_text | regex_findall('\\d+\\.\\d+\\.\\d+\\.\\d+') }}"
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- `regex_search('pattern')` → retourne la **première** occurrence ou `None`.
-- `regex_search('(group)', '\\1')` → retourne le **groupe capturé**.
-- `regex_findall('pattern')` → retourne **toutes les occurrences** en liste.
+- `regex_search('pattern')` → returns the **first** occurrence or `None`.
+- `regex_search('(group)', '\\1')` → returns the **captured group**.
+- `regex_findall('pattern')` → returns **all occurrences** as a list.
 
-**Échappement** : dans YAML, `\\d` (double backslash) car YAML mange un `\`. En
-Python pur ce serait `\d`.
+**Escaping**: in YAML, `\\d` (double backslash) because YAML eats one `\`. In
+pure Python it would be `\d`.
 
-## 📚 Exercice 2 — `regex_replace` : substitution
+## 📚 Exercise 2 — `regex_replace`: substitution
 
 ```yaml
 - name: Demo regex_replace
@@ -96,14 +96,14 @@ Python pur ce serait `\d`.
     - name: Remplacer le domaine
       ansible.builtin.debug:
         msg: "{{ fqdn | regex_replace('\\.[^.]+\\.[^.]+$', '.prod.example.com') }}"
-        # → web1.lab.prod.example.com → en fait → web1.prod.example.com
+        # → web1.lab.prod.example.com → actually → web1.prod.example.com
 ```
 
-🔍 **Observation** : `regex_replace('pattern', 'remplacement')` substitue **toutes**
-les occurrences (équivalent `re.sub` Python). Pour ne remplacer que la première,
-utiliser un pattern plus précis.
+🔍 **Observation**: `regex_replace('pattern', 'replacement')` substitutes **all**
+occurrences (equivalent to Python's `re.sub`). To replace only the first one,
+use a more precise pattern.
 
-## 📚 Exercice 3 — `b64encode` / `b64decode`
+## 📚 Exercise 3 — `b64encode` / `b64decode`
 
 ```yaml
 - name: Demo base64
@@ -121,7 +121,7 @@ utiliser un pattern plus précis.
         # → p@ssw0rd-very-secret-2026
 ```
 
-**Cas d'usage** :
+**Use case**:
 
 ```yaml
 - name: Generer un manifest Kubernetes Secret
@@ -137,10 +137,10 @@ utiliser un pattern plus précis.
     dest: /tmp/secret.yml
 ```
 
-🔍 **Observation** : Kubernetes attend les valeurs de `data:` en **base64**. Sans
-`b64encode`, vous mettez le password en clair (déclaré "encodé" mais en fait pas).
+🔍 **Observation**: Kubernetes expects the `data:` values in **base64**. Without
+`b64encode`, you put the password in plaintext (declared "encoded" but actually not).
 
-## 📚 Exercice 4 — `password_hash` (hachage password)
+## 📚 Exercise 4 — `password_hash` (password hashing)
 
 ```yaml
 - name: Demo password_hash
@@ -161,27 +161,27 @@ utiliser un pattern plus précis.
         msg: "{{ plain_password | password_hash('sha512', 'mysalt') }}"
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **`password_hash('sha512')`** est compatible avec `/etc/shadow` — utilisé par
+- **`password_hash('sha512')`** is compatible with `/etc/shadow`, used by
   `ansible.builtin.user: password:`.
-- **Sans salt**, chaque appel génère un hash différent (sécurité). Mais perte
-  d'**idempotence** : la tâche `user:` rapporte `changed` à chaque run.
-- **Avec salt fixe**, hash déterministe → idempotence garantie. **Mais** salt fixe
-  est un anti-pattern sécurité — préférer **stocker le hash** dans `host_vars/`
-  (avec Vault) plutôt que regénérer à chaque run.
+- **Without a salt**, each call generates a different hash (security). But loss
+  of **idempotence**: the `user:` task reports `changed` on every run.
+- **With a fixed salt**, a deterministic hash → guaranteed idempotence. **But** a
+  fixed salt is a security anti-pattern: prefer to **store the hash** in `host_vars/`
+  (with Vault) rather than regenerate it on every run.
 
 ```yaml
-# Pattern propre : hash genere une fois, stocke dans host_vars (vault)
+# Clean pattern: hash generated once, stored in host_vars (vault)
 - ansible.builtin.user:
     name: alice
-    password: "{{ alice_password_hash }}"  # hash deja stocke
+    password: "{{ alice_password_hash }}"  # hash already stored
 ```
 
-## 📚 Exercice 5 — `json_query` (équivalent `jq`)
+## 📚 Exercise 5 — `json_query` (equivalent to `jq`)
 
-`json_query` permet de naviguer dans des structures JSON complexes avec la syntaxe
-**JMESPath**.
+`json_query` lets you navigate complex JSON structures with the **JMESPath**
+syntax.
 
 ```yaml
 - name: Demo json_query
@@ -203,15 +203,15 @@ utiliser un pattern plus précis.
         msg: "{{ response | community.general.json_query('items[*].{id: id, name: name}') }}"
 ```
 
-🔍 **Observation** : JMESPath est puissant mais **syntaxe spécifique**.
-`items[?contains(roles, 'admin')].name` = "depuis items, garde ceux où roles contient
-admin, projette sur name". Cas d'usage : **parser la sortie d'une API** (`uri:`)
-qui retourne du JSON nested.
+🔍 **Observation**: JMESPath is powerful but has a **specific syntax**.
+`items[?contains(roles, 'admin')].name` = "from items, keep those where roles
+contains admin, project onto name". Use case: **parse the output of an API** (`uri:`)
+that returns nested JSON.
 
-**Alternative pure-Jinja** : `selectattr('roles', 'contains', 'admin') |
-map(attribute='name')` — souvent plus lisible que JMESPath sur les cas simples.
+**Pure-Jinja alternative**: `selectattr('roles', 'contains', 'admin') |
+map(attribute='name')`, often more readable than JMESPath in simple cases.
 
-## 📚 Exercice 6 — `ipaddr` (manipulation d'IPs et CIDR)
+## 📚 Exercise 6 — `ipaddr` (manipulation of IPs and CIDR)
 
 ```yaml
 - name: Demo ipaddr (collection ansible.utils)
@@ -242,87 +242,87 @@ map(attribute='name')` — souvent plus lisible que JMESPath sur les cas simples
         msg: "{{ network | ansible.utils.ipaddr('network/16') }}"
 ```
 
-🔍 **Observation** : `ipaddr` couvre 90% des manipulations IP : extraire le réseau
-parent, compter les hôtes, valider qu'une IP est dans un range. Très utile pour
-des configs réseau dynamiques.
+🔍 **Observation**: `ipaddr` covers 90% of IP manipulations: extract the parent
+network, count the hosts, validate that an IP is in a range. Very useful for
+dynamic network configs.
 
-## 📚 Exercice 7 — Le piège : filtres qui ne sont **pas dans builtin**
+## 📚 Exercise 7 — The pitfall: filters that are **not in builtin**
 
-`json_query` est dans **`community.general`**, pas dans `ansible.builtin`. Sans
-la collection installée, vous obtenez une erreur cryptique.
+`json_query` is in **`community.general`**, not in `ansible.builtin`. Without
+the collection installed, you get a cryptic error.
 
 ```bash
 ansible-galaxy collection install community.general ansible.utils
 ```
 
-🔍 **Observation** : sur Ansible Core 2.20, `community.general` et `ansible.utils`
-**ne sont pas inclus par défaut**. Il faut les installer via `ansible-galaxy`.
+🔍 **Observation**: on Ansible Core 2.20, `community.general` and `ansible.utils`
+**are not included by default**. You must install them via `ansible-galaxy`.
 
-**Convention** : préfixer **toujours** le nom du filtre avec le namespace si la
-collection n'est pas builtin :
+**Convention**: **always** prefix the filter name with the namespace if the
+collection is not builtin:
 
 ```yaml
 {{ var | community.general.json_query('items[*].id') }}
 {{ network | ansible.utils.ipaddr('network/24') }}
 ```
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`regex_search('pattern', '\\1')`** = extraction par regex avec capture de groupe.
-- **`b64encode`** / **`b64decode`** = pour secrets Kubernetes, headers HTTP.
-- **`password_hash('sha512')`** = hash compatible `/etc/shadow` — penser au **salt fixe** pour idempotence.
-- **`json_query`** (community.general) = JMESPath pour navigation JSON complexe.
-- **`ipaddr`** (ansible.utils) = manipulation IPs / CIDR.
-- **Filtres hors builtin** nécessitent `ansible-galaxy collection install`.
+- **`regex_search('pattern', '\\1')`** = regex extraction with group capture.
+- **`b64encode`** / **`b64decode`** = for Kubernetes secrets, HTTP headers.
+- **`password_hash('sha512')`** = hash compatible with `/etc/shadow`; think of a **fixed salt** for idempotence.
+- **`json_query`** (community.general) = JMESPath for complex JSON navigation.
+- **`ipaddr`** (ansible.utils) = IPs / CIDR manipulation.
+- **Non-builtin filters** require `ansible-galaxy collection install`.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voulez générer un manifest Kubernetes `Secret` à partir de variables
-   `username` et `password`. Quel pipeline de filtres ?
+1. You want to generate a Kubernetes `Secret` manifest from `username`
+   and `password` variables. What filter pipeline?
 
-2. `password_hash('sha512')` génère un hash différent à chaque run sans salt fixe.
-   Pourquoi est-ce un problème **idempotence** sur le module `user:` ? Quelle
-   est la solution propre ?
+2. `password_hash('sha512')` generates a different hash on every run without a
+   fixed salt. Why is this an **idempotence** problem on the `user:` module? What
+   is the clean solution?
 
-3. Vous parsez un JSON volumineux (sortie d'une API REST). Quand préférer
-   `json_query` (JMESPath) vs `selectattr + map` (pure Jinja2) ?
+3. You parse a large JSON (output of a REST API). When should you prefer
+   `json_query` (JMESPath) vs `selectattr + map` (pure Jinja2)?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`hash('sha256')`** : simple hash (pas adapté aux passwords — utiliser
-  `password_hash` qui ajoute le salt automatiquement).
-- **`urlencode`** / **`urldecode`** : encodage URL pour des params HTTP.
-- **`from_yaml` / `to_yaml`** : conversion entre string YAML et structure native —
-  utile pour parser une config retournée par un `command:`.
-- **`win_url_encode`** (Windows-specific, dans community.windows) — pour les
-  scenarios Windows / IIS.
-- **Plugin filter custom** : on peut écrire son propre filtre Python dans
-  `plugins/filter/mes_filtres.py` au niveau du repo. À utiliser avec parcimonie —
-  préférer les filtres officiels.
+- **`hash('sha256')`**: simple hash (not suited to passwords; use
+  `password_hash`, which adds the salt automatically).
+- **`urlencode`** / **`urldecode`**: URL encoding for HTTP params.
+- **`from_yaml` / `to_yaml`**: conversion between a YAML string and a native
+  structure, useful to parse a config returned by a `command:`.
+- **`win_url_encode`** (Windows-specific, in community.windows): for Windows / IIS
+  scenarios.
+- **Custom filter plugin**: you can write your own Python filter in
+  `plugins/filter/mes_filtres.py` at the repo level. Use it sparingly; prefer the
+  official filters.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/ecrire-code/filtres-jinja-avances/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/ecrire-code/filtres-jinja-avances/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/ecrire-code/filtres-jinja-avances/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

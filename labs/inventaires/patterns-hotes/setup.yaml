@@ -1,0 +1,23 @@
+---
+# Mise en place du lab patterns-hotes : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup patterns-hotes lab (labenv)
+  hosts: labenv
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (patterns-hotes)
+      ansible.builtin.shell: |
+        rm -f /tmp/lab56-mark-*.txt
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (patterns-hotes)
+  hosts: labenv
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Target exactly the hosts you want with --limit and the union, intersection and exclusion operators, without touching the playbook
+      run_once: true

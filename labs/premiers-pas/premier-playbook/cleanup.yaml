@@ -1,0 +1,41 @@
+---
+# Reset du lab premier-playbook : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup premier-playbook lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset name, state (premier-playbook)
+      ansible.builtin.systemd_service:
+        name: "nginx"
+        state: "stopped"
+      failed_when: false
+    - name: Reset path, regexp, line (premier-playbook)
+      ansible.builtin.lineinfile:
+        path: "/etc/nginx/nginx.conf"
+        regexp: '^(\s*)listen(\s+)[0-9]+;'
+        line: "        listen       80;"
+      failed_when: false
+    # L'étiquette SELinux du port 8888 est persistante : la laisser rendrait la
+    # tâche seport inutile au prochain passage de ce lab.
+    - name: Reset ports, setype, state (premier-playbook)
+      community.general.seport:
+        ports: 8888
+        proto: tcp
+        setype: http_port_t
+        state: absent
+      failed_when: false
+    - name: Reset port, state (premier-playbook)
+      ansible.posix.firewalld:
+        port: 8888/tcp
+        zone: public
+        permanent: true
+        immediate: true
+        state: disabled
+      failed_when: false
+    - name: Reset path, state (premier-playbook)
+      ansible.builtin.file:
+        path: "/usr/share/nginx/html/index.html"
+        state: "absent"
+      failed_when: false

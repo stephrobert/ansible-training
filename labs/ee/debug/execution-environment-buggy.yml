@@ -1,17 +1,11 @@
 ---
-# execution-environment-buggy.yml — VERSION CASSÉE pour exercice debug.
-# Erreurs volontaires :
-#  1. Pas de "version: 3" → ansible-builder lit en mode v1 hérité, IGNORE
-#     les sections de dépendances neuves. Le build "réussit" mais l'EE
-#     est vide (pas d'ansible-core, pas de collections).
-#  2. Collection inexistante dans requirements.yml.
-#  3. Python deps incompatible avec la version d'ansible-core embarquée.
-#
-# Version corrigée : execution-environment.yml (à créer dans le challenge).
+# execution-environment-buggy.yml : définition d'EE héritée d'un ancien
+# projet. Le build « passe » ou échoue selon les cas, mais l'EE produit
+# n'est pas utilisable. À vous de diagnostiquer pourquoi.
 
 images:
   base_image:
-    name: quay.io/ansible/community-ee-minimal:latest
+    name: ghcr.io/ansible-community/community-ee-minimal:latest
 
 dependencies:
   ansible_core:

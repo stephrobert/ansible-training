@@ -1,0 +1,23 @@
+---
+# Mise en place du lab any-errors-fatal : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup any-errors-fatal lab (lab_web1:lab_web2)
+  hosts: lab_web1:lab_web2
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (any-errors-fatal)
+      ansible.builtin.shell: |
+        rm -f /tmp/anyfatal-*.txt
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (any-errors-fatal)
+  hosts: lab_web1:lab_web2
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Enable any_errors_fatal on a multi-host play, compare it with the default and with max_fail_percentage, and combine it with serial
+      run_once: true

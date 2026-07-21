@@ -1,0 +1,4 @@
+---
+id: modules-rhel-firewalld
+title: "Module firewalld : gérer le pare-feu RHEL"
+description: "Autoriser services prédéfinis et ports custom par zone, avec le piège permanent + immediate et la recharge du pare-feu."

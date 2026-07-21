@@ -5,7 +5,7 @@
 # Distribution cible
 lab_os_family: RedHat
 lab_os_distribution: AlmaLinux
-lab_os_major_version: "10"
+lab_os_major_version: "9"
 
 # Domaine local
 lab_domain: lab

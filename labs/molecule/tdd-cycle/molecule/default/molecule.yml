@@ -1,14 +1,29 @@
 ---
-# molecule.yml — TDD cycle complet pour le rôle users.
+# molecule.yml : cycle TDD complet pour le rôle users.
+
 dependency:
   name: galaxy
+  options:
+    # containers.podman est la collection qui monte réellement les
+    # instances : le driver « default » ne fait que déléguer à create.yml.
+    requirements-file: molecule/default/requirements.yml
 
 driver:
+  # « default » = le driver DÉLÉGUÉ. Il ne pilote aucun moteur de
+  # conteneurs lui-même : ce sont create.yml et destroy.yml (fournis) qui
+  # montent et détruisent les instances via containers.podman.
   name: default
+  options:
+    managed: true
+    # De quoi ouvrir un shell dans l'instance quand un test reste rouge :
+    #   molecule login -h instance
+    login_cmd_template: "podman exec -ti {instance} bash"
 
 platforms:
   - name: instance
-    image: docker.io/rockylinux/rockylinux:9
+    # Image « init » : elle embarque systemd en PID 1. AlmaLinux 9 est la
+    # distribution de la formation (cf. distros: alma9 dans lab.yaml).
+    image: docker.io/almalinux/10-init:latest
     pre_build_image: true
     privileged: true
     command: /sbin/init

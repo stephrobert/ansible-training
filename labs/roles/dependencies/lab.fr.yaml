@@ -1,0 +1,4 @@
+---
+id: roles-dependencies
+title: "Dépendances entre rôles via meta/main.yml"
+description: "Chaîner des rôles avec dependencies:, leur passer des variables, maîtriser l'ordre d'exécution et éviter le piège du diamant avec allow_duplicates."

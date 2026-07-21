@@ -1,0 +1,4 @@
+---
+id: premiers-pas-premier-playbook
+title: "Premier playbook : installer nginx sur les webservers"
+description: "Écrire un playbook de 5 tâches (dnf, systemd, firewalld), lire le PLAY RECAP, capturer une sortie avec register et vérifier l'idempotence."

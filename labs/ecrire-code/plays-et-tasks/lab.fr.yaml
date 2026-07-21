@@ -1,0 +1,4 @@
+---
+id: ecrire-code-plays-et-tasks
+title: "Plays et tasks : anatomie et ordre d'exécution"
+description: "Structurer un play avec pre_tasks, tasks, post_tasks et handlers, puis prouver l'ordre d'exécution réel par des fichiers marqueurs horodatés."

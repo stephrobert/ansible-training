@@ -1,0 +1,59 @@
+---
+# Mise en place du lab prepare-managed-nodes : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+#
+# Ce setup DÉFAIT ce que le lab demande de converger. Il ne faisait rien
+# auparavant (« no managed-node state to reset ») : les managed nodes gardaient
+# donc l'état laissé par le run précédent, et les tests étaient verts sans que
+# personne n'ait rien écrit. Un lab dont le setup ne défait rien ne prouve rien.
+- name: Setup prepare-managed-nodes lab (défaire l'état attendu)
+  hosts: lab_web1:lab_web2:lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Retirer toute entrée /etc/hosts désignant un nœud du lab
+      # Les lignes de loopback posées par cloud-init (127.0.0.1 / ::1 sur le nom
+      # de la machine elle-même) sont PRÉSERVÉES par les deux lookahead : les
+      # retirer casserait la résolution du nœud sur lui-même, donc sudo et le
+      # hostname. Seules les lignes ajoutées par le bootstrap sont visées.
+      #
+      # Au passage, cela purge les entrées figées sur des adresses mortes
+      # (10.10.20.10/.21/.22/.31) qu'écrivait l'ancien playbook.
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: "^(?!127\\.)(?!::1\\b)\\S+\\s+.*\\b{{ item | regex_escape }}\\b"
+        state: absent
+      loop: "{{ groups['control'] + groups['rhce_lab'] }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Arrêter et désactiver chronyd
+      ansible.builtin.systemd:
+        name: chronyd
+        enabled: false
+        state: stopped
+      # Le paquet peut ne pas être là du tout : c'est un état de départ valide.
+      failed_when: false
+
+    - name: Dérégler la timezone (le lab demande Europe/Paris)
+      community.general.timezone:
+        name: UTC
+
+    - name: Retirer rsync, que le lab demande d'installer
+      # Paquet feuille : le retirer n'entraîne rien d'autre. Les autres paquets
+      # testés ne sont PAS retirés à dessein : python3-libselinux et
+      # python3-firewall sont ce dont les modules Ansible ont besoin pour opérer
+      # sur la cible, et s'en priver rendrait le lab non rejouable.
+      ansible.builtin.dnf:
+        name: rsync
+        state: absent
+
+- name: Brief the learner (prepare-managed-nodes)
+  hosts: lab_target
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Converge the 5 managed node prerequisites (Python 3, SSH, NOPASSWD sudo, chrony, SELinux) with an idempotent bootstrap playbook
+      run_once: true

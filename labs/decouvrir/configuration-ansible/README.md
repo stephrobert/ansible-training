@@ -1,86 +1,85 @@
-# Lab 03a — Configuration Ansible (`ansible.cfg`, précédence, options critiques)
+# Lab 03a — Ansible configuration (`ansible.cfg`, precedence, critical options)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Configuration Ansible : ansible.cfg, précédence, options critiques**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/configuration-ansible/)
+🔗 [**Ansible configuration: ansible.cfg, precedence, critical options**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/ansible-config-fichier/)
 
-Tout projet Ansible mature dispose d'un **`ansible.cfg`** qui fixe les **options par défaut** : chemin de l'inventaire, user SSH, comportement de `become`, callbacks, **forks**, **pipelining**, **roles_path**, **collections_path**. Sans ce fichier, Ansible utilise des **valeurs par défaut globales** rarement adaptées à un projet — et chaque exécution exige des arguments CLI répétitifs.
+Every mature Ansible project has an **`ansible.cfg`** that sets the **default options**: inventory path, SSH user, `become` behavior, callbacks, **forks**, **pipelining**, **roles_path**, **collections_path**. Without this file, Ansible uses **global default values** rarely suited to a project, and each run requires repetitive CLI arguments.
 
-L'examen RHCE EX294 vous demande de **configurer correctement** un projet Ansible : créer un `ansible.cfg`, comprendre la **précédence** (où est lu en premier), et connaître les **options critiques** qui changent le comportement de runs. Cette page maîtrise ces 3 axes.
+The RHCE EX294 exam asks you to **correctly configure** an Ansible project: create an `ansible.cfg`, understand the **precedence** (where it is read first), and know the **critical options** that change the behavior of runs. This page masters these 3 axes.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Comprendre** la précédence de chargement d'`ansible.cfg` (`ANSIBLE_CONFIG` env > `./ansible.cfg` > `~/.ansible.cfg` > `/etc/ansible/ansible.cfg`).
-2. **Créer** un `ansible.cfg` projet avec les options essentielles (`inventory`, `remote_user`, `host_key_checking`, `forks`, `roles_path`, `collections_path`).
-3. **Vérifier** la config active avec **`ansible-config dump --only-changed`**.
-4. **Surcharger** une option via **variable d'environnement** (`ANSIBLE_FORKS=20`).
-5. **Activer** un callback (`ansible.posix.profile_tasks`) sans toucher à un playbook.
-6. **Distinguer** options `[defaults]` vs `[ssh_connection]` vs `[privilege_escalation]`.
+1. **Understand** the loading precedence of `ansible.cfg` (`ANSIBLE_CONFIG` env > `./ansible.cfg` > `~/.ansible.cfg` > `/etc/ansible/ansible.cfg`).
+2. **Create** a project `ansible.cfg` with the essential options (`inventory`, `remote_user`, `host_key_checking`, `forks`, `roles_path`, `collections_path`).
+3. **Check** the active config with **`ansible-config dump --only-changed`**.
+4. **Override** an option via an **environment variable** (`ANSIBLE_FORKS=20`).
+5. **Enable** a callback (`ansible.posix.profile_tasks`) without touching a playbook.
+6. **Distinguish** `[defaults]` vs `[ssh_connection]` vs `[privilege_escalation]` options.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible all -m ansible.builtin.ping
 ansible db1.lab -b -m ansible.builtin.file -a "path=/tmp/lab03a-config.txt state=absent" 2>&1 | tail -2
 ```
 
-## ⚙️ Arborescence cible
+## ⚙️ Target tree
 
 ```text
 labs/decouvrir/configuration-ansible/
-├── README.md                       ← ce fichier (tuto guidé)
-├── Makefile                        ← cible clean
-├── ansible.cfg                     ← (à créer en exo 2)
+├── README.md                       ← this file (guided tutorial)
+├── ansible.cfg                     ← (to create in exercise 2)
 └── challenge/
-    ├── README.md                   ← consigne du challenge
+    ├── README.md                   ← challenge instructions
     └── tests/
         └── test_configuration.py   ← tests pytest+testinfra
 ```
 
-L'apprenant écrit lui-même `ansible.cfg`, `lab.yml` et `challenge/solution.yml`.
+The learner writes `ansible.cfg`, `lab.yml` and `challenge/solution.yml` themselves.
 
-## 📚 Exercice 1 — Précédence des fichiers `ansible.cfg`
+## 📚 Exercise 1 — Precedence of `ansible.cfg` files
 
-Ansible cherche son fichier de configuration dans **cet ordre** (1er trouvé gagne) :
+Ansible looks for its configuration file in **this order** (first found wins):
 
-| Priorité | Source | Quand l'utiliser |
+| Priority | Source | When to use it |
 |----------|--------|------------------|
-| 1 (max) | **`$ANSIBLE_CONFIG`** | Pointer vers un fichier custom (CI, test) |
-| 2 | **`./ansible.cfg`** dans le répertoire courant | **Recommandé pour un projet** |
-| 3 | **`~/.ansible.cfg`** | Préférences utilisateur globales |
-| 4 (min) | **`/etc/ansible/ansible.cfg`** | Config système (rare) |
+| 1 (max) | **`$ANSIBLE_CONFIG`** | Point to a custom file (CI, test) |
+| 2 | **`./ansible.cfg`** in the current directory | **Recommended for a project** |
+| 3 | **`~/.ansible.cfg`** | Global user preferences |
+| 4 (min) | **`/etc/ansible/ansible.cfg`** | System config (rare) |
 
-Vérifier quel fichier Ansible utilise actuellement :
+Check which file Ansible currently uses:
 
 ```bash
 ansible --version | grep "config file"
 ```
 
-🔍 **Observation** : si vous lancez Ansible depuis un dossier qui contient un `ansible.cfg`, **c'est celui-ci qui est utilisé**. C'est pourquoi un `ansible.cfg` projet à la **racine du repo** est le pattern standard 2026.
+🔍 **Observation**: if you run Ansible from a folder that contains an `ansible.cfg`, **that is the one used**. This is why a project `ansible.cfg` at the **repo root** is the standard 2026 pattern.
 
-## 📚 Exercice 2 — Créer un `ansible.cfg` projet
+## 📚 Exercise 2 — Create a project `ansible.cfg`
 
-Créer `labs/decouvrir/configuration-ansible/ansible.cfg` :
+Create `labs/decouvrir/configuration-ansible/ansible.cfg`:
 
 ```ini
 [defaults]
-inventory = ../../inventory/hosts.yml
-remote_user = ansible
+inventory = ../../../inventory/hosts.yml
+remote_user = student
 host_key_checking = False
 forks = 20
 gathering = smart
@@ -105,23 +104,23 @@ pipelining = True
 ssh_args = -C -o ControlMaster=auto -o ControlPersist=60s
 ```
 
-Vérifier que ce fichier est bien lu :
+Check that this file is indeed read:
 
 ```bash
 cd labs/decouvrir/configuration-ansible/
 ansible --version | grep "config file"
-# → config file = /home/bob/Projets/ansible-training/labs/03a-.../ansible.cfg
+# → config file = $ANSIBLE_TRAINING/labs/decouvrir/configuration-ansible.../ansible.cfg
 ```
 
-🔍 **Observation** : 3 sections principales — **`[defaults]`** (comportement général), **`[privilege_escalation]`** (sudo/become), **`[ssh_connection]`** (transport SSH). Chaque option a une **variable d'env équivalente** : `ANSIBLE_FORKS`, `ANSIBLE_HOST_KEY_CHECKING`, etc.
+🔍 **Observation**: 3 main sections: **`[defaults]`** (general behavior), **`[privilege_escalation]`** (sudo/become), **`[ssh_connection]`** (SSH transport). Each option has an **equivalent env variable**: `ANSIBLE_FORKS`, `ANSIBLE_HOST_KEY_CHECKING`, etc.
 
-## 📚 Exercice 3 — Inspecter la config active
+## 📚 Exercise 3 — Inspect the active config
 
 ```bash
 ansible-config dump --only-changed
 ```
 
-Sortie typique :
+Typical output:
 
 ```text
 DEFAULT_FORKS(/home/.../ansible.cfg) = 20
@@ -132,24 +131,24 @@ DEFAULT_STDOUT_CALLBACK(/home/.../ansible.cfg) = yaml
 HOST_KEY_CHECKING(/home/.../ansible.cfg) = False
 ```
 
-🔍 **Observation cruciale** : **`--only-changed`** affiche **uniquement** les options qui diffèrent du défaut. **Référence** pour vérifier ce que votre `ansible.cfg` modifie réellement. À utiliser en debug (« pourquoi ce comportement ? » → vérifier la config active).
+🔍 **Crucial observation**: **`--only-changed`** shows **only** the options that differ from the default. A **reference** to check what your `ansible.cfg` actually changes. Use it when debugging ("why this behavior?" → check the active config).
 
-## 📚 Exercice 4 — Surcharger une option via variable d'env
+## 📚 Exercise 4 — Override an option via an env variable
 
 ```bash
-# Sans surcharge : forks = 20 (défini dans ansible.cfg)
+# Without override: forks = 20 (defined in ansible.cfg)
 ansible-config dump --only-changed | grep FORKS
 
-# Avec surcharge : forks = 50 pour cette commande
+# With override: forks = 50 for this command
 ANSIBLE_FORKS=50 ansible-config dump --only-changed | grep FORKS
 # → DEFAULT_FORKS(env: ANSIBLE_FORKS) = 50
 ```
 
-🔍 **Observation** : la **variable d'env** a une **précédence supérieure** au fichier `ansible.cfg`. Pratique pour **surcharger ponctuellement** sans modifier le fichier (CI, debug, test ad-hoc). La sortie de `ansible-config dump` montre la **source** entre parenthèses (`env:` ou `path:`).
+🔍 **Observation**: the **env variable** has a **higher precedence** than the `ansible.cfg` file. Handy to **override on the spot** without modifying the file (CI, debug, ad-hoc test). The output of `ansible-config dump` shows the **source** in parentheses (`env:` or `path:`).
 
-## 📚 Exercice 5 — Activer un callback (`profile_tasks`)
+## 📚 Exercise 5 — Enable a callback (`profile_tasks`)
 
-Créer un `lab.yml` simple :
+Create a simple `lab.yml`:
 
 ```yaml
 ---
@@ -163,13 +162,13 @@ Créer un `lab.yml` simple :
     - ansible.builtin.ping:
 ```
 
-Lancer (avec `ansible.cfg` qui active `profile_tasks`) :
+Run it (with an `ansible.cfg` that enables `profile_tasks`):
 
 ```bash
 ansible-playbook lab.yml
 ```
 
-Sortie en fin de run :
+Output at the end of the run:
 
 ```text
 TASK execution time:
@@ -180,11 +179,11 @@ TASK execution time:
 Playbook run took 0 days, 0 hours, 0 minutes, 2 seconds
 ```
 
-🔍 **Observation** : pas besoin de modifier le playbook pour mesurer les performances. **`callbacks_enabled = ansible.posix.profile_tasks`** dans `ansible.cfg` suffit. Pattern indispensable pour identifier les **goulots** sur une fleet de production.
+🔍 **Observation**: no need to modify the playbook to measure performance. **`callbacks_enabled = ansible.posix.profile_tasks`** in `ansible.cfg` is enough. An essential pattern to identify **bottlenecks** on a production fleet.
 
-## 📚 Exercice 6 — `roles_path` et `collections_path`
+## 📚 Exercise 6 — `roles_path` and `collections_path`
 
-Créer un rôle local :
+Create a local role:
 
 ```bash
 mkdir -p roles/check_disk/tasks
@@ -198,7 +197,7 @@ cat > roles/check_disk/tasks/main.yml <<'EOF'
 EOF
 ```
 
-Avec `roles_path = ./roles:~/.ansible/roles` dans `ansible.cfg` :
+With `roles_path = ./roles:~/.ansible/roles` in `ansible.cfg`:
 
 ```yaml
 - hosts: db1.lab
@@ -207,53 +206,53 @@ Avec `roles_path = ./roles:~/.ansible/roles` dans `ansible.cfg` :
     - check_disk
 ```
 
-Lancer : Ansible **trouve** le rôle dans `./roles/` grâce au `roles_path`.
+Run it: Ansible **finds** the role in `./roles/` thanks to `roles_path`.
 
-🔍 **Observation** : sans `roles_path` configuré, Ansible cherche **uniquement** dans `~/.ansible/roles/` et `/usr/share/ansible/roles/`. Ajouter `./roles:` rend les rôles **locaux au projet** prioritaires — pattern standard en 2026.
+🔍 **Observation**: without `roles_path` configured, Ansible looks **only** in `~/.ansible/roles/` and `/usr/share/ansible/roles/`. Adding `./roles:` makes the **project-local** roles take priority: a standard pattern in 2026.
 
-## 📚 Exercice 7 — Précédence env > cfg démontrée
+## 📚 Exercise 7 — Precedence env > cfg demonstrated
 
 ```bash
-# Forks à 20 dans ansible.cfg, à 50 via env
+# Forks at 20 in ansible.cfg, 50 via env
 ANSIBLE_FORKS=50 ansible-playbook lab.yml -v 2>&1 | head -3
 ```
 
-Vérifier le forks effectivement utilisé via `ansible-config dump`.
+Check the forks actually used via `ansible-config dump`.
 
-🔍 **Observation** : la **chaîne de précédence** est : variables d'env → `ansible.cfg` projet → `~/.ansible.cfg` → `/etc/ansible/ansible.cfg` → défaut. **Toujours dans cet ordre**. Permet de **surcharger** finement (env en CI, fichier projet en team, fichier user en perso).
+🔍 **Observation**: the **precedence chain** is: env variables → project `ansible.cfg` → `~/.ansible.cfg` → `/etc/ansible/ansible.cfg` → default. **Always in this order**. It lets you **override** finely (env in CI, project file for the team, user file for personal use).
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Précédence** : `ANSIBLE_CONFIG` env > `./ansible.cfg` > `~/.ansible.cfg` > `/etc/ansible/ansible.cfg`.
-- **3 sections principales** : `[defaults]`, `[privilege_escalation]`, `[ssh_connection]`.
-- **`ansible-config dump --only-changed`** = inspection de la config effective.
-- **Variables d'env** : `ANSIBLE_FORKS`, `ANSIBLE_HOST_KEY_CHECKING`, etc. surchargent le fichier.
-- **Callbacks** activés via `callbacks_enabled = ansible.posix.profile_tasks, ...`.
-- **`roles_path` / `collections_path`** rendent les ressources **locales au projet** prioritaires.
+- **Precedence**: `ANSIBLE_CONFIG` env > `./ansible.cfg` > `~/.ansible.cfg` > `/etc/ansible/ansible.cfg`.
+- **3 main sections**: `[defaults]`, `[privilege_escalation]`, `[ssh_connection]`.
+- **`ansible-config dump --only-changed`** = inspection of the effective config.
+- **Env variables**: `ANSIBLE_FORKS`, `ANSIBLE_HOST_KEY_CHECKING`, etc. override the file.
+- **Callbacks** enabled via `callbacks_enabled = ansible.posix.profile_tasks, ...`.
+- **`roles_path` / `collections_path`** make the **project-local** resources take priority.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Que se passe-t-il si **deux** `ansible.cfg` existent : un dans `./` et un dans `~/.ansible.cfg` ?
-2. Pourquoi `host_key_checking = False` est-il **acceptable en lab** mais **dangereux en prod** ?
-3. Quelle option `[ssh_connection]` est **incompatible** avec `Defaults requiretty` dans `/etc/sudoers` ?
-4. Comment **désactiver** un callback temporairement sans modifier `ansible.cfg` ?
+1. What happens if **two** `ansible.cfg` exist: one in `./` and one in `~/.ansible.cfg`?
+2. Why is `host_key_checking = False` **acceptable in a lab** but **dangerous in production**?
+3. Which `[ssh_connection]` option is **incompatible** with `Defaults requiretty` in `/etc/sudoers`?
+4. How do you **disable** a callback temporarily without modifying `ansible.cfg`?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) — créer un `ansible.cfg` qui active `profile_tasks`, force `forks=20`, et déposer un fichier preuve qui contient le résultat de `ansible-config dump --only-changed`.
+See [`challenge/README.md`](challenge/README.md): create an `ansible.cfg` that enables `profile_tasks`, forces `forks=20`, and drop a proof file that contains the result of `ansible-config dump --only-changed`.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Lab 91** : tuning performances avancé (pipelining, ControlPersist).
-- **`ansible-config view`** : affiche l'`ansible.cfg` effectif avec commentaires.
-- **`ansible-config init --disabled > ansible.cfg`** : génère un fichier de config vide avec **toutes** les options documentées.
-- **Variables d'env exhaustives** : voir `ansible-config list` pour la liste complète.
+- **Lab 91**: advanced performance tuning (pipelining, ControlPersist).
+- **`ansible-config view`**: displays the effective `ansible.cfg` with comments.
+- **`ansible-config init --disabled > ansible.cfg`**: generates an empty config file with **all** the options documented.
+- **Exhaustive env variables**: see `ansible-config list` for the complete list.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint labs/decouvrir/configuration-ansible/lab.yml
 ansible-lint --profile production labs/decouvrir/configuration-ansible/challenge/solution.yml
 ```
 
-> 💡 **Astuce** : `ansible-lint` ne vérifie pas le contenu d'`ansible.cfg`. Pour valider la **syntaxe** : `ansible-config view` retourne une erreur si le fichier est mal formé.
+> 💡 **Tip**: `ansible-lint` does not check the content of `ansible.cfg`. To validate the **syntax**: `ansible-config view` returns an error if the file is malformed.

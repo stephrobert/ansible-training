@@ -1,0 +1,25 @@
+---
+id: decouvrir-installation-ansible
+title: "Ansible installation: verify your control node"
+description: "Identify your install method, check the 8 binaries on PATH, the modules reachable via ansible-doc and the collections the repo relies on."
+section: decouvrir
+level: l1
+difficulty: beginner
+lab_type: lab
+estimated_time: "20m"
+skills:
+  - installation
+  - control-node
+  - collections
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/installation-ansible/
+certification_tags:
+  - rhce
+runtime:
+  type: shell
+  workdir: challenge/work
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

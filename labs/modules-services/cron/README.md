@@ -1,56 +1,56 @@
-# Lab 39 — Module `cron:` (planifier des jobs idempotents)
+# Lab 39 — `cron:` module (schedule idempotent jobs)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Module cron Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-cron/)
+🔗 [**Ansible cron module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-cron/)
 
-`ansible.builtin.cron:` gère les **jobs cron** avec **idempotence garantie via le
-`name:`**. Chaque job est identifié par son **nom unique** que Ansible inscrit en
-commentaire (`#Ansible: <name>`) au-dessus de la ligne du job. À chaque run, le
-job est **mis à jour** au lieu d'être empilé.
+`ansible.builtin.cron:` manages **cron jobs** with **idempotence guaranteed via the
+`name:`**. Each job is identified by its **unique name** that Ansible writes as a
+comment (`#Ansible: <name>`) above the job line. On every run, the
+job is **updated** instead of being stacked.
 
-Le module sait gérer :
+The module can handle:
 
-- la **crontab utilisateur** (`crontab -l`) — défaut.
-- les fichiers **`/etc/cron.d/*`** via `cron_file:` — préférable pour la
-  traçabilité.
-- les **variables d'environnement** (`MAILTO`, `PATH`) au-dessus des jobs (`env: true`).
-- la **désactivation** sans suppression (`disabled: true`).
+- the **user crontab** (`crontab -l`): default.
+- the **`/etc/cron.d/*`** files via `cron_file:`: preferable for
+  traceability.
+- the **environment variables** (`MAILTO`, `PATH`) above the jobs (`env: true`).
+- **disabling** without removal (`disabled: true`).
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Comprendre** le mécanisme du `name:` et le marker `#Ansible:`.
-2. **Choisir** entre crontab user et `/etc/cron.d/` (et pourquoi le second est
-   préférable).
-3. **Définir** des variables d'environnement (`MAILTO`, `PATH`) avec `env: true`.
-4. **Désactiver** un job sans le supprimer (`disabled: true`).
-5. **Utiliser** les raccourcis `special_time:` (`hourly`, `daily`, etc.).
+1. **Understand** the `name:` mechanism and the `#Ansible:` marker.
+2. **Choose** between the user crontab and `/etc/cron.d/` (and why the second is
+   preferable).
+3. **Define** environment variables (`MAILTO`, `PATH`) with `env: true`.
+4. **Disable** a job without removing it (`disabled: true`).
+5. **Use** the `special_time:` shortcuts (`hourly`, `daily`, etc.).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 ansible db1.lab -b -m shell -a "rm -f /etc/cron.d/lab-rhce; crontab -u root -r 2>/dev/null; true"
 ```
 
-## 📚 Exercice 1 — Job dans la crontab user
+## 📚 Exercise 1 — Job in the user crontab
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -66,26 +66,26 @@ Créez `lab.yml` :
         job: "/usr/local/bin/backup-db.sh > /var/log/backup.log 2>&1"
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/modules-services/cron/lab.yml
-ssh ansible@db1.lab 'sudo crontab -l'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'sudo crontab -l'
 ```
 
-🔍 **Observation** : la crontab de root contient :
+🔍 **Observation**: root's crontab contains:
 
 ```text
 #Ansible: Backup base de donnees
 0 2 * * * /usr/local/bin/backup-db.sh > /var/log/backup.log 2>&1
 ```
 
-**Le commentaire `#Ansible: ...`** est le **marker d'idempotence** : Ansible
-cherche cette ligne au prochain run pour identifier le job et le remplacer.
+**The `#Ansible: ...` comment** is the **idempotence marker**: Ansible
+looks for this line on the next run to identify the job and replace it.
 
-**Re-lancer** : `changed=0` (déjà au bon état).
+**Re-run**: `changed=0` (already in the right state).
 
-## 📚 Exercice 2 — Pattern `/etc/cron.d/<file>` (préférable)
+## 📚 Exercise 2 — `/etc/cron.d/<file>` pattern (preferable)
 
 ```yaml
 - name: Healthcheck dans /etc/cron.d/
@@ -97,26 +97,26 @@ cherche cette ligne au prochain run pour identifier le job et le remplacer.
     user: root
 ```
 
-**Vérifiez** :
+**Check**:
 
 ```bash
-ssh ansible@db1.lab 'sudo cat /etc/cron.d/monitoring'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'sudo cat /etc/cron.d/monitoring'
 ```
 
-🔍 **Observation** : le fichier `/etc/cron.d/monitoring` est créé. Différences
-importantes avec la crontab user :
+🔍 **Observation**: the `/etc/cron.d/monitoring` file is created. Important
+differences with the user crontab:
 
-| Caractéristique | crontab user | `/etc/cron.d/<file>` |
+| Characteristic | user crontab | `/etc/cron.d/<file>` |
 |---|---|---|
-| Visibilité | `crontab -l -u root` (caché) | `ls /etc/cron.d/` (visible) |
-| Versioning git | Non (état système) | Oui (fichier dans `/etc/`) |
-| Spécifie `user:` par ligne | Non (toute la crontab d'un user) | Oui (chaque ligne a un user) |
-| Modularité | Tous les jobs dans 1 file | 1 fichier par module/rôle |
+| Visibility | `crontab -l -u root` (hidden) | `ls /etc/cron.d/` (visible) |
+| Git versioning | No (system state) | Yes (file in `/etc/`) |
+| Specifies `user:` per line | No (whole crontab of a user) | Yes (each line has a user) |
+| Modularity | All jobs in 1 file | 1 file per module/role |
 
-**Recommandation** : préférer **`cron_file:`** pour la **traçabilité** et la
-**modularité**.
+**Recommendation**: prefer **`cron_file:`** for **traceability** and
+**modularity**.
 
-## 📚 Exercice 3 — Variables d'environnement (`env: true`)
+## 📚 Exercise 3 — Environment variables (`env: true`)
 
 ```yaml
 - name: Definir MAILTO pour les jobs lab
@@ -139,21 +139,21 @@ importantes avec la crontab user :
   ansible.builtin.cron:
     name: "Backup horaire"
     minute: "0"
-    job: "myapp-backup.sh"  # Resolu via PATH
+    job: "myapp-backup.sh"  # Resolved via PATH
     cron_file: lab-rhce
     user: root
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **`env: true`** change la sémantique : `name:` devient le **nom de la variable**,
-  `value:` est sa **valeur**.
-- **Variables utiles** : `MAILTO`, `PATH`, `SHELL`.
+- **`env: true`** changes the semantics: `name:` becomes the **variable name**,
+  `value:` is its **value**.
+- **Useful variables**: `MAILTO`, `PATH`, `SHELL`.
 
-**Vérifiez le fichier généré** :
+**Check the generated file**:
 
 ```bash
-ssh ansible@db1.lab 'sudo cat /etc/cron.d/lab-rhce'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'sudo cat /etc/cron.d/lab-rhce'
 ```
 
 ```text
@@ -165,11 +165,11 @@ PATH="/opt/myapp/bin:/usr/local/sbin:..."
 0 * * * * root myapp-backup.sh
 ```
 
-**`PATH`** est crucial — par défaut, le `PATH` de cron est **très restrictif**
-(`/usr/bin:/bin`). Si votre script est dans `/opt/myapp/bin/`, il ne sera **pas
-trouvé** sans ce `PATH:` override.
+**`PATH`** is crucial: by default, cron's `PATH` is **very restrictive**
+(`/usr/bin:/bin`). If your script is in `/opt/myapp/bin/`, it will **not
+be found** without this `PATH:` override.
 
-## 📚 Exercice 4 — Désactiver un job sans le supprimer
+## 📚 Exercise 4 — Disable a job without removing it
 
 ```yaml
 - name: Suspendre temporairement le backup horaire
@@ -182,10 +182,10 @@ trouvé** sans ce `PATH:` override.
     disabled: true
 ```
 
-**Vérifiez** :
+**Check**:
 
 ```bash
-ssh ansible@db1.lab 'sudo cat /etc/cron.d/lab-rhce'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'sudo cat /etc/cron.d/lab-rhce'
 ```
 
 ```text
@@ -193,14 +193,14 @@ ssh ansible@db1.lab 'sudo cat /etc/cron.d/lab-rhce'
 #0 * * * * root myapp-backup.sh
 ```
 
-🔍 **Observation** : la ligne du job est **commentée** (`#0 * * * * ...`). Le job
-**ne s'exécute plus** mais reste **conservé pour référence**. Pour le **réactiver**,
-repasser `disabled: false`.
+🔍 **Observation**: the job line is **commented out** (`#0 * * * * ...`). The job
+**no longer runs** but stays **kept for reference**. To **re-enable** it,
+set `disabled: false` again.
 
-**Cas d'usage** : maintenance programmée, debugging d'un script qui plante,
-suspension d'un cron pendant un audit.
+**Use case**: scheduled maintenance, debugging a crashing script,
+suspending a cron during an audit.
 
-## 📚 Exercice 5 — `special_time:` (raccourcis)
+## 📚 Exercise 5 — `special_time:` (shortcuts)
 
 ```yaml
 - name: Job hourly avec raccourci
@@ -212,18 +212,18 @@ suspension d'un cron pendant un audit.
     user: root
 ```
 
-| Forme | Équivalent | Usage |
+| Form | Equivalent | Usage |
 |---|---|---|
-| `special_time: hourly` | `0 * * * *` | Toutes les heures |
-| `special_time: daily` | `0 0 * * *` | Tous les jours à minuit |
-| `special_time: weekly` | `0 0 * * 0` | Tous les dimanches à minuit |
-| `special_time: monthly` | `0 0 1 * *` | Le 1er de chaque mois |
-| `special_time: reboot` | `@reboot` | À chaque démarrage |
+| `special_time: hourly` | `0 * * * *` | Every hour |
+| `special_time: daily` | `0 0 * * *` | Every day at midnight |
+| `special_time: weekly` | `0 0 * * 0` | Every Sunday at midnight |
+| `special_time: monthly` | `0 0 1 * *` | The 1st of each month |
+| `special_time: reboot` | `@reboot` | At every startup |
 
-🔍 **Observation** : `special_time:` **exclut** les options `minute/hour/day/month/weekday`.
-Utiliser **soit** `special_time:`, **soit** les autres — pas les deux.
+🔍 **Observation**: `special_time:` **excludes** the `minute/hour/day/month/weekday` options.
+Use **either** `special_time:` **or** the others, not both.
 
-## 📚 Exercice 6 — Suppression d'un job (`state: absent`)
+## 📚 Exercise 6 — Removing a job (`state: absent`)
 
 ```yaml
 - name: Supprimer le job "Backup horaire"
@@ -234,14 +234,14 @@ Utiliser **soit** `special_time:`, **soit** les autres — pas les deux.
     user: root
 ```
 
-🔍 **Observation** : Ansible cherche le commentaire `#Ansible: Backup horaire` et
-**supprime cette ligne + la ligne du job juste en dessous**.
+🔍 **Observation**: Ansible looks for the `#Ansible: Backup horaire` comment and
+**removes that line + the job line just below it**.
 
-**Important** : sans `state: absent`, un job **renommé** ou **déplacé** devient
-**orphelin** dans la crontab. Toujours **faire le ménage explicite** quand vous
-restructurez les jobs.
+**Important**: without `state: absent`, a **renamed** or **moved** job becomes
+**orphaned** in the crontab. Always **do the explicit cleanup** when you
+restructure the jobs.
 
-## 📚 Exercice 7 — Le piège : modifier le `name:` empile au lieu de remplacer
+## 📚 Exercise 7 — The trap: changing the `name:` stacks instead of replacing
 
 ```yaml
 # Run 1
@@ -251,94 +251,94 @@ restructurez les jobs.
     hour: "2"
     job: "/usr/local/bin/backup-db.sh"
 
-# Run 2 (apres avoir RENOMME)
+# Run 2 (after RENAMING)
 - ansible.builtin.cron:
-    name: "Backup base de donnees"  # Nouveau nom
+    name: "Backup base de donnees"  # New name
     minute: "0"
     hour: "2"
-    job: "/usr/local/bin/backup-db.sh"  # Meme job
+    job: "/usr/local/bin/backup-db.sh"  # Same job
 ```
 
-🔍 **Observation** : la crontab contient **2 jobs identiques** ! Un avec
-`#Ansible: Backup BDD`, l'autre avec `#Ansible: Backup base de donnees`. Le job
-tournera **2 fois** à 2h.
+🔍 **Observation**: the crontab contains **2 identical jobs**! One with
+`#Ansible: Backup BDD`, the other with `#Ansible: Backup base de donnees`. The job
+will run **twice** at 2 a.m.
 
-**Solution** : avant de renommer, **supprimer l'ancien** :
+**Solution**: before renaming, **remove the old one**:
 
 ```yaml
 - ansible.builtin.cron:
-    name: "Backup BDD"  # Ancien nom
+    name: "Backup BDD"  # Old name
     state: absent
 
 - ansible.builtin.cron:
-    name: "Backup base de donnees"  # Nouveau nom
+    name: "Backup base de donnees"  # New name
     minute: "0"
     hour: "2"
     job: "/usr/local/bin/backup-db.sh"
 ```
 
-**Règle** : `name:` est la **clé d'identification**. Ne **jamais** le modifier
-sans plan de migration.
+**Rule**: `name:` is the **identification key**. **Never** change it
+without a migration plan.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`name:`** = clé d'idempotence — **ne jamais** modifier après création.
-- **`cron_file:` dans `/etc/cron.d/`** est préférable à la crontab user (visibilité, versioning).
-- **`env: true`** pour `MAILTO`, `PATH`, `SHELL` — pas dans la même tâche que les jobs.
-- **`disabled: true`** désactive sans supprimer — utile pour les maintenances.
-- **`special_time:`** raccourcit les schedules courants — exclut les options
-  `minute/hour/etc`.
-- **`state: absent`** + `name:` = supprimer un job (avec son commentaire marker).
+- **`name:`** = idempotence key. **Never** change it after creation.
+- **`cron_file:` in `/etc/cron.d/`** is preferable to the user crontab (visibility, versioning).
+- **`env: true`** for `MAILTO`, `PATH`, `SHELL`: not in the same task as the jobs.
+- **`disabled: true`** disables without removing: useful for maintenance.
+- **`special_time:`** shortens common schedules: excludes the
+  `minute/hour/etc` options.
+- **`state: absent`** + `name:` = remove a job (with its marker comment).
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous gérez 5 jobs cron différents pour le rôle `monitoring`. Vous voulez
-   pouvoir **déployer/retirer** tous ces jobs en une seule passe. Quel pattern
-   (`cron_file:`, `loop:`, ...) ?
+1. You manage 5 different cron jobs for the `monitoring` role. You want
+   to be able to **deploy/remove** all these jobs in a single pass. Which pattern
+   (`cron_file:`, `loop:`, ...)?
 
-2. Pourquoi `PATH` dans la crontab est-il un piège classique pour les scripts
-   custom ? Quelle est la valeur par défaut du `PATH` cron ?
+2. Why is `PATH` in the crontab a classic trap for custom
+   scripts? What is the default value of cron's `PATH`?
 
-3. Vous voulez exécuter un script **toutes les 30 minutes** mais aussi **à
-   chaque reboot**. Comment articulez-vous deux tâches `cron:` (avec et sans
-   `special_time:`) ?
+3. You want to run a script **every 30 minutes** but also **at
+   every reboot**. How do you articulate two `cron:` tasks (with and without
+   `special_time:`)?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`hour: "8-18"`** ou **`hour: "*/2"`** : ranges et steps dans les schedules.
-- **Pattern `at:`** : pour des **jobs ponctuels** (pas récurrents) — module
-  `ansible.posix.at` (collection ansible.posix).
-- **Anacron** : pour des jobs qui doivent **rattraper** leurs runs manqués si
-  la machine était éteinte. Pas géré directement par `cron:` Ansible — passer
-  par `template:` sur `/etc/cron.daily/`.
-- **systemd timers** : alternative moderne à cron, plus puissant (déclencheurs
-  multiples, dépendances). Géré via `systemd_service:` sur les `.timer` units.
-- **Pattern `audit cron`** : un play qui collecte toutes les crontabs de tous
-  les hôtes via `command: crontab -l` + `fetch:` — pour audit centralisé.
+- **`hour: "8-18"`** or **`hour: "*/2"`**: ranges and steps in the schedules.
+- **`at:` pattern**: for **one-off jobs** (not recurring): the
+  `ansible.posix.at` module (ansible.posix collection).
+- **Anacron**: for jobs that must **catch up** their missed runs if
+  the machine was off. Not handled directly by Ansible `cron:`: go
+  through `template:` on `/etc/cron.daily/`.
+- **systemd timers**: modern alternative to cron, more powerful (multiple
+  triggers, dependencies). Managed via `systemd_service:` on the `.timer` units.
+- **`audit cron` pattern**: a play that collects all crontabs of all
+  hosts via `command: crontab -l` + `fetch:`: for centralized audit.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/modules-services/cron/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/modules-services/cron/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/modules-services/cron/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task,
+file modes as strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

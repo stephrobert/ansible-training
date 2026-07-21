@@ -1,0 +1,13 @@
+---
+# Reset du lab group-vars-host-vars : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup group-vars-host-vars lab (lab_web1:lab_web2)
+  hosts: lab_web1:lab_web2
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (group-vars-host-vars)
+      ansible.builtin.shell: |
+        rm -f /tmp/lab55-port-*.txt
+      changed_when: false
+      failed_when: false

@@ -1,67 +1,67 @@
 # Lab 84 — Hello Execution Environment
 
-> 💡 **Pré-requis** :
-> - **Podman** installé (`podman --version`).
-> - **ansible-navigator** installé (`pipx install ansible-navigator`).
-> - 4 VMs lab joignables (`ansible all -m ansible.builtin.ping` répond `pong`).
+> 💡 **Prerequisites**:
+> - **Podman** installed (`podman --version`).
+> - **ansible-navigator** installed (`pipx install ansible-navigator`).
+> - 4 lab VMs reachable (`ansible all -m ansible.builtin.ping` answers `pong`).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Présentation des Execution Environments**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/presentation/)
+🔗 [**Introducing Execution Environments**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/presentation/)
 
-Un **Execution Environment (EE)** est une **image conteneur OCI** qui empaquette `ansible-core`, `ansible-runner`, des **collections** Ansible, des **dépendances Python** et des **dépendances système**. L'EE garantit que le **même runtime** Ansible tourne du laptop au controller AAP — fini le « ça marche sur mon poste ».
+An **Execution Environment (EE)** is an **OCI container image** that packages `ansible-core`, `ansible-runner`, Ansible **collections**, **Python dependencies** and **system dependencies**. The EE guarantees that the **same** Ansible **runtime** runs from the laptop to the AAP controller: no more "it works on my machine".
 
-**Ansible Navigator** lance un playbook **dans un EE** au lieu de l'exécuter directement avec `ansible-playbook`. Bénéfices : **isolation**, **reproductibilité**, **debug riche** (TUI ou stdout, artifacts JSON, replay).
+**Ansible Navigator** runs a playbook **inside an EE** instead of running it directly with `ansible-playbook`. Benefits: **isolation**, **reproducibility**, **rich debugging** (TUI or stdout, JSON artifacts, replay).
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Vérifier** que Podman et ansible-navigator sont installés.
-2. **Tirer** une image EE (`quay.io/ansible/creator-ee:latest`).
-3. **Configurer** `ansible-navigator.yml` avec un EE par défaut.
-4. **Lancer** un premier playbook dans l'EE (mode `stdout` et mode interactif).
-5. Comparer **`ansible-playbook`** classique vs **`ansible-navigator run`**.
+1. **Check** that Podman and ansible-navigator are installed.
+2. **Pull** an EE image (`quay.io/ansible/creator-ee:latest`).
+3. **Configure** `ansible-navigator.yml` with a default EE.
+4. **Run** a first playbook inside the EE (`stdout` mode and interactive mode).
+5. Compare classic **`ansible-playbook`** vs **`ansible-navigator run`**.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training/labs/ee/hello/
+cd $ANSIBLE_TRAINING/labs/ee/hello/
 
-# Vérifier les outils requis
+# Check the required tools
 ./setup-ee.sh
 ```
 
-## ⚙️ Arborescence cible
+## ⚙️ Target tree
 
 ```text
 labs/ee/hello/
 ├── README.md
-├── setup-ee.sh                     ← vérifie podman + ansible-navigator
-├── inventory.yml                    ← inventaire 3 VMs lab
-├── ping.yml                         ← playbook de démo (ansible.builtin.ping)
-├── ansible-navigator.yml            ← config EE par défaut + mode stdout
+├── setup-ee.sh                     ← checks podman + ansible-navigator
+├── inventory.yml                    ← inventory of 3 lab VMs
+├── ping.yml                         ← demo playbook (ansible.builtin.ping)
+├── ansible-navigator.yml            ← default EE config + stdout mode
 └── challenge/
     └── tests/
-        └── test_ee_hello.py        ← tests structurels (6 tests)
+        └── test_ee_hello.py        ← structural tests (6 tests)
 ```
 
-## 📚 Exercice 1 — Pull de l'image EE
+## 📚 Exercise 1 — Pulling the EE image
 
 ```bash
 podman pull quay.io/ansible/creator-ee:latest
 podman images | grep creator-ee
 ```
 
-Sortie typique :
+Typical output:
 
 ```text
 quay.io/ansible/creator-ee  latest  abc123def  3 days ago  1.2 GB
 ```
 
-🔍 **Observation** : l'image fait **~1 Go** car elle embarque ansible-core, ansible-runner, ansible-lint, ansible-navigator, et de nombreuses collections (`ansible.posix`, `community.general`, `community.kubernetes`...). C'est l'**EE communautaire le plus complet** — idéal pour la formation et le dev.
+🔍 **Observation**: the image is **~1 GB** because it embeds ansible-core, ansible-runner, ansible-lint, ansible-navigator, and many collections (`ansible.posix`, `community.general`, `community.kubernetes`...). It is the **most complete community EE**, ideal for training and development.
 
-## 📚 Exercice 2 — Lancer un playbook avec ansible-navigator (mode stdout)
+## 📚 Exercise 2 — Running a playbook with ansible-navigator (stdout mode)
 
 ```bash
 ansible-navigator run ping.yml \
@@ -70,7 +70,7 @@ ansible-navigator run ping.yml \
   -m stdout
 ```
 
-Sortie attendue :
+Expected output:
 
 ```text
 PLAY [Lab 84 — Premier run avec ansible-navigator + EE] *********
@@ -86,27 +86,27 @@ web1.lab : ok=1  changed=0  unreachable=0  failed=0
 web2.lab : ok=1  changed=0  unreachable=0  failed=0
 ```
 
-🔍 **Observation** : la sortie ressemble à `ansible-playbook` classique. La différence : **Ansible tourne dans un conteneur Podman éphémère**. Vérifiez avec `podman ps -a` — le conteneur a disparu, c'est volontaire (éphémère).
+🔍 **Observation**: the output looks like classic `ansible-playbook`. The difference: **Ansible runs inside an ephemeral Podman container**. Check with `podman ps -a`: the container is gone, this is intentional (ephemeral).
 
-## 📚 Exercice 3 — Mode interactif (TUI)
+## 📚 Exercise 3 — Interactive mode (TUI)
 
 ```bash
 ansible-navigator run ping.yml \
   -i inventory.yml
-# (sans -m stdout)
+# (without -m stdout)
 ```
 
-L'interface TUI s'ouvre :
+The TUI opens:
 
-- **Menu numéroté** : tapez `0` pour voir les plays, `1` pour voir les tasks, `2` pour les hosts.
-- **Drill-down** : sélectionnez une task, voyez le résultat host par host, le retour JSON brut, le diff.
-- **Navigation clavier** : flèches, `Esc` pour remonter, `:q` pour quitter.
+- **Numbered menu**: type `0` to see the plays, `1` to see the tasks, `2` for the hosts.
+- **Drill-down**: select a task, see the result host by host, the raw JSON return, the diff.
+- **Keyboard navigation**: arrows, `Esc` to go back up, `:q` to quit.
 
-🔍 **Observation** : la TUI sert au **debug riche** — drill-down task → host → résultat JSON. Idéal en formation et en debug local. **Pas adaptée au CI/CD** où on préfère `-m stdout`.
+🔍 **Observation**: the TUI is for **rich debugging**: drill-down task, host, JSON result. Ideal in training and local debugging. **Not suited to CI/CD** where `-m stdout` is preferred.
 
-## 📚 Exercice 4 — Configuration `ansible-navigator.yml`
+## 📚 Exercise 4 — `ansible-navigator.yml` configuration
 
-Le fichier `ansible-navigator.yml` du lab contient la configuration par défaut :
+The lab's `ansible-navigator.yml` file holds the default configuration:
 
 ```yaml
 ansible-navigator:
@@ -116,78 +116,78 @@ ansible-navigator:
   mode: stdout
 ```
 
-Avec ce fichier, on peut simplifier la commande :
+With this file, the command can be simplified:
 
 ```bash
 ansible-navigator run ping.yml -i inventory.yml
-# → utilise creator-ee + mode stdout par défaut
+# → uses creator-ee + stdout mode by default
 ```
 
-🔍 **Observation** : `ansible-navigator.yml` est cherché dans **`./ansible-navigator.yml`**, **`~/.ansible-navigator.yml`**, ou via **`$ANSIBLE_NAVIGATOR_CONFIG`**. Permet de figer l'EE et le mode pour un projet entier.
+🔍 **Observation**: `ansible-navigator.yml` is looked up in **`./ansible-navigator.yml`**, **`~/.ansible-navigator.yml`**, or via **`$ANSIBLE_NAVIGATOR_CONFIG`**. It lets you pin the EE and the mode for an entire project.
 
-## 📚 Exercice 5 — Comparaison ansible-playbook vs ansible-navigator
+## 📚 Exercise 5 — Comparison ansible-playbook vs ansible-navigator
 
 ```bash
-# Classique (sur le venv local)
+# Classic (on the local venv)
 time ansible-playbook ping.yml -i inventory.yml
 
-# Avec EE
+# With EE
 time ansible-navigator run ping.yml -i inventory.yml -m stdout
 ```
 
-| Critère | `ansible-playbook` | `ansible-navigator run` |
+| Criterion | `ansible-playbook` | `ansible-navigator run` |
 |---------|--------------------|-------------------------|
-| Démarrage | Immédiat (~0.5 s) | +1-3 s (lancement Podman) |
-| Reproductibilité | Selon venv local | EE figé, identique partout |
-| Collections | Celles du venv | Celles de l'EE |
-| Debug | `-vvv` texte | TUI + artifacts JSON |
-| CI/CD | Setup Python + collections | `podman run` + image EE |
+| Startup | Immediate (~0.5 s) | +1-3 s (Podman launch) |
+| Reproducibility | Depends on local venv | EE pinned, identical everywhere |
+| Collections | Those of the venv | Those of the EE |
+| Debug | `-vvv` text | TUI + JSON artifacts |
+| CI/CD | Python setup + collections | `podman run` + EE image |
 
-🔍 **Observation** : **navigator** ajoute ~1-3 s par run (overhead Podman) en échange de la **reproductibilité**. Pour itération dev rapide : `ansible-playbook`. Pour prod, formation, CI/CD : `ansible-navigator`.
+🔍 **Observation**: **navigator** adds ~1-3 s per run (Podman overhead) in exchange for **reproducibility**. For fast dev iteration: `ansible-playbook`. For production, training, CI/CD: `ansible-navigator`.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Idempotence** : un second run de votre solution doit afficher `changed=0`
-  partout dans le `PLAY RECAP`. C'est le signal mécanique d'un playbook
-  conforme aux bonnes pratiques.
-- **FQCN explicite** : préférez toujours `ansible.builtin.<module>` (ou la
-  collection appropriée) plutôt que le nom court — `ansible-lint --profile
-  production` le vérifie.
-- **Convention de ciblage** : ce lab cible votre poste local ; pour adapter à un
-  autre groupe, ajustez `hosts:` dans `lab.yml`/`solution.yml` puis relancez.
-- **Reset isolé** : `make clean` à la racine du lab désinstalle proprement
-  ce que la solution a posé pour pouvoir rejouer le scénario.
+- **Idempotence**: a second run of your solution must show `changed=0`
+  everywhere in the `PLAY RECAP`. This is the mechanical signal of a playbook
+  compliant with best practices.
+- **Explicit FQCN**: always prefer `ansible.builtin.<module>` (or the
+  appropriate collection) over the short name. `ansible-lint --profile
+  production` checks it.
+- **Targeting convention**: this lab targets your local machine. To adapt it to
+  another group, adjust `hosts:` in `lab.yml`/`solution.yml` then rerun.
+- **Isolated reset**: `dsoxlab clean <lab-id>` at the lab root cleanly uninstalls
+  what the solution set up so you can replay the scenario.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Pourquoi la première exécution avec navigator est-elle plus lente ? (Indice : `podman pull`).
+1. Why is the first run with navigator slower? (Hint: `podman pull`).
 
-2. Un développeur utilise `ansible-playbook` localement, un autre utilise `ansible-navigator` avec un EE. **Quel risque** introduit cette divergence ?
+2. One developer uses `ansible-playbook` locally, another uses `ansible-navigator` with an EE. **What risk** does this divergence introduce?
 
-3. Comment **forcer** ansible-navigator à utiliser **Docker** au lieu de Podman ? Et pourquoi le ferait-on ?
+3. How do you **force** ansible-navigator to use **Docker** instead of Podman? And why would you do it?
 
-4. À quoi sert `volume-mounts` dans `ansible-navigator.yml` ? Que se passe-t-il sans pour les clés SSH ?
+4. What is `volume-mounts` for in `ansible-navigator.yml`? What happens without it for the SSH keys?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Le challenge ([`challenge/tests/`](challenge/tests/)) valide la structure du lab via 6 tests pytest (script setup, inventaire valide, ansible-navigator.yml correct).
+The challenge ([`challenge/tests/`](challenge/tests/)) validates the lab structure through 6 pytest tests (setup script, valid inventory, correct ansible-navigator.yml).
 
 ```bash
 LAB_NO_REPLAY=1 pytest -v challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Lab 85** : inspecter un EE (collections, ansible-core version, Python deps).
-- **Lab 86** : construire son propre EE avec `ansible-builder`.
-- **Configuration `ansible-navigator.yml` complète** : `playbook-artifact.enable`, `logging`, `time-zone`, `lint.config`.
-- **Variables d'environnement** : `ANSIBLE_NAVIGATOR_EE_IMAGE`, `ANSIBLE_NAVIGATOR_MODE`.
-- **EE Red Hat AAP** : `registry.redhat.io/ansible-automation-platform-25/ee-supported-rhel9` (Subscription).
+- **Lab 85**: inspect an EE (collections, ansible-core version, Python deps).
+- **Lab 86**: build your own EE with `ansible-builder`.
+- **Full `ansible-navigator.yml` configuration**: `playbook-artifact.enable`, `logging`, `time-zone`, `lint.config`.
+- **Environment variables**: `ANSIBLE_NAVIGATOR_EE_IMAGE`, `ANSIBLE_NAVIGATOR_MODE`.
+- **Red Hat AAP EE**: `registry.redhat.io/ansible-automation-platform-25/ee-supported-rhel9` (Subscription).
 
-## 🔍 Sécurité — bonnes pratiques 2026
+## 🔍 Security — 2026 best practices
 
-- **Image pinnée** : `creator-ee:v25.5.0` plutôt que `:latest` en prod.
-- **Volume-mounts SSH** en `ro,Z` (lecture seule + label SELinux).
-- **Pas de secret en variable d'env du conteneur** : passer via `--vault-password-file` ou un secret manager.
-- **`pull.policy: missing`** en dev (rapide), **`always`** en CI (toujours la dernière version).
-- **Signature image** : vérifier avec `cosign verify` avant de pull en prod.
+- **Pinned image**: `creator-ee:v25.5.0` rather than `:latest` in production.
+- **SSH volume-mounts** in `ro,Z` (read-only + SELinux label).
+- **No secret in a container env variable**: pass via `--vault-password-file` or a secret manager.
+- **`pull.policy: missing`** in dev (fast), **`always`** in CI (always the latest version).
+- **Image signature**: verify with `cosign verify` before pulling in production.

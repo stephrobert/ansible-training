@@ -1,0 +1,4 @@
+---
+id: modules-diagnostic-assert-fail
+title: "Modules assert et fail : validation défensive"
+description: "Valider les prérequis en début de play, personnaliser fail_msg et success_msg, et échouer explicitement sur une branche d'erreur."

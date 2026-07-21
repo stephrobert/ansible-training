@@ -1,0 +1,4 @@
+---
+id: ecrire-code-precedence-variables
+title: "Précédence des variables : les 22 niveaux"
+description: "Superposer la même variable à plusieurs niveaux pour démontrer lequel gagne, du role defaults jusqu'à --extra-vars."

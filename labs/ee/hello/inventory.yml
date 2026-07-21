@@ -1,13 +1,6 @@
 ---
+# inventory.yml : À COMPLÉTER PAR VOS SOINS.
+# Déclarez les hôtes web1.lab et db1.lab dans le groupe all, avec leurs
+# ansible_host (10.10.20.21 et 10.10.20.31) et l'utilisateur ansible.
 all:
-  hosts:
-    web1.lab:
-      ansible_host: 10.10.20.21
-    web2.lab:
-      ansible_host: 10.10.20.22
-    db1.lab:
-      ansible_host: 10.10.20.31
-  vars:
-    ansible_user: ansible
-    ansible_ssh_private_key_file: "{{ playbook_dir }}/../../ssh/id_ed25519"
-    ansible_python_interpreter: /usr/bin/python3
+  hosts: {}

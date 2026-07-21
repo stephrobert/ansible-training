@@ -1,0 +1,23 @@
+---
+# Mise en place du lab assert-fail : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup assert-fail lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (assert-fail)
+      ansible.builtin.file:
+        path: "/tmp/lab-assert-validated.txt"
+        state: "absent"
+      failed_when: false
+
+- name: Brief the learner (assert-fail)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Validate prerequisites at the start of a play, customize fail_msg and success_msg, and fail explicitly on an error branch
+      run_once: true

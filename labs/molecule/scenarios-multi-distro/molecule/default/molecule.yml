@@ -1,23 +1,33 @@
 ---
-# molecule.yml — matrice multi-distribution pour valider la portabilité du rôle.
-# Chaque ajout de distro = une nouvelle entrée dans platforms.
+# Matrice multi-distribution : la portabilité ne se décrète pas, elle se
+# prouve sur plusieurs cibles à la fois.
+#
+# Trois plateformes, DEUX familles : c'est le minimum honnête. Tester trois
+# distributions RHEL ne prouve rien d'autre que la portabilité entre trois
+# variantes du même paquet ; c'est Debian qui fait tomber les chemins et
+# l'utilisateur codés en dur.
+#
+# create.yml et destroy.yml (fournis) bouclent sur « platforms » : ajouter
+# une distribution ici ne demande de toucher à aucun autre fichier. C'est
+# tout l'intérêt d'un create.yml générique.
 
 dependency:
   name: galaxy
+  options:
+    requirements-file: molecule/default/requirements.yml
 
 driver:
   name: default
+  options:
+    managed: true
+    login_cmd_template: "podman exec -ti {instance} bash"
 
 platforms:
-  - name: rocky9
-    image: docker.io/rockylinux/rockylinux:9
-    pre_build_image: true
-    privileged: true
-    command: /sbin/init
-    groups:
-      - rhel_family
-
-  - name: alma10
+  # --- Famille RedHat -------------------------------------------------
+  # Les images « -init » embarquent systemd en PID 1. Leur équivalent de
+  # base (docker.io/rockylinux/rockylinux:9) n'a même pas /sbin/init : le
+  # rôle ne pourrait pas y démarrer nginx.
+  - name: alma9
     image: docker.io/almalinux/10-init:latest
     pre_build_image: true
     privileged: true
@@ -25,11 +35,24 @@ platforms:
     groups:
       - rhel_family
 
+  - name: alma9
+    image: docker.io/almalinux/9-init:latest
+    pre_build_image: true
+    privileged: true
+    command: /sbin/init
+    groups:
+      - rhel_family
+
+  # --- Famille Debian : la cible qui casse un rôle « RHEL en dur » -----
+  # C'est elle qui fait échouer dnf, /usr/share/nginx/html et l'utilisateur
+  # nginx. Sans elle, la matrice ne prouve rien.
+  # Cette image embarque déjà systemd et Python ; son /sbin/init pointe sur
+  # /lib/systemd/systemd, on peut donc garder le même « command » partout.
   - name: debian12
     image: docker.io/geerlingguy/docker-debian12-ansible:latest
     pre_build_image: true
     privileged: true
-    command: /lib/systemd/systemd
+    command: /sbin/init
     groups:
       - debian_family
 

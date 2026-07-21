@@ -1,0 +1,4 @@
+---
+id: roles-handlers-meta
+title: "Handlers et meta d'un rôle : notify et galaxy_info"
+description: "Écrire plusieurs handlers (service et non-service), les déclencher avec notify, arbitrer restarted vs reloaded, puis compléter meta/main.yml pour Galaxy."

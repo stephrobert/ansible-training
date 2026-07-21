@@ -1,30 +1,44 @@
-# 🎯 Challenge — Cibler avec précision via patterns
+# 🎯 Challenge — Target precisely via patterns
 
-Vous avez vu chaque opérateur de pattern individuellement. Le challenge consiste à **combiner** plusieurs opérateurs et à **prouver** que seuls les hôtes attendus reçoivent le marqueur.
+You have seen each pattern operator individually. The challenge is to **combine** several operators and to **prove** that only the expected hosts receive the marker.
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `solution.yml` qui :
+Write `solution.yml` that:
 
-1. Cible **`hosts: all`** (le filtrage se fait via `--limit` au moment de l'exécution).
-2. Pose un fichier marqueur `/tmp/lab56-mark-{{ inventory_hostname }}.txt` qui contient `pattern OK on {{ inventory_hostname }}`.
+1. Targets **`hosts: all`** (the filtering is done via `--limit` at run time).
+2. Lays down a marker file `/tmp/lab56-mark-{{ inventory_hostname }}.txt` that contains `pattern OK on {{ inventory_hostname }}`.
 
-Le test automatique **lance 3 commandes** avec des `--limit` différents et vérifie que **seuls les hôtes attendus** ont reçu le marqueur :
+The automated test **runs 3 commands** with different `--limit` values and checks that **only the expected hosts** received the marker:
 
-| Run | `--limit` | Hôtes attendus |
+| Run | `--limit` | Expected hosts |
 |---|---|---|
-| 1 | `webservers:&staging` | `web1.lab` uniquement |
-| 2 | `webservers:!web1.lab` | `web2.lab` uniquement |
-| 3 | `all:!staging` | `web2.lab`, `db1.lab` (pas web1) |
+| 1 | `webservers:&staging` | `web1.lab` only |
+| 2 | `webservers:!web1.lab` | `web2.lab` only |
+| 3 | `all:!staging` | `web2.lab`, `db1.lab` (not web1) |
 
-## 🧩 Consignes
+> ✍️ **Compose these patterns yourself before running the tests.** The table
+> above is the test's specification, not a list to copy blindly: `:&`
+> (intersection) and `:!` (exclusion) are exactly the skill this lab
+> teaches, and the test composes them for you. Run the three by hand first,
+> and check who actually received the marker:
+>
+> ```bash
+> ansible-playbook -i inventory/hosts.yml challenge/solution.yml --limit 'webservers:&staging'
+> ansible -i inventory/hosts.yml all -m ansible.builtin.shell -a 'ls /tmp/lab56-mark-*'
+> ```
+>
+> `ansible-playbook --limit <pattern> --list-hosts` shows the targets without
+> changing anything: use it to try a pattern out before running it.
 
-Squelette à compléter :
+## 🧩 Instructions
+
+Skeleton to complete:
 
 ```yaml
 ---
 - name: Challenge — patterns d'hôtes (le filtrage se fait via --limit)
-  hosts: ???                       # 'all' : on cible large, --limit fait le filtre
+  hosts: ???                       # 'all': we target broad, --limit does the filtering
   become: ???
   gather_facts: false
   tasks:
@@ -35,31 +49,30 @@ Squelette à compléter :
         mode: "0644"
 ```
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **`hosts: all` + `--limit`** vs **`hosts: <pattern>`** : préférer
->   `hosts: all` dans le playbook et **passer le filtre au runtime** via
->   `--limit`. Sinon, on doit éditer le YAML pour chaque cible —
->   anti-pattern.
-> - **Les opérateurs** : `:` = union, `&` = intersection, `!` = exclusion,
->   `*` = wildcard. Les combiner avec attention :
->   `webservers:&staging` = "dans webservers ET dans staging".
-> - **L'inventaire du lab** définit un groupe `staging` qui contient
->   uniquement `web1.lab`. Vérifiez avec `ansible-inventory -i ... --graph`
->   avant de lancer le playbook.
-> - **`changed_when` non nécessaire** : `copy:` est nativement idempotent
->   sur le contenu.
+> - **`hosts: all` + `--limit`** vs **`hosts: <pattern>`**: prefer `hosts: all`
+>   in the playbook and **pass the filter at runtime** via `--limit`.
+>   Otherwise, you have to edit the YAML for each target: an anti-pattern.
+> - **The operators**: `:` = union, `&` = intersection, `!` = exclusion,
+>   `*` = wildcard. Combine them carefully: `webservers:&staging` = "in
+>   webservers AND in staging".
+> - **The lab inventory** defines a `staging` group that contains only
+>   `web1.lab`. Check with `ansible-inventory -i ... --graph` before running
+>   the playbook.
+> - **`changed_when` not necessary**: `copy:` is natively idempotent on the
+>   content.
 
-Lancez la première démo manuellement pour valider :
+Run the first demo manually to validate:
 
 ```bash
 cd labs/inventaires/patterns-hotes/
 ansible-playbook -i inventory/hosts.yml challenge/solution.yml \
     --limit 'webservers:&staging'
-ssh ansible@web1.lab cat /tmp/lab56-mark-web1.lab.txt
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab cat /tmp/lab56-mark-web1.lab.txt
 ```
 
-Le test pytest applique automatiquement les 3 patterns successivement.
+The pytest test automatically applies the 3 patterns one after another.
 
 ## 🧪 Validation
 
@@ -67,24 +80,24 @@ Le test pytest applique automatiquement les 3 patterns successivement.
 pytest -v challenge/tests/
 ```
 
-## 🚀 Pour aller plus loin
+## 🚀 Going further
 
-- Ajouter un 4e cas de test : `--limit '*1.lab'` (devrait toucher `web1.lab` ET `db1.lab`).
-- Modifier l'inventaire pour ajouter un groupe `dev` contenant `web1.lab` et `db1.lab`. Tester `dev:!monitoring` (= web1, car db1 est dans monitoring).
-- Comparer les sorties de `--list-hosts` et `--limit` : la première fait un dry-run de la résolution, la seconde l'applique.
+- Add a 4th test case: `--limit '*1.lab'` (should touch `web1.lab` AND `db1.lab`).
+- Modify the inventory to add a `dev` group containing `web1.lab` and `db1.lab`. Test `dev:!monitoring` (= web1, because db1 is in monitoring).
+- Compare the outputs of `--list-hosts` and `--limit`: the first does a dry-run of the resolution, the second applies it.
 
 ---
 
-Bonne chance ! 🧠
+Good luck! 🧠
 
 ## 🧹 Reset
 
-Pour rejouer le challenge dans un état neutre :
+To replay the challenge in a neutral state:
 
 ```bash
-make -C labs/inventaires/patterns-hotes/ clean
+dsoxlab clean inventaires-patterns-hotes
 ```
 
-Cette cible désinstalle/supprime ce que la solution a posé sur les managed
-nodes (paquets, fichiers, services, règles firewall) afin que vous puissiez
-relancer la solution from scratch.
+This target uninstalls/removes what the solution set down on the managed nodes
+(packages, files, services, firewall rules) so that you can rerun the solution
+from scratch.

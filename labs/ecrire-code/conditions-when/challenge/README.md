@@ -1,27 +1,27 @@
-# 🎯 Challenge — Conditions `when` ciblées
+# 🎯 Challenge — Targeted `when` conditions
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `challenge/solution.yml` qui sur **db1.lab** pose **3 fichiers
-conditionnels** et **n'en pose pas un 4ème** (preuve qu'un `when` faux skippe
-proprement la tâche).
+Write `challenge/solution.yml` that on **db1.lab** lays down **3 conditional
+files** and **does not lay down a 4th** (proof that a false `when` cleanly
+skips the task).
 
-| Fichier à poser | Condition `when` | Contenu attendu |
+| File to lay down | `when` condition | Expected content |
 | --- | --- | --- |
 | `/tmp/cond-redhat.txt` | `ansible_os_family == "RedHat"` | `famille=redhat` |
-| `/tmp/cond-alma10.txt` | `AlmaLinux` ET version ≥ 10 | `os=AlmaLinux10` |
-| `/tmp/cond-feature.txt` | `enable_feature` est défini ET truthy | `feature=enabled` |
+| `/tmp/cond-alma9.txt` | `AlmaLinux` AND version ≥ 9 | `os=AlmaLinux9` |
+| `/tmp/cond-feature.txt` | `enable_feature` is defined AND truthy | `feature=enabled` |
 
-| Fichier à **NE PAS** poser | Condition `when` |
+| File to **NOT** lay down | `when` condition |
 | --- | --- |
-| `/tmp/cond-debian.txt` | `ansible_os_family == "Debian"` (faux sur AlmaLinux) |
+| `/tmp/cond-debian.txt` | `ansible_os_family == "Debian"` (false on AlmaLinux) |
 
-## 🧩 Indices
+## 🧩 Hints
 
-- Activez `gather_facts: true` au niveau du play (sinon `ansible_os_family`
-  n'existe pas).
-- `when:` accepte une **chaîne** (une seule condition) ou une **liste**
-  (toutes ANDées) :
+- Enable `gather_facts: true` at the play level (otherwise `ansible_os_family`
+  does not exist).
+- `when:` accepts a **string** (a single condition) or a **list**
+  (all ANDed):
 
   ```yaml
   when:
@@ -29,11 +29,11 @@ proprement la tâche).
     - condition_2
   ```
 
-- Pour `cond-feature`, vous avez besoin de **2 vérifications** :
-  1. `enable_feature is defined` (sinon erreur de variable indéfinie)
-  2. `enable_feature | bool` (force la conversion en booléen)
+- For `cond-feature`, you need **2 checks**:
+  1. `enable_feature is defined` (otherwise undefined variable error)
+  2. `enable_feature | bool` (forces the conversion to boolean)
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -50,7 +50,7 @@ proprement la tâche).
         mode: "0644"
       when: ???
 
-    - name: cond-alma10 (AlmaLinux >= 10)
+    - name: cond-alma9 (AlmaLinux >= 9)
       ansible.builtin.copy:
         dest: ???
         content: ???
@@ -76,54 +76,54 @@ proprement la tâche).
       when: ???
 ```
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **`when:` accepte une expression Jinja2 sans `{{ }}`** : écrire
->   `when: my_var == "x"` directement, **pas** `when: "{{ my_var == 'x' }}"`.
-> - **Bool depuis `--extra-vars`** : `enable_feature=true` est une
->   **string**. Comparer avec `enable_feature | bool` ou
+> - **`when:` accepts a Jinja2 expression without `{{ }}`**: write
+>   `when: my_var == "x"` directly, **not** `when: "{{ my_var == 'x' }}"`.
+> - **Bool from `--extra-vars`**: `enable_feature=true` is a
+>   **string**. Compare with `enable_feature | bool` or
 >   `enable_feature == "true"`.
-> - **`when:` sur loop** : la condition s'évalue **par item** (loop
->   filtré). Pour skipper toute la loop, utiliser `when:` sur la tâche
->   parent + `block:`.
-> - **`is defined`** vs **`is not none`** : `defined` teste la présence
->   de la variable, `not none` teste sa valeur. Différence subtile mais
->   importante.
+> - **`when:` on a loop**: the condition is evaluated **per item** (filtered
+>   loop). To skip the whole loop, use `when:` on the parent
+>   task + `block:`.
+> - **`is defined`** vs **`is not none`**: `defined` tests the presence
+>   of the variable, `not none` tests its value. Subtle but
+>   important difference.
 
-## 🚀 Lancement
+## 🚀 Launch
 
 ```bash
 ansible-playbook labs/ecrire-code/conditions-when/challenge/solution.yml \
     --extra-vars "enable_feature=true"
 ```
 
-🔍 Sortie attendue : `ok=4, changed=3, skipped=1` (la tâche debian est
-skippée).
+🔍 Expected output: `ok=4, changed=3, skipped=1` (the debian task is
+skipped).
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/conditions-when/challenge/tests/
 ```
 
-> ⚠️ Le `conftest.py` racine joue automatiquement votre `solution.yml` avec
-> `--extra-vars "enable_feature=true"` (cf. `_EXTRA_ARGS`).
+> ⚠️ The root `conftest.py` automatically plays your `solution.yml` with
+> `--extra-vars "enable_feature=true"` (see `_EXTRA_ARGS`).
 
 ## 🧹 Reset
 
 ```bash
-make -C labs/ecrire-code/conditions-when clean
+dsoxlab clean ecrire-code-conditions-when
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`when:` sur un `block:`** : applique la condition à toutes les tâches du
-  block. DRY quand on a 5 tâches qui partagent la même condition.
-- **`is search` / `is match`** : tests Jinja2 pour conditions sur des regex
-  (ex : `when: ansible_kernel is search('rhel|alma')`).
-- **`failed_when` / `changed_when`** : conditions qui modifient l'**état** de
-  la tâche (lab 23).
-- **Lint** :
+- **`when:` on a `block:`**: applies the condition to all the tasks of the
+  block. DRY when you have 5 tasks that share the same condition.
+- **`is search` / `is match`**: Jinja2 tests for conditions on regexes
+  (ex: `when: ansible_kernel is search('rhel|alma')`).
+- **`failed_when` / `changed_when`**: conditions that modify the **state** of
+  the task (lab 23).
+- **Lint**:
 
    ```bash
    ansible-lint labs/ecrire-code/conditions-when/challenge/solution.yml

@@ -1,113 +1,113 @@
-# Lab 03 — Prise en main de la CLI (les 8 commandes du quotidien)
+# Lab 03 — Getting started with the CLI (the 8 everyday commands)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Prise en main de la CLI Ansible : les 8 commandes du quotidien**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/prise-en-main-cli/)
+🔗 [**Getting started with the Ansible CLI: the 8 everyday commands**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/prise-en-main-cli/)
 
-Ansible se manipule via **8 commandes** qui ont chacune un rôle précis. La plupart des labs n'en utilisent que 2 (`ansible` et `ansible-playbook`), mais en production vous toucherez régulièrement les 6 autres pour diagnostiquer, sécuriser ou linter votre code.
+Ansible is operated through **8 commands** that each have a precise role. Most labs use only 2 of them (`ansible` and `ansible-playbook`), but in production you will regularly touch the other 6 to diagnose, secure or lint your code.
 
-| Commande | À quoi ça sert | Quand l'utiliser |
+| Command | What it is for | When to use it |
 | --- | --- | --- |
-| **`ansible`** | Exécuter **un seul module** sur un pattern d'hôtes (mode ad-hoc) | Tester, dépanner, lancer une opération ponctuelle |
-| **`ansible-playbook`** | Exécuter un **playbook YAML** | 90 % du temps |
-| **`ansible-doc`** | Documentation **hors-ligne** des modules | Avant d'utiliser un module inconnu |
-| **`ansible-config`** | Voir la **configuration active** | Quand un comportement vous surprend |
-| **`ansible-inventory`** | Valider l'**inventaire** (groupes, vars résolues) | Avant un déploiement, en debug |
-| **`ansible-galaxy`** | Installer **collections** et **rôles** | Mise en place d'un projet, mise à jour |
-| **`ansible-vault`** | **Chiffrer** des fichiers sensibles | Mots de passe, clés API, certificats |
-| **`ansible-lint`** | Détecter les **anti-patterns** | Avant un commit, dans la CI |
+| **`ansible`** | Run **a single module** on a host pattern (ad-hoc mode) | Test, troubleshoot, run a one-off operation |
+| **`ansible-playbook`** | Run a **YAML playbook** | 90% of the time |
+| **`ansible-doc`** | **Offline** documentation of modules | Before using an unknown module |
+| **`ansible-config`** | See the **active configuration** | When a behavior surprises you |
+| **`ansible-inventory`** | Validate the **inventory** (groups, resolved vars) | Before a deployment, when debugging |
+| **`ansible-galaxy`** | Install **collections** and **roles** | Setting up a project, updating |
+| **`ansible-vault`** | **Encrypt** sensitive files | Passwords, API keys, certificates |
+| **`ansible-lint`** | Detect **anti-patterns** | Before a commit, in CI |
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Exécuter une commande **ad-hoc** sur tous les managed nodes.
-2. Trouver la doc d'un module **sans Internet** via `ansible-doc`.
-3. Inspecter la **configuration active** et l'**inventaire** résolus.
-4. Lister et installer des **collections** via `ansible-galaxy`.
-5. **Chiffrer / déchiffrer** un fichier de variables avec `ansible-vault`.
-6. **Linter** un playbook avec `ansible-lint`.
+1. Run an **ad-hoc** command on all managed nodes.
+2. Find a module's doc **without Internet** via `ansible-doc`.
+3. Inspect the resolved **active configuration** and **inventory**.
+4. List and install **collections** via `ansible-galaxy`.
+5. **Encrypt / decrypt** a variables file with `ansible-vault`.
+6. **Lint** a playbook with `ansible-lint`.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible all -m ansible.builtin.ping
 ```
 
-Réponse attendue : 4 `pong` (un par managed node). Si KO, lancez `make provision` à la racine.
+Expected response: 4 `pong` (one per managed node). If it fails, run `dsoxlab provision` at the root.
 
-## 📚 Exercice 1 — `ansible` : commande ad-hoc
+## 📚 Exercise 1 — `ansible`: ad-hoc command
 
-Le mode **ad-hoc** exécute un seul module sur un pattern d'hôtes, sans playbook. Idéal pour tester une connexion ou collecter une info ponctuelle.
+The **ad-hoc** mode runs a single module on a host pattern, without a playbook. Ideal to test a connection or collect a one-off piece of information.
 
 ```bash
 ansible all -m ansible.builtin.ping
 ```
 
-🔍 **Observation** : 4 `pong` doivent revenir. Le module `ping` n'est **pas** un ICMP — il ouvre une connexion SSH puis lance un mini-script Python sur le managed node. C'est donc un **test bout-en-bout** de toute la chaîne Ansible (SSH + Python distant).
+🔍 **Observation**: 4 `pong` must come back. The `ping` module is **not** ICMP: it opens an SSH connection then runs a tiny Python script on the managed node. It is therefore an **end-to-end test** of the whole Ansible chain (SSH + remote Python).
 
-Variantes utiles :
+Useful variants:
 
 ```bash
-ansible webservers -m ansible.builtin.command -a "uptime"           # uptime sur les webs
-ansible db1.lab -b -m ansible.builtin.dnf -a "name=httpd state=absent"   # désinstaller httpd
-ansible all -m ansible.builtin.setup -a "filter=ansible_distribution"    # collecter un fact
+ansible webservers -m ansible.builtin.command -a "uptime"           # uptime on the web servers
+ansible db1.lab -b -m ansible.builtin.dnf -a "name=tree state=absent"    # uninstall a package
+ansible all -m ansible.builtin.setup -a "filter=ansible_distribution"    # collect a fact
 ```
 
-## 📚 Exercice 2 — `ansible-playbook` : exécuter un playbook
+## 📚 Exercise 2 — `ansible-playbook`: run a playbook
 
 ```bash
 ansible-playbook labs/bootstrap/prepare-managed-nodes/playbook.yml
 ```
 
-🔍 **Observation** : le playbook de préparation se déroule. Au **premier run**, des tâches sont marquées `changed`. Au **second run**, le `PLAY RECAP` affiche `changed=0` partout — c'est l'idempotence du lab 01 en action.
+🔍 **Observation**: the preparation playbook runs. On the **first run**, some tasks are marked `changed`. On the **second run**, the `PLAY RECAP` shows `changed=0` everywhere: this is the idempotence of lab 01 in action.
 
-> 💡 Toutes les commandes `ansible-playbook` du repo se lancent **depuis la racine** — c'est pour ça que l'inventaire utilise un chemin relatif `{{ inventory_dir }}/../ssh/id_ed25519`.
+> 💡 All the `ansible-playbook` commands in the repo run **from the root**: that is why the inventory uses a relative path `{{ inventory_dir }}/../ssh/id_ed25519`.
 
-## 📚 Exercice 3 — `ansible-doc` : documentation hors-ligne
+## 📚 Exercise 3 — `ansible-doc`: offline documentation
 
-`ansible-doc` est votre **manuel local** — pas besoin d'Internet pour comprendre un module.
+`ansible-doc` is your **local manual**: no Internet needed to understand a module.
 
 ```bash
 ansible-doc ansible.builtin.dnf | less
 ```
 
-🔍 **Observation** : la doc d'un module a 4 sections clés :
+🔍 **Observation**: a module's doc has 4 key sections:
 
-- **Description** (en haut) : à quoi sert le module.
-- **Options** : tous les paramètres avec leur **type**, **défaut**, et indication `required`.
-- **Examples** : snippets YAML prêts à copier.
-- **Returns** : les attributs disponibles dans `register:` (utile dès le lab 17).
+- **Description** (at the top): what the module is for.
+- **Options**: all the parameters with their **type**, **default**, and `required` flag.
+- **Examples**: ready-to-copy YAML snippets.
+- **Returns**: the attributes available in `register:` (useful from lab 17 on).
 
-Pour lister tous les modules d'une collection :
+To list all modules of a collection:
 
 ```bash
-ansible-doc -l ansible.builtin | head -20      # modules ansible.builtin uniquement
-ansible-doc -l | grep -i firewall              # filtrer par mot-clé
+ansible-doc -l ansible.builtin | head -20      # ansible.builtin modules only
+ansible-doc -l | grep -i firewall              # filter by keyword
 ```
 
-## 📚 Exercice 4 — `ansible-config` : configuration active
+## 📚 Exercise 4 — `ansible-config`: active configuration
 
-Quand Ansible se comporte de façon inattendue (un timeout long, des facts manquants, des warnings sur le SSH), c'est presque toujours **un paramètre de config** qui surcharge le défaut.
+When Ansible behaves unexpectedly (a long timeout, missing facts, SSH warnings), it is almost always **a config setting** overriding the default.
 
 ```bash
 ansible-config dump --only-changed
 ```
 
-🔍 **Observation** : la sortie liste **uniquement** les paramètres qui diffèrent du défaut, avec leur **source** :
+🔍 **Observation**: the output lists **only** the settings that differ from the default, with their **source**:
 
 ```text
 DEFAULT_HOST_LIST(/.../ansible-training/ansible.cfg) = ['/.../inventory/hosts.yml']
@@ -115,15 +115,15 @@ HOST_KEY_CHECKING(/.../ansible-training/ansible.cfg) = False
 INTERPRETER_PYTHON(/.../ansible-training/ansible.cfg) = auto_silent
 ```
 
-Chaque ligne dit **quel paramètre est modifié** + **par quel fichier**. Si un comportement vous surprend, lancez d'abord cette commande.
+Each line says **which setting is modified** + **by which file**. If a behavior surprises you, run this command first.
 
-## 📚 Exercice 5 — `ansible-inventory` : valider l'inventaire
+## 📚 Exercise 5 — `ansible-inventory`: validate the inventory
 
 ```bash
 ansible-inventory --graph
 ```
 
-🔍 **Observation** : vue arborescente des groupes :
+🔍 **Observation**: tree view of the groups:
 
 ```text
 @all:
@@ -139,126 +139,131 @@ ansible-inventory --graph
   ...
 ```
 
-Pour voir **toutes les variables résolues** d'un hôte (utile en debug d'héritage `group_vars`) :
+To see **all the resolved variables** of a host (useful when debugging `group_vars` inheritance):
 
 ```bash
 ansible-inventory --host web1.lab
 ```
 
-## 📚 Exercice 6 — `ansible-galaxy` : gérer les collections
+## 📚 Exercise 6 — `ansible-galaxy`: manage collections
 
-Lister ce qui est déjà installé :
+List what is already installed:
 
 ```bash
 ansible-galaxy collection list
 ```
 
-🔍 **Observation** : vous devez voir au moins `ansible.posix`, `community.general`, `community.libvirt` (cf. lab 02). Pour installer une nouvelle collection :
+🔍 **Observation**: you should see at least `ansible.posix`, `community.general`, `community.libvirt` (see lab 02). To install a new collection:
 
 ```bash
 ansible-galaxy collection install community.docker
 ```
 
-Pour réinstaller toutes les collections du repo en une commande :
+To reinstall all the repo's collections in one command:
 
 ```bash
 ansible-galaxy collection install -r requirements.yml
 ```
 
-## 📚 Exercice 7 — `ansible-vault` : chiffrer un secret
+## 📚 Exercise 7 — `ansible-vault`: encrypt a secret
 
-Vous ne stockerez **jamais** un mot de passe en clair dans un repo Git. `ansible-vault` chiffre un fichier (ou une variable seule) avec AES-256.
+You will **never** store a plaintext password in a Git repo. `ansible-vault` encrypts a file (or a single variable) with AES-256.
 
 ```bash
 echo "api_key: secret-ABC123" > /tmp/secrets.yml
-ansible-vault encrypt /tmp/secrets.yml         # demande un mot de passe (saisissez "test")
-cat /tmp/secrets.yml                            # → contenu chiffré ($ANSIBLE_VAULT;1.1;AES256...)
-ansible-vault view /tmp/secrets.yml             # → affiche en clair (mot de passe demandé)
-ansible-vault decrypt /tmp/secrets.yml          # → remet en clair sur disque
+ansible-vault encrypt /tmp/secrets.yml         # asks for a password (enter "test")
+cat /tmp/secrets.yml                            # → encrypted content ($ANSIBLE_VAULT;1.1;AES256...)
+ansible-vault view /tmp/secrets.yml             # → displays in plaintext (password prompted)
+ansible-vault decrypt /tmp/secrets.yml          # → back to plaintext on disk
 rm /tmp/secrets.yml
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- Un fichier chiffré commence **toujours** par `$ANSIBLE_VAULT;1.1;AES256` (le `1.1` est la version du format).
-- `view` ne touche pas au disque (lecture seule). `decrypt` réécrit le fichier en clair.
-- Le mot de passe peut être passé via **`--vault-password-file`** (pour la CI/CD) au lieu d'être saisi à la main. C'est ce que fait le challenge.
+- An encrypted file **always** starts with `$ANSIBLE_VAULT;1.1;AES256` (the `1.1` is the format version).
+- `view` does not touch the disk (read-only). `decrypt` rewrites the file in plaintext.
+- The password can be passed via **`--vault-password-file`** (for CI/CD) instead of being typed by hand. This is what the challenge does.
 
-## 📚 Exercice 8 — `ansible-lint` : qualité du code
+## 📚 Exercise 8 — `ansible-lint`: code quality
 
-`ansible-lint` détecte les **anti-patterns** dans un playbook : tâche sans `name:`, FQCN manquant, modules dépréciés, `shell:` sans `creates:`, etc.
+`ansible-lint` detects the **anti-patterns** in a playbook: task without `name:`, missing FQCN, deprecated modules, `shell:` without `creates:`, etc.
 
 ```bash
 ansible-lint labs/bootstrap/prepare-managed-nodes/playbook.yml
 ```
 
-🔍 **Observation** : si le playbook est conforme, **sortie vide** (et exit 0). Sinon, chaque infraction est listée avec le numéro de ligne et la règle violée.
+🔍 **Observation**: if the playbook is compliant, **empty output** (and exit 0). Otherwise, each violation is listed with the line number and the broken rule.
 
-Profile **production** (le plus strict) :
+The **production** profile (the strictest):
 
 ```bash
 ansible-lint --profile production labs/bootstrap/prepare-managed-nodes/
 ```
 
-## 📚 Exercice 9 — Tout enchaîner via Make
+## 📚 Exercise 9 — Chain it all
 
-Le `Makefile` du lab joue 6 commandes en chaîne pour vous donner une vue d'ensemble :
+Chain the 6 toolbox commands yourself, in this order:
 
 ```bash
-make -C labs/decouvrir/prise-en-main-cli run
+ansible all -m ansible.builtin.ping
+ansible-doc -l | head
+ansible-config dump --only-changed
+ansible-inventory --graph
+ansible-galaxy collection list
+ansible-lint --version
 ```
 
-🔍 **Observation** : enchaînement `ansible ping → ansible-doc -l → ansible-config dump → ansible-inventory --graph → ansible-galaxy list → ansible-lint`. Si **toutes** les sorties sont propres, votre poste est prêt pour les labs suivants.
+🔍 **Observation**: the chain `ansible ping → ansible-doc -l → ansible-config dump → ansible-inventory --graph → ansible-galaxy list → ansible-lint`. If **all** the outputs are clean, your machine is ready for the following labs.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`ansible`** (sans suffixe) = ad-hoc. **`ansible-playbook`** = playbook. Ne pas confondre.
-- Le **FQCN** (`ansible.builtin.dnf` au lieu de `dnf`) est **obligatoire** pour la RHCE 2026 et fortement recommandé partout — il garantit qu'Ansible appelle le bon module quand plusieurs collections en exposent un de même nom.
-- `ansible-doc` lit la doc **embarquée** dans le module Python — donc disponible hors-ligne et toujours à jour avec votre version installée.
-- `ansible-vault` chiffre **un fichier entier**. Pour chiffrer **une seule variable** dans un fichier YAML clair, utilisez `ansible-vault encrypt_string` (vu plus tard, section Vault).
-- `ansible-lint --profile production` est le mode strict. Existent aussi `min`, `basic`, `moderate`, `safety`, `shared` du moins au plus strict.
+- **`ansible`** (no suffix) = ad-hoc. **`ansible-playbook`** = playbook. Do not confuse them.
+- The **FQCN** (`ansible.builtin.dnf` instead of `dnf`) is **mandatory** for RHCE 2026 and strongly recommended everywhere: it guarantees that Ansible calls the right module when several collections expose one with the same name.
+- `ansible-doc` reads the doc **embedded** in the Python module: so it is available offline and always up to date with your installed version.
+- `ansible-vault` encrypts **a whole file**. To encrypt **a single variable** in a plaintext YAML file, use `ansible-vault encrypt_string` (seen later, Vault section).
+- `ansible-lint --profile production` is the strict mode. There are also `min`, `basic`, `moderate`, `safety`, `shared` from least to most strict.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voulez vérifier **rapidement** que les 4 managed nodes sont joignables et que le sudo fonctionne. Quelle commande utiliser ? Avec `ansible -b` ? `-m ping` ? `-m command -a "id"` ?
+1. You want to **quickly** check that the 4 managed nodes are reachable and that sudo works. Which command do you use? With `ansible -b`? `-m ping`? `-m command -a "id"`?
 
-2. Un collègue vous dit : « Mon playbook met 30 secondes à démarrer alors qu'avant c'était instantané ». Quelle commande lancer en premier pour diagnostiquer ?
+2. A colleague tells you: "My playbook takes 30 seconds to start whereas it used to be instant." Which command do you run first to diagnose?
 
-3. Vous voulez chiffrer **un seul mot de passe** dans un fichier `vars.yml` qui contient déjà 10 autres variables non sensibles. `ansible-vault encrypt` est-il le bon outil ? Si non, lequel ?
+3. You want to encrypt **a single password** in a `vars.yml` file that already contains 10 other non-sensitive variables. Is `ansible-vault encrypt` the right tool? If not, which one?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Le challenge ([`challenge/README.md`](challenge/README.md)) demande d'écrire un script `solution.sh` qui automatise un cycle complet `ansible-vault` (chiffrer → vérifier le header → déchiffrer) avec un fichier de mot de passe (`--vault-password-file`). C'est le pattern utilisé en CI quand le mot de passe est fourni par un secret manager.
+The challenge ([`challenge/README.md`](challenge/README.md)) asks you to write a `solution.sh` script that automates a full `ansible-vault` cycle (encrypt → check the header → decrypt) with a password file (`--vault-password-file`). This is the pattern used in CI when the password is provided by a secret manager.
 
 ```bash
 pytest -v labs/decouvrir/prise-en-main-cli/challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`ansible-navigator`** : un wrapper TUI qui exécute les playbooks dans un Execution Environment (image OCI) — recommandé pour la RHCE 2026. Lancez `ansible-navigator run labs/bootstrap/prepare-managed-nodes/playbook.yml --mode stdout` pour voir la différence.
-- **`ansible-builder`** : construit des Execution Environments custom à partir d'un fichier YAML. C'est ainsi qu'on garantit qu'un playbook tourne **identiquement** sur le poste dev, en CI et en prod.
-- **Hooks Git pré-commit** : intégrez `ansible-lint --profile production` dans un hook pre-commit pour bloquer les commits qui introduiraient des anti-patterns.
+- **`ansible-navigator`**: a TUI wrapper that runs playbooks inside an Execution Environment (OCI image), recommended for RHCE 2026. Run `ansible-navigator run labs/bootstrap/prepare-managed-nodes/playbook.yml --mode stdout` to see the difference.
+- **`ansible-builder`**: builds custom Execution Environments from a YAML file. This is how you guarantee that a playbook runs **identically** on the dev machine, in CI and in production.
+- **Git pre-commit hooks**: integrate `ansible-lint --profile production` into a pre-commit hook to block commits that would introduce anti-patterns.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/decouvrir/prise-en-main-cli/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/decouvrir/prise-en-main-cli/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/decouvrir/prise-en-main-cli/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

@@ -1,0 +1,4 @@
+---
+id: ecrire-code-handlers
+title: "Handlers : le pattern restart-on-config-change"
+description: "Notifier plusieurs handlers, les découpler avec listen, forcer meta: flush_handlers et combiner validate pour ne jamais appliquer une config invalide."

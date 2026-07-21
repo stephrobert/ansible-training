@@ -1,16 +1,16 @@
-# Lab 74 — `requirements.yml` : installer rôles & collections depuis Galaxy / Git
+# Lab 74 — `requirements.yml`: install roles & collections from Galaxy / Git
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Pré-requis : Ansible installé. Pas besoin des VMs (lab purement local).
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Prerequisite: Ansible installed. No VMs needed (purely local lab).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Installer des rôles via requirements.yml**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-roles/installer-roles-galaxy/)
+🔗 [**Installing roles via requirements.yml**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/installer-roles-galaxy/)
 
-Un fichier `requirements.yml` est l'**équivalent Ansible** de `package.json`
-(Node), `requirements.txt` (Python) ou `Gemfile` (Ruby). Il déclare **toutes
-les dépendances** d'un projet — rôles **et** collections — avec sources
-(Galaxy ou Git) et versions épinglées.
+A `requirements.yml` file is the **Ansible equivalent** of `package.json`
+(Node), `requirements.txt` (Python) or `Gemfile` (Ruby). It declares **all
+the dependencies** of a project (roles **and** collections) with sources
+(Galaxy or Git) and pinned versions.
 
 ```yaml
 # requirements.yml
@@ -24,54 +24,53 @@ roles:
 
 collections:
   - name: ansible.posix
-    version: ">=1.5.0,<2.0.0"          # plage SemVer
+    version: ">=1.5.0,<2.0.0"          # SemVer range
 ```
 
-→ Installation : `ansible-galaxy install -r requirements.yml` (rôles)
+→ Installation: `ansible-galaxy install -r requirements.yml` (roles)
 + `ansible-galaxy collection install -r requirements.yml` (collections).
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Écrire un **`requirements.yml`** mixant rôles Galaxy + Git + collections.
-2. **Pinner les versions** (exact, plage SemVer, tag Git, branche).
-3. Différencier **Galaxy** (auteur.role) et **Git** (URL clonable).
-4. Comprendre `~/.ansible/roles/` vs `~/.ansible/collections/`.
-5. **Vendoriser** un rôle dans le repo (`-p roles/`).
-6. Préparer un projet Ansible **reproductible** (`requirements.yml` versionné).
+1. Write a **`requirements.yml`** mixing Galaxy roles + Git + collections.
+2. **Pin versions** (exact, SemVer range, Git tag, branch).
+3. Distinguish **Galaxy** (author.role) from **Git** (cloneable URL).
+4. Understand `~/.ansible/roles/` vs `~/.ansible/collections/`.
+5. **Vendor** a role into the repo (`-p roles/`).
+6. Prepare a **reproducible** Ansible project (versioned `requirements.yml`).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
 ansible-galaxy --version
 ```
 
-## ⚙️ Arborescence
+## ⚙️ Directory tree
 
 ```text
 labs/galaxy/installer-roles/
 ├── README.md
-├── Makefile
-├── requirements.yml         ← le manifeste à étudier
-└── roles/                    ← cible d'installation locale (vendoring)
+├── requirements.yml         ← the manifest to study
+└── roles/                    ← local install target (vendoring)
 ```
 
-## 📚 Exercice 1 — Lire le `requirements.yml` livré
+## 📚 Exercise 1 — Read the shipped `requirements.yml`
 
 ```yaml
 ---
 roles:
-  # 1. Rôle Galaxy public (avec version pinnée)
+  # 1. Public Galaxy role (with pinned version)
   - name: geerlingguy.docker
     version: 7.4.4
 
-  # 2. Rôle depuis Git (branche main)
+  # 2. Role from Git (main branch)
   - src: https://github.com/stephrobert/ansible-role-motd
     name: stephrobert.motd
     version: main
 
-  # 3. Rôle depuis Git avec tag
+  # 3. Role from Git with tag
   - src: https://github.com/geerlingguy/ansible-role-postgresql
     name: geerlingguy.postgresql
     version: 4.1.0
@@ -90,10 +89,10 @@ collections:
     version: ">=4.0.0"
 ```
 
-🔍 **Observation** : 3 rôles (1 Galaxy + 2 Git) et 4 collections.
-Chacun **pinne** sa version pour reproductibilité.
+🔍 **Observation**: 3 roles (1 Galaxy + 2 Git) and 4 collections.
+Each **pins** its version for reproducibility.
 
-## 📚 Exercice 2 — Installer dans `~/.ansible/`
+## 📚 Exercise 2 — Install into `~/.ansible/`
 
 ```bash
 cd labs/galaxy/installer-roles/
@@ -104,49 +103,49 @@ ansible-galaxy role list
 ansible-galaxy collection list
 ```
 
-🔍 **Observation** : par défaut, les rôles vont dans `~/.ansible/roles/` et
-les collections dans `~/.ansible/collections/ansible_collections/`.
+🔍 **Observation**: by default, roles go into `~/.ansible/roles/` and
+collections into `~/.ansible/collections/ansible_collections/`.
 
-## 📚 Exercice 3 — Vendoriser dans `roles/` du projet
+## 📚 Exercise 3 — Vendor into the project's `roles/`
 
 ```bash
 ansible-galaxy role install -r requirements.yml -p roles/
 ansible-galaxy collection install -r requirements.yml -p collections/
 ```
 
-🔍 **Observation** : `-p` (path) installe **dans le repo lui-même**. C'est
-le pattern **vendoring** : on commit les rôles tiers pour avoir un projet
-reproductible **sans réseau**.
+🔍 **Observation**: `-p` (path) installs **into the repo itself**. This is
+the **vendoring** pattern: you commit the third-party roles to have a
+reproducible project **without network**.
 
-> ⚠️ **Pas de standard absolu** : certains commitent (sécurité,
-> reproductibilité), d'autres non (taille du repo). Le `requirements.yml`
-> versionné suffit dans la plupart des cas.
+> ⚠️ **No absolute standard**: some commit them (security,
+> reproducibility), others do not (repo size). The versioned
+> `requirements.yml` is enough in most cases.
 
-## 📚 Exercice 4 — Pinning fin (versions, tags, branches)
+## 📚 Exercise 4 — Fine-grained pinning (versions, tags, branches)
 
-| Forme | Exemple | Effet |
+| Form | Example | Effect |
 | --- | --- | --- |
-| Version Galaxy exacte | `version: 7.4.4` | Reproductible strict |
-| Plage SemVer | `version: ">=1.5.0,<2.0.0"` | Patch automatique sans breaking |
-| Tag Git | `version: v2.0.1` | Reproductible (même commit pour ce tag) |
-| Branche Git | `version: main` | **Non reproductible** (main bouge) |
-| Commit SHA | `version: abc1234...` | Reproductible **maximum** |
+| Exact Galaxy version | `version: 7.4.4` | Strict reproducible |
+| SemVer range | `version: ">=1.5.0,<2.0.0"` | Automatic patch without breaking |
+| Git tag | `version: v2.0.1` | Reproducible (same commit for this tag) |
+| Git branch | `version: main` | **Not reproducible** (main moves) |
+| Commit SHA | `version: abc1234...` | **Maximum** reproducible |
 
-🔍 **Recommandation production** : version exacte ou commit SHA. Branche
-`main` interdite (risque silent breaking change à la prochaine install).
+🔍 **Production recommendation**: exact version or commit SHA. Branch
+`main` forbidden (risk of silent breaking change on the next install).
 
-## 📚 Exercice 5 — Stratégie d'organisation
+## 📚 Exercise 5 — Organization strategy
 
-Pour un repo Ansible production, organiser :
+For a production Ansible repo, organize:
 
 ```text
 projet/
-├── requirements.yml          ← versionné
+├── requirements.yml          ← versioned
 ├── ansible.cfg               ← roles_path = roles:~/.ansible/roles
-├── roles/                    ← rôles internes au projet
-├── collections/              ← collections vendoring (optionnel)
+├── roles/                    ← project-internal roles
+├── collections/              ← vendored collections (optional)
 ├── playbooks/
-└── .github/workflows/ci.yml  ← installer requirements en CI
+└── .github/workflows/ci.yml  ← install requirements in CI
 ```
 
 ```ini
@@ -156,41 +155,42 @@ roles_path = roles:~/.ansible/roles
 collections_path = collections:~/.ansible/collections
 ```
 
-🔍 **Observation** : `roles_path` priorise les **rôles internes** du projet,
-puis fallback sur les rôles tiers installés via `requirements.yml`.
+🔍 **Observation**: `roles_path` prioritizes the project's **internal
+roles**, then falls back to the third-party roles installed via
+`requirements.yml`.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`requirements.yml`** à la racine du projet, **versionné dans Git**.
-- **Pinning strict** sur la **production**. Plages `>=` réservées aux
-  bibliothèques internes ou à la dev.
-- **Branche `main`** = NoGo en production (silently breaking).
-- **Vendoring** (`-p roles/` + commit) si reproductibilité offline critique.
-- **CI** : `ansible-galaxy install -r requirements.yml` en première étape.
+- **`requirements.yml`** at the project root, **versioned in Git**.
+- **Strict pinning** in **production**. `>=` ranges reserved for internal
+  libraries or dev.
+- **Branch `main`** = NoGo in production (silently breaking).
+- **Vendoring** (`-p roles/` + commit) if offline reproducibility is critical.
+- **CI**: `ansible-galaxy install -r requirements.yml` as the first step.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous avez `version: ">=8.0.0"`. Une nouvelle version `9.0.0` sort —
-   est-elle installée si vous re-roulez `ansible-galaxy install` ? Pourquoi ?
+1. You have `version: ">=8.0.0"`. A new version `9.0.0` comes out:
+   is it installed if you re-run `ansible-galaxy install`? Why?
 
-2. Différence entre `ansible-galaxy install -r requirements.yml` et
-   `ansible-galaxy install -r requirements.yml --force` ?
+2. Difference between `ansible-galaxy install -r requirements.yml` and
+   `ansible-galaxy install -r requirements.yml --force`?
 
-3. Vous voulez utiliser la **HEAD** d'un repo Git mais aussi être
-   reproductible. Comment faire ?
+3. You want to use the **HEAD** of a Git repo but also be
+   reproducible. How do you do it?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md).
+See [`challenge/README.md`](challenge/README.md).
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`signatures:`** sur les collections : vérification GPG (RHCE 2026).
-- **`ANSIBLE_GALAXY_TOKEN`** : auth pour Galaxy privé.
-- **`server_list:`** dans `ansible.cfg` : multi-Galaxy (privé + public).
-- **AAP automation hub** : Galaxy Red Hat privé pour entreprise.
+- **`signatures:`** on collections: GPG verification (RHCE 2026).
+- **`ANSIBLE_GALAXY_TOKEN`**: auth for private Galaxy.
+- **`server_list:`** in `ansible.cfg`: multi-Galaxy (private + public).
+- **AAP automation hub**: Red Hat private Galaxy for the enterprise.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint labs/galaxy/installer-roles/

@@ -1,55 +1,55 @@
-# Lab 33 — Module `blockinfile:` (bloc multi-lignes idempotent)
+# Lab 33 — `blockinfile:` module (idempotent multi-line block)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Module blockinfile Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-blockinfile/)
+🔗 [**Ansible blockinfile module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-blockinfile/)
 
-`ansible.builtin.blockinfile:` insère ou met à jour un **bloc multi-lignes** dans
-un fichier existant, avec **idempotence garantie via des markers automatiques**.
-C'est le module qui comble le trou entre `lineinfile:` (1 ligne) et `template:`
-(fichier complet).
+`ansible.builtin.blockinfile:` inserts or updates a **multi-line block** in an
+existing file, with **idempotence guaranteed through automatic markers**. It is
+the module that fills the gap between `lineinfile:` (1 line) and `template:`
+(whole file).
 
-Au prochain run, Ansible cherche les markers (`# BEGIN ...` et `# END ...`),
-**remplace tout ce qui est entre les deux** par le nouveau bloc, et regénère les
-markers. Conséquence : **idempotence garantie**, jamais de duplication.
+On the next run, Ansible looks for the markers (`# BEGIN ...` and `# END ...`),
+**replaces everything between the two** with the new block, and regenerates the
+markers. Consequence: **idempotence guaranteed**, never any duplication.
 
-Cas d'usage typiques : ajouter **3-10 lignes de durcissement** dans un fichier
-système, déposer un **bloc d'aliases** dans `/etc/profile.d/`, gérer une
-**section custom** dans un fichier que vous ne contrôlez pas entièrement.
+Typical use cases: adding **3-10 hardening lines** to a system file, dropping a
+**block of aliases** in `/etc/profile.d/`, managing a **custom section** in a
+file you do not fully control.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Insérer** un bloc multi-lignes idempotent avec markers automatiques.
-2. **Personnaliser** le marker (format, contenu) pour gérer **plusieurs blocs**.
-3. **Positionner** le bloc avec `insertafter:` / `insertbefore:`.
-4. **Adapter** le format du marker au type de fichier (`#`, `--`, `<!-- -->`).
-5. **Choisir** entre `lineinfile:`, `blockinfile:`, et `template:` selon la taille du contenu.
+1. **Insert** an idempotent multi-line block with automatic markers.
+2. **Customize** the marker (format, content) to manage **several blocks**.
+3. **Position** the block with `insertafter:` / `insertbefore:`.
+4. **Adapt** the marker format to the file type (`#`, `--`, `<!-- -->`).
+5. **Choose** between `lineinfile:`, `blockinfile:`, and `template:` depending on the size of the content.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 ansible db1.lab -b -m shell -a "rm -f /etc/profile.d/aliases-rhce.sh /etc/ssh/sshd_config.d/99-ansible.conf"
 ```
 
-## 📚 Exercice 1 — Bloc simple avec marker par défaut
+## 📚 Exercise 1 — Simple block with the default marker
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -68,14 +68,14 @@ Créez `lab.yml` :
           alias ports='ss -tulpn'
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/modules-fichiers/blockinfile/lab.yml
-ssh ansible@db1.lab 'cat /etc/profile.d/aliases-rhce.sh'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'cat /etc/profile.d/aliases-rhce.sh'
 ```
 
-🔍 **Observation** : le fichier contient :
+🔍 **Observation**: the file contains:
 
 ```text
 # BEGIN ANSIBLE MANAGED BLOCK
@@ -85,12 +85,12 @@ alias ports='ss -tulpn'
 # END ANSIBLE MANAGED BLOCK
 ```
 
-**Re-lancer** : `changed=0` (idempotence par marker).
+**Re-run**: `changed=0` (idempotence via marker).
 
-**Modifier le `block:`** (ajouter `alias rm='rm -i'`) puis relancer : `changed=1`,
-le bloc est **mis à jour entre les markers**, pas dupliqué.
+**Modify the `block:`** (add `alias rm='rm -i'`) then re-run: `changed=1`,
+the block is **updated between the markers**, not duplicated.
 
-## 📚 Exercice 2 — Marker custom (plusieurs blocs dans un fichier)
+## 📚 Exercise 2 — Custom marker (several blocks in one file)
 
 ```yaml
 - name: Bloc 1 - Durcissement sshd
@@ -112,8 +112,8 @@ le bloc est **mis à jour entre les markers**, pas dupliqué.
     marker: "# {mark} LOGGING ANSIBLE"
 ```
 
-🔍 **Observation** : le fichier contient **2 blocs distincts**, chacun avec ses
-propres markers :
+🔍 **Observation**: the file contains **2 distinct blocks**, each with its own
+markers:
 
 ```text
 # BEGIN HARDENING ANSIBLE
@@ -126,13 +126,13 @@ SyslogFacility AUTH
 # END LOGGING ANSIBLE
 ```
 
-**Sans marker custom**, les 2 tâches auraient utilisé le même marker par défaut
-(`# {mark} ANSIBLE MANAGED BLOCK`) → la 2e tâche aurait **écrasé** la 1ère. Avec
-markers custom, **cohabitation** propre.
+**Without a custom marker**, the 2 tasks would have used the same default marker
+(`# {mark} ANSIBLE MANAGED BLOCK`) → the 2nd task would have **overwritten** the
+1st. With custom markers, clean **coexistence**.
 
-**`{mark}`** est remplacé par `BEGIN` ou `END`. Convention : nom unique par bloc.
+**`{mark}`** is replaced by `BEGIN` or `END`. Convention: a unique name per block.
 
-## 📚 Exercice 3 — `insertafter:` / `insertbefore:`
+## 📚 Exercise 3 — `insertafter:` / `insertbefore:`
 
 ```yaml
 - name: Inserer un bloc apres une ligne specifique
@@ -147,16 +147,16 @@ markers custom, **cohabitation** propre.
     marker: "# {mark} LOGGING"
 ```
 
-🔍 **Observation** : si le fichier contient `[server]`, le bloc est inséré
-**juste après** cette ligne. Sinon, le bloc est inséré à `EOF` (défaut).
+🔍 **Observation**: if the file contains `[server]`, the block is inserted
+**just after** that line. Otherwise, the block is inserted at `EOF` (default).
 
-**`insertbefore:`** fait l'inverse — pratique pour ajouter un bloc avant une
-section existante (ex : avant `[End]`).
+**`insertbefore:`** does the opposite: handy to add a block before an existing
+section (e.g. before `[End]`).
 
-**Piège** : si la regex matche **plusieurs lignes**, c'est la **dernière** qui
-gagne (pour `insertafter:`) ou la **première** (pour `insertbefore:`).
+**Pitfall**: if the regex matches **several lines**, it is the **last** one that
+wins (for `insertafter:`) or the **first** (for `insertbefore:`).
 
-## 📚 Exercice 4 — Suppression d'un bloc (`state: absent`)
+## 📚 Exercise 4 — Removing a block (`state: absent`)
 
 ```yaml
 - name: Retirer le bloc HARDENING
@@ -166,17 +166,17 @@ gagne (pour `insertafter:`) ou la **première** (pour `insertbefore:`).
     state: absent
 ```
 
-🔍 **Observation** : Ansible cherche les markers `BEGIN HARDENING ANSIBLE` et
-`END HARDENING ANSIBLE` et **supprime tout entre les deux** (markers compris).
-Le reste du fichier est intact.
+🔍 **Observation**: Ansible looks for the `BEGIN HARDENING ANSIBLE` and
+`END HARDENING ANSIBLE` markers and **removes everything between the two**
+(markers included). The rest of the file is intact.
 
-**Important** : la suppression nécessite **le marker exact** utilisé à la création.
-Si vous changez le `marker:` entre la création et la suppression, le bloc devient
-**orphelin** (Ansible ne le trouve plus).
+**Important**: removal requires **the exact marker** used at creation. If you
+change the `marker:` between creation and removal, the block becomes
+**orphaned** (Ansible no longer finds it).
 
-## 📚 Exercice 5 — Adapter le marker au format de fichier
+## 📚 Exercise 5 — Adapt the marker to the file format
 
-Pour des fichiers où **`#` n'est pas un commentaire**, adapter le marker :
+For files where **`#` is not a comment**, adapt the marker:
 
 ```yaml
 # YAML (# est commentaire, OK par defaut)
@@ -212,11 +212,11 @@ Pour des fichiers où **`#` n'est pas un commentaire**, adapter le marker :
     marker: "# {mark} ANSIBLE"
 ```
 
-🔍 **Observation** : adapter le marker au format **évite que le fichier devienne
-syntaxiquement cassé**. Un `# BEGIN ANSIBLE` dans un fichier XML rendrait le XML
-invalide.
+🔍 **Observation**: adapting the marker to the format **prevents the file from
+becoming syntactically broken**. A `# BEGIN ANSIBLE` in an XML file would make
+the XML invalid.
 
-## 📚 Exercice 6 — Le piège : 2 tâches `blockinfile:` sans marker custom
+## 📚 Exercise 6 — The pitfall: 2 `blockinfile:` tasks without a custom marker
 
 ```yaml
 - name: Bloc 1 (sans marker custom)
@@ -235,86 +235,85 @@ invalide.
       ligne 2B
 ```
 
-**Lancez et inspectez** :
+**Run and inspect**:
 
 ```bash
 ansible-playbook labs/modules-fichiers/blockinfile/lab.yml
-ssh ansible@db1.lab 'cat /tmp/lab-blockinfile-piege.txt'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'cat /tmp/lab-blockinfile-piege.txt'
 ```
 
-🔍 **Observation** : le fichier ne contient que **bloc 2** (`ligne 2A`, `ligne 2B`).
-Le **bloc 1 a été écrasé** parce que les deux tâches utilisent le **même marker
-par défaut** (`# BEGIN ANSIBLE MANAGED BLOCK`).
+🔍 **Observation**: the file contains only **block 2** (`ligne 2A`, `ligne 2B`).
+The **block 1 was overwritten** because both tasks use the **same default
+marker** (`# BEGIN ANSIBLE MANAGED BLOCK`).
 
-**Toujours** mettre un **marker unique** par bloc dans le même fichier.
+**Always** set a **unique marker** per block in the same file.
 
-## 📚 Exercice 7 — Comparaison `lineinfile:` vs `blockinfile:` vs `template:`
+## 📚 Exercise 7 — Comparison `lineinfile:` vs `blockinfile:` vs `template:`
 
-| Cas | Module recommandé | Pourquoi |
+| Case | Recommended module | Why |
 |---|---|---|
-| 1 ligne (`PermitRootLogin no`) | `lineinfile:` | Simple, regex |
-| 3-10 lignes liées (bloc d'options) | `blockinfile:` | Markers, idempotence |
-| Fichier complet possédé | `template:` | Interpolation, validate |
-| Plusieurs blocs séparés dans un fichier | `blockinfile:` × N (marker custom) | Cohabitation |
-| Fichier qu'on ne possède pas (système) | `blockinfile:` | Modifie sans tout réécrire |
+| 1 line (`PermitRootLogin no`) | `lineinfile:` | Simple, regex |
+| 3-10 related lines (block of options) | `blockinfile:` | Markers, idempotence |
+| Whole owned file | `template:` | Interpolation, validate |
+| Several separate blocks in a file | `blockinfile:` × N (custom marker) | Coexistence |
+| File you do not own (system) | `blockinfile:` | Modifies without rewriting everything |
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Markers** = `# BEGIN ANSIBLE MANAGED BLOCK` / `# END ...` par défaut.
-- **`{mark}` dans `marker:`** est remplacé par `BEGIN` ou `END`.
-- **Marker unique par bloc** si plusieurs blocs dans un fichier.
-- **`create: true`** crée le fichier s'il n'existe pas.
-- **`state: absent`** supprime tout entre les markers.
-- **Adapter le format du marker** au type de fichier (`#`, `--`, `<!-- -->`).
-- **Toujours `mode: "0644"`** quoté.
+- **Markers** = `# BEGIN ANSIBLE MANAGED BLOCK` / `# END ...` by default.
+- **`{mark}` in `marker:`** is replaced by `BEGIN` or `END`.
+- **Unique marker per block** if several blocks in one file.
+- **`create: true`** creates the file if it does not exist.
+- **`state: absent`** removes everything between the markers.
+- **Adapt the marker format** to the file type (`#`, `--`, `<!-- -->`).
+- **Always `mode: "0644"`** quoted.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous gérez un fichier `/etc/sysctl.conf` partagé entre plusieurs rôles
-   Ansible. Comment **éviter les conflits** entre les blocs gérés par chaque
-   rôle ?
+1. You manage a `/etc/sysctl.conf` file shared between several Ansible roles.
+   How do you **avoid conflicts** between the blocks managed by each role?
 
-2. Quelle est la différence entre `blockinfile:` (avec markers) et `template:` du
-   point de vue de la **traçabilité** (qui a modifié quoi) ?
+2. What is the difference between `blockinfile:` (with markers) and `template:`
+   from a **traceability** standpoint (who modified what)?
 
-3. Vous voulez ajouter un bloc **avant** une ligne existante dans un fichier.
-   Pourquoi `insertbefore:` peut-il poser problème si la regex matche **plusieurs**
-   lignes ?
+3. You want to add a block **before** an existing line in a file. Why can
+   `insertbefore:` be a problem if the regex matches **several** lines?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`marker_begin:`** / **`marker_end:`** : override fin du marker (au lieu du
-  `{mark}` template). Pour des cas où vous voulez des markers vraiment custom.
-- **`prepend_newline:`** / **`append_newline:`** : ajouter un saut de ligne avant
-  ou après le bloc inséré (utile pour la lisibilité).
-- **Pattern `drop-in config`** : préférer **un fichier dédié** dans
-  `/etc/<service>.conf.d/99-ansible.conf` géré par `template:` ou `copy:` plutôt
-  qu'un `blockinfile:` dans le fichier global. Plus modulaire.
-- **Lab 30 (lineinfile vs template)** : comparaison complète des 3 approches.
+- **`marker_begin:`** / **`marker_end:`**: override the end of the marker
+  (instead of the `{mark}` template). For cases where you want truly custom
+  markers.
+- **`prepend_newline:`** / **`append_newline:`**: add a line break before or
+  after the inserted block (useful for readability).
+- **`drop-in config` pattern**: prefer **a dedicated file** in
+  `/etc/<service>.conf.d/99-ansible.conf` managed by `template:` or `copy:`
+  rather than a `blockinfile:` in the global file. More modular.
+- **Lab 30 (lineinfile vs template)**: full comparison of the 3 approaches.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/modules-fichiers/blockinfile/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/modules-fichiers/blockinfile/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, target RHCE 2026)
 ansible-lint --profile production labs/modules-fichiers/blockinfile/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a pre-commit
+> hook to block any commit that would introduce anti-patterns.

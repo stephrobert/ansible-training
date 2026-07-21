@@ -1,61 +1,47 @@
-# Lab — Module `filesystem:` (créer un système de fichiers)
+# Lab — Module `filesystem:` (create a filesystem)
 
-> ⚠️ **Lab destructif.** Manipule un **disque réel**. Toujours sur **VM jetable**.
+> ⚠️ **Destructive lab.** Operates on a **real disk**. Always on a **throwaway VM**.
 >
-> 💡 **Lab autonome.** Pré-requis : 2 partitions cibles (`/dev/vdb1`, `/dev/vdb2`
-> sur disque réel ou `/dev/loop0p1`, `/dev/loop0p2` via loopback) **d'au moins
-> 400 MiB chacune** (xfs requiert 300 MiB minimum), et
-> `ansible-galaxy collection install community.general`.
+> 💡 **Self-contained lab.** Prerequisite: `ansible-galaxy collection install
+> community.general ansible.posix`. The lab's `setup.yaml` partitions the
+> secondary disk **`/dev/vdb`** of **db1.lab** into 2: `/dev/vdb1` (1 GiB)
+> and `/dev/vdb2` (the rest). Both are well above the **300 MiB**
+> that xfs requires.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Module filesystem Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-filesystem/)
+🔗 [**Ansible filesystem module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-filesystem/)
 
-`community.general.filesystem:` crée un **système de fichiers** sur une
-partition ou un volume logique : `ext4`, `xfs`, `btrfs`, `f2fs`, `swap`. C'est
-l'étape **après la partition** et **avant le mount**.
+`community.general.filesystem:` creates a **filesystem** on a partition or a
+logical volume: `ext4`, `xfs`, `btrfs`, `f2fs`, `swap`. It is the step **after
+the partition** and **before the mount**.
 
-**Important** : le module ne **détruit jamais** un fs existant par défaut —
-protection contre la perte de données. Il faut `force: true` pour forcer.
+**Important**: by default the module **never destroys** an existing fs
+(protection against data loss). You need `force: true` to force it.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Créer** un fs ext4 et xfs sur 2 partitions.
-2. **Choisir** le bon fstype selon le cas d'usage.
-3. **Comprendre** le minimum 300 MiB de xfs (validé en lab).
-4. **Forcer** la recréation avec `force: true`.
+1. **Create** an ext4 and an xfs fs on 2 partitions.
+2. **Choose** the right fstype for the use case.
+3. **Understand** the 300 MiB minimum of xfs (verified in the lab).
+4. **Force** recreation with `force: true`.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
-**Variante A — vrai disque** :
-
-```bash
-# Avec /dev/vdb partitionné (cf. lab parted)
-ansible db1.lab -b -m shell -a "ls /dev/vdb1 /dev/vdb2"
-```
-
-**Variante B — loopback 800 MiB minimum** :
+The lab's `setup.yaml`, run by `dsoxlab run`, resets `/dev/vdb` then lays down
+the 2 working partitions. Check that they are there:
 
 ```bash
-ansible db1.lab -b -m shell -a "
-  losetup -d /dev/loop0 2>/dev/null || true
-  rm -f /var/tmp/lab-disk.img
-  dd if=/dev/zero of=/var/tmp/lab-disk.img bs=1M count=800 status=none
-  losetup -fP /var/tmp/lab-disk.img
-  parted -s /dev/loop0 mklabel gpt
-  parted -s /dev/loop0 mkpart boot 0% 50%
-  parted -s /dev/loop0 mkpart data 50% 100%
-  partprobe /dev/loop0
-  ls /dev/loop0p1 /dev/loop0p2"
+ansible db1.lab -b -m shell -a "lsblk /dev/vdb"
 ```
 
-> ⚠️ **Le loopback doit faire au moins 800 MiB** pour permettre 2 partitions
-> de 400 MiB. xfs refuse les filesystems < 300 MiB avec `Filesystem must be
-> larger than 300MB`.
+> ⚠️ **xfs refuses filesystems < 300 MiB** (`Filesystem must be larger than
+> 300MB`). The partitions laid down by the setup (1 GiB and ~4 GiB) are
+> sized to pass without a second thought.
 
-## 📚 Exercice 1 — Créer ext4 + xfs
+## 📚 Exercise 1 — Create ext4 + xfs
 
 ```yaml
 ---
@@ -66,110 +52,113 @@ ansible db1.lab -b -m shell -a "
     - name: Créer ext4
       community.general.filesystem:
         fstype: ext4
-        dev: /dev/loop0p1     # ou /dev/vdb1
+        dev: /dev/vdb1
         state: present
 
     - name: Créer xfs
       community.general.filesystem:
         fstype: xfs
-        dev: /dev/loop0p2     # ou /dev/vdb2
+        dev: /dev/vdb2
         state: present
 ```
 
-Lancez 2 fois et vérifiez l'idempotence (2e run = `ok`).
-Vérifiez : `blkid /dev/loop0p1 /dev/loop0p2` retourne `TYPE="ext4"` et `TYPE="xfs"`.
+Run it twice and check idempotence (2nd run = `ok`).
+Check: `blkid /dev/vdb1 /dev/vdb2` returns `TYPE="ext4"` and `TYPE="xfs"`.
 
-## 📚 Exercice 2 — Protection contre la destruction
+> 💡 This lab's **challenge** asks for a **swap** on `/dev/vdb1`, not an
+> ext4: this exercise is meant to see the module at work on 2 fstypes.
 
-Tentez de changer le fstype sans `force` :
+## 📚 Exercise 2 — Protection against destruction
+
+Try to change the fstype without `force`:
 
 ```yaml
 - community.general.filesystem:
-    fstype: xfs       # alors que vdb1/loop0p1 est en ext4
-    dev: /dev/loop0p1
+    fstype: xfs       # while vdb1 is ext4
+    dev: /dev/vdb1
 ```
 
-**Observer** : task **`failed`** — le module refuse d'écraser un fs existant.
+**Observe**: task **`failed`**, the module refuses to overwrite an existing fs.
 
-Pour forcer (perte de données acceptée) :
+To force it (data loss accepted):
 
 ```yaml
 - community.general.filesystem:
     fstype: xfs
-    dev: /dev/loop0p1
+    dev: /dev/vdb1
     force: true
 ```
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Idempotence** : un second run du playbook doit afficher `changed=0` sur
-  toutes les tâches du module `community.general.filesystem`. Si une tâche reste `changed=1`, c'est
-  que la regex/condition n'est pas ancrée correctement (cf. exercices).
-- **FQCN explicite** : `community.general.filesystem` (et non son nom court) — `ansible-lint
-  --profile production` le vérifie.
-- **`validate:`** quand c'est disponible (lineinfile, copy, template) : un
-  binaire externe contrôle la syntaxe du fichier avant écriture, ce qui évite
-  de casser un service avec une config invalide.
-- **Convention de ciblage** : ce lab cible **db1.lab** (un seul host pour
-  isoler l'impact destructif).
+- **Idempotence**: a second run of the playbook must show `changed=0` on
+  all tasks of the `community.general.filesystem` module. If a task stays `changed=1`, the
+  regex/condition is not anchored correctly (see the exercises).
+- **Explicit FQCN**: `community.general.filesystem` (not its short name), checked by `ansible-lint
+  --profile production`.
+- **`validate:`** when available (lineinfile, copy, template): an external
+  binary checks the file syntax before writing, which avoids breaking a
+  service with an invalid config.
+- **Targeting convention**: this lab targets **db1.lab** (a single host to
+  isolate the destructive impact).
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Quand utiliser `community.general.filesystem` plutôt que `command: mkfs.<fstype>` (non idempotent — il faut tester si déjà formaté) ? Listez 2 cas où chaque
-   alternative serait préférable (lisibilité, idempotence, performance).
+1. When should you use `community.general.filesystem` rather than `command: mkfs.<fstype>` (not idempotent, you must test whether it is already formatted)? List 2 cases where each
+   alternative would be preferable (readability, idempotence, performance).
 
-2. Si vous deviez créer un filesystem (ext4, xfs, swap) sur un device block sur **50 serveurs en parallèle**, quels
-   paramètres Ansible (`forks`, `serial`, `strategy`) ajusteriez-vous pour
-   tenir un SLA de 5 minutes ?
+2. If you had to create a filesystem (ext4, xfs, swap) on a block device across **50 servers in parallel**, which
+   Ansible parameters (`forks`, `serial`, `strategy`) would you tune to
+   meet a 5-minute SLA?
 
-3. Comment gérer le cas où le module échoue **partiellement** (succès sur
-   certaines tâches, échec sur d'autres) ? Quelles stratégies permettent de
-   reprendre sans tout rejouer (`block/rescue`, `--start-at-task`, marqueur
-   d'état) ?
+3. How do you handle the case where the module fails **partially** (success on
+   some tasks, failure on others)? Which strategies let you resume without
+   replaying everything (`block/rescue`, `--start-at-task`, a state
+   marker)?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Une fois les exercices ci-dessus digérés, lancez le **challenge autonome** :
+Once you have digested the exercises above, launch the **self-contained challenge**:
 
 ```bash
 $ANSIBLE_TRAINING/bin/dsoxlab lab modules-rhel/filesystem --challenge
-# ou
+# or
 cat labs/modules-rhel/filesystem/challenge/README.md
 ```
 
-Le challenge demande d'écrire votre `challenge/solution.yml` sans regarder
-les exercices. Validation par `pytest` :
+The challenge asks you to write your `challenge/solution.yml` without looking
+at the exercises. Validation with `pytest`:
 
 ```bash
 pytest -v labs/modules-rhel/filesystem/challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- Combinez `community.general.filesystem` avec **`backup: true`** pour conserver une copie
-  horodatée du fichier original avant modification — utile pour rollback.
-- Étudiez **`check_mode: true`** + `--diff` : Ansible vous montre ce qu'il
-  ferait sans rien appliquer. Indispensable en production.
-- Comparez la **performance** entre 1 tâche `community.general.filesystem` × 10 et 1 tâche
-  `template:` qui génère le fichier complet en une fois — souvent le
-  template est plus rapide ET plus lisible quand le nombre de modifs grossit.
+- Combine `community.general.filesystem` with **`backup: true`** to keep a
+  timestamped copy of the original file before modification, useful for rollback.
+- Study **`check_mode: true`** + `--diff`: Ansible shows you what it
+  would do without applying anything. Essential in production.
+- Compare the **performance** between 1 `community.general.filesystem` task × 10 and 1 task
+  `template:` that generates the whole file at once: the
+  template is often faster AND more readable as the number of changes grows.
 
 ## 🧹 Cleanup
 
 ```bash
-make clean
+`dsoxlab clean <id-du-lab>`
 ```
 
 ## 📂 Solution
 
-Voir `solution/modules-rhel/filesystem/solution.yml` (validée en lab le
-2026-04-30 sur loopback 800 MiB, AlmaLinux 10, ansible-core 2.18,
+See `solution/modules-rhel/filesystem/solution.yml` (verified on the real
+secondary disk `/dev/vdb`, AlmaLinux 9, ansible-core 2.18,
 community.general 12.x).
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 ansible-lint labs/modules-rhel/filesystem/lab.yml
@@ -177,6 +166,5 @@ ansible-lint labs/modules-rhel/filesystem/challenge/solution.yml
 ansible-lint --profile production labs/modules-rhel/filesystem/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques RHCE 2026.
-
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows the RHCE 2026 best practices.

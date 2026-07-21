@@ -1,0 +1,4 @@
+---
+id: vault-integration-passbolt
+title: "Récupérer des secrets depuis Passbolt"
+description: "Démarrer un Passbolt CE local, l'authentifier par clé OpenPGP, lire un secret depuis Ansible et comparer le modèle Passbolt à HashiCorp Vault."

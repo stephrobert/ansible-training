@@ -1,65 +1,64 @@
-# Lab 61 — Rôles : `argument_specs` (validation automatique)
+# Lab 61 — Roles: `argument_specs` (automatic validation)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Argument specs Ansible : valider les entrées d'un rôle**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-roles/argument-specs/)
+🔗 [**Ansible argument specs: validate a role's inputs**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/argument-specs/)
 
-Sans `argument_specs`, **Ansible ne valide pas** les variables d'entrée d'un
-rôle. Si l'utilisateur passe `webserver_listen_port: "abcd"` (string au lieu
-d'int) ou `webserver_state: enabled` (au lieu de `present`), Ansible
-exécute le rôle et **échoue tard** dans une tâche obscure.
+Without `argument_specs`, **Ansible does not validate** a role's input
+variables. If the user passes `webserver_listen_port: "abcd"` (string instead
+of int) or `webserver_state: enabled` (instead of `present`), Ansible
+runs the role and **fails late** in an obscure task.
 
-**`argument_specs`** (depuis Ansible 2.11) **valide les entrées avant
-l'exécution** : type, choix autorisés, valeurs requises. L'erreur est
-**claire et précoce**.
+**`argument_specs`** (since Ansible 2.11) **validates the inputs before
+execution**: type, allowed choices, required values. The error is
+**clear and early**.
 
-| Sans argument_specs | Avec argument_specs |
+| Without argument_specs | With argument_specs |
 | --- | --- |
-| Erreur tardive dans une tâche obscure | Erreur **avant** la 1ère tâche |
-| Stack trace Ansible interne | Message clair : *« must be one of: present, absent »* |
-| Type silencieusement converti (int → str) | Échec si type incorrect |
-| Variable manquante = valeur vide silencieuse | Échec explicite si `required: true` |
+| Late error in an obscure task | Error **before** the 1st task |
+| Internal Ansible stack trace | Clear message: *"must be one of: present, absent"* |
+| Type silently converted (int → str) | Failure if the type is incorrect |
+| Missing variable = silent empty value | Explicit failure if `required: true` |
 
-C'est le **standard de qualité** d'un rôle Galaxy moderne. `ansible-lint
---profile production` exige `meta/argument_specs.yml` pour les rôles publiés.
+It is the **quality standard** of a modern Galaxy role. `ansible-lint
+--profile production` requires `meta/argument_specs.yml` for published roles.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Écrire un fichier `meta/argument_specs.yml` qui documente toutes les
-   variables d'un rôle.
-2. Définir le **type** d'une variable (`str`, `int`, `bool`, `list`, `dict`).
-3. Restreindre les valeurs avec **`choices:`** (énumération).
-4. Marquer une variable **`required: true`**.
-5. Fournir une **valeur `default`** documentée.
-6. Voir le **message d'erreur** automatique qu'Ansible affiche en cas d'entrée invalide.
+1. Write a `meta/argument_specs.yml` file that documents all a role's
+   variables.
+2. Define the **type** of a variable (`str`, `int`, `bool`, `list`, `dict`).
+3. Restrict the values with **`choices:`** (enumeration).
+4. Mark a variable **`required: true`**.
+5. Provide a documented **`default` value**.
+6. See the automatic **error message** Ansible displays on invalid input.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ansible.builtin.ping
 ```
 
-## ⚙️ Arborescence du lab
+## ⚙️ Lab tree
 
 ```text
 labs/roles/argument-specs/
-├── README.md                                ← ce fichier
-├── Makefile                                 ← cible `clean`
+├── README.md                                ← this file
 ├── roles/
 │   └── webserver/
 │       ├── tasks/main.yml
@@ -67,18 +66,18 @@ labs/roles/argument-specs/
 │       ├── defaults/main.yml
 │       ├── meta/
 │       │   ├── main.yml                     ← galaxy_info (lab 60)
-│       │   └── argument_specs.yml           ← À ÉTUDIER (validation auto)
+│       │   └── argument_specs.yml           ← TO STUDY (auto validation)
 │       ├── vars/main.yml
 │       └── templates/nginx.conf.j2
 └── challenge/
-    ├── README.md                            ← consigne du challenge
+    ├── README.md                            ← challenge instructions
     └── tests/
         └── test_argument_specs.py
 ```
 
-## 📚 Exercice 1 — Lire `meta/argument_specs.yml`
+## 📚 Exercise 1 — Read `meta/argument_specs.yml`
 
-Ouvrez `roles/webserver/meta/argument_specs.yml` :
+Open `roles/webserver/meta/argument_specs.yml`:
 
 ```yaml
 argument_specs:
@@ -110,24 +109,24 @@ argument_specs:
         description: Démarrage automatique du service au boot
 ```
 
-🔍 **Observation** — chaque option a au moins :
+🔍 **Observation**: each option has at least:
 
-| Champ | Rôle |
+| Field | Role |
 | --- | --- |
-| `type:` | Type Python attendu (`str`, `int`, `bool`, `list`, `dict`, `path`, `raw`) |
-| `default:` | Valeur si non fournie. **Doit cohérer avec `defaults/main.yml`**. |
-| `description:` | Documentation pour `ansible-doc -t role` |
-| `choices:` (optionnel) | Liste de valeurs autorisées. Refuse toute autre. |
-| `required:` (optionnel) | Si `true`, l'absence de la variable fait échouer le play |
+| `type:` | Expected Python type (`str`, `int`, `bool`, `list`, `dict`, `path`, `raw`) |
+| `default:` | Value if not provided. **Must be consistent with `defaults/main.yml`**. |
+| `description:` | Documentation for `ansible-doc -t role` |
+| `choices:` (optional) | List of allowed values. Refuses any other. |
+| `required:` (optional) | If `true`, the absence of the variable fails the play |
 
-**`main:`** est le nom du **point d'entrée** du rôle (`tasks/main.yml`). Si
-votre rôle a plusieurs entry points (cf. `import_role/include_role` avec
-`tasks_from:`), vous documentez chacune en parallèle dans `argument_specs:`.
+**`main:`** is the name of the role's **entry point** (`tasks/main.yml`). If
+your role has several entry points (see `import_role/include_role` with
+`tasks_from:`), you document each one in parallel in `argument_specs:`.
 
-## 📚 Exercice 2 — Tester avec une valeur valide
+## 📚 Exercise 2 — Test with a valid value
 
-Créez un `playbook.yml` à la racine du lab qui utilise le rôle avec des
-**valeurs valides** :
+Create a `playbook.yml` at the root of the lab that uses the role with
+**valid values**:
 
 ```yaml
 ---
@@ -143,31 +142,31 @@ Créez un `playbook.yml` à la racine du lab qui utilise le rôle avec des
         webserver_index_content: "Argument specs validés !"
 ```
 
-Lancez :
+Run:
 
 ```bash
 ansible-playbook labs/roles/argument-specs/playbook.yml
 ```
 
-🔍 **Observation** : le play tourne **sans warning** sur les variables.
-`argument_specs` a validé silencieusement.
+🔍 **Observation**: the play runs **without a warning** on the variables.
+`argument_specs` validated silently.
 
-## 📚 Exercice 3 — Tester avec une valeur INVALIDE
+## 📚 Exercise 3 — Test with an INVALID value
 
-Modifiez `webserver_state` à `enabled` (qui n'est **pas** dans `choices`) :
+Change `webserver_state` to `enabled` (which is **not** in `choices`):
 
 ```yaml
 vars:
-  webserver_state: enabled    # ← INVALIDE
+  webserver_state: enabled    # ← INVALID
 ```
 
-Relancez :
+Re-run:
 
 ```bash
 ansible-playbook labs/roles/argument-specs/playbook.yml
 ```
 
-🔍 **Observation** — sortie attendue (extrait) :
+🔍 **Observation**: expected output (excerpt):
 
 ```text
 TASK [webserver : Validating arguments against arg spec 'main'] ***
@@ -179,22 +178,22 @@ fatal: [db1.lab]: FAILED! => {
 }
 ```
 
-L'erreur est :
+The error is:
 
-- **Précoce** : avant la 1ère tâche du rôle.
-- **Claire** : on sait exactement quelle variable et quelles valeurs sont autorisées.
-- **Bloquante** : le rôle ne tourne pas du tout.
+- **Early**: before the role's 1st task.
+- **Clear**: you know exactly which variable and which values are allowed.
+- **Blocking**: the role does not run at all.
 
-## 📚 Exercice 4 — Tester un type incorrect
+## 📚 Exercise 4 — Test an incorrect type
 
-Modifiez `webserver_listen_port` à `"abcd"` (string au lieu d'int) :
+Change `webserver_listen_port` to `"abcd"` (string instead of int):
 
 ```yaml
 vars:
-  webserver_listen_port: "abcd"   # ← INVALIDE (pas un int)
+  webserver_listen_port: "abcd"   # ← INVALID (not an int)
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
 ```text
 "argument_errors": [
@@ -202,13 +201,13 @@ vars:
 ]
 ```
 
-`argument_specs` valide aussi les **conversions de type**. Une chaîne
-numérique (`"8080"`) est convertie en int automatiquement, mais une chaîne
-non-numérique fait échouer.
+`argument_specs` also validates **type conversions**. A numeric string
+(`"8080"`) is converted to int automatically, but a non-numeric
+string causes a failure.
 
-## 📚 Exercice 5 — Marquer une variable `required: true`
+## 📚 Exercise 5 — Mark a variable `required: true`
 
-Ajoutez une option **obligatoire** dans `argument_specs.yml` :
+Add a **mandatory** option in `argument_specs.yml`:
 
 ```yaml
 options:
@@ -218,7 +217,7 @@ options:
     description: Email de l'administrateur (obligatoire)
 ```
 
-Relancez **sans définir** `webserver_admin_email`. Sortie :
+Re-run **without defining** `webserver_admin_email`. Output:
 
 ```text
 "argument_errors": [
@@ -226,61 +225,61 @@ Relancez **sans définir** `webserver_admin_email`. Sortie :
 ]
 ```
 
-> 💡 **Bonne pratique** : limitez les `required: true` à ce qui n'a vraiment
-> pas de défaut sensé. Préférez un `default:` qui marche dans la majorité
-> des cas.
+> 💡 **Best practice**: limit `required: true` to what truly
+> has no sensible default. Prefer a `default:` that works in the majority
+> of cases.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`argument_specs` valide AVANT l'exécution** — erreur précoce et claire.
-- **Pas d'argument_specs = validation tardive** dans une tâche obscure.
-- **`type:`** force une vérification (et conversion automatique si
-  possible). Préférez `int`, `bool`, `list`, `dict` à `str` quand pertinent.
-- **`choices:`** est l'arme contre les fautes de frappe (`enabled` vs
+- **`argument_specs` validates BEFORE execution**: an early and clear error.
+- **No argument_specs = late validation** in an obscure task.
+- **`type:`** forces a check (and automatic conversion if
+  possible). Prefer `int`, `bool`, `list`, `dict` over `str` when relevant.
+- **`choices:`** is the weapon against typos (`enabled` vs
   `present`).
-- **Un fichier par entry point** : `argument_specs.yml` peut documenter
-  plusieurs sections (`main:`, `install:`, `configure:` …).
-- **`ansible-doc -t role <chemin>`** affiche la doc générée à partir
-  d'`argument_specs.yml`. C'est gratuit dès qu'on a remplit ce fichier.
-- **Profil production d'`ansible-lint`** exige `meta/argument_specs.yml` —
-  un rôle sans est rejeté.
+- **One file per entry point**: `argument_specs.yml` can document
+  several sections (`main:`, `install:`, `configure:` …).
+- **`ansible-doc -t role <path>`** displays the doc generated from
+  `argument_specs.yml`. It is free as soon as you have filled in this file.
+- **`ansible-lint`'s production profile** requires `meta/argument_specs.yml`:
+  a role without it is rejected.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous avez `defaults/main.yml: webserver_listen_port: 80` mais
+1. You have `defaults/main.yml: webserver_listen_port: 80` but
    `argument_specs.yml: webserver_listen_port: { type: int, default: 8080 }`.
-   Quelle valeur sera utilisée par défaut ? Pourquoi est-ce un piège ?
+   Which value will be used by default? Why is it a pitfall?
 
-2. Vous voulez accepter **n'importe quelle string** pour `webserver_index_content`
-   mais **refuser** les chaînes vides. Comment l'exprimer dans
-   `argument_specs.yml` ? (Indice : `required: true`).
+2. You want to accept **any string** for `webserver_index_content`
+   but **refuse** empty strings. How do you express it in
+   `argument_specs.yml`? (Hint: `required: true`).
 
-3. `argument_specs` ne valide pas les **plages numériques** (ex: port entre
-   1 et 65535). Comment ajouter cette validation ? (Indice : combiner avec
-   un `assert:` au début de `tasks/main.yml`.)
+3. `argument_specs` does not validate **numeric ranges** (e.g. port between
+   1 and 65535). How do you add this validation? (Hint: combine with
+   an `assert:` at the start of `tasks/main.yml`.)
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`argument_specs` pour `tasks_from:`** : si votre rôle a un entry point
-  alternatif (`tasks/install.yml`, `tasks/configure.yml`), documentez-les
-  dans `argument_specs.yml: install:`, `argument_specs.yml: configure:`.
-- **Plages avec `assert:`** : à la 1ère tâche du rôle, ajoutez un
+- **`argument_specs` for `tasks_from:`**: if your role has an alternative
+  entry point (`tasks/install.yml`, `tasks/configure.yml`), document them
+  in `argument_specs.yml: install:`, `argument_specs.yml: configure:`.
+- **Ranges with `assert:`**: at the role's 1st task, add an
   `assert: that: [webserver_listen_port > 0, webserver_listen_port <= 65535]`.
-- **`mutually_exclusive`** dans une plus haute version d'Ansible : permet
-  de déclarer que 2 options ne peuvent pas être utilisées ensemble.
-- **Génération automatique de doc** : `ansible-doc -t role webserver` lit
-  `argument_specs.yml` et formate la doc en CLI.
+- **`mutually_exclusive`** in a higher version of Ansible: lets
+  you declare that 2 options cannot be used together.
+- **Automatic doc generation**: `ansible-doc -t role webserver` reads
+  `argument_specs.yml` and formats the doc in the CLI.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint labs/roles/argument-specs/roles/webserver/
 ansible-lint --profile production labs/roles/argument-specs/
 ```
 
-Le profil `production` valide en particulier la **présence** et la **cohérence**
-de `argument_specs.yml` avec `defaults/main.yml`.
+The `production` profile validates in particular the **presence** and the **consistency**
+of `argument_specs.yml` with `defaults/main.yml`.

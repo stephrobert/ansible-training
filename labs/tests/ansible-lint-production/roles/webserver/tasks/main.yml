@@ -1,30 +1,31 @@
 ---
-# tasks/main.yml — démontre l'usage des variables defaults/ et vars/
+# tasks/main.yml : rôle hérité d'un ancien projet, fonctionnel mais
+# écrit à la va-vite. Votre mission (voir challenge/README.md) : le
+# remettre au niveau du profil production d'ansible-lint SANS changer
+# son comportement.
 - name: Installer le paquet nginx
-  ansible.builtin.dnf:
+  dnf:
     name: "{{ webserver_package }}"
     state: "{{ webserver_state }}"
 
-- name: Supprimer la conf par défaut conflictuelle
-  ansible.builtin.file:
+- file:
     path: /etc/nginx/conf.d/default.conf
     state: absent
   notify: Restart nginx
 
-- name: Déployer nginx.conf depuis le template (utilise les variables)
-  ansible.builtin.template:
+- name: Déployer nginx.conf depuis le template
+  template:
     src: nginx.conf.j2
     dest: /etc/nginx/nginx.conf
-    mode: "0644"
+    mode: 644
     backup: true
     validate: nginx -t -c %s
   notify: Restart nginx
 
 - name: Déployer la page d'accueil personnalisée
-  ansible.builtin.copy:
+  copy:
     dest: "{{ __webserver_html_dir }}/index.html"
     content: "{{ webserver_index_content }}\n"
-    mode: "0644"
 
 - name: Ouvrir le port HTTP custom dans firewalld
   ansible.posix.firewalld:
@@ -32,9 +33,7 @@
     permanent: true
     immediate: true
     state: enabled
+  ignore_errors: yes
 
 - name: Démarrer et activer nginx
-  ansible.builtin.systemd_service:
-    name: "{{ webserver_package }}"
-    state: "{{ webserver_service_state }}"
-    enabled: "{{ webserver_service_enabled }}"
+  shell: systemctl enable --now {{ webserver_package }}

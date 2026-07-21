@@ -1,0 +1,4 @@
+---
+id: modules-fichiers-blockinfile
+title: "Module blockinfile : bloc multi-lignes idempotent"
+description: "Insérer et maintenir un bloc multi-lignes dans un fichier existant avec markers personnalisés, insertafter/insertbefore et idempotence."

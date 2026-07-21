@@ -1,56 +1,55 @@
-# Lab 30 — `lineinfile:` vs `template:` (quand utiliser quoi)
+# Lab 30 — `lineinfile:` vs `template:` (when to use which)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**lineinfile vs template Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/lineinfile-vs-template/)
+🔗 [**lineinfile vs template in Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/lineinfile-vs-template/)
 
-Deux modules pour **modifier des fichiers de config**, deux philosophies opposées :
+Two modules to **modify config files**, two opposite philosophies:
 
-- **`lineinfile:`** = chirurgie ligne par ligne. Vous ne **possédez pas** le fichier
-  entier — vous ajoutez/modifiez **1 ou 2 lignes** ciblées par regex. Conserve le
-  reste intact.
-- **`template:`** = réécriture complète. Vous **possédez** le fichier — vous
-  régénérez tout depuis un template Jinja2.
+- **`lineinfile:`** = line-by-line surgery. You do **not own** the whole file:
+  you add/modify **1 or 2 lines** targeted by regex. Keeps the rest intact.
+- **`template:`** = full rewrite. You **own** the file: you regenerate everything
+  from a Jinja2 template.
 
-Choisir le mauvais module mène à **deux problèmes différents** :
+Choosing the wrong module leads to **two different problems**:
 
-- `lineinfile:` sur 20 lignes → 20 tâches, regex fragiles, illisible.
-- `template:` sur un fichier que vous ne possédez pas → vous écrasez les
-  modifications de l'utilisateur ou d'autres outils.
+- `lineinfile:` on 20 lines → 20 tasks, fragile regexes, unreadable.
+- `template:` on a file you do not own → you overwrite the modifications of the
+  user or of other tools.
 
-Ce lab démontre les **deux modules** côte à côte sur des cas concrets.
+This lab demonstrates the **two modules** side by side on concrete cases.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Choisir** entre `lineinfile:` et `template:` selon le scénario.
-2. **Utiliser** `lineinfile:` avec `regexp:`, `line:`, `state:`, `backup:`.
-3. **Combiner** les deux modules : `template:` pour la base, `lineinfile:` pour des overrides.
-4. **Identifier** le seuil où `lineinfile:` devient `blockinfile:` ou `template:`.
-5. **Diagnostiquer** un `lineinfile:` qui empile au lieu de remplacer (regex absente).
+1. **Choose** between `lineinfile:` and `template:` depending on the scenario.
+2. **Use** `lineinfile:` with `regexp:`, `line:`, `state:`, `backup:`.
+3. **Combine** the two modules: `template:` for the base, `lineinfile:` for overrides.
+4. **Identify** the threshold where `lineinfile:` becomes `blockinfile:` or `template:`.
+5. **Diagnose** a `lineinfile:` that stacks up instead of replacing (missing regex).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 ansible db1.lab -b -m shell -a "rm -f /etc/myapp.conf*; rm -f /etc/hosts.bak"
 ```
 
-## 📚 Exercice 1 — `lineinfile:` simple (1 ligne)
+## 📚 Exercise 1 — Simple `lineinfile:` (1 line)
 
 ```yaml
 ---
@@ -67,19 +66,19 @@ ansible db1.lab -b -m shell -a "rm -f /etc/myapp.conf*; rm -f /etc/hosts.bak"
         backup: true
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/ecrire-code/lineinfile-vs-template/lab.yml
-ssh ansible@db1.lab 'cat /etc/hosts'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'cat /etc/hosts'
 ```
 
-🔍 **Observation** : la ligne `192.168.99.99 mon-host.lab` est ajoutée à
-`/etc/hosts`. **Le reste du fichier est intact** — Ansible n'a rien réécrit.
+🔍 **Observation**: the line `192.168.99.99 mon-host.lab` is added to
+`/etc/hosts`. **The rest of the file is intact**: Ansible rewrote nothing.
 
-**Re-lancer le playbook** : aucune modification (idempotent grâce au `regexp:`).
+**Re-run the playbook**: no modification (idempotent thanks to the `regexp:`).
 
-## 📚 Exercice 2 — `lineinfile:` avec `regexp:` (modifier une ligne existante)
+## 📚 Exercise 2 — `lineinfile:` with `regexp:` (modify an existing line)
 
 ```yaml
 - name: Modifier la valeur de PermitRootLogin
@@ -92,20 +91,20 @@ ssh ansible@db1.lab 'cat /etc/hosts'
     validate: 'sshd -t -f %s'
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **`regexp:`** matche la ligne **existante** (commentée ou décommentée).
-- **`line:`** la **remplace** par la nouvelle valeur.
-- **Sans `regexp:`**, Ansible **ajoute** une nouvelle ligne (et empile à chaque run).
+- **`regexp:`** matches the **existing** line (commented or uncommented).
+- **`line:`** **replaces** it with the new value.
+- **Without `regexp:`**, Ansible **adds** a new line (and stacks up on every run).
 
-**Toujours** mettre `regexp:` quand vous modifiez une option existante. Sans regexp,
-au 2e run vous avez **2 lignes `PermitRootLogin no`**.
+**Always** set `regexp:` when you modify an existing option. Without regexp,
+on the 2nd run you have **2 lines `PermitRootLogin no`**.
 
-## 📚 Exercice 3 — `template:` pour un fichier complet
+## 📚 Exercise 3 — `template:` for a complete file
 
-Pour un fichier de config **applicatif** (myapp.conf), `template:` est plus propre.
+For an **application** config file (myapp.conf), `template:` is cleaner.
 
-Créez `templates/myapp.conf.j2` :
+Create `templates/myapp.conf.j2`:
 
 ```jinja
 [server]
@@ -129,14 +128,14 @@ pool_size = {{ database.pool_size }}
     backup: true
 ```
 
-🔍 **Observation** : le fichier est **généré complet** depuis le template. Pas
-besoin de 5 `lineinfile:` séparés pour 5 sections. Maintenance plus simple.
+🔍 **Observation**: the file is **generated completely** from the template. No
+need for 5 separate `lineinfile:` for 5 sections. Simpler maintenance.
 
-## 📚 Exercice 4 — Démontrer la différence sur le même fichier
+## 📚 Exercise 4 — Demonstrate the difference on the same file
 
-Imaginons qu'on veuille gérer `/etc/myapp.conf` qui a 6 lignes :
+Suppose we want to manage `/etc/myapp.conf`, which has 6 lines:
 
-**Approche `lineinfile:` (mauvais choix ici)** :
+**`lineinfile:` approach (wrong choice here)**:
 
 ```yaml
 - ansible.builtin.lineinfile:
@@ -154,18 +153,18 @@ Imaginons qu'on veuille gérer `/etc/myapp.conf` qui a 6 lignes :
     regexp: '^workers'
     line: 'workers = 4'
 
-# ... 3 autres lineinfile pour [database]
+# ... 3 other lineinfile for [database]
 ```
 
-🔍 **Problèmes** :
+🔍 **Problems**:
 
-- **6 tâches** au lieu d'1.
-- Les **sections `[server]`** et `[database]` ne sont pas gérées (Ansible ne
-  comprend pas la structure INI).
-- Si une ligne attendue est **absente** au départ, `lineinfile:` l'**ajoute en
-  fin de fichier** — pas dans la bonne section !
+- **6 tasks** instead of 1.
+- The **`[server]`** and `[database]` sections are not managed (Ansible does not
+  understand the INI structure).
+- If an expected line is **missing** at first, `lineinfile:` **adds it at the end
+  of the file**, not in the right section!
 
-**Approche `template:` (bon choix)** :
+**`template:` approach (good choice)**:
 
 ```yaml
 - ansible.builtin.template:
@@ -173,13 +172,12 @@ Imaginons qu'on veuille gérer `/etc/myapp.conf` qui a 6 lignes :
     dest: /etc/myapp.conf
 ```
 
-→ **1 seule tâche**, structure préservée, code idempotent.
+→ **A single task**, structure preserved, idempotent code.
 
-## 📚 Exercice 5 — Combiner les deux : `template:` + `lineinfile:`
+## 📚 Exercise 5 — Combine the two: `template:` + `lineinfile:`
 
-Pattern réel : vous générez `nginx.conf` via `template:`, mais vous voulez **ajouter
-une ligne** dans `/etc/sysctl.conf` (fichier que vous ne possédez pas, géré par
-plusieurs outils).
+Real pattern: you generate `nginx.conf` via `template:`, but you want to **add
+a line** in `/etc/sysctl.conf` (a file you do not own, managed by several tools).
 
 ```yaml
 - name: Generer nginx.conf depuis template (controle complet)
@@ -206,113 +204,113 @@ handlers:
     ansible.builtin.command: sysctl -p
 ```
 
-🔍 **Observation** : `template:` pour les fichiers **app-spécifiques** que vous
-contrôlez ; `lineinfile:` pour les fichiers **partagés** (`/etc/hosts`,
+🔍 **Observation**: `template:` for the **app-specific** files you control;
+`lineinfile:` for the **shared** files (`/etc/hosts`,
 `/etc/sysctl.conf`, `/etc/security/limits.conf`).
 
-## 📚 Exercice 6 — Le piège : `lineinfile:` sans `regexp:` empile
+## 📚 Exercise 6 — The pitfall: `lineinfile:` without `regexp:` stacks up
 
 ```yaml
-# ❌ Mauvais : pas de regexp
+# ❌ Wrong: no regexp
 - ansible.builtin.lineinfile:
     path: /tmp/lab-piege.txt
     line: 'option = valeur'
     create: true
 ```
 
-**Lancez 3 fois** :
+**Run 3 times**:
 
 ```bash
 for i in 1 2 3; do
   ansible-playbook labs/ecrire-code/lineinfile-vs-template/lab.yml
 done
-ssh ansible@db1.lab 'cat /tmp/lab-piege.txt'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'cat /tmp/lab-piege.txt'
 ```
 
-🔍 **Observation** : sans `regexp:`, Ansible **vérifie si la ligne existe déjà
-exactement**. Si vous changez juste un caractère (espace, casse), elle est
-ajoutée à nouveau → **fichier qui grossit**.
+🔍 **Observation**: without `regexp:`, Ansible **checks whether the line already
+exists exactly**. If you change just one character (space, case), it is
+added again → **a file that grows**.
 
-**Solution** : **toujours** mettre un `regexp:` qui matche la **clé** (`^option\s*=`),
-même si la `line:` complète change.
+**Solution**: **always** set a `regexp:` that matches the **key** (`^option\s*=`),
+even if the full `line:` changes.
 
 ```yaml
-# ✅ Bon : regexp sur la cle
+# ✅ Good: regexp on the key
 - ansible.builtin.lineinfile:
     path: /tmp/lab-piege.txt
     regexp: '^option\s*='
     line: 'option = valeur'
 ```
 
-## 📚 Exercice 7 — Quand passer de `lineinfile:` à `blockinfile:` ?
+## 📚 Exercise 7 — When to move from `lineinfile:` to `blockinfile:`?
 
-`blockinfile:` (lab 33 plus tard) gère **un bloc de plusieurs lignes** avec
-markers automatiques. Quand préférer ?
+`blockinfile:` (lab 33 later) manages **a block of several lines** with
+automatic markers. When to prefer it?
 
-| Cas | Module |
+| Case | Module |
 |---|---|
-| 1 ligne (`option = valeur`) | `lineinfile:` |
-| 2-3 lignes liées (bloc d'options) | `blockinfile:` |
-| Fichier complet possédé | `template:` |
+| 1 line (`option = valeur`) | `lineinfile:` |
+| 2-3 related lines (block of options) | `blockinfile:` |
+| Full owned file | `template:` |
 
-**Règle** : si vous avez **3+ `lineinfile:` consécutifs** sur le même fichier,
-passer à **`blockinfile:`** (1 tâche, markers, idempotent).
+**Rule**: if you have **3+ consecutive `lineinfile:`** on the same file,
+move to **`blockinfile:`** (1 task, markers, idempotent).
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`lineinfile:`** = 1 ligne, **`template:`** = fichier complet.
-- **`regexp:`** = obligatoire pour modifier une ligne existante (sinon empile).
-- **`backup: true`** + **`validate:`** = combo de sécurité sur les configs critiques.
-- **`template:`** sur fichier **possédé** ; **`lineinfile:`** sur fichier **partagé**.
-- **3+ `lineinfile:` consécutifs** = passer à `blockinfile:` (lab 33).
-- **`lineinfile:` sans `regexp:`** = piège classique (empile à chaque modification de la ligne).
+- **`lineinfile:`** = 1 line, **`template:`** = full file.
+- **`regexp:`** = mandatory to modify an existing line (otherwise it stacks up).
+- **`backup: true`** + **`validate:`** = safety combo on critical configs.
+- **`template:`** on an **owned** file; **`lineinfile:`** on a **shared** file.
+- **3+ consecutive `lineinfile:`** = move to `blockinfile:` (lab 33).
+- **`lineinfile:` without `regexp:`** = classic pitfall (stacks up on every change of the line).
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voulez modifier `/etc/sudoers` pour ajouter une règle. `lineinfile:` ou
-   `template:` ? Pourquoi `validate: 'visudo -cf %s'` est-il **critique** ?
+1. You want to modify `/etc/sudoers` to add a rule. `lineinfile:` or
+   `template:`? Why is `validate: 'visudo -cf %s'` **critical**?
 
-2. Vous générez `/etc/hosts` via `template:` à partir d'un loop sur `groups['all']`.
-   Quel est le **risque** comparé à un `lineinfile:` qui ajouterait juste une ligne ?
+2. You generate `/etc/hosts` via `template:` from a loop over `groups['all']`.
+   What is the **risk** compared to a `lineinfile:` that would just add a line?
 
-3. Vous avez 5 lignes à ajouter dans `/etc/sysctl.conf`. Comparez les approches :
-   5 `lineinfile:`, 1 `blockinfile:`, ou 1 `template:` complet pour `/etc/sysctl.d/99-myapp.conf`.
+3. You have 5 lines to add in `/etc/sysctl.conf`. Compare the approaches:
+   5 `lineinfile:`, 1 `blockinfile:`, or 1 full `template:` for `/etc/sysctl.d/99-myapp.conf`.
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`lineinfile: insertafter:`** / **`insertbefore:`** : positionner la ligne
-  ajoutée après/avant un marker. Ex : ajouter après `^# Custom rules` dans sudoers.
-- **`replace:`** module : substitution **multi-occurrence** par regex. Différent
-  de `lineinfile:` qui ne traite qu'une seule ligne.
-- **Pattern `drop-in config`** : éviter de modifier `/etc/<service>.conf` (fichier
-  global) ; déposer un fichier custom dans `/etc/<service>.conf.d/99-myapp.conf`
-  via `template:`. Plus propre, plus modulaire.
-- **`lineinfile: state: absent`** + `regexp:` : **supprimer** une ligne matchant
-  le regexp. Pratique pour le **durcissement** (retirer des options dangereuses).
+- **`lineinfile: insertafter:`** / **`insertbefore:`**: position the line
+  added after/before a marker. Ex: add after `^# Custom rules` in sudoers.
+- **`replace:`** module: **multi-occurrence** substitution by regex. Different
+  from `lineinfile:`, which handles only a single line.
+- **`drop-in config` pattern**: avoid modifying `/etc/<service>.conf` (global
+  file); drop a custom file into `/etc/<service>.conf.d/99-myapp.conf`
+  via `template:`. Cleaner, more modular.
+- **`lineinfile: state: absent`** + `regexp:`: **remove** a line matching
+  the regexp. Handy for **hardening** (removing dangerous options).
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/ecrire-code/lineinfile-vs-template/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/ecrire-code/lineinfile-vs-template/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/ecrire-code/lineinfile-vs-template/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

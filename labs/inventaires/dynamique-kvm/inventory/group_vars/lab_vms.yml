@@ -1,0 +1,22 @@
+---
+# Paramètres de connexion communs aux 4 VMs du lab.
+#
+# Pourquoi ici, au niveau du GROUPE, alors que 'ansible_connection' doit vivre
+# dans host_vars/ (cf. le commentaire de ces fichiers) ? Parce que la précédence
+# ne se discute que sur les variables que le PLUGIN pose lui-même. Le plugin
+# libvirt ne pose que 'ansible_connection' et 'ansible_libvirt_uri' : sur tout
+# le reste, il n'y a personne à battre, et le groupe suffit.
+#
+# Aucun 'ansible_host' : Terraform attribue les IP et les change à chaque
+# reprovisionnement. Les figer ici, c'est écrire quatre adresses qui seront
+# fausses demain. La résolution passe par le ssh_config généré par dsoxlab, qui
+# porte les adresses réelles, l'utilisateur et la clé (`Host web1.lab` →
+# `HostName …`). Le nom du domaine libvirt est aussi le nom du bloc Host : le
+# nom que remonte le plugin se connecte donc sans traduction.
+ansible_user: ansible
+ansible_ssh_common_args: >-
+  -F {{ lookup('env', 'HOME') }}/.cache/dsoxlab/ansible-training/ssh_config
+  -o StrictHostKeyChecking=no
+  -o UserKnownHostsFile=/dev/null
+ansible_ssh_private_key_file: "{{ inventory_dir }}/../../../../ssh/id_ed25519"
+ansible_python_interpreter: /usr/bin/python3.9

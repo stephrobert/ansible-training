@@ -1,0 +1,35 @@
+---
+id: inventaires-statiques
+title: "Write a static inventory from scratch: groups, children and group vars"
+description: "Author an Ansible static inventory by hand: declare host groups, a parent group with children, and group variables, then prove the resolved inventory with ansible-inventory and ansible -m ping."
+section: inventaires
+level: l2
+difficulty: beginner
+lab_type: lab
+estimated_time: "40m"
+skills:
+  - static-inventory
+  - inventory-groups
+  - group-children
+  - group-vars
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/statiques-yaml/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+        web1: web1.lab
+        web2: web2.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

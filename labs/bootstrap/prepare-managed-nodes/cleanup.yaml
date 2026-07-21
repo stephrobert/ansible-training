@@ -1,0 +1,11 @@
+---
+# Reset du lab prepare-managed-nodes : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup prepare-managed-nodes lab
+  hosts: lab_target
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Nothing to clean up for this lab
+      ansible.builtin.debug:
+        msg: "prepare-managed-nodes: no managed-node state to reset."

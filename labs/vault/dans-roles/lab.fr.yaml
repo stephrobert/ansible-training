@@ -1,0 +1,4 @@
+---
+id: vault-dans-roles
+title: "Vault dans un rôle : defaults en clair, vars chiffré"
+description: "Exposer dans defaults/main.yml des variables publiques qui pointent vers des vault_* d'un vars/main.yml chiffré, et les surcharger depuis le playbook."

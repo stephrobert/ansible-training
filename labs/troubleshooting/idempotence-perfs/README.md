@@ -1,59 +1,58 @@
-# Lab 91 — Idempotence cassée et tuning performances (forks, pipelining, ControlPersist)
+# Lab 91 — Broken idempotence and performance tuning (forks, pipelining, ControlPersist)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo.
+> If it fails, run `mise install && dsoxlab provision` at the repo root.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Idempotence cassée et tuning des performances**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/idempotence-cassee/)
+🔗 [**Broken idempotence and performance tuning**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/idempotence-cassee/)
 
-Un playbook **idempotent** affiche `changed=0` au **second passage**. Si vous voyez `changed=N` à chaque run, **vos tâches mentent** sur leur état — chaque exécution refait tout, casse les caches HTTP/CDN, redémarre des services inutilement, et fait perdre confiance dans le code.
+An **idempotent** playbook shows `changed=0` on the **second run**. If you see `changed=N` on every run, **your tasks are lying** about their state: each run redoes everything, breaks HTTP/CDN caches, restarts services needlessly, and erodes trust in the code.
 
-Ce lab vous apprend à **diagnostiquer** les 3 anti-patterns les plus fréquents (`shell` sans `creates:`, `lineinfile` sans `regexp:`, `command` sans `changed_when:`), à les **fixer**, et à **mesurer** l'impact d'optimisations SSH (`pipelining`, `forks`, `ControlPersist`) sur le temps total d'un playbook.
+This lab teaches you to **diagnose** the 3 most frequent anti-patterns (`shell` without `creates:`, `lineinfile` without `regexp:`, `command` without `changed_when:`), to **fix** them, and to **measure** the impact of SSH optimizations (`pipelining`, `forks`, `ControlPersist`) on a playbook's total time.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Identifier** les modules non-idempotents par défaut (`command`, `shell`, `raw`, `script`).
-2. **Rendre idempotent** un `shell` avec **`creates:`** ou **`removes:`**.
-3. **Forcer le verdict `changed`** d'une tâche avec **`changed_when:`**.
-4. **Mesurer** un baseline de temps avec `profile_tasks` (cf lab 89).
-5. **Activer pipelining + forks=20 + ControlPersist=60s** dans `ansible.cfg`.
-6. **Comparer** baseline vs optimisé sur un playbook multi-host.
+1. **Identify** the non-idempotent-by-default modules (`command`, `shell`, `raw`, `script`).
+2. **Make** a `shell` **idempotent** with **`creates:`** or **`removes:`**.
+3. **Force a task's `changed` verdict** with **`changed_when:`**.
+4. **Measure** a time baseline with `profile_tasks` (see lab 89).
+5. **Enable pipelining + forks=20 + ControlPersist=60s** in `ansible.cfg`.
+6. **Compare** baseline vs optimized on a multi-host playbook.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible all -m ansible.builtin.ping
 ansible all -b -m ansible.builtin.file -a "path=/tmp/lab91-marker state=absent" 2>&1 | tail -2
 ```
 
-## ⚙️ Arborescence cible
+## ⚙️ Target tree layout
 
 ```text
 labs/troubleshooting/idempotence-perfs/
 ├── README.md
-├── Makefile
-├── ansible.cfg                       ← (à créer en exo 5)
+├── ansible.cfg                       ← (to create in exercise 5)
 └── challenge/
     ├── README.md
     └── tests/
         └── test_idempotence.py
 ```
 
-L'apprenant écrit lui-même `lab.yml` et `challenge/solution.yml`.
+The learner writes `lab.yml` and `challenge/solution.yml` themselves.
 
-## 📚 Exercice 1 — Anti-pattern `shell` sans `creates:`
+## 📚 Exercise 1 — Anti-pattern: `shell` without `creates:`
 
 ```yaml
 ---
@@ -64,39 +63,39 @@ L'apprenant écrit lui-même `lab.yml` et `challenge/solution.yml`.
       ansible.builtin.shell: "echo lab91 > /tmp/lab91-marker"
 ```
 
-Lancer **2 fois** :
+Run it **twice**:
 
 ```bash
 ansible-playbook labs/troubleshooting/idempotence-perfs/lab.yml
 ansible-playbook labs/troubleshooting/idempotence-perfs/lab.yml | grep changed
 ```
 
-Sortie :
+Output:
 
 ```text
 changed=1   ← run 1
-changed=1   ← run 2 (PROBLÈME : non idempotent)
+changed=1   ← run 2 (PROBLEM: not idempotent)
 ```
 
-🔍 **Observation** : `shell` exécute **toujours** la commande sans vérifier l'état. **Toujours** `changed=1`.
+🔍 **Observation**: `shell` **always** runs the command without checking state. **Always** `changed=1`.
 
-### Fix avec `creates:`
+### Fix with `creates:`
 
 ```yaml
 - name: Créer un fichier marker (idempotent)
   ansible.builtin.shell: "echo lab91 > /tmp/lab91-marker"
   args:
-    creates: /tmp/lab91-marker        # ← skip si le fichier existe
+    creates: /tmp/lab91-marker        # ← skip if the file exists
 ```
 
-Sortie après fix :
+Output after the fix:
 
 ```text
 changed=1   ← run 1
 changed=0   ← run 2 (correct)
 ```
 
-## 📚 Exercice 2 — Anti-pattern `lineinfile` sans `regexp:`
+## 📚 Exercise 2 — Anti-pattern: `lineinfile` without `regexp:`
 
 ```yaml
 - name: Modifier la config (anti-pattern)
@@ -107,7 +106,7 @@ changed=0   ← run 2 (correct)
     create: true
 ```
 
-Lancer **2 fois**. Si la valeur change un jour :
+Run it **twice**. If the value changes one day:
 
 ```yaml
 - name: Modifier la config (anti-pattern, MAJ)
@@ -115,44 +114,44 @@ Lancer **2 fois**. Si la valeur change un jour :
     line: "max_connections = 200"
 ```
 
-Le fichier contient maintenant **les 2 lignes** : `max_connections = 100` ET `max_connections = 200`. **Duplication**.
+The file now contains **both lines**: `max_connections = 100` AND `max_connections = 200`. **Duplication**.
 
-### Fix avec `regexp:`
+### Fix with `regexp:`
 
 ```yaml
 - name: Modifier la config (idempotent)
   ansible.builtin.lineinfile:
     path: /tmp/lab91-config.cfg
-    regexp: '^max_connections\s*='   # ← match les lignes existantes
+    regexp: '^max_connections\s*='   # ← matches existing lines
     line: "max_connections = 200"
     state: present
     create: true
 ```
 
-🔍 **Observation** : avec `regexp:`, lineinfile **remplace** la ligne au lieu d'en ajouter une. Toujours **mettre `regexp:`** sauf si on est sûr de la première mise en place.
+🔍 **Observation**: with `regexp:`, lineinfile **replaces** the line instead of adding one. Always **set `regexp:`** unless you are sure of the first insertion.
 
-## 📚 Exercice 3 — Anti-pattern `command` sans `changed_when:`
+## 📚 Exercise 3 — Anti-pattern: `command` without `changed_when:`
 
 ```yaml
 - name: Vérifier la version curl
   ansible.builtin.command: curl --version
-  # ↑ retourne toujours changed=1 alors qu'on lit seulement
+  # ↑ always returns changed=1 even though we only read
 ```
 
-### Fix avec `changed_when: false`
+### Fix with `changed_when: false`
 
 ```yaml
 - name: Vérifier la version curl
   ansible.builtin.command: curl --version
-  changed_when: false                 # ← lecture seule, jamais de changement
+  changed_when: false                 # ← read-only, never a change
   register: curl_out
 ```
 
-🔍 **Observation** : `changed_when: false` est le pattern pour les **commandes de lecture/diagnostic**. Préserve l'idempotence du playbook.
+🔍 **Observation**: `changed_when: false` is the pattern for **read/diagnostic commands**. It preserves the playbook's idempotence.
 
-## 📚 Exercice 4 — `changed_when:` conditionnel
+## 📚 Exercise 4 — `changed_when:` conditional
 
-Un cas plus subtil : on veut signaler `changed` **uniquement** si la sortie contient une erreur.
+A more subtle case: you want to signal `changed` **only** if the output contains an error.
 
 ```yaml
 - name: Health check API
@@ -163,16 +162,16 @@ Un cas plus subtil : on veut signaler `changed` **uniquement** si la sortie cont
   changed_when: "'OK' not in health.content"
 ```
 
-🔍 **Observation** : `changed_when:` accepte une expression Jinja2/Python. Permet de **dériver** l'état changed du résultat de la tâche, pas du module.
+🔍 **Observation**: `changed_when:` accepts a Jinja2/Python expression. It lets you **derive** the changed state from the task result, not from the module.
 
-## 📚 Exercice 5 — Baseline performances
+## 📚 Exercise 5 — Performance baseline
 
-Créer un playbook qui exécute **5 tâches** sur **3 hosts** :
+Create a playbook that runs **5 tasks** on **3 hosts**:
 
 ```yaml
 ---
 - hosts: all
-  gather_facts: true                 # ← intentionnellement coûteux
+  gather_facts: true                 # ← intentionally expensive
   tasks:
     - ansible.builtin.shell: sleep 0.5
       changed_when: false
@@ -186,17 +185,17 @@ Créer un playbook qui exécute **5 tâches** sur **3 hosts** :
       changed_when: false
 ```
 
-Lancer **sans optimisation** (config par défaut) :
+Run it **without optimization** (default config):
 
 ```bash
 time ansible-playbook labs/troubleshooting/idempotence-perfs/lab.yml
 ```
 
-Mesurer le temps. Sur 3 hosts × 5 tâches × 0.5s + overhead SSH = ~15-20 s typique.
+Measure the time. On 3 hosts × 5 tasks × 0.5s + SSH overhead = ~15-20 s typical.
 
-## 📚 Exercice 6 — Activer pipelining + forks + ControlPersist
+## 📚 Exercise 6 — Enable pipelining + forks + ControlPersist
 
-Créer `ansible.cfg` au niveau du lab :
+Create `ansible.cfg` at the lab level:
 
 ```ini
 [defaults]
@@ -211,26 +210,26 @@ pipelining = True
 ssh_args = -C -o ControlMaster=auto -o ControlPersist=60s
 ```
 
-Re-lancer :
+Re-run:
 
 ```bash
 time ANSIBLE_CONFIG=labs/troubleshooting/idempotence-perfs/ansible.cfg \
   ansible-playbook labs/troubleshooting/idempotence-perfs/lab.yml
 ```
 
-**Cible : -50 % à -60 %** sur le temps total.
+**Target: -50% to -60%** on the total time.
 
-🔍 **Observation** : 3 leviers cumulés :
+🔍 **Observation**: 3 combined levers:
 
-- **`pipelining=True`** : supprime `mkdir tmp + scp + exec` → 1 SSH au lieu de 3 par tâche.
-- **`forks=20`** : exécute 20 hosts en parallèle (default 5).
-- **`ControlPersist=60s`** : connexion SSH **réutilisée** pendant 60s. Évite 1 handshake par tâche.
+- **`pipelining=True`**: removes `mkdir tmp + scp + exec` → 1 SSH instead of 3 per task.
+- **`forks=20`**: runs 20 hosts in parallel (default 5).
+- **`ControlPersist=60s`**: SSH connection **reused** for 60s. Avoids 1 handshake per task.
 
-⚠️ **Pipelining incompatible avec `requiretty`** dans `/etc/sudoers`. Sur les images custom RHEL, vérifier.
+⚠️ **Pipelining incompatible with `requiretty`** in `/etc/sudoers`. On custom RHEL images, check.
 
-## 📚 Exercice 7 — Tester l'idempotence en CI
+## 📚 Exercise 7 — Test idempotence in CI
 
-Pour automatiser la vérification d'idempotence dans la CI :
+To automate the idempotence check in CI:
 
 ```bash
 # Run 1
@@ -238,41 +237,43 @@ ansible-playbook lab.yml > /tmp/run1.log
 # Run 2
 ansible-playbook lab.yml | tee /tmp/run2.log
 
-# Échec si le 2e run a des changes
+# Fail if the 2nd run has changes
 grep -E 'changed=[1-9]' /tmp/run2.log && echo "IDEMPOTENCE KO" && exit 1
 echo "IDEMPOTENCE OK"
 ```
 
-🔍 **Observation** : un test idempotence en CI **bloque** les régressions où un dev oublie un `changed_when:` ou un `creates:`. **À mettre dans le pipeline `ansible-playbook --check --diff`**.
+🔍 **Observation**: an idempotence test in CI **blocks** regressions where a dev forgets a `changed_when:` or a `creates:`. **Put it in the `ansible-playbook --check --diff` pipeline**.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`command`, `shell`, `raw`, `script`** = non-idempotents par défaut.
-- **`creates:`** / **`removes:`** rendent un `shell` idempotent en check de fichier.
-- **`changed_when: false`** pour les commandes de lecture/diagnostic.
-- **`lineinfile`** **toujours** avec `regexp:`.
-- **3 leviers SSH** : `pipelining`, `forks`, `ControlPersist`.
-- **Test idempotence** = run 2× et vérifier `changed=0`.
+- **`command`, `shell`, `raw`, `script`** = non-idempotent by default.
+- **`creates:`** / **`removes:`** make a `shell` idempotent via a file check.
+- **`changed_when: false`** for read/diagnostic commands.
+- **`lineinfile`** **always** with `regexp:`.
+- **3 SSH levers**: `pipelining`, `forks`, `ControlPersist`.
+- **Idempotence test** = run 2× and check `changed=0`.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Pourquoi `pipelining` est-il désactivé par défaut ?
-2. Quand **`changed_when: true`** explicite (au lieu de `false`) est-il utile ?
-3. **`forks=200`** sur un poste standard : risques ?
-4. **`creates:` accepte-t-il un glob** comme `/tmp/lab91-*` ? (Indice : non, exact path).
+1. Why is `pipelining` disabled by default?
+2. When is an explicit **`changed_when: true`** (instead of `false`) useful?
+3. **`forks=200`** on a standard workstation: risks?
+4. Does **`creates:` accept a glob** like `/tmp/lab91-*`? (Hint: no, exact path).
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) — refactorer un playbook **non idempotent** vers un playbook **idempotent** avec `creates:` + `regexp:` + `changed_when:`.
+See [`challenge/README.md`](challenge/README.md): refactor a **non-idempotent** playbook into an **idempotent** one with `creates:` + `regexp:` + `changed_when:`.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Lab 92** : Mock RHCE EX294.
-- **`ANSIBLE_PROFILE_TASKS=1`** sans toucher à `ansible.cfg`.
-- **`stdout_callback = dense`** : 1 ligne par host (utile flottes 50+ hosts).
-- **`fact_caching = redis`** pour fleet > 100 hosts (jsonfile devient lent).
+- **Lab 92**: RHCE EX294 mock.
+- **`ANSIBLE_CALLBACKS_ENABLED=ansible.posix.profile_tasks`** without touching
+  `ansible.cfg`. A callback is enabled by name in that list; there is no
+  `ANSIBLE_PROFILE_TASKS` variable, and setting it does nothing.
+- **`stdout_callback = dense`**: 1 line per host (useful for 50+ host fleets).
+- **`fact_caching = redis`** for fleets > 100 hosts (jsonfile becomes slow).
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint labs/troubleshooting/idempotence-perfs/lab.yml

@@ -1,16 +1,16 @@
 # 🎯 Challenge — `delegate_to` + `run_once`
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `challenge/solution.yml` qui démontre **deux mécaniques** complémentaires :
+Write `challenge/solution.yml` that demonstrates **two** complementary mechanics:
 
-1. **Une tâche standard** itère sur tous les `webservers` (web1, web2) et pose
-   un marqueur **local** sur chaque hôte : `/tmp/delegation-on-{{ inventory_hostname }}.txt`.
-2. **Une tâche déléguée** pose **un seul** fichier sur **db1.lab** (un hôte
-   pourtant absent du groupe `webservers`) — preuve que `delegate_to` permet
-   d'agir hors-pattern, et que `run_once` empêche le doublon.
+1. **A standard task** iterates over all `webservers` (web1, web2) and places
+   a **local** marker on each host: `/tmp/delegation-on-{{ inventory_hostname }}.txt`.
+2. **A delegated task** places **a single** file on **db1.lab** (a host
+   that is nonetheless absent from the `webservers` group): proof that `delegate_to`
+   allows acting outside the pattern, and that `run_once` prevents the duplicate.
 
-## 🧩 Indices
+## 🧩 Hints
 
 ```yaml
 ---
@@ -20,7 +20,7 @@
   tasks:
     - name: Marqueur local sur chaque webserver
       ansible.builtin.copy:
-        dest: ???        # interpolez inventory_hostname
+        dest: ???        # interpolate inventory_hostname
         content: ???
         mode: "0644"
 
@@ -33,81 +33,81 @@
       run_once: ???
 ```
 
-À compléter :
+To complete:
 
-- **`delegate_to: db1.lab`** : la tâche s'exécute sur db1, pas sur web1/web2.
-- **`run_once: true`** : sans ça, la tâche tournerait 2 fois (une par hôte de
-  `webservers`), avec le **même contenu** mais sur le **même** db1.lab → soit
-  inutile, soit conflit. `run_once` garantit une seule exécution dans le batch.
+- **`delegate_to: db1.lab`**: the task runs on db1, not on web1/web2.
+- **`run_once: true`**: without it, the task would run twice (once per host of
+  `webservers`), with the **same content** but on the **same** db1.lab → either
+  useless or a conflict. `run_once` guarantees a single execution in the batch.
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **`delegate_to:` ne change PAS `inventory_hostname`** : la variable
->   reste celle de l'hôte courant du play. Pour récupérer celle de la
->   cible déléguée, utiliser `delegate_facts: true` + `hostvars[delegate].…`.
-> - **`run_once: true` sans `delegate_to`** : la tâche tourne sur **le
->   premier hôte** du batch. Combiné avec `delegate_to: localhost`, c'est
->   le pattern "tâche unique côté control node".
-> - **`local_action:`** : raccourci pour `delegate_to: localhost`. Plus
->   lisible quand on n'a qu'**une seule** tâche à exécuter localement.
-> - **`become:` sur tâche déléguée** : s'applique à **l'hôte délégué**, pas
->   au play. `become: true` sur une tâche `delegate_to: localhost`
->   demande sudo localement.
+> - **`delegate_to:` does NOT change `inventory_hostname`**: the variable
+>   stays that of the current play host. To get that of the
+>   delegated target, use `delegate_facts: true` + `hostvars[delegate].…`.
+> - **`run_once: true` without `delegate_to`**: the task runs on **the
+>   first host** of the batch. Combined with `delegate_to: localhost`, it is
+>   the "single task on the control node" pattern.
+> - **`local_action:`**: shortcut for `delegate_to: localhost`. More
+>   readable when you have only **a single** task to run locally.
+> - **`become:` on a delegated task**: applies to **the delegated host**, not
+>   to the play. `become: true` on a `delegate_to: localhost` task
+>   requests sudo locally.
 
-## 🚀 Lancement
+## 🚀 Launch
 
 ```bash
 ansible-playbook labs/ecrire-code/delegation/challenge/solution.yml
 ```
 
-🔍 **Ce que vous devez voir** :
+🔍 **What you should see**:
 
-- 1ère tâche : `changed: [web1.lab]` et `changed: [web2.lab]` (deux exécutions).
-- 2ème tâche : **une seule** ligne `changed: [web1.lab -> db1.lab]` (notation
-  délégation : *ce qu'on cible* → *où on agit*). Le `-> db1.lab` est crucial.
+- 1st task: `changed: [web1.lab]` and `changed: [web2.lab]` (two executions).
+- 2nd task: **a single** line `changed: [web1.lab -> db1.lab]` (delegation
+  notation: *what we target* → *where we act*). The `-> db1.lab` is crucial.
 
-Vérifiez :
+Verify:
 
 ```bash
-# Sur les webservers (marqueurs locaux)
+# On the webservers (local markers)
 ansible webservers -m ansible.builtin.command \
     -a "ls /tmp/delegation-on-*.txt"
 
-# Sur db1 (marqueur délégué)
+# On db1 (delegated marker)
 ansible db1.lab -m ansible.builtin.command \
     -a "ls /tmp/delegation-on-db1.txt"
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/delegation/challenge/tests/
 ```
 
-Le test vérifie :
+The test checks:
 
-- `/tmp/delegation-on-web1.lab.txt` sur **web1**.
-- `/tmp/delegation-on-web2.lab.txt` sur **web2**.
-- `/tmp/delegation-on-db1.txt` sur **db1** (preuve `delegate_to`).
-- **Aucun** `/tmp/delegation-on-db1.txt` sur web1 ni web2 (preuve isolation).
+- `/tmp/delegation-on-web1.lab.txt` on **web1**.
+- `/tmp/delegation-on-web2.lab.txt` on **web2**.
+- `/tmp/delegation-on-db1.txt` on **db1** (`delegate_to` proof).
+- **No** `/tmp/delegation-on-db1.txt` on web1 or web2 (isolation proof).
 
 ## 🧹 Reset
 
 ```bash
-make -C labs/ecrire-code/delegation clean
+dsoxlab clean ecrire-code-delegation
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`delegate_facts: true`** : les facts collectés sur l'hôte délégué sont
-  enregistrés sur l'hôte cible (utile pour partager une info de db1 vers les
+- **`delegate_facts: true`**: the facts collected on the delegated host are
+  recorded on the target host (useful to share info from db1 to the
   webservers).
-- **`local_action`** = `delegate_to: localhost`. Forme historique encore vue.
-- **Pattern load-balancer** : avant de redémarrer un webserver, déléguer à
-  l'hôte du LB pour le drainer. Après le restart, déléguer à nouveau pour le
-  ré-injecter. Combiné avec `serial: 1` (lab 09), c'est le rolling deploy
-  classique.
-- **Lint** :
+- **`local_action`** = `delegate_to: localhost`. Historical form still seen.
+- **Load-balancer pattern**: before restarting a webserver, delegate to
+  the LB host to drain it. After the restart, delegate again to
+  re-inject it. Combined with `serial: 1` (lab 09), it is the classic rolling
+  deploy.
+- **Lint**:
 
    ```bash
    ansible-lint labs/ecrire-code/delegation/challenge/solution.yml

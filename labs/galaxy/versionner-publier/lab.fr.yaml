@@ -1,0 +1,4 @@
+---
+id: galaxy-versionner-publier
+title: "Versionner et publier un rôle : semver, tags Git, Galaxy"
+description: "Appliquer le semver à un rôle, tenir un CHANGELOG.md, poser un tag Git annoté et automatiser la publication Galaxy depuis la CI."

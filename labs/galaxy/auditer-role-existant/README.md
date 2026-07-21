@@ -1,167 +1,168 @@
-# Lab 75 — Auditer un rôle Ansible avant adoption
+# Lab 75 — Auditing an Ansible role before adoption
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Pré-requis : Ansible installé. Pas besoin des VMs (lab purement local + lecture).
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Prerequisite: Ansible installed. No VMs needed (purely local lab + reading).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Auditer un rôle Ansible tiers**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-roles/auditer-role/)
+🔗 [**Auditing a third-party Ansible role**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/auditer-role-existant/)
 
-Avant d'adopter un rôle Galaxy ou GitHub dans votre projet (et donc de
-**l'exécuter avec `become: true`** sur vos serveurs production), passez-le
-au crible d'une **checklist d'audit**. Les rôles tiers sont du **code
-arbitraire** qui tournera root sur vos machines.
+Before adopting a Galaxy or GitHub role in your project (and therefore
+**running it with `become: true`** on your production servers), put it
+through an **audit checklist**. Third-party roles are **arbitrary
+code** that will run as root on your machines.
 
-| Risque | Si pas audité |
+| Risk | If not audited |
 | --- | --- |
-| Maintenance | Rôle abandonné depuis 3 ans, breaking change Ansible 2.18 |
-| Sécurité | Téléchargement HTTP non chiffré, secret hardcodé |
-| Qualité | Pas d'idempotence, casse au 2e run |
-| Compat | Targets RHEL 7 only, votre prod est RHEL 10 |
+| Maintenance | Role abandoned for 3 years, Ansible 2.18 breaking change |
+| Security | Unencrypted HTTP download, hardcoded secret |
+| Quality | No idempotence, breaks on 2nd run |
+| Compat | RHEL 7 only targets, your prod is RHEL 10 |
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Évaluer un rôle sur **6 axes** : mainteneur, qualité, sécurité, tests,
+1. Evaluate a role on **6 axes**: maintainer, quality, security, tests,
    compat, idempotence.
-2. Lire le `meta/main.yml` pour identifier les **plateformes supportées**.
-3. Détecter les **anti-patterns** classiques (FQCN absent, secrets hardcodés,
-   `command:` sans `creates:`).
-4. Calculer un **score d'audit** chiffré (9-10/10 = adopter).
-5. **Décider** : adopter / forker / refuser.
+2. Read `meta/main.yml` to identify the **supported platforms**.
+3. Detect the classic **anti-patterns** (missing FQCN, hardcoded secrets,
+   `command:` without `creates:`).
+4. Compute a numeric **audit score** (9-10/10 = adopt).
+5. **Decide**: adopt / fork / reject.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-# Pour les exemples : installer un rôle Galaxy célèbre
+# For the examples: install a famous Galaxy role
 ansible-galaxy role install geerlingguy.docker
 ls ~/.ansible/roles/geerlingguy.docker/
 ```
 
-## ⚙️ Arborescence
+## ⚙️ Directory tree
 
 ```text
 labs/galaxy/auditer-role-existant/
 ├── README.md
-├── Makefile
-├── AUDIT_CHECKLIST.md       ← checklist livrée (à étudier)
-└── roles/
-    └── webserver/            ← rôle exemple à auditer
+├── AUDIT_CHECKLIST.md       ← shipped checklist (to study)
+├── roles/
+│   └── webserver/            ← healthy example role (for comparison)
+└── vendor/
+    └── thirdparty_backup/    ← third-party role TO AUDIT (challenge)
 ```
 
-## 📚 Exercice 1 — Lire `AUDIT_CHECKLIST.md`
+## 📚 Exercise 1 — Read `AUDIT_CHECKLIST.md`
 
-La checklist couvre **6 sections** :
+The checklist covers **6 sections**:
 
-| Section | Items clés |
+| Section | Key items |
 | --- | --- |
-| ✅ Mainteneur | Auteur, date dernier commit, CHANGELOG |
-| ✅ Qualité du code | meta/main.yml, argument_specs, FQCN, variables préfixées |
-| ✅ Sécurité | Secrets, HTTPS, checksum, permissions, become |
+| ✅ Maintainer | Author, last commit date, CHANGELOG |
+| ✅ Code quality | meta/main.yml, argument_specs, FQCN, prefixed variables |
+| ✅ Security | Secrets, HTTPS, checksum, permissions, become |
 | ✅ Tests | molecule, verify, ansible-lint, CI/CD |
-| ✅ Compatibilité | Platforms, min_ansible_version, deps obsolètes |
-| ✅ Idempotence | changed=0 au 2e run, changed_when justifié |
-| ✅ Maintenabilité | Commentaires, defaults, structure |
+| ✅ Compatibility | Platforms, min_ansible_version, obsolete deps |
+| ✅ Idempotence | changed=0 on 2nd run, justified changed_when |
+| ✅ Maintainability | Comments, defaults, structure |
 
-## 📚 Exercice 2 — Audit pratique de `geerlingguy.docker`
+## 📚 Exercise 2 — Practical audit of `geerlingguy.docker`
 
 ```bash
 cd ~/.ansible/roles/geerlingguy.docker/
 
-# Vérifier date dernier commit
+# Check last commit date
 git log -1 --format="%cd" 2>/dev/null || stat -c '%y' meta/main.yml
 
-# Vérifier FQCN (chercher les non-FQCN)
+# Check FQCN (find the non-FQCN ones)
 grep -rE "^\s*-\s*(dnf|apt|copy|template|file|service):" tasks/
 
-# Vérifier presence argument_specs
+# Check presence of argument_specs
 ls meta/argument_specs.yml 2>/dev/null
 
-# Vérifier scénario molecule
+# Check molecule scenario
 ls molecule/default/molecule.yml 2>/dev/null
 ```
 
-🔍 **Observation** : `geerlingguy.docker` est un rôle de **référence
-Galaxy** — il devrait passer la plupart des checkpoints.
+🔍 **Observation**: `geerlingguy.docker` is a **Galaxy reference role**:
+it should pass most of the checkpoints.
 
-## 📚 Exercice 3 — Détecter les red flags classiques
+## 📚 Exercise 3 — Detect the classic red flags
 
 ```bash
-# Anti-pattern 1 : secrets en dur
+# Anti-pattern 1: hardcoded secrets
 grep -rE "(password|api_key|secret).*=.*[a-zA-Z0-9]{8,}" roles/
 
-# Anti-pattern 2 : URLs HTTP non sécurisées
+# Anti-pattern 2: insecure HTTP URLs
 grep -rE "http://" roles/
 
-# Anti-pattern 3 : downloads sans checksum
+# Anti-pattern 3: downloads without checksum
 grep -B2 -A5 "get_url:" roles/ | grep -v "checksum:"
 
-# Anti-pattern 4 : command/shell sans creates/removes
+# Anti-pattern 4: command/shell without creates/removes
 grep -rB2 -A5 "command:\|shell:" roles/ | grep -v "creates:\|removes:\|changed_when:"
 ```
 
-## 📚 Exercice 4 — Score d'audit
+## 📚 Exercise 4 — Audit score
 
-| Score | Décision |
+| Score | Decision |
 | --- | --- |
-| **9-10/10** sections OK | ✅ Adopter sans réserve. |
-| **7-8/10** | ⚠️ Acceptable avec audit complémentaire. |
-| **5-6/10** | 🔧 Risqué. Forker ou chercher alternative. |
-| **< 5/10** | ❌ Refuser. Maintenance trop coûteuse. |
+| **9-10/10** sections OK | ✅ Adopt without reservation. |
+| **7-8/10** | ⚠️ Acceptable with additional audit. |
+| **5-6/10** | 🔧 Risky. Fork or look for an alternative. |
+| **< 5/10** | ❌ Reject. Maintenance too costly. |
 
-🔍 **Observation** : un score < 5/10 sur un rôle tiers est un signal fort
-pour **écrire le sien** plutôt que d'hériter de la dette technique.
+🔍 **Observation**: a score < 5/10 on a third-party role is a strong signal
+to **write your own** rather than inherit the technical debt.
 
-## 📚 Exercice 5 — Auditer `roles/webserver/` du lab
+## 📚 Exercise 5 — Audit the lab's `roles/webserver/`
 
-Le rôle livré dans `roles/webserver/` est un rôle **simple**. Passez-le à
-la checklist :
+The role shipped in `roles/webserver/` is a **simple** role. Run it through
+the checklist:
 
-- [ ] `meta/main.yml` présent ? Quels champs `galaxy_info` ?
-- [ ] `meta/argument_specs.yml` présent ?
-- [ ] `tasks/main.yml` utilise FQCN ?
-- [ ] `defaults/main.yml` documente les variables ?
-- [ ] `README.md` présent ?
+- [ ] `meta/main.yml` present? Which `galaxy_info` fields?
+- [ ] `meta/argument_specs.yml` present?
+- [ ] `tasks/main.yml` uses FQCN?
+- [ ] `defaults/main.yml` documents the variables?
+- [ ] `README.md` present?
 
-Calculez son score sur 10.
+Compute its score out of 10.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Auditer** = obligatoire avant adoption en production.
-- Un rôle sans **`molecule/`** = pas de garantie de fonctionnement.
-- Un rôle sans **`argument_specs.yml`** = vous devez vous-même valider les
-  inputs au runtime.
-- **CHANGELOG.md absent** ou vide = mainteneur n'investit pas dans la
-  communication des breaking changes.
-- **Préférer Red Hat / geerlingguy / ansible-collections** : ces auteurs
-  ont un track record vérifiable.
+- **Auditing** = mandatory before production adoption.
+- A role without **`molecule/`** = no guarantee it works.
+- A role without **`argument_specs.yml`** = you must validate the
+  inputs yourself at runtime.
+- **CHANGELOG.md missing** or empty = the maintainer does not invest in
+  communicating breaking changes.
+- **Prefer Red Hat / geerlingguy / ansible-collections**: these authors
+  have a verifiable track record.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous trouvez un rôle parfait sauf qu'il télécharge un binaire en HTTP
-   (pas HTTPS). Adoptez-vous ? Quels mitigations envisagez-vous ?
+1. You find a perfect role except that it downloads a binary over HTTP
+   (not HTTPS). Do you adopt it? What mitigations do you consider?
 
-2. Différence entre **forker** un rôle et écrire le sien ? Quels critères
-   pour choisir ?
+2. Difference between **forking** a role and writing your own? What criteria
+   to choose?
 
-3. Sur quels critères jugez-vous **CRITIQUES** (refus immédiat) vs
-   **MAJEURS** (audit complémentaire) ?
+3. On what criteria do you rate a finding **CRITICAL** (immediate reject) vs
+   **MAJOR** (additional audit)?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md).
+See [`challenge/README.md`](challenge/README.md).
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`ansible-lint --profile=production`** : run sur le rôle audité.
-- **`safety check`** sur les `requirements.txt` éventuels.
-- **`grype`** ou **`trivy`** : scan vulnérabilités sur les images Docker
-  référencées.
-- **Audit automatisé** : intégrer le rôle dans un repo + faire tourner
-  Molecule pour valider en pratique.
+- **`ansible-lint --profile=production`**: run on the audited role.
+- **`safety check`** on any `requirements.txt`.
+- **`grype`** or **`trivy`**: vulnerability scan on the referenced Docker
+  images.
+- **Automated audit**: integrate the role into a repo + run
+  Molecule to validate in practice.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint labs/galaxy/auditer-role-existant/

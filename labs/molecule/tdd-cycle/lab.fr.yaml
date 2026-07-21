@@ -1,0 +1,4 @@
+---
+id: molecule-tdd-cycle
+title: "Molecule : développer un rôle users par les tests"
+description: "Écrire verify.yml et argument_specs.yml avant la moindre tâche, puis itérer converge jusqu'au vert et refactorer sans casser les tests."

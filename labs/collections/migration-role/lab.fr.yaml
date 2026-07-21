@@ -1,0 +1,4 @@
+---
+id: collections-migration-role
+title: "Migrer un rôle standalone vers une collection"
+description: "Déplacer un rôle et son module custom dans une collection, configurer plugin_routing.redirect, et vérifier que l'ancien nom marche avec un warning."

@@ -1,0 +1,26 @@
+---
+id: tests-ansible-lint-production
+title: "ansible-lint production profile with pre-commit"
+description: "Configure .ansible-lint on the production profile plus a strict .yamllint, then wire both into pre-commit with a secret-leak hook."
+section: tests
+level: l3
+difficulty: advanced
+lab_type: lab
+estimated_time: "40m"
+skills:
+  - lint
+  - yamllint
+  - pre-commit
+  - secret-detection
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ansible-lint-production-profile/
+track:
+  - au-dela-ex294
+runtime:
+  type: shell
+  workdir: challenge/work
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

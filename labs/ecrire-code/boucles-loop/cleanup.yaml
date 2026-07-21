@@ -1,0 +1,27 @@
+---
+# Reset du lab boucles-loop : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+#
+# Écrit à la main : la cible `clean` du Makefile passait les utilisateurs par
+# `-e '{"items":[...]}'` puis doublonnait avec un `userdel` shell. Ici, la
+# boucle est native au playbook et une seule tâche suffit.
+- name: Cleanup boucles-loop lab
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Remove the challenge users and their home
+      ansible.builtin.user:
+        name: "{{ item }}"
+        state: absent
+        remove: true
+      loop:
+        - chal_alice
+        - chal_bob
+        - chal_charlie
+      failed_when: false
+
+    - name: Remove the loop result file
+      ansible.builtin.file:
+        path: /tmp/loop-result.txt
+        state: absent

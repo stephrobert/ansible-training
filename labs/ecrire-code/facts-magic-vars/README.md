@@ -1,74 +1,74 @@
-# Lab 14 — Facts et magic vars (`ansible_facts`, `hostvars`)
+# Lab 14 — Facts and magic vars (`ansible_facts`, `hostvars`)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Facts et magic vars Ansible : ansible_facts, gather_subset, hostvars**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/facts-magic-vars/)
+🔗 [**Ansible facts and magic vars: ansible_facts, gather_subset, hostvars**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/facts-magic-vars/)
 
-Les **facts** sont des informations système collectées automatiquement par Ansible
-au début d'un play (`gather_facts: true` par défaut) : OS, version, IP, mémoire,
-CPU, interfaces réseau, etc. Les **magic vars** sont des variables fournies par
-Ansible (pas par les managed nodes) : `inventory_hostname`, `groups`, `hostvars`,
-`play_hosts`, `ansible_play_batch`, `ansible_play_hosts_all`. Maîtriser ces deux
-catégories permet de **rendre vos playbooks dynamiques** et **multi-hôtes** sans
-hardcoder de valeurs.
+**Facts** are system information collected automatically by Ansible
+at the start of a play (`gather_facts: true` by default): OS, version, IP, memory,
+CPU, network interfaces, etc. **Magic vars** are variables provided by
+Ansible (not by the managed nodes): `inventory_hostname`, `groups`, `hostvars`,
+`play_hosts`, `ansible_play_batch`, `ansible_play_hosts_all`. Mastering these two
+categories lets you **make your playbooks dynamic** and **multi-host** without
+hardcoding values.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Lire** les facts système les plus utiles (`ansible_distribution`, `ansible_default_ipv4`).
-2. **Utiliser** les magic vars (`inventory_hostname`, `groups`, `hostvars`).
-3. **Accéder** aux facts d'un autre hôte via `hostvars['<hostname>']`.
-4. **Limiter** la collecte avec `gather_subset:` pour gagner en performance.
-5. **Désactiver** `gather_facts:` quand les facts ne sont pas nécessaires.
+1. **Read** the most useful system facts (`ansible_distribution`, `ansible_default_ipv4`).
+2. **Use** the magic vars (`inventory_hostname`, `groups`, `hostvars`).
+3. **Access** another host's facts via `hostvars['<hostname>']`.
+4. **Limit** the collection with `gather_subset:` to gain performance.
+5. **Disable** `gather_facts:` when the facts are not needed.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible all -m ping
 ```
 
-## 📚 Exercice 1 — Voir tous les facts (curiosité)
+## 📚 Exercise 1 — See all the facts (curiosity)
 
-Lancez `setup` en ad-hoc pour explorer :
+Run `setup` ad-hoc to explore:
 
 ```bash
 ansible web1.lab -m ansible.builtin.setup | less
 ```
 
-🔍 **Observation** : énorme output ! Chaque managed node renvoie **300-500 facts**.
-Les plus utiles :
+🔍 **Observation**: huge output! Each managed node returns **300-500 facts**.
+The most useful:
 
 - `ansible_distribution`, `ansible_distribution_version` (`AlmaLinux`, `10.1`)
 - `ansible_default_ipv4.address` (`10.10.20.21`)
-- `ansible_memtotal_mb` (mémoire totale en MB)
+- `ansible_memtotal_mb` (total memory in MB)
 - `ansible_processor_count` / `ansible_processor_vcpus` (CPU)
-- `ansible_hostname` / `ansible_fqdn` (hostname court / FQDN)
+- `ansible_hostname` / `ansible_fqdn` (short hostname / FQDN)
 - `ansible_kernel`, `ansible_architecture`
-- `ansible_interfaces` (liste des interfaces réseau)
+- `ansible_interfaces` (list of network interfaces)
 
-**Filtrer** un fact précis :
+**Filter** a specific fact:
 
 ```bash
 ansible web1.lab -m ansible.builtin.setup -a "filter=ansible_default_ipv4"
 ```
 
-## 📚 Exercice 2 — Lire les facts dans un play
+## 📚 Exercise 2 — Read the facts in a play
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -89,18 +89,18 @@ Créez `lab.yml` :
           interfaces : {{ ansible_interfaces | join(', ') }}
 ```
 
-**Lancez** :
+**Run it**:
 
 ```bash
 ansible-playbook labs/ecrire-code/facts-magic-vars/lab.yml
 ```
 
-🔍 **Observation** : tous les facts sont disponibles **sans `vars:`** — Ansible les a
-collectés au début du play (`gather_facts: true` est implicite par défaut).
+🔍 **Observation**: all the facts are available **without `vars:`**: Ansible collected
+them at the start of the play (`gather_facts: true` is implicit by default).
 
-## 📚 Exercice 3 — Magic vars (`inventory_hostname`, `groups`, `hostvars`)
+## 📚 Exercise 3 — Magic vars (`inventory_hostname`, `groups`, `hostvars`)
 
-Modifiez `lab.yml` pour utiliser les magic vars :
+Modify `lab.yml` to use the magic vars:
 
 ```yaml
 - name: Demo magic vars
@@ -116,23 +116,23 @@ Modifiez `lab.yml` pour utiliser les magic vars :
           batch courant : {{ ansible_play_batch }}
 ```
 
-**Lancez** :
+**Run it**:
 
 ```bash
 ansible-playbook labs/ecrire-code/facts-magic-vars/lab.yml
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **`inventory_hostname`** = le nom **dans l'inventaire** (ce que Ansible voit). C'est
-  toujours **`web1.lab`** ici, peu importe le hostname réel de la VM.
-- **`ansible_hostname`** = le nom **rapporté par la VM** (`hostname -s`). Peut être
-  différent (machine renommée, FQDN différent, etc.).
-- **`groups['webservers']`** = liste des membres du groupe.
-- **`ansible_play_hosts_all`** = tous les hôtes du play (même ceux qui ont échoué).
-- **`ansible_play_batch`** = hôtes du **batch courant** (utile avec `serial:`).
+- **`inventory_hostname`** = the name **in the inventory** (what Ansible sees). It is
+  always **`web1.lab`** here, regardless of the VM's real hostname.
+- **`ansible_hostname`** = the name **reported by the VM** (`hostname -s`). It can be
+  different (renamed machine, different FQDN, etc.).
+- **`groups['webservers']`** = list of the group's members.
+- **`ansible_play_hosts_all`** = all the hosts of the play (even those that failed).
+- **`ansible_play_batch`** = hosts of the **current batch** (useful with `serial:`).
 
-## 📚 Exercice 4 — `hostvars` : accéder aux facts d'un autre hôte
+## 📚 Exercise 4 — `hostvars`: access another host's facts
 
 ```yaml
 - name: Demo hostvars
@@ -146,19 +146,19 @@ ansible-playbook labs/ecrire-code/facts-magic-vars/lab.yml
           OS de db1 : {{ hostvars['db1.lab'].ansible_distribution | default('inconnu') }}
 ```
 
-**Lancez d'abord** :
+**Run first**:
 
 ```bash
 ansible-playbook labs/ecrire-code/facts-magic-vars/lab.yml
 ```
 
-🔍 **Observation** : selon que web2 et db1 ont déjà été "fact-gathered" dans cette
-session, vous obtenez soit les vraies valeurs, soit `inconnu` (filtre `default`).
+🔍 **Observation**: depending on whether web2 and db1 have already been "fact-gathered"
+in this session, you get either the real values or `inconnu` (the `default` filter).
 
-**Pourquoi** ? `hostvars` ne contient des facts que si Ansible **a contacté** ces
-hôtes. Dans le play `hosts: web1.lab`, Ansible ne récolte que les facts de web1.
+**Why**? `hostvars` only contains facts if Ansible **has contacted** those
+hosts. In the play `hosts: web1.lab`, Ansible only gathers web1's facts.
 
-**Solution** : pré-collecter les facts en lançant un premier play `hosts: all`.
+**Solution**: pre-collect the facts by running a first `hosts: all` play.
 
 ```yaml
 ---
@@ -175,10 +175,10 @@ hôtes. Dans le play `hosts: web1.lab`, Ansible ne récolte que les facts de web
         msg: "IP de web2 : {{ hostvars['web2.lab'].ansible_default_ipv4.address }}"
 ```
 
-## 📚 Exercice 5 — `gather_subset:` pour limiter la collecte
+## 📚 Exercise 5 — `gather_subset:` to limit the collection
 
-Sur 100 hôtes, le `gather_facts: true` complet prend **30+ secondes**. Souvent, vous
-n'avez besoin que d'une fraction.
+On 100 hosts, the full `gather_facts: true` takes **30+ seconds**. Often, you
+only need a fraction.
 
 ```yaml
 ---
@@ -186,9 +186,9 @@ n'avez besoin que d'une fraction.
   hosts: web1.lab
   gather_facts: true
   gather_subset:
-    - "!all"        # Ne pas collecter tout
-    - "!min"        # Meme pas le minimum
-    - network       # Mais collecter network
+    - "!all"        # Do not collect everything
+    - "!min"        # Not even the minimum
+    - network       # But collect network
   tasks:
     - name: Verifier ce qui est collecte
       ansible.builtin.debug:
@@ -198,25 +198,25 @@ n'avez besoin que d'une fraction.
           memoire : {{ ansible_memtotal_mb | default('non collecte') }}
 ```
 
-**Lancez** :
+**Run it**:
 
 ```bash
 ansible-playbook labs/ecrire-code/facts-magic-vars/lab.yml
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- `ansible_default_ipv4.address` est disponible (subset `network` collecté).
-- `ansible_distribution` et `ansible_memtotal_mb` peuvent être **absents** si non
-  inclus.
+- `ansible_default_ipv4.address` is available (`network` subset collected).
+- `ansible_distribution` and `ansible_memtotal_mb` may be **absent** if not
+  included.
 
-**Subsets disponibles** : `all`, `min`, `network`, `hardware`, `virtual`, `facter`,
-`ohai`. Le préfixe `!` exclut.
+**Available subsets**: `all`, `min`, `network`, `hardware`, `virtual`, `facter`,
+`ohai`. The `!` prefix excludes.
 
-## 📚 Exercice 6 — Désactiver complètement `gather_facts`
+## 📚 Exercise 6 — Disable `gather_facts` entirely
 
-Quand vous **n'avez besoin d'aucun fact** (juste copier un fichier, par exemple),
-`gather_facts: false` économise 1-3s par hôte :
+When you **need no fact at all** (just copying a file, for example),
+`gather_facts: false` saves 1-3s per host:
 
 ```yaml
 ---
@@ -233,53 +233,53 @@ Quand vous **n'avez besoin d'aucun fact** (juste copier un fichier, par exemple)
         msg: "host inventaire : {{ inventory_hostname }}"
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- `ansible_distribution` est `non collecte` (filtre default).
-- `inventory_hostname` marche **toujours** — c'est une magic var Ansible, pas un fact.
+- `ansible_distribution` is `non collecte` (default filter).
+- `inventory_hostname` **always** works: it is an Ansible magic var, not a fact.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Facts** = collectés sur le managed node (`gather_facts: true`).
-- **Magic vars** = fournies par Ansible (`inventory_hostname`, `groups`, `hostvars`).
-- **`inventory_hostname`** ≠ **`ansible_hostname`** (nom inventaire vs nom réel VM).
-- **`hostvars`** ne contient que les hôtes **déjà contactés** dans cette session.
-- **`gather_subset:`** + **`gather_facts: false`** = leviers de **performance** sur grandes fleets.
-- **Pré-collecter les facts** dans un play `hosts: all` avant un play multi-hôtes.
+- **Facts** = collected on the managed node (`gather_facts: true`).
+- **Magic vars** = provided by Ansible (`inventory_hostname`, `groups`, `hostvars`).
+- **`inventory_hostname`** ≠ **`ansible_hostname`** (inventory name vs real VM name).
+- **`hostvars`** only contains the hosts **already contacted** in this session.
+- **`gather_subset:`** + **`gather_facts: false`** = **performance** levers on large fleets.
+- **Pre-collect the facts** in a `hosts: all` play before a multi-host play.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voulez générer un fichier `/etc/hosts` complet sur web1, contenant les IPs
-   de **tous** les managed nodes. Quel pattern utilisez-vous (combinaison de `groups`,
-   `hostvars`, `loop:`) ?
+1. You want to generate a complete `/etc/hosts` file on web1, containing the IPs
+   of **all** the managed nodes. Which pattern do you use (combination of `groups`,
+   `hostvars`, `loop:`)?
 
-2. `ansible_fqdn` retourne `web1.lab` sur web1, mais `ansible_hostname` retourne juste
-   `web1`. Quelle est la différence interne (qu'est-ce qui est interrogé sur le managed
-   node) ?
+2. `ansible_fqdn` returns `web1.lab` on web1, but `ansible_hostname` returns just
+   `web1`. What is the internal difference (what is queried on the managed
+   node)?
 
-3. Sur 200 hôtes, `gather_facts: true` met 1 minute. Vous n'avez besoin que des IPs
-   et de l'OS. Que mettez-vous dans `gather_subset:` pour gagner du temps ?
+3. On 200 hosts, `gather_facts: true` takes 1 minute. You only need the IPs
+   and the OS. What do you put in `gather_subset:` to save time?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`fact_caching`** : configurer `ansible.cfg` avec `fact_caching = jsonfile` pour
-  **persister les facts** entre runs. Évite la re-collecte sur les hôtes inchangés.
-- **`ansible_local`** : facts custom déposés dans `/etc/ansible/facts.d/*.fact` côté
-  managed node. Lus automatiquement et exposés sous `ansible_local.<filename>.<key>`.
-- **`set_fact:`** + **`cacheable: true`** : créer un fact dynamique au runtime et
-  le persister dans le cache. Voir lab 16.
-- **Pattern `inventory_hostname_short`** : magic var qui donne juste `web1` au lieu
-  de `web1.lab` — utile quand l'inventaire utilise des FQDN mais que vos templates
-  veulent le nom court.
+- **`fact_caching`**: configure `ansible.cfg` with `fact_caching = jsonfile` to
+  **persist the facts** across runs. Avoids re-collecting on unchanged hosts.
+- **`ansible_local`**: custom facts dropped into `/etc/ansible/facts.d/*.fact` on the
+  managed node side. Read automatically and exposed under `ansible_local.<filename>.<key>`.
+- **`set_fact:`** + **`cacheable: true`**: create a dynamic fact at runtime and
+  persist it in the cache. See lab 16.
+- **`inventory_hostname_short` pattern**: magic var that gives just `web1` instead
+  of `web1.lab`: useful when the inventory uses FQDNs but your templates
+  want the short name.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 # Lint de votre fichier de lab (tutoriel guidé)
@@ -292,9 +292,9 @@ ansible-lint labs/ecrire-code/facts-magic-vars/challenge/solution.yml
 ansible-lint --profile production labs/ecrire-code/facts-magic-vars/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

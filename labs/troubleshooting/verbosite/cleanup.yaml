@@ -1,0 +1,12 @@
+---
+# Reset du lab verbosite : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup verbosite lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (verbosite)
+      ansible.builtin.file:
+        path: "/tmp/lab89-profile.txt"
+        state: "absent"

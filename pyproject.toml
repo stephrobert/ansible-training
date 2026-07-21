@@ -1,0 +1,75 @@
+[project]
+name = "ansible-training"
+version = "0.1.0"
+description = "Lab pédagogique Ansible RHCE EX294 — fournisseur de labs pour la CLI dsoxlab"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.pytest.ini_options]
+# Le contrat dsoxlab impose que chaque lab nomme son test challenge/tests/
+# test_functional.py. Les 108 fichiers partagent donc le même basename, dans
+# des répertoires sans __init__.py : le mode d'import « prepend » historique
+# les prend alors pour un seul et même module et échoue en « import file
+# mismatch ». importlib les isole par leur chemin.
+#
+# Sans ce réglage, `pytest` à la racine ne collecte plus rien (dsoxlab, lui,
+# lance un lab à la fois et ne voit pas le problème).
+addopts = "--import-mode=importlib"
+
+# Ne collecter QUE les tests des challenges. Le contrat dsoxlab impose leur
+# emplacement (challenge/tests/test_functional.py) : tout ce qui porte
+# `test_*.py` ailleurs sous labs/ est un ARTEFACT du lab, pas un test du
+# catalogue.
+#
+# Deux dégâts réels, mesurés, sans ces exclusions :
+#
+# 1. `labs/tests/testinfra/molecule/default/tests/test_webserver.py` était
+#    collecté par le run global et exécuté en backend `[local]`, c'est-à-dire
+#    CONTRE LE POSTE du formateur. Avec la référence en place, 3 tests sur 6
+#    passaient contre la machine hôte (quelque chose y écoute sur 8080, un
+#    /etc/nginx/nginx.conf y traîne). Un test vert qui n'a jamais approché une
+#    VM du lab.
+# 2. `galaxy/installer-roles` installe pour de vrai dans challenge/deps/ (son
+#    test l'exige). Au run SUIVANT, pytest collectait les tests unitaires
+#    embarqués dans les collections téléchargées et sortait en « Interrupted:
+#    2 errors during collection » : zéro test exécuté sur TOUT le dépôt. Le
+#    premier run passait, le second cassait tout.
+# 3. `solution/` ne contient QUE des corrections de formateur, chiffrées. Un
+#    `test_webserver.py` de référence y est un ARTEFACT à poser chez
+#    l'apprenant, pas un test à jouer : pytest tentait de l'importer et sortait
+#    sur le chiffré.
+testpaths = ["labs"]
+# NOTE : `collect_ignore_glob` n'est PAS une option ini de pytest, c'est une
+# variable de conftest.py. Déclarée ici, elle était silencieusement ignorée
+# (« PytestConfigWarning: Unknown config option »), donc les exclusions
+# ci-dessus ne protégeaient de rien. Elle vit désormais dans conftest.py.
+norecursedirs = [
+    "molecule", "ansible_collections", "deps", "solution", "*.egg", ".git",
+]
+
+[tool.uv]
+# Ce dépôt n'est pas un package Python : c'est un fournisseur de labs.
+# uv crée quand même un venv pour les dev-deps, mais ne tente pas de
+# builder le projet.
+package = false
+
+# Le dépôt fournit des labs (meta.yml + lab.yaml + setup/cleanup.yaml)
+# consommés par la CLI dsoxlab. La CLI s'installe séparément, en outil
+# global :
+#   uv tool install dsoxlab
+# ou
+#   pipx install dsoxlab
+#
+# Les outils Ansible du lab (ansible-core, ansible-lint, molecule…) ne sont
+# pas listés ici : ils sont installés en environnements isolés via pipx/mise
+# (cf. requirements.txt et scripts/bootstrap.sh).
+
+[dependency-groups]
+# dsoxlab embarque pytest + pytest-testinfra : aucun outil de test à installer
+# côté dépôt de labs. On le garde en dev-dep uniquement pour les contributeurs
+# qui veulent un venv local (édition, IDE) ; l'apprenant, lui, utilise le tool
+# global.
+dev = [
+    "pyyaml>=6",
+    "dsoxlab>=0.1.6",
+]

@@ -1,0 +1,32 @@
+---
+id: modules-utilisateurs-sudoers
+title: "sudoers module: manage sudo rights safely"
+description: "Create rules under /etc/sudoers.d/ with automatic visudo validation, limit allowed commands, and handle nopassword on a group."
+section: modules-utilisateurs
+level: l3
+difficulty: advanced
+lab_type: lab
+estimated_time: "50m"
+skills:
+  - sudo
+  - privilege-management
+  - least-privilege
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-sudoers/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

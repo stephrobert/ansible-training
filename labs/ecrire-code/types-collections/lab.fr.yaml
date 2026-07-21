@@ -1,0 +1,4 @@
+---
+id: ecrire-code-types-collections
+title: "Types collections : listes, dicts, structures imbriquées"
+description: "Déclarer listes et listes de dicts en YAML, boucler dessus avec loop_control: label, filtrer par when et accéder aux champs imbriqués."

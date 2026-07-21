@@ -1,0 +1,4 @@
+---
+id: modules-fichiers-lineinfile
+title: "Module lineinfile : modifier une ligne dans un fichier"
+description: "Ajouter, remplacer par regexp ou supprimer une ligne d'un fichier de configuration, avec backrefs et validation de syntaxe avant écriture."

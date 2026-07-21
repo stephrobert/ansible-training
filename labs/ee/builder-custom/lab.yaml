@@ -1,0 +1,26 @@
+---
+id: ee-builder-custom
+title: "Build a custom EE with ansible-builder v3"
+description: "Write a v3 execution-environment.yml, pin ansible-core and dependencies, build with Podman, test the image and push it to a private registry."
+section: ee
+level: l3
+difficulty: advanced
+lab_type: lab
+estimated_time: "55m"
+skills:
+  - ee-build
+  - execution-environment
+  - version-pinning
+  - image-registry
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/ee-builder/
+track:
+  - au-dela-ex294
+runtime:
+  type: shell
+  workdir: challenge/work
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

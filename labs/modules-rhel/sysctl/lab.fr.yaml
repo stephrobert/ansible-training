@@ -1,0 +1,4 @@
+---
+id: modules-rhel-sysctl
+title: "Module sysctl : paramètres kernel persistés"
+description: "Modifier des paramètres kernel (ip_forward, tcp_syncookies, swappiness) avec application immédiate et persistance via /etc/sysctl.d/."

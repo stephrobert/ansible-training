@@ -1,18 +1,20 @@
-# 🎯 Challenge — Pipeline CI complet pour builder + signer un EE
+# 🎯 Challenge — Full CI pipeline to build + sign an EE
 
-## ✅ Objectif
+## ✅ Objective
 
-Produire 2 pipelines CI (GitHub Actions + GitLab CI) qui buildent,
-scannent et signent un EE de production.
+Write 2 CI pipelines (GitHub Actions + GitLab CI) that build,
+scan and sign a production EE. Both files are delivered as a
+**skeleton** (with `???`): you write each step.
 
-| Fichier | Attente |
+| File | Expectation |
 | --- | --- |
-| `.github/workflows/build-ee.yml` | Actions externes pinées par **SHA 40 caractères**. `permissions: {}` au global. `persist-credentials: false`. Scan **Trivy** avec `exit-code: '1'`. **Signature `cosign`**. |
-| `.gitlab-ci.yml` | Au moins **4 stages**. |
+| `.github/workflows/build-ee.yml` | External actions pinned by **40-character SHA**. `permissions: {}` globally, re-broadened in the job (including `id-token: write` for cosign). `persist-credentials: false`. **Trivy** scan with `exit-code: '1'`. **`cosign` signature**. |
+| `.gitlab-ci.yml` | 4 stages `build`, `scan`, `push`, `sign`, with one job per stage. |
+| `execution-environment.yml` | Delivered. Must declare `version: 3` (builder v3 schema). |
 
-## 🧩 Indices
+## 🧩 Hints
 
-### Squelette GitHub Actions
+### GitHub Actions skeleton
 
 ```yaml
 ---
@@ -24,7 +26,7 @@ on:
   pull_request:
     branches: [main]
 
-permissions: {}                            # ← {} obligatoire au global
+permissions: {}                            # ← {} mandatory globally
 
 jobs:
   build:
@@ -35,9 +37,9 @@ jobs:
       id-token: write                      # cosign keyless OIDC
 
     steps:
-      - uses: actions/checkout@???        # SHA 40 chars (ex: b4ffde...)
+      - uses: actions/checkout@???        # 40-char SHA (e.g.: b4ffde...)
         with:
-          persist-credentials: false      # ← obligatoire
+          persist-credentials: false      # ← mandatory
 
       - uses: redhat-actions/podman-login@???
         with:
@@ -51,38 +53,32 @@ jobs:
         with:
           image-ref: ghcr.io/${{ github.repository }}/ee:${{ github.ref_name }}
           severity: CRITICAL,HIGH
-          exit-code: '1'                  # ← bloquer si vuln HIGH+
+          exit-code: '1'                  # ← block if HIGH+ vuln
 
       - uses: sigstore/cosign-installer@???
       - run: cosign sign --yes ghcr.io/${{ github.repository }}/ee:${{ github.ref_name }}
 ```
 
-### Pinning SHA d'une action
+### Pinning an action by SHA
 
 ```bash
 gh api repos/actions/checkout/git/refs/tags/v4.2.2 --jq .object.sha
 # → b4ffde65f46336ab88eb53be808477a3936bae11
-# Utiliser dans `uses:` au lieu de @v4 (mutable)
+# Use in `uses:` instead of @v4 (mutable)
 ```
 
-### Squelette GitLab CI (4 stages)
+### GitLab CI skeleton (4 stages)
 
 ```yaml
 ---
 stages:
-  - lint
   - build
   - scan
+  - push
   - sign
 
 variables:
   EE_IMAGE: $CI_REGISTRY_IMAGE/ee:$CI_COMMIT_TAG
-
-lint:
-  stage: lint
-  image: registry.gitlab.com/pipeline-components/ansible-lint:latest
-  script:
-    - ansible-lint .
 
 build:
   stage: build
@@ -92,28 +88,44 @@ scan:
   stage: scan
   ???
 
+push:
+  stage: push
+  ???
+
 sign:
   stage: sign
   ???
 ```
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
-> - **Pinning par SHA 40 chars** : `actions/checkout@b4ffde6...` (pas
->   `@v4`). Sécurité supply chain — un tag peut être bougé, un SHA non.
-> - **`permissions: {}`** au global, élargi par job avec `permissions:
->   { contents: read, packages: write, id-token: write }`. Principe du
->   moindre privilège.
-> - **`persist-credentials: false`** sur `actions/checkout` : sinon le
->   token reste en `.git/config` après le checkout (risque de fuite).
-> - **`cosign` keyless** : signature OIDC sans clé privée. Nécessite
->   `id-token: write` permission. Plus simple que les clés long-vivantes.
-> - **Trivy `exit-code: '1'`** : bloquer le pipeline sur CRITICAL/HIGH.
->   Sans, le scan est cosmétique.
+> - **Pinning by 40-char SHA**: `actions/checkout@b4ffde6...` (not
+>   `@v4`). Supply chain security: a tag can be moved, a SHA cannot.
+> - **`permissions: {}`** globally, broadened per job with `permissions:
+>   { contents: read, packages: write, id-token: write }`. Principle of
+>   least privilege.
+> - **`persist-credentials: false`** on `actions/checkout`: otherwise the
+>   token stays in `.git/config` after checkout (leak risk).
+> - **`cosign` keyless**: OIDC signature without a private key. Requires
+>   `id-token: write` permission. Simpler than long-lived keys.
+> - **Trivy `exit-code: '1'`**: block the pipeline on CRITICAL/HIGH.
+>   Without it, the scan is cosmetic.
 
-## 🚀 Lancement
+## 🚀 Launch
 
-Le pipeline tourne sur PR / tag — pas localement.
+The pipeline runs on PR / tag, not locally. Validate at least the
+GitHub workflow with `actionlint .github/workflows/build-ee.yml`: pytest
+also runs it if the binary is present.
+
+## 📓 Command log
+
+When both pipelines are ready, record in `challenge/solution.sh`
+the commands you used (searching SHAs via `gh api`, running `actionlint`).
+This log must exist for pytest to run:
+
+```bash
+chmod +x challenge/solution.sh
+```
 
 ## 🧪 Validation
 
@@ -121,20 +133,21 @@ Le pipeline tourne sur PR / tag — pas localement.
 pytest -v labs/ee/ci-pipeline/challenge/tests/
 ```
 
-Le test valide la **structure** des deux fichiers CI (pinning, perms,
-trivy, cosign).
+The test validates the **semantics** of both CI files (SHA pinning,
+permissions, blocking Trivy, cosign, 4 stages) and runs actionlint if
+available.
 
 ## 🧹 Reset
 
 ```bash
-make -C labs/ee/ci-pipeline/ clean
+dsoxlab clean ee-ci-pipeline
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Renovate / Dependabot** : auto-update des SHA pinnés (avec PR).
-- **Reusable workflows** : factoriser le build EE entre plusieurs repos.
-- **Vault des secrets `cosign`** : preferer la signature **keyless OIDC**
-  (pas de clé privée à manipuler).
-- **Provenance SLSA-3** : ajouter `actions/attest-build-provenance` pour
-  l'attestation SLSA.
+- **Renovate / Dependabot**: auto-update of pinned SHAs (with PRs).
+- **Reusable workflows**: factor the EE build across several repos.
+- **`cosign` secrets Vault**: prefer the **keyless OIDC** signature
+  (no private key to handle).
+- **SLSA-3 provenance**: add `actions/attest-build-provenance` for
+  the SLSA attestation.

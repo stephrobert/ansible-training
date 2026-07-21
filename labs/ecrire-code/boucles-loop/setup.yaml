@@ -1,0 +1,33 @@
+---
+# Mise en place du lab boucles-loop : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup boucles-loop lab
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Remove the challenge users and their home
+      ansible.builtin.user:
+        name: "{{ item }}"
+        state: absent
+        remove: true
+      loop:
+        - chal_alice
+        - chal_bob
+        - chal_charlie
+      failed_when: false
+
+    - name: Remove the loop result file
+      ansible.builtin.file:
+        path: /tmp/loop-result.txt
+        state: absent
+
+- name: Brief the learner (boucles-loop)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Loop over a list and a list of dicts, keep console output readable with loop_control: label, iterate a dict with dict2items
+      run_once: true
