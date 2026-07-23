@@ -1,6 +1,6 @@
 ---
 # Collections Ansible Galaxy nécessaires pour le lab et la formation RHCE.
-# Installées par scripts/bootstrap.sh via `ansible-galaxy collection install -r`.
+# À installer via `ansible-galaxy collection install -r requirements.yml`.
 
 collections:
   # Note : `ansible.builtin` est embarquée dans ansible-core, pas installable

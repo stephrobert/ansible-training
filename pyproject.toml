@@ -62,7 +62,7 @@ package = false
 #
 # Les outils Ansible du lab (ansible-core, ansible-lint, molecule…) ne sont
 # pas listés ici : ils sont installés en environnements isolés via pipx/mise
-# (cf. requirements.txt et scripts/bootstrap.sh).
+# (cf. requirements.txt).
 
 [dependency-groups]
 # dsoxlab embarque pytest + pytest-testinfra : aucun outil de test à installer
