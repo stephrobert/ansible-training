@@ -31,7 +31,12 @@ import time
 from pathlib import Path
 
 import pytest
-import testinfra
+# testinfra n'est importé que dans lab_host(), à l'usage. Il ne sert qu'aux
+# labs vm, alors qu'un import en tête de fichier casse le chargement de ce
+# conftest pour TOUS les tests du dépôt, y compris les vérificateurs de
+# catalogue de tests/ qui ne touchent jamais une machine. C'est ce qui faisait
+# échouer le job « Pre-commit parity » : l'environnement isolé des hooks n'a
+# pas testinfra.
 
 REPO_ROOT = Path(__file__).parent.resolve()
 SSH_KEY = REPO_ROOT / "ssh" / "id_ed25519"
@@ -114,6 +119,15 @@ def lab_host(name):
     Returns:
         testinfra Host prêt à l'usage (sudo activé).
     """
+
+    try:
+        import testinfra
+    except ModuleNotFoundError as exc:  # pragma: no cover
+        raise RuntimeError(
+            "testinfra est absent : les labs vm ont besoin de "
+            "pytest-testinfra. Installe-le, ou lance les labs via "
+            "'dsoxlab check', qui l'embarque."
+        ) from exc
     cfg = _dsoxlab_ssh_config()
     if cfg is None:
         pytest.skip(

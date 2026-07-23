@@ -89,14 +89,14 @@ repos:
       # l'incohérence visible au commit.
       - id: outillage-coherent
         name: les vérificateurs de catalogue sont présents et câblés
-        entry: pytest tests/test_outillage_coherent.py -q
+        entry: uv run --no-project --with pytest --with pyyaml pytest tests/test_outillage_coherent.py -q
         language: system
         pass_filenames: false
         always_run: true
 
       - id: internal-links
         name: les liens relatifs des README pointent vers un fichier existant
-        entry: pytest tests/test_liens_internes.py -q
+        entry: uv run --no-project --with pytest --with pyyaml pytest tests/test_liens_internes.py -q
         language: system
         pass_filenames: false
         files: '\.md$'
@@ -107,7 +107,7 @@ repos:
       # dépannage, dont un dont la sémantique était en plus inversée.
       - id: ansible-vars-exist
         name: les variables ANSIBLE_* citées existent vraiment
-        entry: pytest tests/test_variables_ansible.py -q
+        entry: uv run --no-project --with pytest --with pyyaml pytest tests/test_variables_ansible.py -q
         language: system
         pass_filenames: false
         files: '\.(md|ya?ml|sh|cfg)$'
