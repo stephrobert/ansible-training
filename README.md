@@ -60,6 +60,35 @@ dsoxlab run <lab-id>
 dsoxlab check <lab-id>
 ```
 
+### Your first lab
+
+**Start with the `decouvrir` section.** `bootstrap` prepares the
+infrastructure; it is not the pedagogical entry point.
+
+```bash
+dsoxlab use decouvrir                 # starting section
+dsoxlab next                          # → decouvrir-declaratif-vs-imperatif
+```
+
+Then, for this lab and every other one, the same four-step cycle:
+
+```bash
+dsoxlab course <id>        # 1. the context, then the course
+dsoxlab challenge <id>     # 2. what is asked of you
+dsoxlab run <id>           # 3. prepares your workspace and puts you in it
+dsoxlab check <id>         # 4. validate and score
+```
+
+`run` is the step people skip: it creates the files you work on, and for a `vm`
+lab it puts the managed nodes into the state the scenario describes. A `check`
+run without `run` fails by reporting that nothing is done — true, but
+misleading.
+
+**The 25 `shell` labs need no virtual machine at all**: writing YAML, a Jinja2
+template, an inventory, running Molecule or `ansible-lint` all happen on your
+own box. You can start without provisioning anything, and only bring the 4 VMs
+up when you reach the `vm` labs.
+
 > ⚠️ **`mise run provision`, not `dsoxlab provision` on its own.** The CLI brings
 > the VMs up, but it delivers them **bare**: cloud-init sets the account and the
 > key, nothing more. The labs, however, target equipped managed nodes

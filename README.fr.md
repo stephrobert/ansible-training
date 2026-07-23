@@ -59,6 +59,35 @@ dsoxlab run <id-du-lab>
 dsoxlab check <id-du-lab>
 ```
 
+### Ton premier lab
+
+**Commence par la section `decouvrir`.** `bootstrap` prépare l'infrastructure,
+elle n'est pas le point d'entrée pédagogique.
+
+```bash
+dsoxlab use decouvrir                 # section de départ
+dsoxlab next                          # → decouvrir-declaratif-vs-imperatif
+```
+
+Puis, pour ce lab comme pour tous les autres, le même cycle en quatre temps :
+
+```bash
+dsoxlab course <id>        # 1. le contexte, puis le cours
+dsoxlab challenge <id>     # 2. ce qui t'est demandé
+dsoxlab run <id>           # 3. prépare ton espace de travail et t'y place
+dsoxlab check <id>         # 4. valide et note
+```
+
+`run` est l'étape que l'on oublie : c'est elle qui crée les fichiers sur
+lesquels tu travailles, et pour un lab `vm`, qui met les managed nodes dans
+l'état décrit par le scénario. Un `check` lancé sans `run` échoue en annonçant
+que rien n'est fait, ce qui est vrai mais trompeur.
+
+**Les 25 labs `shell` ne demandent aucune machine virtuelle** : écrire du YAML,
+un template Jinja2, un inventaire, jouer Molecule ou `ansible-lint` se fait sur
+ton poste. Tu peux donc commencer sans provisionner quoi que ce soit, et ne
+monter les 4 VMs qu'au moment d'aborder les labs `vm`.
+
 > ⚠️ **`mise run provision`, et non `dsoxlab provision` seul.** La CLI monte les
 > VMs, mais elle les livre **nues** : cloud-init pose le compte et la clé, rien
 > de plus. Les labs, eux, ciblent des managed nodes équipés (`firewalld`,
