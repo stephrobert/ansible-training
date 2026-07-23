@@ -16,83 +16,14 @@ Drop an encrypted application configuration on `db1.lab`, containing
 | Secrets source | **encrypted YAML file** (`challenge/files/app_secrets.yml`) |
 | Vault password | `challenge/.vault_password` (mode `0600`, gitignored) |
 
-## 🧩 Hints
-
-### Step 1 — Prepare the vault password
+## 🧩 Stuck?
 
 ```bash
-cd labs/premiers-pas/ansible-vault/challenge/
-
-echo "??? choose a strong password ???" > .vault_password
-chmod ??? .vault_password
+dsoxlab hint premiers-pas-ansible-vault
 ```
 
-### Step 2 — Create the plaintext secrets file
-
-```bash
-mkdir -p files
-cat > files/app_secrets.yml <<'EOF'
----
-app_db_password: ???
-app_jwt_secret:  ???
-app_redis_token: ???
-EOF
-```
-
-### Step 3 — Encrypt the file
-
-```bash
-ansible-vault ??? files/app_secrets.yml --vault-password-file=.vault_password
-```
-
-Check:
-
-```bash
-head -3 files/app_secrets.yml      # → must start with $ANSIBLE_VAULT;1.1;AES256
-```
-
-### Step 4 — Write `solution.yml`
-
-Skeleton to complete (the `???` are to be guessed):
-
-```yaml
----
-- name: Challenge 04b — déposer config applicative chiffrée
-  hosts: ???
-  become: ???
-  gather_facts: false
-  vars_files:
-    - ???                          # the encrypted file
-
-  tasks:
-    - name: Déposer /tmp/db1-app.conf avec les 3 secrets
-      ansible.builtin.copy:
-        dest: ???
-        content: |
-          # config app — secrets déchiffrés au runtime
-          db_password={{ ??? }}
-          jwt_secret={{ ??? }}
-          redis_token={{ ??? }}
-        owner: ???
-        group: ???
-        mode: ???
-      # Task level, aligned with `ansible.builtin.copy:` and not indented
-      # under it: see the trap noted below.
-      no_log: ???
-```
-
-> 💡 **Traps**:
->
-> - **`no_log: true`** is a **task-level** keyword, not a parameter of the
->   `copy:` module. Placing it in the module gives `Unsupported parameters`.
-> - **Mode `0600`** essential for `.vault_password` AND for the secrets
->   file dropped. Without it, other system users can steal the
->   content.
-> - **`vars_files: [files/app_secrets.yml]`**: path relative to the playbook.
->   With `solution.yml` in `challenge/`, the path is just
->   `files/app_secrets.yml` (not `challenge/files/...`).
-> - **The test scans `.vault_password`** to check mode 0600. Mode
->   0644 fails the test, even if decryption works.
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🚀 Running
 

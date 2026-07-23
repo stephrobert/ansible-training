@@ -14,15 +14,14 @@ The report must come from an actual run of the script (`./inspect.sh`),
 not from a copy-paste: the observed versions change with the
 `latest` tags, which is precisely the point of the inspection.
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-- ansible-core version in an image:
-  `podman run --rm <ee> ansible --version | head -1`.
-- Size: `podman image inspect <ee> --format '{{.Size}}'`.
-- Embedded collections: `podman run --rm <ee> ansible-galaxy collection
-  list`, or `ansible-navigator collections --eei <ee> --mode stdout`.
-- Generate a Markdown table in bash: accumulate lines
-  `| image | version | taille |` in the output file.
+```bash
+dsoxlab hint ee-inspection
+```
+
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🚀 Launch
 

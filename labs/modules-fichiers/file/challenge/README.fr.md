@@ -14,16 +14,14 @@ déploiement applicatif, en exerçant les **5 états** du module
 | Suppression d'une ancienne config | `absent` | `/etc/myapp-old.conf` (s'il existe) |
 | Marqueur d'init | `touch` | `/var/log/myapp-init.timestamp` (mode 0644) |
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-- `state: directory` → crée le répertoire (et ses parents si besoin, via
-  `recurse: true` ou implicitement).
-- `state: link` → crée un symlink. **Pensez à `force: true`** pour écraser un
-  symlink existant qui pointerait ailleurs.
-- `state: absent` → supprime le fichier ou répertoire (récursivement pour un
-  dir).
-- `state: touch` → met à jour le mtime (équivalent `touch`). Pas idempotent
-  en `changed` (à wrapper avec `changed_when: false` si on s'en soucie).
+```bash
+dsoxlab hint modules-fichiers-file
+```
+
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🧩 Squelette
 

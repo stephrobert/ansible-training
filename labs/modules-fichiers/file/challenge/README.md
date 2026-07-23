@@ -13,16 +13,14 @@ exercising the **5 states** of the `ansible.builtin.file` module.
 | Removal of an old config | `absent` | `/etc/myapp-old.conf` (if it exists) |
 | Init marker | `touch` | `/var/log/myapp-init.timestamp` (mode 0644) |
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-- `state: directory` → creates the directory (and its parents if needed, via
-  `recurse: true` or implicitly).
-- `state: link` → creates a symlink. **Remember `force: true`** to overwrite an
-  existing symlink that points elsewhere.
-- `state: absent` → removes the file or directory (recursively for a
-  dir).
-- `state: touch` → updates the mtime (equivalent to `touch`). Not idempotent
-  in `changed` (to wrap with `changed_when: false` if you care).
+```bash
+dsoxlab hint modules-fichiers-file
+```
+
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🧩 Skeleton
 

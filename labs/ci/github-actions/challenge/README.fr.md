@@ -19,20 +19,14 @@ aucun modèle prêt à copier n'est fourni.
 | Moindre privilège | `permissions:` global vide (`{}`), droits accordés job par job |
 | Credentials | `persist-credentials: false` sur chaque `actions/checkout` |
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-- Un tag (`@v4`) peut être déplacé, un SHA non. Pour trouver le SHA d'un tag :
+```bash
+dsoxlab hint ci-github-actions
+```
 
-  ```bash
-  gh api repos/actions/checkout/git/refs/tags/v4.2.2 --jq .object.sha
-  ```
-
-- `permissions: {}` au global ne suffit pas à builder : réélargissez dans
-  chaque job (`contents: read` au minimum).
-- La matrice se déclare sous `strategy.matrix`, et `fail-fast: false`
-  laisse toutes les combinaisons s'exécuter même si l'une échoue.
-- Validez localement avec `actionlint .github/workflows/test.yml` : pytest
-  le lance aussi si le binaire est présent.
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 📓 Journal de commandes
 

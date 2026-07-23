@@ -26,13 +26,11 @@ into this state:
 - `dnf repolist enabled | grep local-test` returns **nothing**.
 - 2nd run of the playbook: `changed: 0`.
 
-## Hints
+## 🧩 Stuck?
 
-- Order matters: the GPG key must be imported **before** declaring the
-  repo that requires it, and the repo declared **before** installing the package.
-- The repo's `name` parameter determines the name of the `.repo` file generated
-  in `/etc/yum.repos.d/`.
-- The macros `$releasever` and `$basearch` (or the facts variable
-  `ansible_distribution_major_version`) avoid hardcoding the version.
-- Disabling is not removing: a disabled repo stays declared,
-  `dnf repolist all` still shows it, `dnf repolist enabled` does not.
+```bash
+dsoxlab hint modules-paquets-yum-repository
+```
+
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.

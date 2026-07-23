@@ -47,13 +47,11 @@ In other words:
 - After `[client]`: still `ssl_enabled=false`.
 - 1st run: `changed`. 2nd run: `ok` (idempotent).
 
-## Hints
+## 🧩 Stuck?
 
-- `before:` and `after:` bound the substitution zone: that is what
-  protects the `[client]` section.
-- Watch out: combined with `before:`/`after:`, the `^` anchor does not behave
-  as in MULTILINE mode, remove it in the bounded zone.
-- To change the port without rewriting the whole line, a capture group
-  (`\g<1>`) preserves the prefix.
-- If your regexp still matches the replacement text, idempotence
-  is broken: the 2nd run stays `changed`.
+```bash
+dsoxlab hint modules-fichiers-replace
+```
+
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.

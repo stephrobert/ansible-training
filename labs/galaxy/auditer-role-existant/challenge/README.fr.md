@@ -28,19 +28,14 @@ score: <int 0-10>                 # votre note globale
 verdict: <adopt|fork|reject>      # votre recommandation argumentée
 ```
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-- Parcourez chaque fichier du rôle : `tasks/`, `defaults/`, `meta/`,
-  et notez ce qui manque autant que ce qui est présent.
-- Un module sans point dans son nom (`yum:` au lieu de
-  `ansible.builtin.yum:`) n'est pas FQCN.
-- Un `shell:`/`command:` sans `creates:` ni `removes:` casse
-  l'idempotence : comptez-les.
-- Un mot de passe dans `defaults/main.yml` finit dans Git de tous les
-  consommateurs du rôle : c'est éliminatoire en production.
-- Le barème est le vôtre, mais souvenez-vous de la grille de
-  `AUDIT_CHECKLIST.md` : secret en clair + zéro test, la conclusion ne
-  fait pas débat.
+```bash
+dsoxlab hint galaxy-auditer-role-existant
+```
+
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 📓 Journal de commandes
 

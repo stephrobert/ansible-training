@@ -24,23 +24,14 @@ Expected state (this is what pytest checks):
 | `verify.yml` | at least 2 `ansible.builtin.assert` tasks that prove the state (nginx package, nginx.conf) |
 | Everything | `molecule syntax` passes (pytest actually runs it) |
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-- The modern Molecule v6+ driver is called `default` (delegated): it is
-  the Ansible collections (containers.podman...) that drive the
-  instances.
-- A platform is declared with `name`, `image`, `pre_build_image: true`,
-  `command: /sbin/init` and `privileged: true` for a systemd container.
-- In `verify.yml`, the pattern is: collect the state (`command` module
-  with `changed_when: false`, or `stat`), then `ansible.builtin.assert`
-  with `that:` and `fail_msg:`.
-- Test as you go:
+```bash
+dsoxlab hint molecule-introduction
+```
 
-  ```bash
-  cd labs/molecule/introduction
-  ANSIBLE_ROLES_PATH=$PWD/roles molecule syntax
-  molecule test        # full cycle if Podman is available
-  ```
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 📓 Command log
 

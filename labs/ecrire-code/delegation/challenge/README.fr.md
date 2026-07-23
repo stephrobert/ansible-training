@@ -10,49 +10,14 @@
    pourtant absent du groupe `webservers`) — preuve que `delegate_to` permet
    d'agir hors-pattern, et que `run_once` empêche le doublon.
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-```yaml
----
-- name: Challenge - delegation
-  hosts: webservers
-  become: true
-  tasks:
-    - name: Marqueur local sur chaque webserver
-      ansible.builtin.copy:
-        dest: ???        # interpolez inventory_hostname
-        content: ???
-        mode: "0644"
-
-    - name: Marqueur centralisé sur db1 (déléguer + une seule fois)
-      ansible.builtin.copy:
-        dest: /tmp/delegation-on-db1.txt
-        content: ???
-        mode: "0644"
-      delegate_to: ???
-      run_once: ???
+```bash
+dsoxlab hint ecrire-code-delegation
 ```
 
-À compléter :
-
-- **`delegate_to: db1.lab`** : la tâche s'exécute sur db1, pas sur web1/web2.
-- **`run_once: true`** : sans ça, la tâche tournerait 2 fois (une par hôte de
-  `webservers`), avec le **même contenu** mais sur le **même** db1.lab → soit
-  inutile, soit conflit. `run_once` garantit une seule exécution dans le batch.
-
-> 💡 **Pièges** :
->
-> - **`delegate_to:` ne change PAS `inventory_hostname`** : la variable
->   reste celle de l'hôte courant du play. Pour récupérer celle de la
->   cible déléguée, utiliser `delegate_facts: true` + `hostvars[delegate].…`.
-> - **`run_once: true` sans `delegate_to`** : la tâche tourne sur **le
->   premier hôte** du batch. Combiné avec `delegate_to: localhost`, c'est
->   le pattern "tâche unique côté control node".
-> - **`local_action:`** : raccourci pour `delegate_to: localhost`. Plus
->   lisible quand on n'a qu'**une seule** tâche à exécuter localement.
-> - **`become:` sur tâche déléguée** : s'applique à **l'hôte délégué**, pas
->   au play. `become: true` sur une tâche `delegate_to: localhost`
->   demande sudo localement.
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🚀 Lancement
 

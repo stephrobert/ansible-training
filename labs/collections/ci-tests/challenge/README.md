@@ -14,81 +14,14 @@ Write **two pipeline files** (GitHub Actions + GitLab CI) that pass **`zizmor`**
 | `persist-credentials: false` | on `actions/checkout` |
 | Pinned actions | by **40-character SHA** |
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-### `.github/workflows/ansible-test.yml` skeleton
-
-```yaml
-name: Ansible test
-on:
-  push:
-    branches: [main]
-  pull_request:
-
-permissions: ???                            # ← global = none
-
-jobs:
-  sanity:
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: ???
-    strategy:
-      fail-fast: ???
-      matrix:
-        ansible: [???, ???]                 # ← at least 2 versions
-        python: [???, ???]                  # ← at least 2 versions
-    steps:
-      - uses: actions/checkout@???          # ← 40-char SHA
-        with:
-          path: ???
-          persist-credentials: ???
-
-      - uses: actions/setup-python@???      # ← 40-char SHA
-        with:
-          python-version: "${{ matrix.python }}"
-
-      - run: |
-          pip install "https://github.com/ansible/ansible/archive/${{ matrix.ansible }}.tar.gz"
-
-      - name: ansible-test sanity
-        working-directory: ???
-        run: ansible-test sanity --docker default -v --color
+```bash
+dsoxlab hint collections-ci-tests
 ```
 
-### `.gitlab-ci.yml` skeleton
-
-```yaml
-stages:
-  - sanity
-
-sanity:
-  stage: sanity
-  image: python:${PYTHON_VERSION}
-  parallel:
-    matrix:
-      - PYTHON_VERSION: ["???", "???"]
-        ANSIBLE_VERSION: ["???", "???"]
-  before_script:
-    - pip install "https://github.com/ansible/ansible/archive/${ANSIBLE_VERSION}.tar.gz"
-    - mkdir -p ansible_collections/student/lab96
-  script:
-    - cd ansible_collections/student/lab96
-    - ???                                    # ← ansible-test command
-```
-
-> 💡 **Pitfalls**:
->
-> - **`ansible-test`** must be run from the
->   `ansible_collections/<namespace>/<name>/` tree. Outside this tree, it
->   refuses.
-> - **`ansible-test sanity`**: lint + import + format. Fast. Run it
->   in pre-commit.
-> - **`ansible-test integration`**: real module invocation tests.
->   Requires targets (Docker, Podman, AWS…). Heavier.
-> - **`ansible-test units`**: pytest on the modules' Python code.
->   Checks the logic without external dependencies.
-> - **Python matrix**: `--python 3.11`, `3.12`, etc. Check compatibility
->   on the targeted Python versions (Ansible 2.18+ requires ≥ 3.11).
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🚀 Launch
 

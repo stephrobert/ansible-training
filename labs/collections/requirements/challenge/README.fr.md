@@ -13,92 +13,14 @@
 | Sources requises | Galaxy + Git + (URL **ou** dir) |
 | Pinning | **Strict** (semver `version: "X.Y.Z"` ou tag Git) |
 
-## 🧩 Indices
-
-### Étape 1 — `requirements.yml` (à créer dans `challenge/`)
-
-```yaml
----
-collections:
-  # Source 1 : Galaxy
-  - name: ???
-    version: ???
-
-  # Source 2 : Git (avec tag)
-  - name: https://github.com/ansible-collections/community.docker.git
-    type: ???
-    version: ???
-
-  # Source 3 : URL ou dir (au choix)
-  - name: ???
-    type: ???
-```
-
-### Étape 2 — `solution.yml` qui orchestre l'installation
-
-```yaml
----
-- name: Challenge 94 — installer collections + déposer inventaire
-  hosts: db1.lab
-  become: true
-  gather_facts: false
-
-  tasks:
-    - name: Installer les collections du requirements.yml
-      ansible.builtin.command:
-        cmd: >-
-          ansible-galaxy collection install
-          -r {{ playbook_dir }}/requirements.yml
-          -p {{ playbook_dir }}/../local_collections
-        creates: ???              # ← le marqueur d'une installation déjà faite
-      delegate_to: localhost
-      become: false
-
-    - name: Lister les collections installées localement
-      ansible.builtin.command: >-
-        ansible-galaxy collection list
-        -p {{ playbook_dir }}/../local_collections
-      delegate_to: localhost
-      become: false
-      register: ???
-      changed_when: ???
-
-    - name: Déposer le fichier preuve sur db1.lab
-      ansible.builtin.copy:
-        dest: /tmp/lab94-collections.txt
-        content: ???
-        owner: ???
-        group: ???
-        mode: ???
-```
-
-### Étape 3 — Lancement
+## 🧩 Bloqué ?
 
 ```bash
-ansible-playbook labs/collections/requirements/challenge/solution.yml
+dsoxlab hint collections-requirements
 ```
 
-> 💡 **Pièges** :
->
-> - **`requirements.yml`** (collections) ≠ **`requirements.txt`**
->   (Python). Convention historique : les deux peuvent coexister dans
->   un projet Ansible.
-> - **Pinning `version:`** : sans, vous risquez un build cassé quand la
->   collection bumpe en major (breaking change). Toujours pin en prod.
-> - **`-r requirements.yml`** vs **`collections:`** dans `ansible-galaxy
->   install` : la 2ᵉ syntaxe (clé YAML) est moderne. Ne pas mélanger.
-> - **`signatures:`** sur les collections (Ansible 2.13+) : vérification
->   GPG. Renforce la supply chain. Format : URLs vers fichier `.sig`.
-> - **`--force` casse l'idempotence** : il réinstalle à chaque passage, donc
->   le playbook ne converge jamais. Et même sans lui, une collection tirée
->   d'un dépôt **Git** est toujours réinstallée : galaxy ne sait pas comparer
->   un tag à ce qui est déjà sur le disque. D'où `creates:` sur la commande,
->   qui saute réellement la tâche. Déclarer `changed_when: false` ferait
->   passer le test d'idempotence sans rien rendre idempotent : c'est le
->   playbook qui mentirait.
-> - **Accès Internet requis** : ce lab installe depuis `galaxy.ansible.com`
->   **et** clone depuis GitHub. Hors ligne ou derrière un proxy fermé, il ne
->   peut pas passer : c'est assumé, le sujet porte sur les sources externes.
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🚀 Lancement
 

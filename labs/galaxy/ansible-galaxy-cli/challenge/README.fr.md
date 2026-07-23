@@ -26,16 +26,14 @@ Contraintes :
 - `set -euo pipefail` en tête : la moindre commande qui échoue doit faire
   échouer le script.
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-- `role init` et `collection init` acceptent `--init-path <dossier>`.
-- `collection init` attend un nom complet `namespace.nom`.
-- `collection build` se lance depuis le dossier de la collection et accepte
-  `--output-path`.
-- `collection install` accepte un chemin d'archive `.tar.gz` et `-p` pour
-  choisir le dossier d'installation.
-- La cheatsheet livrée à la racine (`cheatsheet.md`) reste votre
-  aide-mémoire : chaque commande dont vous avez besoin y figure.
+```bash
+dsoxlab hint galaxy-ansible-galaxy-cli
+```
+
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🧪 Validation
 

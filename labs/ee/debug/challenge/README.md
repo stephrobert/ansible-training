@@ -21,29 +21,14 @@ Expected deliverables (this is what pytest checks):
 The buggy files at the root must NOT be modified: they serve
 as evidence for the diagnosis.
 
-## 🧩 Hints (method, not answers)
+## 🧩 Stuck?
 
 ```bash
-cd labs/ee/debug/
-
-# 1. Attempt the build and READ the logs, including the warnings at the start
-ansible-builder build -f execution-environment-buggy.yml \
-    --container-runtime podman --verbosity 3
-
-# 2. A build that "succeeds" proves nothing: what does the EE answer?
-podman run --rm local/lab88-buggy:dev ansible --version
-
-# 3. Check each declared collection individually
-ansible-galaxy collection install <namespace.collection>:<version>
-
-# 4. Check each Python dependency individually
-pip index versions <paquet>
+dsoxlab hint ee-debug
 ```
 
-Questions to ask yourself: which ansible-builder schema is actually
-used when nothing specifies it? Does each declared dependency exist
-where it is supposed to be downloaded? What is missing so that the system
-dependencies of the collections are installed?
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 📓 Command log
 

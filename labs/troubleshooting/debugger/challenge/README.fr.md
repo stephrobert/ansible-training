@@ -17,65 +17,14 @@
 > `target_dir` correctement défini en `vars:` (pas la version cassée
 > avec débogueur — pytest tournera après votre fix).
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-### Étape 1 — Squelette `solution.yml`
-
-```yaml
----
-- name: Challenge 90 — debugger fix runtime
-  hosts: ???
-  become: ???
-  gather_facts: false
-  vars:
-    target_dir: ???                 # ← après votre debug, fixer ici à /tmp
-
-  tasks:
-    - name: Déposer la preuve
-      ansible.builtin.copy:
-        dest: "{{ target_dir }}/lab90-debug.txt"
-        content: "???"
-        mode: ???
+```bash
+dsoxlab hint troubleshooting-debugger
 ```
 
-### Étape 2 — Workflow recommandé
-
-1. **Phase 1 (debug interactif)** : commencer **sans** `vars: { target_dir: /tmp }`,
-   activer `debugger: on_failed`, observer l'échec, injecter au runtime via
-   `task_vars['target_dir'] = '/tmp'` + `update_task` + `redo`.
-
-2. **Phase 2 (fix permanent)** : une fois la cause comprise, **éditer le YAML**
-   pour définir `vars: { target_dir: /tmp }` proprement et **retirer**
-   `debugger: on_failed` (qui n'a pas sa place en code de prod).
-
-### Étape 3 — Commandes du REPL
-
-| Commande | Effet |
-| --- | --- |
-| `p task_vars['target_dir']` | inspecte (devrait dire `undefined`) |
-| `task_vars['target_dir'] = '/tmp'` | injecte la variable |
-| `update_task` ou `u` | recrée la tâche avec les nouvelles vars |
-| `redo` ou `r` | rejoue la tâche |
-| `continue` ou `c` | passe à la suivante |
-| `quit` ou `q` | abandonne |
-
-> 💡 **Pièges** :
->
-> - **`debugger: on_failed`** déclenche le debug interactif **seulement
->   si** la tâche échoue. Pour debug même en succès : `debugger:
->   always`.
-> - **Niveau task vs play** : `debugger:` peut être au play-level (toutes
->   les tâches) ou task-level (cette tâche seulement). Préférer
->   task-level — moins intrusif.
-> - **REPL bloqué en CI** : `debugger:` ne fonctionne **que** dans un
->   terminal interactif (TTY). En CI/cron, désactiver via
->   `ANSIBLE_ENABLE_TASK_DEBUGGER=false` ou supprimer la directive.
->   Attention à ne pas confondre avec `ANSIBLE_TASK_DEBUGGER_IGNORE_ERRORS`,
->   qui fait l'INVERSE : elle invoque le débogueur même sur une tâche portant
->   `ignore_errors: true`.
-> - **Variables modifiées via `task_vars[...]`** ne persistent pas
->   au-delà de la tâche. Pour persister : `set_fact` dans une tâche
->   suivante.
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🚀 Lancement
 

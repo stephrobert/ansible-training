@@ -13,84 +13,14 @@ Produire les 5 fichiers requis pour builder un EE custom **schéma v3**. Un sixi
 | `build-ee.sh` | Exécutable. Utilise `--container-runtime podman`. |
 | `configs/ansible.cfg` | Livré. Conserver `host_key_checking = False` (injecté dans l'EE). |
 
-## 🧩 Indices
-
-### `execution-environment.yml` (schéma v3)
-
-```yaml
----
-version: 3
-
-images:
-  base_image:
-    name: ???                 # ghcr.io/ansible-community/community-ee-minimal:latest
-
-dependencies:
-  ansible_core:
-    package_pip: ???          # ansible-core==2.18.0  (pin strict, pas >=)
-  ansible_runner:
-    package_pip: ansible-runner==2.4.0
-  galaxy: requirements.yml
-  python: requirements.txt
-  system: bindep.txt
-```
-
-### `requirements.yml` (collections pinnées)
-
-```yaml
----
-collections:
-  - name: community.docker
-    version: ???              # ex: 3.10.4
-  - name: ansible.posix
-    version: ???              # ex: 1.5.4
-```
-
-### `requirements.txt` (Python pinné)
-
-```text
-???==???        # chaque dépendance Python épinglée en version exacte
-```
-
-Vérifiez les versions réelles avec `pip index versions <paquet>`.
-
-### `bindep.txt` (system deps)
-
-```text
-[platform:???]  # le profil des bases UBI/RHEL
-???             # les binaires dont vos collections ont besoin (git...)
-```
-
-### `build-ee.sh`
+## 🧩 Bloqué ?
 
 ```bash
-cat > build-ee.sh <<'SH'
-#!/usr/bin/env bash
-set -euo pipefail
-ansible-builder build \
-    --container-runtime ???                  # podman (pas docker)
-    --tag ???                                 # localhost/lab86-custom-ee:latest
-    --verbosity 2
-SH
-chmod +x build-ee.sh
+dsoxlab hint ee-builder-custom
 ```
 
-> 💡 **Pièges** :
->
-> - **Schéma v3 obligatoire** : oublier `version: 3` fait tomber
->   `ansible-builder` sur une erreur cryptique. Le test pytest le
->   vérifie explicitement.
-> - **Pinning `==` strict** : `ansible_core: { package_pip: ansible-core==2.18.0 }`.
->   Une plage `>=2.18.0` peut briser la reproductibilité du build (la
->   version installée dépend de la date du build).
-> - **Collections** : chaque entrée doit avoir `version:` (pas de
->   `latest`). Le test pytest scanne `requirements.yml` et rejette si
->   absent.
-> - **`bindep.txt`** : header `[platform:rpm]` indispensable pour les
->   builds RHEL/AlmaLinux. Pour Debian, ajouter `[platform:dpkg]`.
-> - **`localhost/`** dans le tag : convention pour les images locales
->   non-pushed. Sans ce préfixe, Podman peut tenter de chercher l'image
->   sur Docker Hub.
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🚀 Lancement
 

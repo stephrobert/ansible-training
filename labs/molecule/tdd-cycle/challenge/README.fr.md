@@ -26,22 +26,14 @@ c'est tout l'objet du lab : vous les écrivez **dans l'ordre du TDD**.
 | `converge.yml` | inchangé : ce sont les données du contrat |
 | Le tout | `molecule syntax` passe (pytest l'exécute réellement) |
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-- Collecte d'état sans effet de bord : `ansible.builtin.command: getent
-  passwd alice` avec `changed_when: false`, puis assertion sur le stdout.
-- Le fallback shell s'écrit `{{ item.shell | default(users_default_shell) }}`.
-- Cycle complet avec Podman :
+```bash
+dsoxlab hint molecule-tdd-cycle
+```
 
-  ```bash
-  cd labs/molecule/tdd-cycle
-  ANSIBLE_ROLES_PATH=$PWD/roles molecule converge
-  ANSIBLE_ROLES_PATH=$PWD/roles molecule verify     # RED puis GREEN
-  ANSIBLE_ROLES_PATH=$PWD/roles molecule test       # cycle intégral
-  ```
-
-- Notez l'instant où vos tests passent du rouge au vert : c'est LA
-  sensation que ce lab veut vous faire vivre.
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 📓 Journal de commandes
 

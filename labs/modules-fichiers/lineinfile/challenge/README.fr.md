@@ -23,10 +23,11 @@ Sur **db1.lab**, écrivez un playbook **`solution.yml`** qui :
 - `sshd -T | grep -E "PermitRootLogin|MaxAuthTries|AllowUsers"` retourne les 3 lignes attendues.
 - `sshd -t` ne renvoie **aucune** erreur.
 
-## Indices
+## 🧩 Bloqué ?
 
-- Pour l'idempotence avec `backrefs: true`, la regexp doit matcher à la fois
-  la ligne d'origine et la ligne après modification — utilisez un groupe
-  qui capture le préfixe (espaces + nom du paramètre).
-- `AllowUsers` peut ne pas exister du tout — utiliser un `lineinfile:` sans
-  `backrefs` pour cette tâche-là.
+```bash
+dsoxlab hint modules-fichiers-lineinfile
+```
+
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.

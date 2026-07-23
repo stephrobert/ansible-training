@@ -8,64 +8,14 @@ web2.lab**, dans cet ordre garanti par `serial: 1`.
 Vous devez prouver via les **mtimes** que `serial: 1` a bien séquentialisé
 l'exécution (web1 traité **complètement** avant que web2 ne commence).
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-- Cible : groupe `webservers` (donc 2 hôtes web1 + web2).
-- Au niveau du **play**, activez deux mots-clés :
-  - `serial: 1` → un hôte à la fois
-  - `max_fail_percentage: 0` → arrêt immédiat à la première erreur
-- Une tâche `ansible.builtin.copy` qui pose `/tmp/serial-{{ inventory_hostname }}.txt`.
-  Le contenu doit être **stable** (par exemple `vague {{ inventory_hostname }}`) :
-  c'est le **mtime** du fichier qui prouve la séquentialisation, jamais son contenu.
-- Une seconde tâche `ansible.builtin.pause` de 2 secondes pour que le **mtime**
-  de web1 soit strictement antérieur à celui de web2.
-
-Squelette à compléter :
-
-```yaml
----
-- name: Challenge - serial 1 sur 2 webservers
-  hosts: ???
-  become: true
-  serial: ???
-  max_fail_percentage: ???
-
-  tasks:
-    - name: Marqueur de vague
-      ansible.builtin.copy:
-        dest: ???
-        content: ???                   # contenu STABLE, cf. le piège ci-dessous
-        mode: "0644"
-
-    - name: Pause pour que les mtimes soient distincts
-      ansible.builtin.pause:
-        seconds: ???
+```bash
+dsoxlab hint ecrire-code-parallelisme-strategies
 ```
 
-> 💡 **Pièges** :
->
-> - **`serial: 1`** = rolling 1-par-1 (lent, mais sûr). Sur 2 webservers,
->   le test `mtime web1 < web2` ne passe que si web1 est traité **avant**
->   web2 — pas garanti par défaut. La pause aide à séparer les mtimes.
-> - **Le contenu du marqueur doit être STABLE.** La tentation est d'y écrire
->   `{{ ansible_date_time.iso8601 }}` « pour horodater ». Deux raisons de ne
->   pas le faire, et la seconde est fatale :
->
->   1. Ça ne prouve rien de plus. Ce fact porte l'heure de la **collecte des
->      facts**, pas celle de l'écriture du fichier. Le `mtime`, lui, est posé
->      par le noyau au moment exact de l'écriture : c'est le seul témoin de la
->      vague. Pire, `ansible.cfg` met les facts en cache pendant 2 heures : le
->      même horodatage serait recopié sur les deux hôtes.
->   2. Le contenu changerait à chaque run, `copy:` rendrait **toujours
->      `changed`**, et `test_solution_idempotente` exige `changed=0` au second
->      passage. Votre playbook échouerait.
-> - **`strategy: linear`** (défaut) = play-bloquant : tous les hôtes
->   doivent finir une tâche avant de passer à la suivante. **`free`** =
->   chaque hôte avance à son rythme — rare en prod, utile en démo.
-> - **`max_fail_percentage`** : tolérance au-delà de laquelle le play
->   s'arrête. Different de `any_errors_fatal` qui est tolérance zéro.
-> - **`forks`** dans `ansible.cfg` (défaut 5) limite le parallélisme global.
->   Avec `serial: 10` mais `forks: 5`, vous traitez 5-par-5.
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🚀 Lancement
 

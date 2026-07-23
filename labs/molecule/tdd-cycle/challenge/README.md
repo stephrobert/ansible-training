@@ -26,22 +26,14 @@ Expected state (this is what pytest checks):
 | `converge.yml` | unchanged: it is the contract data |
 | Everything | `molecule syntax` passes (pytest actually runs it) |
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-- State collection without side effects: `ansible.builtin.command: getent
-  passwd alice` with `changed_when: false`, then an assertion on the stdout.
-- The shell fallback is written `{{ item.shell | default(users_default_shell) }}`.
-- Full cycle with Podman:
+```bash
+dsoxlab hint molecule-tdd-cycle
+```
 
-  ```bash
-  cd labs/molecule/tdd-cycle
-  ANSIBLE_ROLES_PATH=$PWD/roles molecule converge
-  ANSIBLE_ROLES_PATH=$PWD/roles molecule verify     # RED then GREEN
-  ANSIBLE_ROLES_PATH=$PWD/roles molecule test       # full cycle
-  ```
-
-- Notice the moment when your tests go from red to green: this is THE
-  feeling this lab wants you to experience.
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 📓 Command log
 

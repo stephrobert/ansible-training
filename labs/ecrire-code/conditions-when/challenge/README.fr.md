@@ -16,22 +16,14 @@ proprement la tâche).
 | --- | --- |
 | `/tmp/cond-debian.txt` | `ansible_os_family == "Debian"` (faux sur AlmaLinux) |
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-- Activez `gather_facts: true` au niveau du play (sinon `ansible_os_family`
-  n'existe pas).
-- `when:` accepte une **chaîne** (une seule condition) ou une **liste**
-  (toutes ANDées) :
+```bash
+dsoxlab hint ecrire-code-conditions-when
+```
 
-  ```yaml
-  when:
-    - condition_1
-    - condition_2
-  ```
-
-- Pour `cond-feature`, vous avez besoin de **2 vérifications** :
-  1. `enable_feature is defined` (sinon erreur de variable indéfinie)
-  2. `enable_feature | bool` (force la conversion en booléen)
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🧩 Squelette
 

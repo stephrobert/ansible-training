@@ -12,15 +12,14 @@ Sur **db1.lab**, configurer **4 paramètres `sysctl`** dans un fichier dédié
 | `kernel.kptr_restrict` | `2` | Cache les pointeurs kernel dans `/proc` (durcissement) |
 | `vm.swappiness` | `10` | Préfère la RAM au swap (perfs) |
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-- `ansible.posix.sysctl` est le module à utiliser.
-- **`sysctl_file:`** : fichier où écrire la valeur. Si vous l'omettez, le
-  paramètre est écrit dans `/etc/sysctl.conf` (file global). Préférez un
-  fichier dédié `/etc/sysctl.d/99-<rôle>.conf` (Ansible-friendly,
-  versionnable).
-- **`reload: true`** : applique immédiatement (`sysctl -p ...`). Sans ça, la
-  valeur n'est active **qu'après reboot**.
+```bash
+dsoxlab hint modules-rhel-sysctl
+```
+
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🧩 Squelette
 

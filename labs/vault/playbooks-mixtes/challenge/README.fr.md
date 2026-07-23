@@ -11,80 +11,14 @@ chargés automatiquement par Ansible au runtime.
 | --- | --- | --- |
 | `web1.lab` | `/tmp/lab80-challenge.txt` | `Env: lab80`, `Port: 80`, `Admin token starts: lab80_admi`, `Web secret length: 20` |
 
-## 🧩 Indices
-
-### Structure attendue
-
-```text
-group_vars/
-├── all/
-│   ├── main.yml           ← env_name, env_port (clair)
-│   └── vault.yml          ← vault_admin_token (chiffré)
-└── webservers/
-    ├── main.yml           ← variables propres aux webservers (clair)
-    └── vault.yml          ← vault_web_secret (chiffré)
-```
-
-### Étape 1 — Variables en clair
-
-```yaml
-# group_vars/all/main.yml
----
-env_name: ???              # doit afficher "Env: lab80"
-env_port: ???              # doit afficher "Port: 80"
-```
-
-### Étape 2 — Variables sensibles (chiffrées)
+## 🧩 Bloqué ?
 
 ```bash
-# Le mot de passe vault du lab est genere localement, jamais versionne :
-#   ./scripts/setup-lab-vault-passwords.sh
-# Il cree .vault_password a la racine du lab, avec les bons droits.
-
-cat > group_vars/all/vault.yml <<'YAML'
----
-vault_admin_token: ???     # doit commencer par "lab80_admi" (chars 0-9)
-YAML
-ansible-vault encrypt group_vars/all/vault.yml --vault-password-file=.vault_password
-
-cat > group_vars/webservers/vault.yml <<'YAML'
----
-vault_web_secret: ???      # exactement 20 caractères
-YAML
-ansible-vault encrypt group_vars/webservers/vault.yml --vault-password-file=.vault_password
+dsoxlab hint vault-playbooks-mixtes
 ```
 
-### Étape 3 — Écrire `challenge/solution.yml`
-
-```yaml
----
-- name: Challenge 80 — playbook mixte clair + vault sur webservers
-  hosts: ???
-  become: ???
-  gather_facts: false
-  tasks:
-    - name: Déposer le marqueur lab80
-      ansible.builtin.copy:
-        dest: ???
-        content: |
-          Env: {{ env_name }}
-          Port: {{ env_port }}
-          Admin token starts: {{ vault_admin_token[:10] }}
-          Web secret length: {{ vault_web_secret | length }}
-        mode: "0600"
-      no_log: ???
-```
-
-> 💡 **Pièges** :
->
-> - **Convention `vault_*`** : préfixer les variables sensibles. Permet
->   de **`grep -r vault_ inventory/`** pour auditer tous les secrets.
-> - **`group_vars/<grp>/main.yml` + `vault.yml`** : Ansible charge les
->   2 fichiers et merge. Pas besoin de `vars_files:` explicite.
-> - **Précédence** : `group_vars/<grp>/` > `group_vars/all/`. Donc une
->   variable dans `webservers/vault.yml` override `all/vault.yml`.
-> - **Diff lisible** : seul `vault.yml` est chiffré. `main.yml` reste
->   en clair → diffs Git lisibles sur les vars non sensibles.
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🚀 Lancement
 

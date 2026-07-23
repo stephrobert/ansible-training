@@ -48,13 +48,11 @@ Autrement dit :
 - Après `[client]` : toujours `ssl_enabled=false`.
 - 1er run : `changed`. 2e run : `ok` (idempotent).
 
-## Indices
+## 🧩 Bloqué ?
 
-- `before:` et `after:` bornent la zone de substitution : c'est ce qui
-  protège la section `[client]`.
-- Attention : combiné à `before:`/`after:`, l'ancrage `^` ne se comporte
-  pas comme en mode MULTILINE, retirez-le dans la zone bornée.
-- Pour changer le port sans réécrire toute la ligne, un groupe de capture
-  (`\g<1>`) préserve le préfixe.
-- Si votre regexp matche encore le texte de remplacement, l'idempotence
-  est cassée : le 2e run reste `changed`.
+```bash
+dsoxlab hint modules-fichiers-replace
+```
+
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.

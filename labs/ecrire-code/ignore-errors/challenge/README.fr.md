@@ -11,12 +11,14 @@
 
 Le play termine en succès (`failed=0`) malgré l'erreur silencieuse.
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-- **`ignore_errors: true`** sur une tâche : l'erreur est loguée mais le play
-  continue.
-- **`ansible.builtin.systemd_service`** avec `state: stopped` sur un service
-  qui n'existe pas → erreur garantie.
+```bash
+dsoxlab hint ecrire-code-ignore-errors
+```
+
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🧩 Squelette
 

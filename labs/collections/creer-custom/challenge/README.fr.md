@@ -13,108 +13,14 @@ Initialiser une collection **`student.lab95`**, y ajouter **un module Python** q
 | Tarball | `build/student-lab95-1.0.0.tar.gz` |
 | Tags `galaxy.yml` | au moins `[demo, lab95]` |
 
-## 🧩 Indices
-
-### Étape 1 — Init
+## 🧩 Bloqué ?
 
 ```bash
-cd labs/collections/creer-custom/challenge/
-mkdir -p collection_root
-ansible-galaxy collection init student.lab95 --init-path ???
+dsoxlab hint collections-creer-custom
 ```
 
-### Étape 2 — Squelette du module Python
-
-`collection_root/ansible_collections/student/lab95/plugins/modules/lab95_hello.py` :
-
-```python
-#!/usr/bin/python
-from __future__ import absolute_import, division, print_function
-__metaclass__ = type
-
-DOCUMENTATION = r'''
----
-module: lab95_hello
-short_description: ???
-version_added: ???
-description:
-  - ???
-options: {}
-author:
-  - "Apprenant RHCE 2026"
-'''
-
-EXAMPLES = r'''
-- name: Test hello
-  student.lab95.lab95_hello:
-'''
-
-RETURN = r'''
-msg:
-  description: Message de salutation.
-  type: str
-  returned: always
-'''
-
-from ansible.module_utils.basic import AnsibleModule
-
-
-def run_module():
-    module = AnsibleModule(argument_spec=dict(), supports_check_mode=True)
-    module.exit_json(changed=False, msg=???)
-
-
-def main():
-    run_module()
-
-
-if __name__ == '__main__':
-    main()
-```
-
-### Étape 3 — Compléter `galaxy.yml`
-
-Vérifier la présence de :
-
-```yaml
-namespace: student
-name: lab95
-version: "1.0.0"
-tags:
-  - ???
-  - ???
-authors:
-  - "???"
-```
-
-### Étape 4 — Compléter `meta/runtime.yml`
-
-```yaml
----
-requires_ansible: ???
-```
-
-### Étape 5 — Builder
-
-```bash
-cd collection_root/ansible_collections/student/lab95/
-ansible-galaxy collection build --output-path ../../../../build/
-ls ../../../../build/
-```
-
-> 💡 **Pièges** :
->
-> - **Arborescence stricte** : `collection_root/ansible_collections/<namespace>/<name>/`.
->   Pas le bon chemin = collection invalide.
-> - **`namespace.name`** : minuscules, underscores autorisés. Pas de
->   tiret. Pas de point. Validation stricte par Galaxy.
-> - **`galaxy.yml`** obligatoire à la racine. Champs requis : `namespace`,
->   `name`, `version`, `readme`, `authors`. Sinon, `ansible-galaxy build`
->   refuse.
-> - **`build_ignore:`** : exclure des fichiers du tarball (`tests/`,
->   `.git/`, `*.pyc`). Réduit la taille publié sur Galaxy.
-> - **`ansible-galaxy collection install <tarball>`** pour tester
->   localement avant publish.
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🚀 Lancement
 

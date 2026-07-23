@@ -9,25 +9,14 @@
 2. Le test pytest peut **lancer la même solution avec une valeur invalide
    passée en `--extra-vars`** et observer qu'`argument_specs` la rejette.
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-Le rôle a `argument_specs.yml` qui contient en particulier :
-
-```yaml
-webserver_state:
-  type: str
-  default: present
-  choices: [present, absent, latest]
-
-webserver_service_state:
-  type: str
-  default: started
-  choices: [started, stopped, restarted, reloaded]
-
-webserver_listen_port:
-  type: int
-  default: 80
+```bash
+dsoxlab hint roles-argument-specs
 ```
+
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🧩 Squelette
 

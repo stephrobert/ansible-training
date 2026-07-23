@@ -21,20 +21,14 @@ Before the sudo rules, create:
 - Group: `ops-team`.
 - `bob` member of the `ops-team` group (`groups: ops-team, append: true`).
 
-## 🧩 `community.general.sudoers` hints
+## 🧩 Stuck?
 
-| Option | Effect |
-| --- | --- |
-| `name:` | Identifier + **file name** in `/etc/sudoers.d/` |
-| `user:` | Target user (XOR with `group:`) |
-| `group:` | Target group (XOR with `user:`) |
-| `commands:` | Allowed commands (string or list) |
-| `runas:` | "run as" |
-| `nopassword: true` | NOPASSWD (without password) |
-| `nopassword: false` | Forces the password prompt (by default it is `true`, beware) |
+```bash
+dsoxlab hint modules-utilisateurs-sudoers
+```
 
-> ⚠️ **Trap**: by default, `nopassword:` is `true`. For the alice rule that
-> **must** ask for the password, you must set it explicitly to `false`.
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🧩 Skeleton
 

@@ -9,25 +9,14 @@ role with **valid values** to demonstrate that:
 2. The pytest test can **run the same solution with an invalid value
    passed via `--extra-vars`** and observe that `argument_specs` rejects it.
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-The role has `argument_specs.yml` that contains in particular:
-
-```yaml
-webserver_state:
-  type: str
-  default: present
-  choices: [present, absent, latest]
-
-webserver_service_state:
-  type: str
-  default: started
-  choices: [started, stopped, restarted, reloaded]
-
-webserver_listen_port:
-  type: int
-  default: 80
+```bash
+dsoxlab hint roles-argument-specs
 ```
+
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🧩 Skeleton
 

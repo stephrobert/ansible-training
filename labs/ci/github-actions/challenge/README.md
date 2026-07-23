@@ -19,20 +19,14 @@ Expected state (this is what pytest checks):
 | Least privilege | global `permissions:` empty (`{}`), rights granted job by job |
 | Credentials | `persist-credentials: false` on each `actions/checkout` |
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-- A tag (`@v4`) can be moved, a SHA cannot. To find a tag's SHA:
+```bash
+dsoxlab hint ci-github-actions
+```
 
-  ```bash
-  gh api repos/actions/checkout/git/refs/tags/v4.2.2 --jq .object.sha
-  ```
-
-- `permissions: {}` at the global level is not enough to build: widen it again
-  in each job (`contents: read` at minimum).
-- The matrix is declared under `strategy.matrix`, and `fail-fast: false`
-  lets all combinations run even if one fails.
-- Validate locally with `actionlint .github/workflows/test.yml`: pytest
-  runs it too if the binary is present.
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 📓 Command log
 

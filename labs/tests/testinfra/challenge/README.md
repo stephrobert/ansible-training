@@ -17,18 +17,14 @@ The 4 minimal expected proofs:
 3. socket listening on port 8080,
 4. `nginx -t` returns 0 (valid configuration).
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-- The `host` fixture is injected by the pytest-testinfra plugin: each
-  test function receives it as a parameter.
-- API: `host.package("nginx").is_installed`, `host.service("nginx").is_running`,
-  `host.socket("tcp://0.0.0.0:8080").is_listening`, `host.run("nginx -t").rc`.
-- Real execution against the instance:
+```bash
+dsoxlab hint tests-testinfra
+```
 
-  ```bash
-  cd labs/tests/testinfra
-  ANSIBLE_ROLES_PATH=$PWD/roles molecule test    # requires Podman
-  ```
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 📓 Command log
 

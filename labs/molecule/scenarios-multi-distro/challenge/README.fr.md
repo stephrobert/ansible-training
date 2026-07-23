@@ -17,28 +17,14 @@ portabilité avec une matrice Molecule.
 | `molecule.yml` | au moins 3 plateformes couvrant les deux familles |
 | Le tout | `molecule syntax` passe (pytest l'exécute réellement) |
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-- Le chargement dynamique s'écrit :
+```bash
+dsoxlab hint molecule-scenarios-multi-distro
+```
 
-  ```yaml
-  - name: Charger les variables de la distribution
-    ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
-  ```
-
-- `ansible.builtin.package` délègue au gestionnaire natif (dnf ou apt) :
-  une seule tâche d'installation pour toutes les familles.
-- Sur Debian, nginx sert `/var/www/html` et tourne sous `www-data` ; sur
-  RHEL, `/usr/share/nginx/html` et `nginx`. C'est exactement ce que vos
-  deux fichiers vars doivent capturer.
-- Preuve finale multi-distro (Podman requis) :
-
-  ```bash
-  cd labs/molecule/scenarios-multi-distro
-  ANSIBLE_ROLES_PATH=$PWD/roles molecule test
-  ```
-
-  Trois instances montent en parallèle et le même rôle s'adapte à chacune.
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 📓 Journal de commandes
 

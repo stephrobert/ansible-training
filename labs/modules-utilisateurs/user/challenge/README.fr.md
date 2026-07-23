@@ -19,16 +19,14 @@ spécifiques à chacun.
 | `bob` | `/bin/bash` | `Bob — dev` | `rhce-team` | — | **2001** | (défaut) |
 | `deploy` | `/bin/bash` | `Compte applicatif deploy` | `rhce-team` | — | **2000** | `/opt/deploy/` |
 
-## 🧩 Indices clés
+## 🧩 Bloqué ?
 
-- `ansible.builtin.user` est idempotent : un user déjà conforme → `ok` (pas
-  changed).
-- **`group:`** (singulier) = groupe primaire. **`groups:`** (pluriel) =
-  liste de groupes secondaires.
-- **`append: true`** sur `groups:` ajoute au lieu de **remplacer**. Sans ça,
-  un user déjà membre d'autres groupes les **perdrait**.
-- **`uid:`** force un UID. Si l'UID est déjà pris, la tâche échoue.
-- **`create_home: true`** sur `deploy` (pour créer `/opt/deploy/`).
+```bash
+dsoxlab hint modules-utilisateurs-user
+```
+
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🧩 Squelette
 

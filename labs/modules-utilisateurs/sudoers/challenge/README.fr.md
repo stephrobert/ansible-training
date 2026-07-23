@@ -21,20 +21,14 @@ Avant les règles sudo, créez :
 - Groupe : `ops-team`.
 - `bob` membre du groupe `ops-team` (`groups: ops-team, append: true`).
 
-## 🧩 Indices `community.general.sudoers`
+## 🧩 Bloqué ?
 
-| Option | Effet |
-| --- | --- |
-| `name:` | Identifiant + **nom du fichier** dans `/etc/sudoers.d/` |
-| `user:` | User cible (XOR avec `group:`) |
-| `group:` | Groupe cible (XOR avec `user:`) |
-| `commands:` | Commandes autorisées (string ou liste) |
-| `runas:` | "exécuter en tant que" |
-| `nopassword: true` | NOPASSWD (sans mot de passe) |
-| `nopassword: false` | Force la saisie du mot de passe (par défaut, c'est `true` — attention) |
+```bash
+dsoxlab hint modules-utilisateurs-sudoers
+```
 
-> ⚠️ **Piège** : par défaut, `nopassword:` vaut `true`. Pour la règle alice
-> qui **doit** demander le mot de passe, vous devez l'expliciter à `false`.
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🧩 Squelette
 

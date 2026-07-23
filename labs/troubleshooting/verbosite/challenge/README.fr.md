@@ -12,67 +12,14 @@
 | Contenu | Les 3 noms de tâches séparés par `\n` (un par ligne) |
 | Callbacks activés | `ansible.posix.profile_tasks` (visible dans la sortie) |
 
-## 🧩 Indices
-
-### Étape 1 — Créer `ansible.cfg` au niveau du lab
-
-```ini
-[defaults]
-stdout_callback = ???
-callbacks_enabled = ansible.posix.profile_tasks, ???
-
-[callback_profile_tasks]
-task_output_limit = ???
-```
-
-### Étape 2 — Squelette de `solution.yml`
-
-```yaml
----
-- name: Challenge 89 — profile 3 tâches
-  hosts: ???
-  become: ???
-  gather_facts: false
-  tasks:
-    - name: ???                                   # tâche 1
-      ansible.builtin.shell: sleep 1
-      changed_when: false
-
-    - name: ???                                   # tâche 2
-      ansible.builtin.shell: ???
-      changed_when: false
-
-    - name: ???                                   # tâche 3 : dépose le fichier preuve
-      ansible.builtin.copy:
-        dest: /tmp/lab89-profile.txt
-        content: |
-          ???
-          ???
-          ???
-        owner: ???
-        group: ???
-        mode: ???
-```
-
-### Étape 3 — Activer le profile via `ANSIBLE_CONFIG`
+## 🧩 Bloqué ?
 
 ```bash
-ANSIBLE_CONFIG=labs/troubleshooting/verbosite/ansible.cfg \
-  ansible-playbook labs/troubleshooting/verbosite/challenge/solution.yml
+dsoxlab hint troubleshooting-verbosite
 ```
 
-> 💡 **Pièges** :
->
-> - **`-v` à `-vvvv`** : 4 niveaux. `-v` = recap par hôte ; `-vv` = +
->   variables ; `-vvv` = + commands SSH ; `-vvvv` = + connection
->   establishment.
-> - **`ANSIBLE_DEBUG=1`** : output massif (debug interne Ansible). À
->   utiliser **uniquement** quand `-vvvv` ne suffit pas.
-> - **Callback plugins** : `yaml`, `default`, `unixy`, `dense`, `null`,
->   `oneline`, `selective`. Définir dans `ansible.cfg` via
->   `stdout_callback = yaml`.
-> - **`no_log: true`** masque la sortie même en `-vvvv` — protection des
->   secrets. À garder en prod.
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🚀 Lancement
 

@@ -12,56 +12,14 @@ Write a playbook that combines the **3 patterns** (`import_tasks` static + `incl
 | Permissions | `0644`, owner `root` |
 | Mechanisms used | **`ansible.builtin.import_tasks`** + **`ansible.builtin.include_tasks`** with `loop:` |
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-### Step 1 — Tasks files
-
-Create in `labs/ecrire-code/import-include/challenge/tasks/`:
-
-`tasks/static.yml`:
-
-```yaml
----
-- name: Marker static (import_tasks)
-  ansible.builtin.copy:
-    dest: ???                    # ← /tmp/lab30a-import.txt
-    content: ???
-    mode: ???
+```bash
+dsoxlab hint ecrire-code-import-include
 ```
 
-`tasks/loop.yml`:
-
-```yaml
----
-- name: Marker loop (include_tasks dynamic)
-  ansible.builtin.copy:
-    dest: "/tmp/lab30a-loop-{{ item }}.txt"
-    content: "iteration: {{ item }}\n"
-    mode: ???
-```
-
-### Step 2 — `solution.yml` skeleton
-
-```yaml
----
-- name: Challenge 30a — import + include + loop
-  hosts: ???
-  become: ???
-  gather_facts: false
-
-  tasks:
-    - name: Static — import_tasks (parsé au start)
-      ansible.builtin.???: ???        # ← import_tasks, static.yml file
-
-    - name: Dynamic — include_tasks dans une loop
-      ansible.builtin.???: ???        # ← include_tasks (loop does NOT work with import_tasks)
-      loop: ???                        # ← [1, 2, 3]
-```
-
-> 💡 **Pitfalls**:
-> - **`import_tasks` does NOT support `loop:`** because it is resolved at startup before `item` exists. Use **`include_tasks`** to loop.
-> - **FQCN mandatory**: `ansible.builtin.import_tasks`, not just `import_tasks` (ansible-lint's `fqcn-builtins` rule).
-> - The **path of the `tasks/*.yml`** is relative to the playbook. With `solution.yml` in `challenge/`, the path is `tasks/static.yml` (not `challenge/tasks/...`).
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🚀 Run
 

@@ -12,57 +12,14 @@ Créer un `ansible.cfg` au niveau du lab qui active **`profile_tasks`** + force 
 | Contenu | Sortie de `ansible-config dump --only-changed` (≥3 lignes non vides) |
 | `ansible.cfg` doit contenir | `forks = 20`, `stdout_callback = yaml`, `callbacks_enabled = ansible.posix.profile_tasks` |
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-### Étape 1 — `ansible.cfg`
-
-Créer `labs/decouvrir/configuration-ansible/ansible.cfg` avec a minima :
-
-```ini
-[defaults]
-forks = ???
-stdout_callback = ???
-callbacks_enabled = ???
-host_key_checking = False
+```bash
+dsoxlab hint decouvrir-configuration-ansible
 ```
 
-### Étape 2 — Squelette `solution.yml`
-
-```yaml
----
-- name: Challenge 03a — config Ansible
-  hosts: ???
-  become: ???
-  gather_facts: false
-
-  tasks:
-    - name: Capturer la config active
-      ansible.builtin.command: ansible-config dump --only-changed
-      register: ???
-      changed_when: ???                # ← lecture seule
-      delegate_to: localhost
-      become: false
-
-    - name: Déposer la sortie sur db1.lab
-      ansible.builtin.copy:
-        dest: ???
-        content: "{{ ???.stdout }}\n"
-        owner: ???
-        group: ???
-        mode: ???
-```
-
-> 💡 **Pièges** :
-> - **`delegate_to: localhost`** + **`become: false`** sur la première task car `ansible-config` tourne sur le **control node** (le poste de l'apprenant), pas sur la cible.
-> - **`changed_when: false`** sur la commande de lecture pour préserver l'idempotence.
-> - **`cd` ne suffit PAS, et c'est le piège du lab.** Votre playbook vit dans
->   `challenge/`, or une tâche `delegate_to: localhost` s'exécute avec le dossier
->   du PLAYBOOK comme répertoire courant. Depuis `challenge/`, Ansible ne voit
->   donc jamais l'`ansible.cfg` que vous venez d'écrire à la racine du lab.
->   Mesuré : `ansible-config dump` ne le mentionne pas, et le test échoue.
->   Il faut désigner explicitement le fichier, par exemple avec un
->   `environment: ANSIBLE_CONFIG: ...` au niveau du play. C'est justement
->   l'exercice 1 : `ANSIBLE_CONFIG` est la source de PLUS HAUTE précédence.
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🚀 Lancement
 

@@ -19,16 +19,14 @@ each one.
 | `bob` | `/bin/bash` | `Bob — dev` | `rhce-team` | — | **2001** | (default) |
 | `deploy` | `/bin/bash` | `Compte applicatif deploy` | `rhce-team` | — | **2000** | `/opt/deploy/` |
 
-## 🧩 Key hints
+## 🧩 Stuck?
 
-- `ansible.builtin.user` is idempotent: a user already compliant → `ok` (not
-  changed).
-- **`group:`** (singular) = primary group. **`groups:`** (plural) = list of
-  secondary groups.
-- **`append: true`** on `groups:` adds instead of **replacing**. Without it, a
-  user already a member of other groups would **lose** them.
-- **`uid:`** forces a UID. If the UID is already taken, the task fails.
-- **`create_home: true`** on `deploy` (to create `/opt/deploy/`).
+```bash
+dsoxlab hint modules-utilisateurs-user
+```
+
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🧩 Skeleton
 

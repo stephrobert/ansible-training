@@ -10,22 +10,14 @@ role with a **custom port** to demonstrate that:
 2. The role's `meta/main.yml` is read correctly (verifiable via
    `ansible-galaxy role list`).
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-The role accepts variables (override of the `defaults/`):
+```bash
+dsoxlab hint roles-handlers-meta
+```
 
-| Variable | Default | Override? |
-| --- | --- | --- |
-| `webserver_listen_port` | `80` | ✅ → **`8080`** (the test expects this port) |
-| `webserver_index_content` | `<h1>Hello…</h1>` | ✅ → custom message including `inventory_hostname` |
-
-The challenge checks via the tests:
-
-- `nginx` is `running` and listens on **port 8080**
-- `/var/log/webserver-deploy.log` exists and contains `db1.lab`
-- `/var/log/deploy-notification.log` exists and contains `Deployment completed`,
-  `db1.lab`, and **`8080`** (proof that the handler indeed read the
-  overridden variable)
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🧩 Skeleton
 

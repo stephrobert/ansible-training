@@ -38,14 +38,11 @@ par le setup du lab : `/dev/vdb1` (1 GiB) et `/dev/vdb2` (le reste).
 - `cat /etc/fstab` contient les 2 entrées (montage et swap).
 - 2e run du playbook : `changed: 0`.
 
-## Indices
+## 🧩 Bloqué ?
 
-- `fstype: swap` lance `mkswap` : le module qui crée les systèmes de
-  fichiers sait aussi préparer un swap.
-- Un swap ne se monte pas sur un répertoire : son entrée fstab utilise
-  `none` comme point de montage (`fstype: swap`, `opts: sw`).
-- L'activation immédiate du swap (`swapon`) n'est couverte par aucun état
-  déclaratif : pensez à une commande conditionnée par l'état courant pour
-  rester idempotent.
-- Pour le montage xfs, un seul état déclaratif produit à la fois le montage
-  actif ET l'entrée fstab.
+```bash
+dsoxlab hint modules-rhel-filesystem
+```
+
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.

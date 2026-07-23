@@ -26,13 +26,11 @@ dans cet état :
 - `dnf repolist enabled | grep local-test` ne retourne **rien**.
 - 2e run du playbook : `changed: 0`.
 
-## Indices
+## 🧩 Bloqué ?
 
-- L'ordre compte : la clé GPG doit être importée **avant** de déclarer le
-  dépôt qui l'exige, et le dépôt déclaré **avant** d'installer le paquet.
-- Le paramètre `name` du dépôt détermine le nom du fichier `.repo` généré
-  dans `/etc/yum.repos.d/`.
-- Les macros `$releasever` et `$basearch` (ou la variable de facts
-  `ansible_distribution_major_version`) évitent de figer la version.
-- Désactiver n'est pas supprimer : un dépôt désactivé reste déclaré,
-  `dnf repolist all` le montre encore, `dnf repolist enabled` non.
+```bash
+dsoxlab hint modules-paquets-yum-repository
+```
+
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.

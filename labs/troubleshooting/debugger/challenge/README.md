@@ -17,65 +17,14 @@ Write a playbook that **fails on purpose** on an undefined `target_dir` variable
 > `target_dir` correctly defined in `vars:` (not the broken version
 > with the debugger: pytest runs after your fix).
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-### Step 1 — `solution.yml` skeleton
-
-```yaml
----
-- name: Challenge 90 — debugger fix runtime
-  hosts: ???
-  become: ???
-  gather_facts: false
-  vars:
-    target_dir: ???                 # ← after your debug, set it here to /tmp
-
-  tasks:
-    - name: Déposer la preuve
-      ansible.builtin.copy:
-        dest: "{{ target_dir }}/lab90-debug.txt"
-        content: "???"
-        mode: ???
+```bash
+dsoxlab hint troubleshooting-debugger
 ```
 
-### Step 2 — Recommended workflow
-
-1. **Phase 1 (interactive debug)**: start **without** `vars: { target_dir: /tmp }`,
-   enable `debugger: on_failed`, observe the failure, inject at runtime via
-   `task_vars['target_dir'] = '/tmp'` + `update_task` + `redo`.
-
-2. **Phase 2 (permanent fix)**: once the cause is understood, **edit the YAML**
-   to define `vars: { target_dir: /tmp }` cleanly and **remove**
-   `debugger: on_failed` (which has no place in production code).
-
-### Step 3 — REPL commands
-
-| Command | Effect |
-| --- | --- |
-| `p task_vars['target_dir']` | inspect (should say `undefined`) |
-| `task_vars['target_dir'] = '/tmp'` | injects the variable |
-| `update_task` or `u` | recreates the task with the new vars |
-| `redo` or `r` | replays the task |
-| `continue` or `c` | moves to the next one |
-| `quit` or `q` | aborts |
-
-> 💡 **Traps**:
->
-> - **`debugger: on_failed`** triggers the interactive debug **only
->   if** the task fails. To debug even on success: `debugger:
->   always`.
-> - **Task vs play level**: `debugger:` can be at play-level (all
->   tasks) or task-level (this task only). Prefer
->   task-level: less intrusive.
-> - **REPL blocked in CI**: `debugger:` works **only** in an
->   interactive terminal (TTY). In CI/cron, disable it via
->   `ANSIBLE_ENABLE_TASK_DEBUGGER=false`, or remove the directive.
->   Do not confuse it with `ANSIBLE_TASK_DEBUGGER_IGNORE_ERRORS`, which does the
->   OPPOSITE: it invokes the debugger even on a task carrying
->   `ignore_errors: true`.
-> - **Variables modified via `task_vars[...]`** do not persist
->   beyond the task. To persist them: `set_fact` in a
->   later task.
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🚀 Running
 

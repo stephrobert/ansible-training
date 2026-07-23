@@ -28,19 +28,14 @@ score: <int 0-10>                 # your overall score
 verdict: <adopt|fork|reject>      # your argued recommendation
 ```
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-- Go through each file of the role: `tasks/`, `defaults/`, `meta/`,
-  and note what is missing as much as what is present.
-- A module without a dot in its name (`yum:` instead of
-  `ansible.builtin.yum:`) is not FQCN.
-- A `shell:`/`command:` without `creates:` or `removes:` breaks
-  idempotence: count them.
-- A password in `defaults/main.yml` ends up in the Git of every
-  consumer of the role: it is disqualifying in production.
-- The scale is yours, but remember the grid in
-  `AUDIT_CHECKLIST.md`: plaintext secret + zero tests, the conclusion is
-  not up for debate.
+```bash
+dsoxlab hint galaxy-auditer-role-existant
+```
+
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 📓 Command log
 

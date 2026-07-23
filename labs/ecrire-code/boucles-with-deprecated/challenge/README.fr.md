@@ -11,29 +11,14 @@ itérations différentes :
 | Liste simple | `[apple, banana, cherry]` | 3 fichiers `/tmp/withitems-<fruit>.txt` |
 | Dict (clé→valeur) | `{nginx: 80, redis: 6379}` | `/tmp/withdict-nginx.txt` (contenu `80`), `/tmp/withdict-redis.txt` (contenu `6379`) |
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-### Boucle sur liste simple
-
-```yaml
-loop:
-  - element1
-  - element2
+```bash
+dsoxlab hint ecrire-code-boucles-with-deprecated
 ```
 
-L'item courant est accessible via `{{ item }}`.
-
-### Boucle sur dict
-
-Un dict ne s'itère pas directement. Il faut le **convertir en liste de paires**
-avec le filtre **`dict2items`** :
-
-```yaml
-loop: "{{ mon_dict | dict2items }}"
-```
-
-Chaque item devient un dict `{ key: ..., value: ... }`. Vous accédez aux deux
-champs via `{{ item.key }}` et `{{ item.value }}`.
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🧩 Squelette
 

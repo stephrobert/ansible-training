@@ -14,81 +14,14 @@
 | `persist-credentials: false` | sur `actions/checkout` |
 | Actions pinnées | par **SHA 40 caractères** |
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-### Squelette `.github/workflows/ansible-test.yml`
-
-```yaml
-name: Ansible test
-on:
-  push:
-    branches: [main]
-  pull_request:
-
-permissions: ???                            # ← global = aucune
-
-jobs:
-  sanity:
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: ???
-    strategy:
-      fail-fast: ???
-      matrix:
-        ansible: [???, ???]                 # ← au moins 2 versions
-        python: [???, ???]                  # ← au moins 2 versions
-    steps:
-      - uses: actions/checkout@???          # ← SHA 40 chars
-        with:
-          path: ???
-          persist-credentials: ???
-
-      - uses: actions/setup-python@???      # ← SHA 40 chars
-        with:
-          python-version: "${{ matrix.python }}"
-
-      - run: |
-          pip install "https://github.com/ansible/ansible/archive/${{ matrix.ansible }}.tar.gz"
-
-      - name: ansible-test sanity
-        working-directory: ???
-        run: ansible-test sanity --docker default -v --color
+```bash
+dsoxlab hint collections-ci-tests
 ```
 
-### Squelette `.gitlab-ci.yml`
-
-```yaml
-stages:
-  - sanity
-
-sanity:
-  stage: sanity
-  image: python:${PYTHON_VERSION}
-  parallel:
-    matrix:
-      - PYTHON_VERSION: ["???", "???"]
-        ANSIBLE_VERSION: ["???", "???"]
-  before_script:
-    - pip install "https://github.com/ansible/ansible/archive/${ANSIBLE_VERSION}.tar.gz"
-    - mkdir -p ansible_collections/student/lab96
-  script:
-    - cd ansible_collections/student/lab96
-    - ???                                    # ← commande ansible-test
-```
-
-> 💡 **Pièges** :
->
-> - **`ansible-test`** doit être lancé depuis l'arborescence
->   `ansible_collections/<namespace>/<name>/`. Hors de cet arbre, il
->   refuse.
-> - **`ansible-test sanity`** : lint + import + format. Rapide. À
->   lancer en pré-commit.
-> - **`ansible-test integration`** : tests réels d'invocation des modules.
->   Demande des cibles (Docker, Podman, AWS…). Plus lourd.
-> - **`ansible-test units`** : pytest sur le code Python des modules.
->   Vérifie la logique sans dépendances externes.
-> - **Matrix Python** : `--python 3.11`, `3.12`, etc. Vérifier la compat
->   sur les Python ciblés (Ansible 2.18+ exige ≥ 3.11).
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🚀 Lancement
 

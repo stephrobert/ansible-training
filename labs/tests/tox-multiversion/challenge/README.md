@@ -14,33 +14,14 @@ Expected state (this is what pytest checks):
 | `[testenv:ansible-X]` | at least 3 sections, each pinning `ansible-core` in its `deps` |
 | `[testenv:lint]` | a separate environment for yamllint + ansible-lint (fail-fast, without spinning up an instance) |
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-- tox's range syntax factorizes the environments:
+```bash
+dsoxlab hint tests-tox-multiversion
+```
 
-  ```ini
-  [tox]
-  envlist = ansible-2.{17,18}
-  ```
-
-- Each dedicated section pins its version:
-
-  ```ini
-  [testenv:ansible-2.18]
-  deps =
-      ansible-core==2.18.*
-      ...
-  ```
-
-- Remember `passenv`/`setenv` to propagate `ANSIBLE_ROLES_PATH` and the
-  colors to Molecule.
-- Check your configuration locally:
-
-  ```bash
-  cd labs/tests/tox-multiversion
-  tox --listenvs        # the declared envs
-  tox -e lint           # the fastest env
-  ```
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 📓 Command log
 

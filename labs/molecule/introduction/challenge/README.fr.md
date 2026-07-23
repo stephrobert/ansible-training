@@ -24,23 +24,14 @@ irait frapper à la porte d'une machine qui n'existe pas.
 | `verify.yml` | au moins 2 tâches `ansible.builtin.assert` qui prouvent l'état (paquet nginx, nginx.conf) |
 | Le tout | `molecule syntax` passe (pytest l'exécute réellement) |
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-- Le driver moderne de Molecule v6+ s'appelle `default` (delegated) : ce
-  sont les collections Ansible (containers.podman...) qui pilotent les
-  instances.
-- Une plateforme se déclare avec `name`, `image`, `pre_build_image: true`,
-  `command: /sbin/init` et `privileged: true` pour un conteneur systemd.
-- Dans `verify.yml`, le pattern est : collecter l'état (module `command`
-  avec `changed_when: false`, ou `stat`), puis `ansible.builtin.assert`
-  avec `that:` et `fail_msg:`.
-- Testez au fur et à mesure :
+```bash
+dsoxlab hint molecule-introduction
+```
 
-  ```bash
-  cd labs/molecule/introduction
-  ANSIBLE_ROLES_PATH=$PWD/roles molecule syntax
-  molecule test        # cycle complet si Podman est disponible
-  ```
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 📓 Journal de commandes
 

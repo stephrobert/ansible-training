@@ -12,104 +12,14 @@ scannent et signent un EE de production. Les deux fichiers sont livrés en
 | `.gitlab-ci.yml` | 4 stages `build`, `scan`, `push`, `sign`, avec un job par stage. |
 | `execution-environment.yml` | Livré. Doit déclarer `version: 3` (schéma builder v3). |
 
-## 🧩 Indices
-
-### Squelette GitHub Actions
-
-```yaml
----
-name: Build & sign EE
-
-on:
-  push:
-    tags: ["v*.*.*"]
-  pull_request:
-    branches: [main]
-
-permissions: {}                            # ← {} obligatoire au global
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      id-token: write                      # cosign keyless OIDC
-
-    steps:
-      - uses: actions/checkout@???        # SHA 40 chars (ex: b4ffde...)
-        with:
-          persist-credentials: false      # ← obligatoire
-
-      - uses: redhat-actions/podman-login@???
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - run: ansible-builder build --tag ghcr.io/${{ github.repository }}/ee:${{ github.ref_name }}
-
-      - uses: aquasecurity/trivy-action@???
-        with:
-          image-ref: ghcr.io/${{ github.repository }}/ee:${{ github.ref_name }}
-          severity: CRITICAL,HIGH
-          exit-code: '1'                  # ← bloquer si vuln HIGH+
-
-      - uses: sigstore/cosign-installer@???
-      - run: cosign sign --yes ghcr.io/${{ github.repository }}/ee:${{ github.ref_name }}
-```
-
-### Pinning SHA d'une action
+## 🧩 Bloqué ?
 
 ```bash
-gh api repos/actions/checkout/git/refs/tags/v4.2.2 --jq .object.sha
-# → b4ffde65f46336ab88eb53be808477a3936bae11
-# Utiliser dans `uses:` au lieu de @v4 (mutable)
+dsoxlab hint ee-ci-pipeline
 ```
 
-### Squelette GitLab CI (4 stages)
-
-```yaml
----
-stages:
-  - build
-  - scan
-  - push
-  - sign
-
-variables:
-  EE_IMAGE: $CI_REGISTRY_IMAGE/ee:$CI_COMMIT_TAG
-
-build:
-  stage: build
-  ???
-
-scan:
-  stage: scan
-  ???
-
-push:
-  stage: push
-  ???
-
-sign:
-  stage: sign
-  ???
-```
-
-> 💡 **Pièges** :
->
-> - **Pinning par SHA 40 chars** : `actions/checkout@b4ffde6...` (pas
->   `@v4`). Sécurité supply chain — un tag peut être bougé, un SHA non.
-> - **`permissions: {}`** au global, élargi par job avec `permissions:
->   { contents: read, packages: write, id-token: write }`. Principe du
->   moindre privilège.
-> - **`persist-credentials: false`** sur `actions/checkout` : sinon le
->   token reste en `.git/config` après le checkout (risque de fuite).
-> - **`cosign` keyless** : signature OIDC sans clé privée. Nécessite
->   `id-token: write` permission. Plus simple que les clés long-vivantes.
-> - **Trivy `exit-code: '1'`** : bloquer le pipeline sur CRITICAL/HIGH.
->   Sans, le scan est cosmétique.
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🚀 Lancement
 

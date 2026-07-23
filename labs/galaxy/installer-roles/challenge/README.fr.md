@@ -25,16 +25,14 @@ Deux temps, tous deux vérifiés par pytest :
    `challenge/deps/roles/` et que la collection épinglée est installée
    **dans la version exacte demandée** (lecture du MANIFEST.json).
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-- Un rôle Git se déclare avec `src:` (URL), `name:` (nom local) et
-  `version:` (tag ou branche).
-- Des valeurs sûres si vous manquez d'inspiration : `geerlingguy.docker`
-  (Galaxy), `https://github.com/geerlingguy/ansible-role-postgresql`
-  (Git, tag `4.1.0`), collection `community.crypto` en version exacte.
-- Épingler en version exacte signifie `version: "2.20.0"`, pas
-  `>=2.0.0` : en production, un install rejoué doit donner le même
-  résultat au bit près.
+```bash
+dsoxlab hint galaxy-installer-roles
+```
+
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 📓 Journal de commandes
 

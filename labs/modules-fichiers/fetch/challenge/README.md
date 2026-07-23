@@ -27,19 +27,14 @@ Target: `hosts: web1.lab` only.
    content `RHCE-LAB-2026`.
 2. Pull it back (`fetch:`) to the control node into `collected/web1-tag.txt`.
 
-## 🧩 Key hints
+## 🧩 Stuck?
 
-- **`fetch:` with `flat: true`** is what lets you place a single file on the
-  control node (without the `<hostname>/<path>` subtree that fetch creates by
-  default).
-- To interpolate the **short hostname** (without `.lab`), use:
+```bash
+dsoxlab hint modules-fichiers-fetch
+```
 
-  ```yaml
-  "{{ inventory_hostname | regex_replace('\\.lab$', '') }}"
-  ```
-
-- The fetch's `dest:` can use **`{{ inventory_dir }}/../collected/...`**
-  to stay relative to the repo, or an absolute path on the control side.
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🧩 Skeleton
 

@@ -23,10 +23,11 @@ On **db1.lab** with a secondary disk **`/dev/vdb`**, write
 - 2nd run of the playbook → **`changed: 0`** (idempotent).
 - The `debug` displays the 3 partitions with their respective flags.
 
-## Hints
+## 🧩 Stuck?
 
-- `label: gpt` must be repeated on **every** `parted:` task. Without it, the
-  module falls back to its default (`msdos`) and recreates the table on every call:
-  you will get 2 msdos partitions instead of 3 GPT partitions.
-- `part_start` of the 2nd task = `part_end` of the 1st.
-- For the final LVM: `part_end: "100%"`.
+```bash
+dsoxlab hint modules-rhel-parted
+```
+
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.

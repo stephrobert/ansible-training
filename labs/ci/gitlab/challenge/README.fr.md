@@ -16,31 +16,14 @@ manquants). Complétez-le pour obtenir le pipeline attendu : c'est vous qui
 | Job `release` | stage `release`, `rules:` avec une condition sur `$CI_COMMIT_TAG` (déclenché uniquement sur tag) |
 | Secrets | aucun token ni mot de passe en clair dans le fichier |
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-- La matrice GitLab se déclare ainsi :
+```bash
+dsoxlab hint ci-gitlab
+```
 
-  ```yaml
-  parallel:
-    matrix:
-      - DISTRO: ...
-        ANSIBLE_VERSION: "..."
-  ```
-
-  Chaque entrée de la liste est une combinaison (ou un produit cartésien si
-  une clé porte une liste).
-
-- `needs: ["ansible-lint"]` court-circuite l'ordre des stages et documente la
-  dépendance réelle.
-- Pour la release, le pattern canonique est :
-
-  ```yaml
-  rules:
-    - if: $CI_COMMIT_TAG
-  ```
-
-- Le token Galaxy ne se met JAMAIS ici : Settings, CI/CD, Variables
-  (masked + protected), puis référence `$GALAXY_API_KEY` dans le script.
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 📓 Journal de commandes
 

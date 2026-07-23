@@ -25,16 +25,14 @@ Contraintes :
   rôle webserver (pytest vérifie le format et la cohérence des versions,
   pas la prose).
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-- Tag annoté : `git tag -a v1.2.0 -m "Release v1.2.0"` (un tag léger ne
-  passera pas : `git cat-file -t` doit répondre `tag`).
-- Dans un script, fixez l'identité Git locale du dépôt de travail :
-  `git -C ... config user.email/user.name` avant de committer.
-- `ansible-galaxy collection init acme.webstack --init-path ...` pose un
-  `galaxy.yml` dont vous ajustez `version:` (sed, ou éditez puis copiez).
-- La cohérence tag / CHANGELOG / galaxy.yml est exactement ce qu'un
-  reviewer vérifie avant d'autoriser une publication.
+```bash
+dsoxlab hint galaxy-versionner-publier
+```
+
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🧪 Validation
 

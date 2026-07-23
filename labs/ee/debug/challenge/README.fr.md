@@ -21,29 +21,14 @@ Livrables attendus (c'est ce que pytest vérifie) :
 Les fichiers buggy de la racine ne doivent PAS être modifiés : ils servent
 de pièce à conviction pour le diagnostic.
 
-## 🧩 Indices (méthode, pas réponses)
+## 🧩 Bloqué ?
 
 ```bash
-cd labs/ee/debug/
-
-# 1. Tenter le build et LIRE les logs, y compris les warnings du début
-ansible-builder build -f execution-environment-buggy.yml \
-    --container-runtime podman --verbosity 3
-
-# 2. Un build qui « réussit » ne prouve rien : que répond l'EE ?
-podman run --rm local/lab88-buggy:dev ansible --version
-
-# 3. Vérifier individuellement chaque collection déclarée
-ansible-galaxy collection install <namespace.collection>:<version>
-
-# 4. Vérifier individuellement chaque dépendance Python
-pip index versions <paquet>
+dsoxlab hint ee-debug
 ```
 
-Questions à vous poser : quel schéma ansible-builder est réellement
-utilisé quand rien ne le précise ? Chaque dépendance déclarée existe-t-elle
-là où elle est censée être téléchargée ? Que manque-t-il pour que les
-dépendances système des collections soient installées ?
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 📓 Journal de commandes
 

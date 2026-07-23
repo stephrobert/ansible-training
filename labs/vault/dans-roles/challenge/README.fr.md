@@ -12,90 +12,14 @@ correctement déchiffrés à l'exécution.
 | --- | --- | --- |
 | `db1.lab` | `/tmp/lab81-secured-app.txt` | `user: appuser`, `port: 9999`, `RoleDBPas…` (9 premiers chars du db_password), `role_api_tok_lab81_xyz` |
 
-## 🧩 Indices
-
-### Structure attendue du rôle
-
-```text
-roles/secured_app/
-├── defaults/main.yml      ← secured_app_user, secured_app_port (clair, basse précédence)
-├── vars/main.yml          ← vault_secured_app_db_password, vault_secured_app_api_token (chiffré)
-└── tasks/main.yml         ← compose le marqueur final
-```
-
-### Étape 1 — Defaults (clair)
-
-```yaml
-# roles/secured_app/defaults/main.yml
----
-secured_app_user: ???       # → "user: appuser"
-secured_app_port: ???       # default à 8080, le play l'override à 9999
-```
-
-### Étape 2 — Vars (chiffré)
+## 🧩 Bloqué ?
 
 ```bash
-# Le mot de passe vault du lab est genere localement, jamais versionne :
-#   ./scripts/setup-lab-vault-passwords.sh
-# Il cree .vault_password a la racine du lab, avec les bons droits.
-
-cat > roles/secured_app/vars/main.yml <<'YAML'
----
-vault_secured_app_db_password: ???       # commence par "RoleDBPas" (9 chars)
-vault_secured_app_api_token: ???          # exactement "role_api_tok_lab81_xyz"
-secured_app_db_password: "{{ vault_secured_app_db_password }}"
-secured_app_api_token: "{{ vault_secured_app_api_token }}"
-YAML
-
-ansible-vault encrypt roles/secured_app/vars/main.yml --vault-password-file=.vault_password
+dsoxlab hint vault-dans-roles
 ```
 
-### Étape 3 — Tâche du rôle
-
-```yaml
-# roles/secured_app/tasks/main.yml
----
-- name: Déposer le marqueur lab81
-  ansible.builtin.copy:
-    dest: /tmp/lab81-secured-app.txt
-    content: |
-      user: {{ secured_app_user }}
-      port: {{ secured_app_port }}
-      db_starts: {{ secured_app_db_password[:9] }}
-      api_token: {{ secured_app_api_token }}
-    mode: "0600"
-  no_log: ???
-```
-
-### Étape 4 — `challenge/solution.yml`
-
-```yaml
----
-- name: Challenge 81 — invoquer le rôle secured_app sur db1
-  hosts: ???
-  become: ???
-  gather_facts: false
-  roles:
-    - role: secured_app
-      vars:
-        secured_app_port: 9999       # override du default
-```
-
-> 💡 **Pièges** :
->
-> - **`defaults/main.yml`** (priorité 2) vs **`vars/main.yml`** (priorité
->   18) : tout ce qui est dans `vars/` ne peut **pas** être overridé par
->   un `--extra-vars` du play. Les utilisateurs du rôle modifient les
->   `defaults/`, pas les `vars/`.
-> - **Pattern d'indirection** : `vars/main.yml` chiffré contient
->   `vault_*`, puis `defaults/main.yml` clair fait
->   `app_var: "{{ vault_app_var }}"`. Le rôle utilise `app_var`,
->   l'utilisateur ne voit que les `defaults/`.
-> - **`ANSIBLE_ROLES_PATH`** doit pointer sur le dossier parent du rôle.
->   Pas le rôle lui-même.
-> - **Distribution du rôle** : ne jamais inclure le `.vault_password` dans
->   le tarball Galaxy. L'utilisateur fournit le sien via
->   `--vault-password-file`.
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🚀 Lancement
 

@@ -16,31 +16,14 @@ Expected state (this is what pytest checks):
 | Job `release` | stage `release`, `rules:` with a condition on `$CI_COMMIT_TAG` (triggered only on tag) |
 | Secrets | no token or plaintext password in the file |
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-- The GitLab matrix is declared like this:
+```bash
+dsoxlab hint ci-gitlab
+```
 
-  ```yaml
-  parallel:
-    matrix:
-      - DISTRO: ...
-        ANSIBLE_VERSION: "..."
-  ```
-
-  Each list entry is a combination (or a cartesian product if
-  a key holds a list).
-
-- `needs: ["ansible-lint"]` short-circuits the stage order and documents the
-  real dependency.
-- For the release, the canonical pattern is:
-
-  ```yaml
-  rules:
-    - if: $CI_COMMIT_TAG
-  ```
-
-- The Galaxy token NEVER goes here: Settings, CI/CD, Variables
-  (masked + protected), then reference `$GALAXY_API_KEY` in the script.
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 📓 Command log
 

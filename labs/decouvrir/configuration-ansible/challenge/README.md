@@ -12,57 +12,14 @@ Create a lab-level `ansible.cfg` that enables **`profile_tasks`** + forces **`fo
 | Content | Output of `ansible-config dump --only-changed` (≥3 non-empty lines) |
 | `ansible.cfg` must contain | `forks = 20`, `stdout_callback = yaml`, `callbacks_enabled = ansible.posix.profile_tasks` |
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-### Step 1 — `ansible.cfg`
-
-Create `labs/decouvrir/configuration-ansible/ansible.cfg` with at least:
-
-```ini
-[defaults]
-forks = ???
-stdout_callback = ???
-callbacks_enabled = ???
-host_key_checking = False
+```bash
+dsoxlab hint decouvrir-configuration-ansible
 ```
 
-### Step 2 — `solution.yml` skeleton
-
-```yaml
----
-- name: Challenge 03a — config Ansible
-  hosts: ???
-  become: ???
-  gather_facts: false
-
-  tasks:
-    - name: Capturer la config active
-      ansible.builtin.command: ansible-config dump --only-changed
-      register: ???
-      changed_when: ???                # ← read-only
-      delegate_to: localhost
-      become: false
-
-    - name: Déposer la sortie sur db1.lab
-      ansible.builtin.copy:
-        dest: ???
-        content: "{{ ???.stdout }}\n"
-        owner: ???
-        group: ???
-        mode: ???
-```
-
-> 💡 **Pitfalls**:
-> - **`delegate_to: localhost`** + **`become: false`** on the first task because `ansible-config` runs on the **control node** (the learner's machine), not on the target.
-> - **`changed_when: false`** on the read command to preserve idempotence.
-> - **`cd` is NOT enough, and that is the lab's trap.** Your playbook lives in
->   `challenge/`, yet a `delegate_to: localhost` task runs with the PLAYBOOK's
->   folder as the current directory. From `challenge/`, Ansible therefore never
->   sees the `ansible.cfg` you just wrote at the lab root.
->   Measured: `ansible-config dump` does not mention it, and the test fails.
->   You must explicitly designate the file, for example with an
->   `environment: ANSIBLE_CONFIG: ...` at the play level. This is exactly
->   exercise 1: `ANSIBLE_CONFIG` is the HIGHEST precedence source.
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🚀 Launch
 

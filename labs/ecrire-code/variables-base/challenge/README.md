@@ -13,55 +13,14 @@ You will create **two files**:
 At runtime, we pass `--extra-vars` to force 2 values and observe that they
 **override** those of the play.
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-### 1) Create the `challenge/vars/db.yml` file
-
-```yaml
----
-db_engine: ???
-db_max_connections: ???
+```bash
+dsoxlab hint ecrire-code-variables-base
 ```
 
-To be completed according to the table below.
-
-### 2) Create `challenge/solution.yml`
-
-Skeleton:
-
-```yaml
----
-- name: Challenge - precedence variables
-  hosts: db1.lab
-  become: true
-
-  vars:
-    service_name: "default-service"
-    service_port: 8000
-
-  vars_files:
-    - vars/db.yml
-
-  tasks:
-    - name: Poser /tmp/challenge-vars.txt avec les 4 variables résolues
-      ansible.builtin.copy:
-        dest: /tmp/challenge-vars.txt
-        mode: "0644"
-        content: |
-          service_name={{ ??? }}
-          service_port={{ ??? }}
-          db_engine={{ ??? }}
-          db_max_connections={{ ??? }}
-```
-
-### 3) Expected values in the files
-
-| Variable | Source | Expected value (without `--extra-vars`) |
-| --- | --- | --- |
-| `service_name` | `vars:` of the play | `default-service` |
-| `service_port` | `vars:` of the play | `8000` |
-| `db_engine` | `vars_files: vars/db.yml` | `postgresql` |
-| `db_max_connections` | `vars_files: vars/db.yml` | `100` |
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🚀 Launch
 

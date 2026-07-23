@@ -12,56 +12,14 @@
 | Permissions | `0644`, owner `root` |
 | Mécanismes utilisés | **`ansible.builtin.import_tasks`** + **`ansible.builtin.include_tasks`** avec `loop:` |
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-### Étape 1 — Fichiers de tâches
-
-Créer dans `labs/ecrire-code/import-include/challenge/tasks/` :
-
-`tasks/static.yml` :
-
-```yaml
----
-- name: Marker static (import_tasks)
-  ansible.builtin.copy:
-    dest: ???                    # ← /tmp/lab30a-import.txt
-    content: ???
-    mode: ???
+```bash
+dsoxlab hint ecrire-code-import-include
 ```
 
-`tasks/loop.yml` :
-
-```yaml
----
-- name: Marker loop (include_tasks dynamic)
-  ansible.builtin.copy:
-    dest: "/tmp/lab30a-loop-{{ item }}.txt"
-    content: "iteration: {{ item }}\n"
-    mode: ???
-```
-
-### Étape 2 — Squelette `solution.yml`
-
-```yaml
----
-- name: Challenge 30a — import + include + loop
-  hosts: ???
-  become: ???
-  gather_facts: false
-
-  tasks:
-    - name: Static — import_tasks (parsé au start)
-      ansible.builtin.???: ???        # ← import_tasks, fichier static.yml
-
-    - name: Dynamic — include_tasks dans une loop
-      ansible.builtin.???: ???        # ← include_tasks (loop NE marche PAS avec import_tasks)
-      loop: ???                        # ← [1, 2, 3]
-```
-
-> 💡 **Pièges** :
-> - **`import_tasks` ne supporte PAS `loop:`** car résolu au démarrage avant que `item` n'existe. Utiliser **`include_tasks`** pour boucler.
-> - **FQCN obligatoire** : `ansible.builtin.import_tasks`, pas juste `import_tasks` (règle `fqcn-builtins` d'ansible-lint).
-> - Le **chemin des `tasks/*.yml`** est relatif au playbook. Avec `solution.yml` dans `challenge/`, le chemin est `tasks/static.yml` (pas `challenge/tasks/...`).
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🚀 Lancement
 

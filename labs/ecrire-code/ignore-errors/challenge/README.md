@@ -11,12 +11,14 @@ Write `challenge/solution.yml` that, on **db1.lab**:
 
 The play ends in success (`failed=0`) despite the silent error.
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-- **`ignore_errors: true`** on a task: the error is logged but the play
-  continues.
-- **`ansible.builtin.systemd_service`** with `state: stopped` on a service
-  that does not exist → guaranteed error.
+```bash
+dsoxlab hint ecrire-code-ignore-errors
+```
+
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🧩 Skeleton
 

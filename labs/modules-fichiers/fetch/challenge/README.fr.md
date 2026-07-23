@@ -27,19 +27,14 @@ Cible : `hosts: web1.lab` uniquement.
    contenu `RHCE-LAB-2026`.
 2. Le rapatrier (`fetch:`) côté control node dans `collected/web1-tag.txt`.
 
-## 🧩 Indices clés
+## 🧩 Bloqué ?
 
-- **`fetch:` avec `flat: true`** est ce qui permet de poser un fichier unique
-  côté control node (sans le sous-arbre `<hostname>/<chemin>` que fetch crée
-  par défaut).
-- Pour interpoler le **hostname court** (sans `.lab`), utilisez :
+```bash
+dsoxlab hint modules-fichiers-fetch
+```
 
-  ```yaml
-  "{{ inventory_hostname | regex_replace('\\.lab$', '') }}"
-  ```
-
-- Le `dest:` du fetch peut utiliser **`{{ inventory_dir }}/../collected/...`**
-  pour rester relatif au repo, ou un chemin absolu côté control.
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🧩 Squelette
 

@@ -25,16 +25,14 @@ Two stages, both verified by pytest:
    `challenge/deps/roles/` and that the pinned collection is installed
    **in the exact requested version** (reading MANIFEST.json).
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-- A Git role is declared with `src:` (URL), `name:` (local name) and
-  `version:` (tag or branch).
-- Safe values if you lack inspiration: `geerlingguy.docker`
-  (Galaxy), `https://github.com/geerlingguy/ansible-role-postgresql`
-  (Git, tag `4.1.0`), collection `community.crypto` in an exact version.
-- Pinning to an exact version means `version: "2.20.0"`, not
-  `>=2.0.0`: in production, a replayed install must give the same
-  result down to the bit.
+```bash
+dsoxlab hint galaxy-installer-roles
+```
+
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 📓 Command log
 

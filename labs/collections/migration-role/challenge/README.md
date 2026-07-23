@@ -27,70 +27,14 @@ Migrate a standalone role `legacy_role` (with a module `lab97_check`) to the col
 > name responds, it is **the redirect** that resolved it, and nothing else. This is
 > exactly what the tests check.
 
-## 🧩 Hints
-
-### Step 1 — Initialize the target collection
+## 🧩 Stuck?
 
 ```bash
-cd labs/collections/migration-role/challenge/
-mkdir -p ansible_collections
-ansible-galaxy collection init student.lab97_migrated --init-path ansible_collections/
+dsoxlab hint collections-migration-role
 ```
 
-### Step 2 — Create the migrated module
-
-`ansible_collections/student/lab97_migrated/plugins/modules/lab97_check.py` (skeleton to complete with DOCUMENTATION + EXAMPLES + RETURN, see lab 95).
-
-### Step 3 — Configure the `meta/runtime.yml`
-
-```yaml
----
-requires_ansible: ???
-
-plugin_routing:
-  modules:
-    ???:                                         # ← the OLD name (the one from library/)
-      redirect: ???                              # ← target FQCN (the new name)
-      deprecation:
-        removal_version: ???
-        warning_text: ???
-```
-
-### Step 4 — `solution.yml` skeleton
-
-```yaml
----
-- hosts: ???
-  become: ???
-  tasks:
-    - name: Test ancien nom, servi par la redirection (deprecation attendue)
-      student.lab97_migrated.???:                # ← the old name, redirected
-      register: ???
-
-    - name: Test nouveau FQCN explicite
-      student.lab97_migrated.lab97_check:
-      register: ???
-
-    - name: Déposer la preuve
-      ansible.builtin.copy:
-        dest: ???
-        content: |
-          legacy: {{ ???.msg }}
-          new: {{ ???.msg }}
-        mode: ???
-```
-
-> 💡 **Pitfalls**:
->
-> - **Role → collection migration**: `roles/<role>/` → `roles/<role>/`
->   in `ansible_collections/<ns>/<col>/`. Identical internal structure,
->   different external path.
-> - **Role FQCN**: `<ns>.<col>.<role>`. E.g. `mycollection.webserver`.
->   Lets you have 2 `webserver` roles from different namespaces.
-> - **`include_role:`** vs **`roles:`**: the 2nd syntax loads the role
->   at parsing, the 1st at runtime. For FQCN both work.
-> - **`ansible-galaxy collection install`** of custom collections: may
->   require `-p` to point to the right `collections_path`.
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🚀 Launch
 

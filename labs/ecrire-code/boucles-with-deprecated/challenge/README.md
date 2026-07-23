@@ -11,29 +11,14 @@ different iterations:
 | Simple list | `[apple, banana, cherry]` | 3 files `/tmp/withitems-<fruit>.txt` |
 | Dict (key→value) | `{nginx: 80, redis: 6379}` | `/tmp/withdict-nginx.txt` (content `80`), `/tmp/withdict-redis.txt` (content `6379`) |
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-### Loop over a simple list
-
-```yaml
-loop:
-  - element1
-  - element2
+```bash
+dsoxlab hint ecrire-code-boucles-with-deprecated
 ```
 
-The current item is accessible via `{{ item }}`.
-
-### Loop over a dict
-
-A dict does not iterate directly. You have to **convert it into a list of pairs**
-with the **`dict2items`** filter:
-
-```yaml
-loop: "{{ mon_dict | dict2items }}"
-```
-
-Each item becomes a dict `{ key: ..., value: ... }`. You access the two
-fields via `{{ item.key }}` and `{{ item.value }}`.
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🧩 Skeleton
 

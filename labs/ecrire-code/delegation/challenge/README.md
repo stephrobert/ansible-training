@@ -10,49 +10,14 @@ Write `challenge/solution.yml` that demonstrates **two** complementary mechanics
    that is nonetheless absent from the `webservers` group): proof that `delegate_to`
    allows acting outside the pattern, and that `run_once` prevents the duplicate.
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-```yaml
----
-- name: Challenge - delegation
-  hosts: webservers
-  become: true
-  tasks:
-    - name: Marqueur local sur chaque webserver
-      ansible.builtin.copy:
-        dest: ???        # interpolate inventory_hostname
-        content: ???
-        mode: "0644"
-
-    - name: Marqueur centralisé sur db1 (déléguer + une seule fois)
-      ansible.builtin.copy:
-        dest: /tmp/delegation-on-db1.txt
-        content: ???
-        mode: "0644"
-      delegate_to: ???
-      run_once: ???
+```bash
+dsoxlab hint ecrire-code-delegation
 ```
 
-To complete:
-
-- **`delegate_to: db1.lab`**: the task runs on db1, not on web1/web2.
-- **`run_once: true`**: without it, the task would run twice (once per host of
-  `webservers`), with the **same content** but on the **same** db1.lab → either
-  useless or a conflict. `run_once` guarantees a single execution in the batch.
-
-> 💡 **Traps**:
->
-> - **`delegate_to:` does NOT change `inventory_hostname`**: the variable
->   stays that of the current play host. To get that of the
->   delegated target, use `delegate_facts: true` + `hostvars[delegate].…`.
-> - **`run_once: true` without `delegate_to`**: the task runs on **the
->   first host** of the batch. Combined with `delegate_to: localhost`, it is
->   the "single task on the control node" pattern.
-> - **`local_action:`**: shortcut for `delegate_to: localhost`. More
->   readable when you have only **a single** task to run locally.
-> - **`become:` on a delegated task**: applies to **the delegated host**, not
->   to the play. `become: true` on a `delegate_to: localhost` task
->   requests sudo locally.
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🚀 Launch
 

@@ -16,83 +16,14 @@ Déposer une configuration applicative chiffrée sur `db1.lab`, contenant
 | Source des secrets | **fichier YAML chiffré** (`challenge/files/app_secrets.yml`) |
 | Mot de passe vault | `challenge/.vault_password` (mode `0600`, gitignored) |
 
-## 🧩 Indices
-
-### Étape 1 — Préparer le mot de passe vault
+## 🧩 Bloqué ?
 
 ```bash
-cd labs/premiers-pas/ansible-vault/challenge/
-
-echo "??? choisissez un mot de passe robuste ???" > .vault_password
-chmod ??? .vault_password
+dsoxlab hint premiers-pas-ansible-vault
 ```
 
-### Étape 2 — Créer le fichier de secrets en clair
-
-```bash
-mkdir -p files
-cat > files/app_secrets.yml <<'EOF'
----
-app_db_password: ???
-app_jwt_secret:  ???
-app_redis_token: ???
-EOF
-```
-
-### Étape 3 — Chiffrer le fichier
-
-```bash
-ansible-vault ??? files/app_secrets.yml --vault-password-file=.vault_password
-```
-
-Vérification :
-
-```bash
-head -3 files/app_secrets.yml      # → doit commencer par $ANSIBLE_VAULT;1.1;AES256
-```
-
-### Étape 4 — Écrire `solution.yml`
-
-Squelette à compléter (les `???` sont à deviner) :
-
-```yaml
----
-- name: Challenge 04b — déposer config applicative chiffrée
-  hosts: ???
-  become: ???
-  gather_facts: false
-  vars_files:
-    - ???                          # le fichier chiffré
-
-  tasks:
-    - name: Déposer /tmp/db1-app.conf avec les 3 secrets
-      ansible.builtin.copy:
-        dest: ???
-        content: |
-          # config app — secrets déchiffrés au runtime
-          db_password={{ ??? }}
-          jwt_secret={{ ??? }}
-          redis_token={{ ??? }}
-        owner: ???
-        group: ???
-        mode: ???
-      # Niveau tâche, aligné sur `ansible.builtin.copy:` et non indenté
-      # dessous : voir le piège signalé plus bas.
-      no_log: ???
-```
-
-> 💡 **Pièges** :
->
-> - **`no_log: true`** est un keyword **task-level**, pas un paramètre du
->   module `copy:`. Le placer dans le module donne `Unsupported parameters`.
-> - **Mode `0600`** indispensable pour `.vault_password` ET pour le fichier
->   de secrets déposé. Sans ça, autres users du système peuvent voler le
->   contenu.
-> - **`vars_files: [files/app_secrets.yml]`** : chemin relatif au playbook.
->   Avec `solution.yml` dans `challenge/`, le chemin est juste
->   `files/app_secrets.yml` (pas `challenge/files/...`).
-> - **Le test scanne le `.vault_password`** pour vérifier mode 0600. Mode
->   0644 fait échouer le test, même si le déchiffrement marche.
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🚀 Lancement
 

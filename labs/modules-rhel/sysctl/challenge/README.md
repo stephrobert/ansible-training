@@ -12,15 +12,14 @@ On **db1.lab**, configure **4 `sysctl` parameters** in a dedicated file
 | `kernel.kptr_restrict` | `2` | Hides kernel pointers in `/proc` (hardening) |
 | `vm.swappiness` | `10` | Prefers RAM over swap (perf) |
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-- `ansible.posix.sysctl` is the module to use.
-- **`sysctl_file:`**: file where the value is written. If you omit it, the
-  parameter is written into `/etc/sysctl.conf` (global file). Prefer a
-  dedicated file `/etc/sysctl.d/99-<role>.conf` (Ansible-friendly,
-  versionable).
-- **`reload: true`**: applies immediately (`sysctl -p ...`). Without it, the
-  value is only active **after a reboot**.
+```bash
+dsoxlab hint modules-rhel-sysctl
+```
+
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🧩 Skeleton
 

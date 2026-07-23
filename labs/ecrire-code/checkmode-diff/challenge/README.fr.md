@@ -11,40 +11,14 @@ Le but pédagogique : démontrer le **workflow audit → exécution** :
    changer, sans rien écrire.
 2. **Exécution réelle** : une fois le diff validé, on relance sans `--check`.
 
-## 🧩 Indices pour écrire `solution.yml`
+## 🧩 Bloqué ?
 
-- Cible : **un seul hôte**, `db1.lab`.
-- Élévation : il faut écrire dans `/etc/`, donc `become: true`.
-- Module : `ansible.builtin.copy` avec **`content:`** (pas `src:` — on n'a pas
-  de fichier source à pousser).
-- Permissions : `mode: "0644"` (lecture pour tous).
-
-Squelette à **compléter** :
-
-```yaml
----
-- name: Challenge - poser un marqueur checkmode
-  hosts: ???
-  become: ???
-  tasks:
-    - name: Poser /etc/lab-checkmode.txt
-      ansible.builtin.copy:
-        dest: ???
-        content: ???
-        mode: "0644"
+```bash
+dsoxlab hint ecrire-code-checkmode-diff
 ```
 
-> 💡 **Pièges** :
->
-> - **`--check` ≠ `--diff`** : `--check` simule, `--diff` affiche les
->   différences. À l'examen comme en prod, **les deux ensemble** sont la
->   pratique standard avant un run réel.
-> - **`content:` avec accent** : le caractère `é` est UTF-8 — assurez-vous
->   que votre éditeur sauve en UTF-8, sinon ansible-playbook râle.
-> - **Idempotence** : `copy:` compare le **checksum** du contenu. Au 2e
->   run, `changed=0` (pas d'écriture). C'est ce que valide implicitement
->   ce lab.
-> - **`/etc/`** nécessite `become: true` — sinon "Permission denied".
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🚀 Lancement en deux temps
 

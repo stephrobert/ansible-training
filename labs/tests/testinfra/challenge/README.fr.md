@@ -17,18 +17,14 @@ Les 4 preuves minimales attendues :
 3. socket en écoute sur le port 8080,
 4. `nginx -t` retourne 0 (configuration valide).
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-- La fixture `host` est injectée par le plugin pytest-testinfra : chaque
-  fonction de test la reçoit en paramètre.
-- API : `host.package("nginx").is_installed`, `host.service("nginx").is_running`,
-  `host.socket("tcp://0.0.0.0:8080").is_listening`, `host.run("nginx -t").rc`.
-- Exécution réelle contre l'instance :
+```bash
+dsoxlab hint tests-testinfra
+```
 
-  ```bash
-  cd labs/tests/testinfra
-  ANSIBLE_ROLES_PATH=$PWD/roles molecule test    # nécessite Podman
-  ```
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 📓 Journal de commandes
 

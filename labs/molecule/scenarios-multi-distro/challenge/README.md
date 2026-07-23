@@ -17,28 +17,14 @@ Expected state (this is what pytest checks):
 | `molecule.yml` | at least 3 platforms covering the two families |
 | Everything | `molecule syntax` passes (pytest actually runs it) |
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-- The dynamic load is written:
+```bash
+dsoxlab hint molecule-scenarios-multi-distro
+```
 
-  ```yaml
-  - name: Charger les variables de la distribution
-    ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
-  ```
-
-- `ansible.builtin.package` delegates to the native manager (dnf or apt):
-  a single install task for all families.
-- On Debian, nginx serves `/var/www/html` and runs as `www-data`; on
-  RHEL, `/usr/share/nginx/html` and `nginx`. This is exactly what your
-  two vars files must capture.
-- Final multi-distro proof (Podman required):
-
-  ```bash
-  cd labs/molecule/scenarios-multi-distro
-  ANSIBLE_ROLES_PATH=$PWD/roles molecule test
-  ```
-
-  Three instances come up in parallel and the same role adapts to each.
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 📓 Command log
 

@@ -14,33 +14,14 @@ qui teste le rôle `webserver` sur plusieurs versions d'ansible-core.
 | `[testenv:ansible-X]` | au moins 3 sections, chacune épinglant `ansible-core` dans ses `deps` |
 | `[testenv:lint]` | environnement séparé pour yamllint + ansible-lint (fail-fast, sans monter d'instance) |
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-- La syntaxe range de tox factorise les environnements :
+```bash
+dsoxlab hint tests-tox-multiversion
+```
 
-  ```ini
-  [tox]
-  envlist = ansible-2.{17,18}
-  ```
-
-- Chaque section dédiée épingle sa version :
-
-  ```ini
-  [testenv:ansible-2.18]
-  deps =
-      ansible-core==2.18.*
-      ...
-  ```
-
-- Pensez à `passenv`/`setenv` pour propager `ANSIBLE_ROLES_PATH` et les
-  couleurs vers Molecule.
-- Vérifiez votre configuration localement :
-
-  ```bash
-  cd labs/tests/tox-multiversion
-  tox --listenvs        # les envs déclarés
-  tox -e lint           # l'env le plus rapide
-  ```
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 📓 Journal de commandes
 

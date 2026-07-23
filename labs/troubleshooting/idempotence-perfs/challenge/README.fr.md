@@ -12,65 +12,14 @@
 
 **Critère** : second passage de `solution.yml` retourne `changed=0`.
 
-## 🧩 Indices
-
-### Squelette `solution.yml`
-
-```yaml
----
-- name: Challenge 91 — playbook idempotent
-  hosts: ???
-  become: ???
-  gather_facts: false
-
-  tasks:
-    - name: Tâche 1 — créer marker
-      ansible.builtin.shell: "echo lab91 > /tmp/lab91-marker"
-      args:
-        creates: ???              # ← chemin du fichier marker
-
-    - name: Tâche 2 — poser max_connections
-      ansible.builtin.lineinfile:
-        path: /tmp/lab91-config.cfg
-        regexp: ???               # ← regex pour matcher la ligne
-        line: ???
-        create: ???
-        mode: "0644"
-
-    - name: Tâche 3a — lire la version curl
-      ansible.builtin.command: curl --version
-      register: curl_version
-      changed_when: ???           # ← lecture seule
-
-    - name: Tâche 3b — stocker la sortie
-      ansible.builtin.copy:
-        dest: /tmp/lab91-curl.txt
-        content: "{{ curl_version.stdout_lines[0] }}\n"
-        mode: "0644"
-```
-
-### Test d'idempotence manuel
+## 🧩 Bloqué ?
 
 ```bash
-ansible-playbook labs/troubleshooting/idempotence-perfs/challenge/solution.yml
-ansible-playbook labs/troubleshooting/idempotence-perfs/challenge/solution.yml | grep -E 'changed=|ok='
-# → changed=0 attendu sur le 2e run
+dsoxlab hint troubleshooting-idempotence-perfs
 ```
 
-> 💡 **Pièges** :
->
-> - **`shell:` / `command:` sans `creates:` ou `changed_when:`** : marqué
->   `changed=1` à chaque run → casse l'idempotence du play. Cause
->   principale d'un test "changed=0 au 2e run" qui échoue.
-> - **`pipelining = True`** dans `ansible.cfg` : 30-50 % de speedup. Mais
->   incompatible avec `requiretty` dans sudoers — vérifier le sudoers
->   avant.
-> - **`fact_caching = jsonfile`** + TTL 1h : évite de re-collecter les
->   facts à chaque run. Gain 1-3 sec par hôte.
-> - **`forks` (défaut 5)** : augmenter à 10-20 sur un control node
->   correct. Plus de parallélisme = run plus court sur grand inventaire.
-> - **`strategy: free`** : chaque hôte avance indépendamment, plus rapide
->   que `linear` mais sortie moins lisible.
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🚀 Lancement
 

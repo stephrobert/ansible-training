@@ -16,22 +16,14 @@ skips the task).
 | --- | --- |
 | `/tmp/cond-debian.txt` | `ansible_os_family == "Debian"` (false on AlmaLinux) |
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-- Enable `gather_facts: true` at the play level (otherwise `ansible_os_family`
-  does not exist).
-- `when:` accepts a **string** (a single condition) or a **list**
-  (all ANDed):
+```bash
+dsoxlab hint ecrire-code-conditions-when
+```
 
-  ```yaml
-  when:
-    - condition_1
-    - condition_2
-  ```
-
-- For `cond-feature`, you need **2 checks**:
-  1. `enable_feature is defined` (otherwise undefined variable error)
-  2. `enable_feature | bool` (forces the conversion to boolean)
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🧩 Skeleton
 

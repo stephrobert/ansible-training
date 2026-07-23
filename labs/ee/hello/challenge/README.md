@@ -13,68 +13,14 @@ At the lab root, produce 4 files that demonstrate the use of
 | `ping.yml` | FQCN module `ansible.builtin.ping`. |
 | `ansible-navigator.yml` | References the `creator-ee` image in `execution-environment.image:`. |
 
-## 🧩 Hints
-
-### Step 1 — `setup-ee.sh` (script to complete)
+## 🧩 Stuck?
 
 ```bash
-cat > setup-ee.sh <<'SH'
-#!/usr/bin/env bash
-set -euo pipefail
-command -v ??? >/dev/null || sudo dnf install -y ???
-command -v ??? >/dev/null || pipx install ???
-podman pull ???                            # official creator-ee image
-SH
-chmod +x setup-ee.sh
+dsoxlab hint ee-hello
 ```
 
-### Step 2 — `inventory.yml`
-
-```yaml
----
-all:
-  hosts:
-    ???:                                   # web1.lab and db1.lab
-    ???:
-```
-
-### Step 3 — `ping.yml`
-
-```yaml
----
-- name: Hello EE
-  hosts: ???
-  gather_facts: false
-  tasks:
-    - name: Pinger
-      ansible.builtin.???:
-```
-
-### Step 4 — `ansible-navigator.yml`
-
-```yaml
----
-ansible-navigator:
-  execution-environment:
-    image: ???                  # ghcr.io/ansible/creator-ee:latest
-    container-engine: ???       # podman (not docker — RHCE 2026 convention)
-    pull:
-      policy: ???                # 'missing' (pull if absent), 'always' (CI), 'never'
-  mode: ???                      # 'stdout' (CI), 'interactive' (TUI)
-  logging:
-    level: info
-```
-
-> 💡 **Pitfalls**:
->
-> - **`podman` vs `docker`**: Red Hat recommends Podman (rootless, no
->   daemon). At the EX294 2026, it is `podman` everywhere. Docker works
->   but remains an anti-pattern in the RHEL ecosystem.
-> - **`pull.policy: missing`**: pull only if the image is absent
->   locally. **`always`** forces a pull (useful in CI), **`never`**
->   requires the image to be already present (useful offline).
-> - **`mode: stdout`** is essential for CI/scripts. The default
->   `interactive` (TUI) blocks in a non-tty script.
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🚀 Launch
 

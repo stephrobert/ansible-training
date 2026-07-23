@@ -25,16 +25,14 @@ Constraints:
   webserver role (pytest checks the format and the version consistency,
   not the prose).
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-- Annotated tag: `git tag -a v1.2.0 -m "Release v1.2.0"` (a lightweight tag will
-  not pass: `git cat-file -t` must answer `tag`).
-- In a script, set the local Git identity of the working repo:
-  `git -C ... config user.email/user.name` before committing.
-- `ansible-galaxy collection init acme.webstack --init-path ...` lays down a
-  `galaxy.yml` whose `version:` you adjust (sed, or edit then copy).
-- The tag / CHANGELOG / galaxy.yml consistency is exactly what a
-  reviewer checks before authorizing a publication.
+```bash
+dsoxlab hint galaxy-versionner-publier
+```
+
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🧪 Validation
 

@@ -26,16 +26,14 @@ Constraints:
 - `set -euo pipefail` at the top: the slightest failing command must make
   the script fail.
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-- `role init` and `collection init` accept `--init-path <folder>`.
-- `collection init` expects a full name `namespace.name`.
-- `collection build` runs from the collection folder and accepts
-  `--output-path`.
-- `collection install` accepts a `.tar.gz` archive path and `-p` to
-  choose the install folder.
-- The cheatsheet shipped at the root (`cheatsheet.md`) remains your
-  reference: every command you need is in it.
+```bash
+dsoxlab hint galaxy-ansible-galaxy-cli
+```
+
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🧪 Validation
 

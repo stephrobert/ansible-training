@@ -27,40 +27,14 @@ Attention : `verify.yml` (livré) vérifie que nginx écoute sur le port
 surchargé. Si votre `host_vars` est absent ou faux, un `molecule test`
 complet échouera.
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-- `dependency.name: galaxy` accepte `options.requirements-file` pour
-  pointer un fichier de dépendances du scénario.
-- `prepare.yml` est joué une seule fois après `create`, avant `converge` :
-  parfait pour installer `procps-ng` et `iproute` (diagnostic) qui ne sont
-  pas du ressort du rôle.
-- Deux prérequis, pas un seul. `verify.yml` a besoin de `ss` (paquet
-  `iproute`) pour constater le port d'écoute, mais le **rôle lui-même** a
-  besoin de `firewalld` : il ouvre son port avec `ansible.posix.firewalld`.
-  Sur une VM le démon tourne déjà ; dans un conteneur, non, et le
-  `converge` meurt sur « firewalld is not running ». Installer le paquet ne
-  suffit pas, il faut aussi démarrer le service. Un rôle qui **configure**
-  un pare-feu n'a pas à en **installer** un : c'est au banc de test de
-  fournir la machine dans l'état attendu.
-- Contrairement à une idée répandue, la séquence par défaut de Molecule
-  joue déjà `prepare`. Déclarer votre `test_sequence` ne sert donc pas à
-  l'activer, mais à retirer les étapes que vous n'avez pas (`cleanup`,
-  `side_effect`) et à rendre le contrat explicite.
-- La séquence par défaut se surcharge ainsi :
+```bash
+dsoxlab hint molecule-installation-config
+```
 
-  ```yaml
-  scenario:
-    name: default
-    test_sequence:
-      - ...
-  ```
-
-- Testez au fur et à mesure :
-
-  ```bash
-  cd labs/molecule/installation-config
-  ANSIBLE_ROLES_PATH=$PWD/roles molecule syntax
-  ```
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 📓 Journal de commandes
 

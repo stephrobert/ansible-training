@@ -20,23 +20,14 @@ Your work, in two steps:
 Pytest actually runs `ansible-lint --profile production`: the lab
 is validated only when the linter is green.
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-- Run the linter and handle the findings one by one:
+```bash
+dsoxlab hint tests-ansible-lint-production
+```
 
-  ```bash
-  cd labs/tests/ansible-lint-production/
-  ansible-lint --profile production roles/
-  ```
-
-- Each rule identifier (fqcn[action-core], risky-octal,
-  no-changed-when...) has its page: https://docs.ansible.com/projects/lint/rules/
-- "Without changing the behavior": replace `shell: systemctl ...` with
-  the appropriate module, do not delete the task. Pytest checks that the role
-  still installs nginx, still deploys the page and still manages the
-  service.
-- For `.yamllint`, ansible-lint prints at the start of the run the compatibility
-  requirements it expects from a custom config: read that warning.
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 📓 Command log
 

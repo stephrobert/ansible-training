@@ -11,40 +11,14 @@ The pedagogical goal: demonstrate the **audit → execution** workflow:
    change, without writing anything.
 2. **Real execution**: once the diff is validated, you rerun without `--check`.
 
-## 🧩 Hints to write `solution.yml`
+## 🧩 Stuck?
 
-- Target: **a single host**, `db1.lab`.
-- Elevation: you need to write in `/etc/`, so `become: true`.
-- Module: `ansible.builtin.copy` with **`content:`** (not `src:`, you have
-  no source file to push).
-- Permissions: `mode: "0644"` (read for everyone).
-
-Skeleton to **complete**:
-
-```yaml
----
-- name: Challenge - poser un marqueur checkmode
-  hosts: ???
-  become: ???
-  tasks:
-    - name: Poser /etc/lab-checkmode.txt
-      ansible.builtin.copy:
-        dest: ???
-        content: ???
-        mode: "0644"
+```bash
+dsoxlab hint ecrire-code-checkmode-diff
 ```
 
-> 💡 **Traps**:
->
-> - **`--check` ≠ `--diff`**: `--check` simulates, `--diff` shows the
->   differences. On the exam as in prod, **the two together** are the
->   standard practice before a real run.
-> - **`content:` with an accent**: the `é` character is UTF-8, make sure
->   your editor saves in UTF-8, otherwise ansible-playbook complains.
-> - **Idempotence**: `copy:` compares the **checksum** of the content. On the 2nd
->   run, `changed=0` (no write). This is what this lab implicitly
->   validates.
-> - **`/etc/`** requires `become: true`, otherwise "Permission denied".
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 🚀 Launch in two steps
 

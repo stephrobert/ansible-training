@@ -27,40 +27,14 @@ Warning: `verify.yml` (provided) checks that nginx listens on the
 overridden port. If your `host_vars` is absent or wrong, a full `molecule test`
 will fail.
 
-## 🧩 Hints
+## 🧩 Stuck?
 
-- `dependency.name: galaxy` accepts `options.requirements-file` to
-  point to a scenario dependencies file.
-- `prepare.yml` is played once after `create`, before `converge`:
-  perfect to install `procps-ng` and `iproute` (diagnostics) that are
-  not the role's responsibility.
-- Two prerequisites, not one. `verify.yml` needs `ss` (package
-  `iproute`) to observe the listening port, but the **role itself** needs
-  `firewalld`: it opens its port with `ansible.posix.firewalld`.
-  On a VM the daemon already runs; in a container, it does not, and the
-  `converge` dies on "firewalld is not running". Installing the package is not
-  enough, you also have to start the service. A role that **configures**
-  a firewall has no business **installing** one: it is up to the test harness to
-  provide the machine in the expected state.
-- Contrary to a widespread belief, Molecule's default sequence
-  already plays `prepare`. Declaring your `test_sequence` therefore does not serve
-  to enable it, but to remove the steps you do not have (`cleanup`,
-  `side_effect`) and to make the contract explicit.
-- The default sequence is overridden like this:
+```bash
+dsoxlab hint molecule-installation-config
+```
 
-  ```yaml
-  scenario:
-    name: default
-    test_sequence:
-      - ...
-  ```
-
-- Test as you go:
-
-  ```bash
-  cd labs/molecule/installation-config
-  ANSIBLE_ROLES_PATH=$PWD/roles molecule syntax
-  ```
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
 ## 📓 Command log
 

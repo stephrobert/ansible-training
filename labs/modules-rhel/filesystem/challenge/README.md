@@ -37,14 +37,11 @@ Write `solution.yml` that brings the machine into this state:
 - `cat /etc/fstab` contains both entries (mount and swap).
 - 2nd run of the playbook: `changed: 0`.
 
-## Hints
+## 🧩 Stuck?
 
-- `fstype: swap` runs `mkswap`: the module that creates filesystems
-  also knows how to prepare a swap.
-- A swap is not mounted on a directory: its fstab entry uses
-  `none` as the mount point (`fstype: swap`, `opts: sw`).
-- Immediate swap activation (`swapon`) is not covered by any declarative
-  state: think of a command conditioned on the current state to
-  stay idempotent.
-- For the xfs mount, a single declarative state produces both the active
-  mount AND the fstab entry.
+```bash
+dsoxlab hint modules-rhel-filesystem
+```
+
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.

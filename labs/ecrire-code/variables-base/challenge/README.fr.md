@@ -13,55 +13,14 @@ Vous allez créer **deux fichiers** :
 À l'exécution, on passe `--extra-vars` pour forcer 2 valeurs et observer
 qu'elles **écrasent** celles du play.
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-### 1) Créez le fichier `challenge/vars/db.yml`
-
-```yaml
----
-db_engine: ???
-db_max_connections: ???
+```bash
+dsoxlab hint ecrire-code-variables-base
 ```
 
-À compléter selon le tableau ci-dessous.
-
-### 2) Créez `challenge/solution.yml`
-
-Squelette :
-
-```yaml
----
-- name: Challenge - precedence variables
-  hosts: db1.lab
-  become: true
-
-  vars:
-    service_name: "default-service"
-    service_port: 8000
-
-  vars_files:
-    - vars/db.yml
-
-  tasks:
-    - name: Poser /tmp/challenge-vars.txt avec les 4 variables résolues
-      ansible.builtin.copy:
-        dest: /tmp/challenge-vars.txt
-        mode: "0644"
-        content: |
-          service_name={{ ??? }}
-          service_port={{ ??? }}
-          db_engine={{ ??? }}
-          db_max_connections={{ ??? }}
-```
-
-### 3) Valeurs attendues dans les fichiers
-
-| Variable | Source | Valeur attendue (sans `--extra-vars`) |
-| --- | --- | --- |
-| `service_name` | `vars:` du play | `default-service` |
-| `service_port` | `vars:` du play | `8000` |
-| `db_engine` | `vars_files: vars/db.yml` | `postgresql` |
-| `db_max_connections` | `vars_files: vars/db.yml` | `100` |
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🚀 Lancement
 

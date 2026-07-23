@@ -10,22 +10,14 @@
 2. Le `meta/main.yml` du rôle est correctement lu (vérifiable via
    `ansible-galaxy role list`).
 
-## 🧩 Indices
+## 🧩 Bloqué ?
 
-Le rôle accepte des variables (override des `defaults/`) :
+```bash
+dsoxlab hint roles-handlers-meta
+```
 
-| Variable | Défaut | À surcharger ? |
-| --- | --- | --- |
-| `webserver_listen_port` | `80` | ✅ → **`8080`** (le test attend ce port) |
-| `webserver_index_content` | `<h1>Hello…</h1>` | ✅ → message custom incluant `inventory_hostname` |
-
-Le challenge vérifie via les tests :
-
-- `nginx` est `running` et écoute sur **port 8080**
-- `/var/log/webserver-deploy.log` existe et contient `db1.lab`
-- `/var/log/deploy-notification.log` existe et contient `Deployment completed`,
-  `db1.lab`, et **`8080`** (preuve que le handler a bien lu la variable
-  surchargée)
+Les indices sont progressifs et **coûtent des points** : le premier oriente, le
+dernier débloque.
 
 ## 🧩 Squelette
 

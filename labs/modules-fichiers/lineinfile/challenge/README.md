@@ -23,10 +23,11 @@ On **db1.lab**, write a **`solution.yml`** playbook that:
 - `sshd -T | grep -E "PermitRootLogin|MaxAuthTries|AllowUsers"` returns the 3 expected lines.
 - `sshd -t` returns **no** error.
 
-## Hints
+## 🧩 Stuck?
 
-- For idempotence with `backrefs: true`, the regexp must match both
-  the original line and the line after modification, use a group
-  that captures the prefix (spaces + parameter name).
-- `AllowUsers` may not exist at all, use a `lineinfile:` without
-  `backrefs` for that task.
+```bash
+dsoxlab hint modules-fichiers-lineinfile
+```
+
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
