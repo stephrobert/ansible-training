@@ -10,8 +10,8 @@
 #             qui n'ont donc rien à faire ici.
 #
 # Ce que mise ne peut PAS gérer, et qui reste à la charge de la distribution :
-# libvirt, qemu-kvm, virt-install (daemons + appartenance au groupe libvirt).
-# Voir scripts/bootstrap.sh.
+# libvirt, qemu-kvm (daemons + appartenance au groupe libvirt), à installer
+# avec le gestionnaire de paquets de la distribution.
 #
 #   mise install     # installe toute la chaîne, versions pinées
 #   mise tasks       # liste les tâches

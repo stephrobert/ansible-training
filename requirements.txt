@@ -1,5 +1,5 @@
 # Dépendances Python du lab Ansible
-# Installées par scripts/bootstrap.sh via mise/pipx (cf. la roadmap §12.7)
+# Installées via mise/pipx en environnements isolés (cf. la roadmap §12.7)
 #
 # Ces versions sont alignées sur le RHCE EX294 RHEL 9/10 (mi-2026).
 # Chaque outil est installé dans son propre environnement isolé via pipx
@@ -7,12 +7,16 @@
 
 ansible-core>=2.18,<2.19
 ansible-navigator>=25.0
-ansible-lint>=25.0
+ansible-lint>=26.6.0
 molecule>=25.0
 molecule-plugins[docker,libvirt]
-yamllint>=1.35
+yamllint>=1.38.0
 
 # Tests des challenges (pattern repris de l'ancien lab ansible-training)
 # pytest + testinfra valident chaque solution de challenge.
-pytest>=8.0
-pytest-testinfra>=10.0
+pytest>=9.1.1
+pytest-testinfra>=10.2.2
+
+# pyyaml : requis par conftest.py, qui importe yaml au chargement de la suite.
+# Sans lui, pytest s'arrête au démarrage (ModuleNotFoundError: No module named 'yaml').
+pyyaml>=6.0.3
