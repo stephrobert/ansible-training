@@ -15,4 +15,4 @@ yamllint>=1.35
 # Tests des challenges (pattern repris de l'ancien lab ansible-training)
 # pytest + testinfra valident chaque solution de challenge.
 pytest>=8.0
-pytest-testinfra>=10.0
+pytest-testinfra>=10.2.2
