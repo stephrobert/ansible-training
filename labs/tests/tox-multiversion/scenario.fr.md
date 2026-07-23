@@ -1,7 +1,7 @@
 # Contexte : un bug remonté depuis une version que vous n'avez jamais lancée
 
-Une issue tombe sur votre rôle publié : il échoue sur `ansible-core` 2.16. Vous
-n'arrivez pas à reproduire, parce que votre poste tourne en 2.18 et n'a jamais
+Une issue tombe sur votre rôle publié : il échoue sur `ansible-core` 2.19. Vous
+n'arrivez pas à reproduire, parce que votre poste tourne en 2.21 et n'a jamais
 fait autrement. Vos utilisateurs, eux, sont ailleurs : certains sont figés sur
 la LTS par leur équipe plateforme, d'autres sont déjà sur la dernière version, et
 votre suite mono-version est aveugle aux deux. Reproduire à la main impose de

@@ -1,7 +1,7 @@
 ---
 # ansible-navigator.yml : À COMPLÉTER PAR VOS SOINS.
-# Configurez l'exécution dans l'EE officiel creator-ee :
-#   - image : l'EE creator-ee (registre officiel)
+# Configurez l'exécution dans l'EE officiel community-ansible-dev-tools :
+#   - image : l'EE community-ansible-dev-tools (registre officiel)
 #   - moteur de conteneurs : celui préconisé par Red Hat
 #   - politique de pull : tirer seulement si l'image est absente
 #   - mode : celui qui convient aux scripts et à la CI (non interactif)

@@ -34,11 +34,19 @@ def test_ansible_cfg_has_forks_20():
     )
 
 
-def test_ansible_cfg_has_stdout_callback_yaml():
+def test_ansible_cfg_has_yaml_result_format():
+    """La sortie YAML doit être demandée par la clé qui la produit réellement.
+
+    `stdout_callback = yaml` était le réglage d'avant ansible-core 2.19 ; le
+    plugin a été supprimé. Et son remplaçant a un nom trompeur : l'option se
+    documente `result_format`, mais sa clé INI est `callback_result_format`.
+    Écrire `result_format = yaml` dans un ansible.cfg ne produit rien et ne
+    lève rien, la sortie reste en JSON.
+    """
     cfg = configparser.ConfigParser()
     cfg.read(ANSIBLE_CFG)
-    assert cfg.get("defaults", "stdout_callback", fallback=None) == "yaml", (
-        "ansible.cfg [defaults] doit définir stdout_callback = yaml"
+    assert cfg.get("defaults", "callback_result_format", fallback=None) == "yaml", (
+        "ansible.cfg [defaults] doit définir callback_result_format = yaml"
     )
 
 
@@ -80,7 +88,7 @@ def test_proof_file_has_at_least_three_lines(host):
 
 
 def test_proof_file_contains_config_keys(host):
-    """Le contenu doit ressembler à une sortie ansible-config dump (clés FORKS, STDOUT_CALLBACK)."""
+    """Le contenu doit ressembler à une sortie ansible-config dump (clé FORKS)."""
     content = host.file(RESULT_FILE).content_string
     assert re.search(r"DEFAULT_FORKS|FORKS\b", content), (
         "Le fichier doit contenir une référence à FORKS (sortie ansible-config dump)"
@@ -93,7 +101,7 @@ def test_proof_file_contains_config_keys(host):
 # l'a CHARGÉ : un ansible.cfg parfait au mauvais endroit, ou supplanté par un
 # autre (ANSIBLE_CFG, ./ansible.cfg, ~/.ansible.cfg), les satisferait tous.
 #
-# `ansible-config dump --only-changed` indique, entre parenthèses, la SOURCE de
+# `ansible-config dump --only-changed --type all` indique, entre parenthèses, la SOURCE de
 # chaque valeur. Exiger que la source soit le cfg du lab prouve la précédence,
 # qui est justement le sujet de ce lab.
 # ----------------------------------------------------------------------
@@ -131,14 +139,22 @@ def test_dump_forks_20_vient_du_cfg_du_lab(host):
     )
 
 
-def test_dump_stdout_callback_yaml_vient_du_cfg_du_lab(host):
-    """stdout_callback=yaml doit être ACTIF et venir du cfg du lab."""
-    got = _dumped(host, "DEFAULT_STDOUT_CALLBACK")
-    assert got, "DEFAULT_STDOUT_CALLBACK absent du dump : valeur non appliquée."
+def test_dump_result_format_yaml_vient_du_cfg_du_lab(host):
+    """La sortie YAML doit être ACTIVE et venir du cfg du lab.
+
+    Les options de plugin n'apparaissent que dans `--type all` : c'est pour
+    cela que le dump du lab le demande. Sans ce drapeau, la clé est absente du
+    dump et l'on ne peut rien prouver du tout.
+    """
+    got = _dumped(host, "result_format")
+    assert got, (
+        "result_format absent du dump : la sortie YAML n'est pas appliquée, "
+        "ou le dump a été pris sans --type all."
+    )
     source, value = got
-    assert value == "yaml", f"stdout_callback actif = {value}, attendu yaml."
+    assert value == "yaml", f"result_format actif = {value}, attendu yaml."
     assert source.endswith("labs/decouvrir/configuration-ansible/ansible.cfg"), (
-        f"stdout_callback=yaml est actif mais vient de « {source} »."
+        f"result_format=yaml est actif mais vient de « {source} »."
     )
 
 

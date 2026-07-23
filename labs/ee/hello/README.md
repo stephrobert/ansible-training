@@ -18,7 +18,7 @@ An **Execution Environment (EE)** is an **OCI container image** that packages `a
 By the end of this lab, you will know how to:
 
 1. **Check** that Podman and ansible-navigator are installed.
-2. **Pull** an EE image (`quay.io/ansible/creator-ee:latest`).
+2. **Pull** an EE image (`ghcr.io/ansible/community-ansible-dev-tools:latest`).
 3. **Configure** `ansible-navigator.yml` with a default EE.
 4. **Run** a first playbook inside the EE (`stdout` mode and interactive mode).
 5. Compare classic **`ansible-playbook`** vs **`ansible-navigator run`**.
@@ -49,14 +49,14 @@ labs/ee/hello/
 ## 📚 Exercise 1 — Pulling the EE image
 
 ```bash
-podman pull quay.io/ansible/creator-ee:latest
-podman images | grep creator-ee
+podman pull ghcr.io/ansible/community-ansible-dev-tools:latest
+podman images | grep community-ansible-dev-tools
 ```
 
 Typical output:
 
 ```text
-quay.io/ansible/creator-ee  latest  abc123def  3 days ago  1.2 GB
+ghcr.io/ansible/community-ansible-dev-tools  latest  abc123def  3 days ago  1.2 GB
 ```
 
 🔍 **Observation**: the image is **~1 GB** because it embeds ansible-core, ansible-runner, ansible-lint, ansible-navigator, and many collections (`ansible.posix`, `community.general`, `community.kubernetes`...). It is the **most complete community EE**, ideal for training and development.
@@ -66,7 +66,7 @@ quay.io/ansible/creator-ee  latest  abc123def  3 days ago  1.2 GB
 ```bash
 ansible-navigator run ping.yml \
   -i inventory.yml \
-  --eei quay.io/ansible/creator-ee:latest \
+  --eei ghcr.io/ansible/community-ansible-dev-tools:latest \
   -m stdout
 ```
 
@@ -111,7 +111,7 @@ The lab's `ansible-navigator.yml` file holds the default configuration:
 ```yaml
 ansible-navigator:
   execution-environment:
-    image: quay.io/ansible/creator-ee:latest
+    image: ghcr.io/ansible/community-ansible-dev-tools:latest
     container-engine: podman
   mode: stdout
 ```
@@ -120,7 +120,7 @@ With this file, the command can be simplified:
 
 ```bash
 ansible-navigator run ping.yml -i inventory.yml
-# → uses creator-ee + stdout mode by default
+# → uses community-ansible-dev-tools + stdout mode by default
 ```
 
 🔍 **Observation**: `ansible-navigator.yml` is looked up in **`./ansible-navigator.yml`**, **`~/.ansible-navigator.yml`**, or via **`$ANSIBLE_NAVIGATOR_CONFIG`**. It lets you pin the EE and the mode for an entire project.
@@ -186,7 +186,7 @@ LAB_NO_REPLAY=1 pytest -v challenge/tests/
 
 ## 🔍 Security — 2026 best practices
 
-- **Pinned image**: `creator-ee:v25.5.0` rather than `:latest` in production.
+- **Pinned image**: `community-ansible-dev-tools:v25.5.0` rather than `:latest` in production.
 - **SSH volume-mounts** in `ro,Z` (read-only + SELinux label).
 - **No secret in a container env variable**: pass via `--vault-password-file` or a secret manager.
 - **`pull.policy: missing`** in dev (fast), **`always`** in CI (always the latest version).

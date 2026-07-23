@@ -34,7 +34,7 @@ En complément, les **callback plugins** comme `ansible.posix.profile_tasks` mes
 1. **Choisir** le bon niveau `-v` selon le symptôme (variable Jinja vs SSH vs autre).
 2. **Activer** un callback `profile_tasks` via `ansible.cfg` pour mesurer les performances.
 3. **Distinguer** les arguments **post-template** (`-vv`) des connexions SSH (`-vvv`).
-4. **Activer** `stdout_callback = yaml` pour des sorties multi-ligne lisibles.
+4. **Activer** `callback_result_format = yaml` pour des sorties multi-ligne lisibles.
 5. **Sortir un secret** par mégarde **et** comprendre pourquoi `no_log: true` est obligatoire.
 
 ## 🔧 Préparation
@@ -142,7 +142,7 @@ Créer `ansible.cfg` à la racine du lab :
 
 ```ini
 [defaults]
-stdout_callback = yaml
+callback_result_format = yaml
 callbacks_enabled = ansible.posix.profile_tasks, ansible.posix.timer
 
 [callback_profile_tasks]
@@ -182,7 +182,7 @@ Playbook run took 0 days, 0 hours, 0 minutes, 4 seconds
 
 🔍 **Observation** : `profile_tasks` trie les tâches par durée descendante. **Indispensable** pour identifier le top des tâches lentes sur une fleet de production. Le callback `timer` ajoute le **temps total** du playbook.
 
-## 📚 Exercice 5 — `stdout_callback = yaml` pour sortie lisible
+## 📚 Exercice 5 — `callback_result_format = yaml` pour sortie lisible
 
 Sans le callback `yaml`, une `set_fact` complexe affiche :
 
@@ -190,7 +190,7 @@ Sans le callback `yaml`, une `set_fact` complexe affiche :
 ok: [db1.lab] => {"ansible_facts": {"my_data": [{"name": "alice", "age": 30}, {"name": "bob", "age": 25}]}}
 ```
 
-Avec `stdout_callback = yaml` :
+Avec `callback_result_format = yaml` :
 
 ```yaml
 ok: [db1.lab] => 
@@ -241,7 +241,7 @@ ok: [db1.lab] =>
 - **`-vv`** = chemin fichier + args templatés. Bug Jinja2 → utiliser `-vv`.
 - **`-vvv`** = commande SSH exacte. Bug réseau / connexion → utiliser `-vvv`.
 - **`-vvvv`** = internals plugin de connexion. Très rare, surtout pour ControlMaster.
-- **Callbacks** : `profile_tasks` + `timer` + `stdout_callback=yaml` dans `ansible.cfg`.
+- **Callbacks** : `profile_tasks` + `timer` + `callback_result_format=yaml` dans `ansible.cfg`.
 - **`no_log: true`** systématique sur toute tâche manipulant un secret.
 
 ## 🤔 Questions de réflexion

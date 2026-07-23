@@ -26,7 +26,7 @@ L'examen RHCE EX294 vous demande de **configurer correctement** un projet Ansibl
 
 1. **Comprendre** la précédence de chargement d'`ansible.cfg` (`ANSIBLE_CONFIG` env > `./ansible.cfg` > `~/.ansible.cfg` > `/etc/ansible/ansible.cfg`).
 2. **Créer** un `ansible.cfg` projet avec les options essentielles (`inventory`, `remote_user`, `host_key_checking`, `forks`, `roles_path`, `collections_path`).
-3. **Vérifier** la config active avec **`ansible-config dump --only-changed`**.
+3. **Vérifier** la config active avec **`ansible-config dump --only-changed --type all`**.
 4. **Surcharger** une option via **variable d'environnement** (`ANSIBLE_FORKS=20`).
 5. **Activer** un callback (`ansible.posix.profile_tasks`) sans toucher à un playbook.
 6. **Distinguer** options `[defaults]` vs `[ssh_connection]` vs `[privilege_escalation]`.
@@ -86,7 +86,7 @@ gathering = smart
 fact_caching = jsonfile
 fact_caching_connection = /tmp/ansible-fact-cache
 fact_caching_timeout = 7200
-stdout_callback = yaml
+callback_result_format = yaml
 callbacks_enabled = ansible.posix.profile_tasks, ansible.posix.timer
 retry_files_enabled = False
 deprecation_warnings = False
@@ -225,7 +225,7 @@ Vérifier le forks effectivement utilisé via `ansible-config dump`.
 
 - **Précédence** : `ANSIBLE_CONFIG` env > `./ansible.cfg` > `~/.ansible.cfg` > `/etc/ansible/ansible.cfg`.
 - **3 sections principales** : `[defaults]`, `[privilege_escalation]`, `[ssh_connection]`.
-- **`ansible-config dump --only-changed`** = inspection de la config effective.
+- **`ansible-config dump --only-changed --type all`** = inspection de la config effective.
 - **Variables d'env** : `ANSIBLE_FORKS`, `ANSIBLE_HOST_KEY_CHECKING`, etc. surchargent le fichier.
 - **Callbacks** activés via `callbacks_enabled = ansible.posix.profile_tasks, ...`.
 - **`roles_path` / `collections_path`** rendent les ressources **locales au projet** prioritaires.
@@ -239,7 +239,7 @@ Vérifier le forks effectivement utilisé via `ansible-config dump`.
 
 ## 🚀 Challenge final
 
-Voir [`challenge/README.md`](challenge/README.md) — créer un `ansible.cfg` qui active `profile_tasks`, force `forks=20`, et déposer un fichier preuve qui contient le résultat de `ansible-config dump --only-changed`.
+Voir [`challenge/README.md`](challenge/README.md) — créer un `ansible.cfg` qui active `profile_tasks`, force `forks=20`, et déposer un fichier preuve qui contient le résultat de `ansible-config dump --only-changed --type all`.
 
 ## 💡 Pour aller plus loin
 

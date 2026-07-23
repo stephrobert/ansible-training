@@ -1,7 +1,7 @@
 ---
 id: ee-inspection
 title: "Inspect an Execution Environment and pick the right one"
-description: "List an EE's contents with ansible-navigator, compare creator-ee, awx-ee and community-ee-minimal, then pick one per use case."
+description: "List an EE's contents with ansible-navigator, compare community-ansible-dev-tools, awx-ee and community-ee-minimal, then pick one per use case."
 section: ee
 level: l2
 difficulty: intermediate

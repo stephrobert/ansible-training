@@ -26,7 +26,7 @@ By the end of this lab, you will know how to:
 
 1. **Understand** the loading precedence of `ansible.cfg` (`ANSIBLE_CONFIG` env > `./ansible.cfg` > `~/.ansible.cfg` > `/etc/ansible/ansible.cfg`).
 2. **Create** a project `ansible.cfg` with the essential options (`inventory`, `remote_user`, `host_key_checking`, `forks`, `roles_path`, `collections_path`).
-3. **Check** the active config with **`ansible-config dump --only-changed`**.
+3. **Check** the active config with **`ansible-config dump --only-changed --type all`**.
 4. **Override** an option via an **environment variable** (`ANSIBLE_FORKS=20`).
 5. **Enable** a callback (`ansible.posix.profile_tasks`) without touching a playbook.
 6. **Distinguish** `[defaults]` vs `[ssh_connection]` vs `[privilege_escalation]` options.
@@ -86,7 +86,7 @@ gathering = smart
 fact_caching = jsonfile
 fact_caching_connection = /tmp/ansible-fact-cache
 fact_caching_timeout = 7200
-stdout_callback = yaml
+callback_result_format = yaml
 callbacks_enabled = ansible.posix.profile_tasks, ansible.posix.timer
 retry_files_enabled = False
 deprecation_warnings = False
@@ -225,7 +225,7 @@ Check the forks actually used via `ansible-config dump`.
 
 - **Precedence**: `ANSIBLE_CONFIG` env > `./ansible.cfg` > `~/.ansible.cfg` > `/etc/ansible/ansible.cfg`.
 - **3 main sections**: `[defaults]`, `[privilege_escalation]`, `[ssh_connection]`.
-- **`ansible-config dump --only-changed`** = inspection of the effective config.
+- **`ansible-config dump --only-changed --type all`** = inspection of the effective config.
 - **Env variables**: `ANSIBLE_FORKS`, `ANSIBLE_HOST_KEY_CHECKING`, etc. override the file.
 - **Callbacks** enabled via `callbacks_enabled = ansible.posix.profile_tasks, ...`.
 - **`roles_path` / `collections_path`** make the **project-local** resources take priority.
@@ -239,7 +239,7 @@ Check the forks actually used via `ansible-config dump`.
 
 ## 🚀 Final challenge
 
-See [`challenge/README.md`](challenge/README.md): create an `ansible.cfg` that enables `profile_tasks`, forces `forks=20`, and drop a proof file that contains the result of `ansible-config dump --only-changed`.
+See [`challenge/README.md`](challenge/README.md): create an `ansible.cfg` that enables `profile_tasks`, forces `forks=20`, and drop a proof file that contains the result of `ansible-config dump --only-changed --type all`.
 
 ## 💡 Going further
 

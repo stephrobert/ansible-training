@@ -11,6 +11,7 @@ documentée dans le README.
 """
 
 import configparser
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -27,6 +28,22 @@ def _parser():
     return parser
 
 
+# Le nom d'environnement s'écrit « ansible2.19 », SANS tiret entre « ansible »
+# et la version : avec un tiret, tox 4 lit « 2.19 » comme une spec
+# d'interpréteur et refuse de démarrer (« could not find python interpreter
+# matching any of the specs 2.19 »). Ces tests acceptent donc les deux formes
+# plutôt que d'imposer celle qui ne démarre plus.
+ANSIBLE_ENV = re.compile(r"^ansible-?\d")
+
+
+def _ansible_env_sections(parser):
+    """Sections [testenv:ansibleX] du tox.ini, quelle que soit la graphie."""
+    return [
+        s for s in parser.sections()
+        if s.startswith("testenv:") and ANSIBLE_ENV.match(s.split(":", 1)[1])
+    ]
+
+
 def test_tox_ini_present():
     assert TOX_INI.exists(), "tox.ini manquant : le squelette livré a-t-il été supprimé ?"
 
@@ -34,11 +51,19 @@ def test_tox_ini_present():
 def test_tox_envlist_has_multiple_ansible_versions():
     parser = _parser()
     envlist = parser["tox"].get("envlist", "")
-    assert "ansible" in envlist, "envlist doit cibler des environnements ansible-X"
+    assert "ansible" in envlist, "envlist doit cibler des environnements ansibleX"
     assert "{" in envlist, (
-        "Utilisez la syntaxe range de tox (ansible-2.{X,Y,Z}) pour factoriser"
+        "Utilisez la syntaxe générative de tox (ansible2.{X,Y,Z}) pour factoriser"
     )
-    versions = [v for v in ("16", "17", "18", "19") if v in envlist]
+    # On compte ce que l'accolade développe réellement, au lieu de chercher une
+    # liste de versions figée dans le test : celle-ci périmait le lab à chaque
+    # sortie d'ansible-core, et c'est ce qui l'a mis au rouge au passage en 2.19.
+    versions = [
+        v
+        for group in re.findall(r"\{([^}]*)\}", envlist)
+        for v in group.split(",")
+        if v.strip()
+    ]
     assert len(versions) >= 3, (
         f"Au moins 3 versions d'ansible-core dans envlist, vu : {envlist!r}"
     )
@@ -56,9 +81,9 @@ def test_testenv_runs_molecule_test():
 
 def test_at_least_3_envs_per_version():
     parser = _parser()
-    ansible_envs = [s for s in parser.sections() if s.startswith("testenv:ansible-")]
+    ansible_envs = _ansible_env_sections(parser)
     assert len(ansible_envs) >= 3, (
-        f"Au moins 3 sections [testenv:ansible-X] attendues, vu : {ansible_envs}"
+        f"Au moins 3 sections [testenv:ansibleX] attendues, vu : {ansible_envs}"
     )
 
 
@@ -69,9 +94,9 @@ def test_each_env_pins_ansible_core():
     n itère pas, aucune assertion ne joue, et le test est vert sur le squelette.
     """
     parser = _parser()
-    envs = [s for s in parser.sections() if s.startswith("testenv:ansible-")]
+    envs = _ansible_env_sections(parser)
     assert envs, (
-        "Aucune section [testenv:ansible-*] dans tox.ini : le lab demande un "
+        "Aucune section [testenv:ansible*] dans tox.ini : le lab demande un "
         "environnement par version d ansible-core."
     )
     for s in envs:
@@ -119,7 +144,7 @@ def test_tox_accepts_configuration():
         f"tox refuse votre configuration :\n{result.stdout}{result.stderr}"
     )
     envs = [line.strip() for line in result.stdout.splitlines() if line.strip()]
-    ansible_envs = [e for e in envs if e.startswith("ansible-")]
+    ansible_envs = [e for e in envs if ANSIBLE_ENV.match(e)]
     assert len(ansible_envs) >= 3, (
-        f"tox --listenvs doit exposer au moins 3 envs ansible-X, vu : {envs}"
+        f"tox --listenvs doit exposer au moins 3 envs ansibleX, vu : {envs}"
     )

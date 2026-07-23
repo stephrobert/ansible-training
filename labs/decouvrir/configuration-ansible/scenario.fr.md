@@ -13,7 +13,7 @@ Votre mission :
    **`forks = 20`**, bascule la sortie sur le **callback `yaml`** et active
    **`profile_tasks`** pour que les tâches lentes se dénoncent elles-mêmes.
 2. Vérifier ce qui est **réellement actif** avec
-   `ansible-config dump --only-changed`, et comprendre pourquoi votre fichier
+   `ansible-config dump --only-changed --type all`, et comprendre pourquoi votre fichier
    ne gagne que si le run démarre depuis son répertoire.
 3. Archiver la preuve : déposer ce dump sur `db1.lab` dans
    `/tmp/lab03a-config.txt`, propriétaire `root`, mode `0644`.

@@ -8,15 +8,15 @@
 🔗 [**Testing an Ansible role with multi-version tox**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/tests-tox-multiversion/)
 
 A role distributed on Galaxy must work on **several `ansible-core`
-versions** (typically: 2.16 LTS, 2.17, 2.18). You can validate this
+versions** (typically: 2.19, 2.20, 2.21). You can validate this
 with **`tox`**, a Python environment orchestrator.
 
 ```text
 tox.ini
-   ├─ envlist = ansible-2.{16,17,18}
-   ├─ [testenv:ansible-2.16] → pin ansible-core==2.16.* → molecule test
-   ├─ [testenv:ansible-2.17] → pin ansible-core==2.17.* → molecule test
-   └─ [testenv:ansible-2.18] → pin ansible-core==2.18.* → molecule test
+   ├─ envlist = ansible2.{19,20,21}
+   ├─ [testenv:ansible2.19] → pin ansible-core==2.19.* → molecule test
+   ├─ [testenv:ansible2.20] → pin ansible-core==2.20.* → molecule test
+   └─ [testenv:ansible2.21] → pin ansible-core==2.21.* → molecule test
 ```
 
 `tox` creates 3 isolated venvs, installs the target Ansible version in each,
@@ -29,7 +29,7 @@ By the end of this lab, you will know how to:
 
 1. Write a `tox.ini` with **several** Ansible **environments**.
 2. Pin the `ansible-core` version in each env.
-3. Run `tox -e ansible-2.18` for a specific version.
+3. Run `tox -e ansible2.21` for a specific version.
 4. Run `tox` for **all** versions in parallel.
 
 ## 🔧 Preparation
@@ -53,30 +53,30 @@ labs/tests/tox-multiversion/
 
 ```ini
 [tox]
-envlist = ansible-2.{16,17,18}
+envlist = ansible2.{19,20,21}
 skipsdist = true
 
 [testenv]
 commands =
     molecule test
 
-[testenv:ansible-2.16]
+[testenv:ansible2.19]
 deps =
-    ansible-core==2.16.*
+    ansible-core==2.19.*
     molecule
     molecule-plugins[podman]
     pytest-testinfra
 
-[testenv:ansible-2.17]
+[testenv:ansible2.20]
 deps =
-    ansible-core==2.17.*
+    ansible-core==2.20.*
     molecule
     molecule-plugins[podman]
     pytest-testinfra
 
-[testenv:ansible-2.18]
+[testenv:ansible2.21]
 deps =
-    ansible-core==2.18.*
+    ansible-core==2.21.*
     molecule
     molecule-plugins[podman]
     pytest-testinfra
@@ -86,12 +86,12 @@ deps =
 
 - **`envlist`**: the env names to run by default.
 - **`[testenv]`**: config shared by all envs (here the `molecule test` command).
-- **`[testenv:ansible-2.X]`**: specific config with an Ansible pin.
+- **`[testenv:ansible2.X]`**: specific config with an Ansible pin.
 - **`deps` is repeated in full in each env, on purpose.** You could factor
   the shared lines with `{[testenv]deps}`, but spelling out `ansible-core==2.X.*`
   in every section makes the pinned version readable at a glance, without
   chasing a substitution chain.
-- **`ansible-core==2.16.*`** (strict pin on the branch), not `>=2.16,<2.17`:
+- **`ansible-core==2.19.*`** (strict pin on the branch), not `>=2.19,<2.20`:
   a wide range would install the same latest version in all three envs and
   make the matrix decorative. The pin is what the automated tests check.
 
@@ -99,13 +99,13 @@ deps =
 
 ```bash
 cd labs/tests/tox-multiversion
-tox -e ansible-2.18
+tox -e ansible2.21
 ```
 
 🔍 `tox`:
 
-1. Creates a venv `.tox/ansible-2.18/`.
-2. Installs `ansible-core==2.18.*` + Molecule + dependencies.
+1. Creates a venv `.tox/ansible2.21/`.
+2. Installs `ansible-core==2.21.*` + Molecule + dependencies.
 3. Runs `molecule test`.
 
 ## 📚 Exercise 3 — All versions
@@ -117,13 +117,13 @@ tox
 Runs the 3 envs in series. Summary output:
 
 ```text
-ansible-2.16: OK
-ansible-2.17: OK
-ansible-2.18: OK
+ansible2.19: OK
+ansible2.20: OK
+ansible2.21: OK
 ___________ summary ____________
-  ansible-2.16: commands succeeded
-  ansible-2.17: commands succeeded
-  ansible-2.18: commands succeeded
+  ansible2.19: commands succeeded
+  ansible2.20: commands succeeded
+  ansible2.21: commands succeeded
   congratulations :)
 ```
 
@@ -139,7 +139,7 @@ tox -p auto    # parallelizes according to the number of CPUs
 
 - **`tox`** is the reference Python tool for testing across several
   dependency versions. Ansible is just one use case.
-- **Strict pin** (`==2.18.*`) > wide range (`>=2.16`). You want the CI to
+- **Strict pin** (`==2.21.*`) > wide range (`>=2.19`). You want the CI to
   fail if Ansible publishes a new version you have not validated.
 - **Idiomatic** in the Ansible community: every `geerlingguy` role on
   Galaxy has a `tox.ini`.
@@ -170,8 +170,8 @@ See [`challenge/README.md`](challenge/README.md).
   `meta/main.yml` (`min_ansible_version` fields, etc.).
 - **`tox -e lint`**: add an env that only runs `ansible-lint`, separate
   from the Molecule tests.
-- **GitHub Actions matrix**: `strategy.matrix.ansible_version: [2.16,
-  2.17, 2.18]` → one runner per version, in parallel (lab 69).
+- **GitHub Actions matrix**: `strategy.matrix.ansible_version: [2.19,
+  2.20, 2.21]` → one runner per version, in parallel (lab 69).
 
 ## 🔍 Linting with `ansible-lint`
 

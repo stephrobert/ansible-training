@@ -195,7 +195,7 @@ See [`challenge/README.md`](challenge/README.md): the **18 detailed tasks**, in 
 ## 💡 Going further
 
 - **Mock 2**: redo this lab in 1 week, aim for a shorter time.
-- **`ansible-navigator`**: a real EX294 objective (use Automation content navigator to find modules in collections and build inventories). Also testing your playbook in `creator-ee` (lab 84) guarantees portability.
+- **`ansible-navigator`**: a real EX294 objective (use Automation content navigator to find modules in collections and build inventories). Also testing your playbook in `community-ansible-dev-tools` (lab 84) guarantees portability.
 - **`ansible-lint --profile production`** on your playbook: zero warning expected.
 
 ## 🔍 Linting with `ansible-lint`

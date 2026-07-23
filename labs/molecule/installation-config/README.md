@@ -22,7 +22,7 @@ And in `molecule.yml`, you configure:
 
 - **`provisioner.inventory.host_vars`**: per-instance variables.
 - **`scenario.test_sequence`**: order of the cycle steps (add `idempotence`).
-- **`provisioner.config_options.defaults.callback_enabled`**: Ansible
+- **`provisioner.config_options.defaults.callbacks_enabled`**: Ansible
   callbacks (`profile_tasks`, `timer`).
 
 ## 🎯 Objectives
@@ -147,7 +147,7 @@ Add in `molecule.yml`:
 provisioner:
   config_options:
     defaults:
-      callback_enabled: profile_tasks, timer
+      callbacks_enabled: ansible.posix.profile_tasks, ansible.posix.timer
 ```
 
 🔍 **Observation**: at the end of `converge`, you see **the time of

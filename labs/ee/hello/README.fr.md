@@ -18,7 +18,7 @@ Un **Execution Environment (EE)** est une **image conteneur OCI** qui empaquette
 À la fin de ce lab, vous saurez :
 
 1. **Vérifier** que Podman et ansible-navigator sont installés.
-2. **Tirer** une image EE (`quay.io/ansible/creator-ee:latest`).
+2. **Tirer** une image EE (`ghcr.io/ansible/community-ansible-dev-tools:latest`).
 3. **Configurer** `ansible-navigator.yml` avec un EE par défaut.
 4. **Lancer** un premier playbook dans l'EE (mode `stdout` et mode interactif).
 5. Comparer **`ansible-playbook`** classique vs **`ansible-navigator run`**.
@@ -49,14 +49,14 @@ labs/ee/hello/
 ## 📚 Exercice 1 — Pull de l'image EE
 
 ```bash
-podman pull quay.io/ansible/creator-ee:latest
-podman images | grep creator-ee
+podman pull ghcr.io/ansible/community-ansible-dev-tools:latest
+podman images | grep community-ansible-dev-tools
 ```
 
 Sortie typique :
 
 ```text
-quay.io/ansible/creator-ee  latest  abc123def  3 days ago  1.2 GB
+ghcr.io/ansible/community-ansible-dev-tools  latest  abc123def  3 days ago  1.2 GB
 ```
 
 🔍 **Observation** : l'image fait **~1 Go** car elle embarque ansible-core, ansible-runner, ansible-lint, ansible-navigator, et de nombreuses collections (`ansible.posix`, `community.general`, `community.kubernetes`...). C'est l'**EE communautaire le plus complet** — idéal pour la formation et le dev.
@@ -66,7 +66,7 @@ quay.io/ansible/creator-ee  latest  abc123def  3 days ago  1.2 GB
 ```bash
 ansible-navigator run ping.yml \
   -i inventory.yml \
-  --eei quay.io/ansible/creator-ee:latest \
+  --eei ghcr.io/ansible/community-ansible-dev-tools:latest \
   -m stdout
 ```
 
@@ -111,7 +111,7 @@ Le fichier `ansible-navigator.yml` du lab contient la configuration par défaut 
 ```yaml
 ansible-navigator:
   execution-environment:
-    image: quay.io/ansible/creator-ee:latest
+    image: ghcr.io/ansible/community-ansible-dev-tools:latest
     container-engine: podman
   mode: stdout
 ```
@@ -120,7 +120,7 @@ Avec ce fichier, on peut simplifier la commande :
 
 ```bash
 ansible-navigator run ping.yml -i inventory.yml
-# → utilise creator-ee + mode stdout par défaut
+# → utilise community-ansible-dev-tools + mode stdout par défaut
 ```
 
 🔍 **Observation** : `ansible-navigator.yml` est cherché dans **`./ansible-navigator.yml`**, **`~/.ansible-navigator.yml`**, ou via **`$ANSIBLE_NAVIGATOR_CONFIG`**. Permet de figer l'EE et le mode pour un projet entier.
@@ -186,7 +186,7 @@ LAB_NO_REPLAY=1 pytest -v challenge/tests/
 
 ## 🔍 Sécurité — bonnes pratiques 2026
 
-- **Image pinnée** : `creator-ee:v25.5.0` plutôt que `:latest` en prod.
+- **Image pinnée** : `community-ansible-dev-tools:v25.5.0` plutôt que `:latest` en prod.
 - **Volume-mounts SSH** en `ro,Z` (lecture seule + label SELinux).
 - **Pas de secret en variable d'env du conteneur** : passer via `--vault-password-file` ou un secret manager.
 - **`pull.policy: missing`** en dev (rapide), **`always`** en CI (toujours la dernière version).

@@ -1,7 +1,7 @@
 ---
 id: troubleshooting-verbosite
 title: "Verbosity levels and callback plugins"
-description: "Pick the -v level that matches the symptom, enable profile_tasks and the yaml stdout_callback, and see what a missing no_log leaks."
+description: "Pick the -v level that matches the symptom, enable profile_tasks and YAML output (callback_result_format), and see what a missing no_log leaks."
 section: troubleshooting
 level: l2
 difficulty: intermediate

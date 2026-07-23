@@ -23,7 +23,7 @@ driver:
   options:
     managed: true
     # De quoi ouvrir un shell dans l'instance quand un test reste rouge :
-    #   molecule login -h instance-alma9
+    #   molecule login -h instance-alma10
     login_cmd_template: "podman exec -ti {instance} bash"
 
 platforms:
@@ -31,7 +31,7 @@ platforms:
   # démarre nginx via systemd, donc le conteneur doit faire tourner un
   # vrai PID 1 systemd, pas un shell. Une image de base ne convient pas :
   # docker.io/rockylinux/rockylinux:9 n'a même pas /sbin/init.
-  - name: instance-alma9
+  - name: instance-alma10
     # AlmaLinux 9 : la distribution de la formation (cf. distros du
     # lab.yaml). La variante « -init » embarque systemd.
     image: docker.io/almalinux/10-init:latest
@@ -45,6 +45,11 @@ platforms:
 provisioner:
   # C'est Ansible qui joue converge.yml puis verify.yml.
   name: ansible
+  config_options:
+    defaults:
+      # Molecule 26 ne met plus le roles/ du projet dans le roles path :
+      # sans cette ligne, converge échoue sur « the role was not found ».
+      roles_path: ${MOLECULE_PROJECT_DIRECTORY}/roles
 
 verifier:
   # « ansible » : les assertions vivent dans verify.yml, en Ansible natif.

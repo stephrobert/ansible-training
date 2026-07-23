@@ -1,7 +1,7 @@
 # Context — A bug report from a version you never ran
 
-An issue lands on your published role: it fails on `ansible-core` 2.16. You
-cannot reproduce it, because your machine runs 2.18 and always has. Your users
+An issue lands on your published role: it fails on `ansible-core` 2.19. You
+cannot reproduce it, because your machine runs 2.21 and always has. Your users
 do not. Some are pinned to the LTS by their platform team, others are already on
 the newest release, and your single-version test suite has been blind to all of
 them. Reproducing this by hand means rebuilding a virtualenv per version, and

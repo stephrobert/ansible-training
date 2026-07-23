@@ -6,7 +6,7 @@ exécutent réellement les outils disponibles sans conteneur : bash -n sur
 le script, ansible-inventory sur l'inventaire, ansible-playbook
 --syntax-check sur le playbook.
 
-Le run complet dans l'EE (podman + pull de creator-ee) reste la
+Le run complet dans l'EE (podman + pull de community-ansible-dev-tools) reste la
 validation manuelle documentée dans le README : trop lourd et dépendant
 du réseau pour ce harnais.
 """
@@ -36,8 +36,8 @@ def test_setup_script_completed():
     assert "ansible-navigator" in content, (
         "Le script doit vérifier/installer ansible-navigator"
     )
-    assert "creator-ee" in content, (
-        "Le script doit pré-tirer l'image creator-ee (podman pull)"
+    assert "community-ansible-dev-tools" in content, (
+        "Le script doit pré-tirer l'image community-ansible-dev-tools (podman pull)"
     )
 
 
@@ -113,8 +113,8 @@ def test_navigator_config_semantics():
     cfg = yaml.safe_load((LAB_DIR / "ansible-navigator.yml").read_text())
     nav = cfg.get("ansible-navigator", {})
     ee = nav.get("execution-environment", {})
-    assert "creator-ee" in str(ee.get("image", "")), (
-        f"Image attendue : creator-ee (registre officiel), vu : {ee.get('image')!r}"
+    assert "community-ansible-dev-tools" in str(ee.get("image", "")), (
+        f"Image attendue : community-ansible-dev-tools (registre officiel), vu : {ee.get('image')!r}"
     )
     assert ee.get("container-engine") == "podman", (
         "container-engine: podman attendu (préconisation Red Hat, rootless)"

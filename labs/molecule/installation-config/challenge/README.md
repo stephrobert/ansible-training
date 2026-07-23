@@ -20,7 +20,7 @@ Expected state (this is what pytest checks):
 | `molecule/default/prepare.yml` | To create: instance preparation play (prerequisites outside the role's scope) |
 | `molecule.yml`: `host_vars` | `provisioner.inventory.host_vars` overrides `webserver_listen_port: 8080` for the instance |
 | `molecule.yml`: `test_sequence` | custom sequence under `scenario:`, including `prepare`, `converge`, `idempotence` and `verify` |
-| `molecule.yml`: callbacks | `callback_enabled` with `profile_tasks` and `timer` |
+| `molecule.yml`: callbacks | `callbacks_enabled` with `profile_tasks` and `timer` |
 | Everything | `molecule syntax` passes (pytest actually runs it) |
 
 Warning: `verify.yml` (provided) checks that nginx listens on the

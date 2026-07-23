@@ -94,10 +94,15 @@ def test_molecule_yml_has_callback_options():
     defaults = (
         config.get("provisioner", {}).get("config_options", {}).get("defaults", {})
     )
-    callbacks = str(defaults.get("callback_enabled", ""))
+    # `callback_enabled` a été renommé `callbacks_enabled` en ansible-core 2.19.
+    # On accepte encore l'ancienne clé pour ne pas casser une configuration
+    # existante, mais l'énoncé et la solution enseignent la nouvelle.
+    callbacks = str(
+        defaults.get("callbacks_enabled") or defaults.get("callback_enabled", "")
+    )
     assert "profile_tasks" in callbacks, (
         "Activez le callback profile_tasks (temps par tâche) via "
-        "provisioner.config_options.defaults.callback_enabled"
+        "provisioner.config_options.defaults.callbacks_enabled"
     )
     assert "timer" in callbacks, "Activez aussi le callback timer (durée totale)"
 

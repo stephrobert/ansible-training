@@ -4,14 +4,14 @@
 
 At the lab root, produce 4 files that demonstrate the use of
 `ansible-navigator` with an official Execution Environment
-(`creator-ee`).
+(`community-ansible-dev-tools`).
 
 | File | Expectation |
 | --- | --- |
 | `setup-ee.sh` | Executable. Checks/installs `podman` and `ansible-navigator`. |
 | `inventory.yml` | Valid YAML. Hosts `web1.lab` and `db1.lab` in the `all` group, each declaring its `ansible_host` (reachable IP). |
 | `ping.yml` | FQCN module `ansible.builtin.ping`. |
-| `ansible-navigator.yml` | References the `creator-ee` image in `execution-environment.image:`. |
+| `ansible-navigator.yml` | References the `community-ansible-dev-tools` image in `execution-environment.image:`. |
 
 ## 🧩 Stuck?
 
@@ -48,7 +48,7 @@ pytest -v labs/ee/hello/challenge/tests/
 The tests actually run `bash -n` on your script,
 `ansible-inventory` on your inventory and `ansible-playbook
 --syntax-check` on your playbook. Only the run inside the EE (Podman + pull
-of creator-ee) stays manual.
+of community-ansible-dev-tools) stays manual.
 
 ## 🧹 Reset
 

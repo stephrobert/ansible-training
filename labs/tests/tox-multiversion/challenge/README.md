@@ -9,7 +9,7 @@ Expected state (this is what pytest checks):
 
 | Item | Expectation |
 | --- | --- |
-| `[tox] envlist` | range syntax `ansible-2.{...}` covering at least 3 recent ansible-core versions |
+| `[tox] envlist` | range syntax `ansible2.{...}` covering at least 3 recent ansible-core versions |
 | `[testenv]` | `commands` runs `molecule test` |
 | `[testenv:ansible-X]` | at least 3 sections, each pinning `ansible-core` in its `deps` |
 | `[testenv:lint]` | a separate environment for yamllint + ansible-lint (fail-fast, without spinning up an instance) |

@@ -354,34 +354,43 @@ def _protect_lab_tree(request, lab_root: Path) -> None:
     truffé de `???`, un `requirements.yml` avec `roles: []`… Quand la référence
     tourne, elle écrit la correction PAR-DESSUS ces fichiers suivis. Sans
     restauration, un run laisse les réponses en clair dans l'arbre, et le
-    prochain `git add` les commite. La branche solution.sh a son finalizer ;
-    celle-ci n'avait rien.
+    prochain `git add` les commite.
 
-    On ne restaure QUE les fichiers qui étaient propres avant notre passage :
-    si l'apprenant a déjà modifié son squelette, c'est son travail, on n'y
-    touche pas.
+    On PHOTOGRAPHIE le contenu réel de chaque fichier suivi du lab avant de poser
+    la solution, et on le réécrit tel quel après. Le snapshot est en mémoire, pas
+    `git checkout` : c'est ce qui rend correct le cas du formateur qui a des
+    corrections NON COMMITÉES sur un squelette (nouveaux `???`, renommage d'API).
+    L'ancienne version détectait par `git status` et restaurait via `git checkout`
+    HEAD : elle excluait donc les fichiers déjà modifiés (elle les laissait
+    écrasés par la solution) et, pour les autres, aurait jeté les corrections en
+    cours au profit de HEAD. Rejouer un lab dont on vient d'éditer le squelette
+    laissait la réponse dans l'arbre — le piège que ce finalizer doit fermer.
+
+    Ne tourne qu'en mode replay (formateur/campagne) : en mode apprenant,
+    `_apply_lab_state` sort avant, donc on ne restaure jamais par-dessus le
+    travail de quelqu'un qui joue le lab.
     """
     res = subprocess.run(
-        ["git", "status", "--porcelain", "--untracked-files=no", "--", str(lab_root)],
-        cwd=REPO_ROOT, capture_output=True, text=True,
+        ["git", "ls-files", "-z", "--", str(lab_root)],
+        cwd=REPO_ROOT, capture_output=True,
     )
     if res.returncode != 0:
         return  # hors dépôt git : rien à protéger
-    deja_sales = {line[3:].strip() for line in res.stdout.splitlines()}
+    files = [REPO_ROOT / p for p in res.stdout.decode().split("\0") if p]
+    snapshot: dict[Path, bytes] = {}
+    for f in files:
+        try:
+            snapshot[f] = f.read_bytes()
+        except OSError:
+            pass  # fichier suivi mais absent du disque : rien à photographier
 
     def _restaurer() -> None:
-        apres = subprocess.run(
-            ["git", "status", "--porcelain", "--untracked-files=no", "--", str(lab_root)],
-            cwd=REPO_ROOT, capture_output=True, text=True,
-        )
-        if apres.returncode != 0:
-            return
-        salis = {line[3:].strip() for line in apres.stdout.splitlines()} - deja_sales
-        if salis:
-            subprocess.run(
-                ["git", "checkout", "--", *sorted(salis)],
-                cwd=REPO_ROOT, capture_output=True, text=True,
-            )
+        for f, content in snapshot.items():
+            try:
+                if not f.is_file() or f.read_bytes() != content:
+                    f.write_bytes(content)
+            except OSError:
+                pass
 
     request.addfinalizer(_restaurer)
 
@@ -557,6 +566,59 @@ def _managed_save_path(fqdn: str) -> str:
     return f"/var/lib/libvirt/qemu/save/{fqdn}.save"
 
 
+def _domain_uuid(fqdn: str) -> str | None:
+    """UUID du domaine libvirt tel qu'il existe MAINTENANT, ou None."""
+    res = subprocess.run(
+        ["sudo", "virsh", "domuuid", fqdn], capture_output=True, text=True,
+    )
+    return res.stdout.strip() or None
+
+
+def _saved_image_uuid(path: str) -> str | None:
+    """UUID du domaine auquel appartient un état mémoire figé, ou None."""
+    res = subprocess.run(
+        ["sudo", "virsh", "save-image-dumpxml", path],
+        capture_output=True, text=True,
+    )
+    if res.returncode != 0:
+        return None
+    found = re.search(r"<uuid>([0-9a-f-]+)</uuid>", res.stdout)
+    return found.group(1) if found else None
+
+
+def _golden_is_usable(fqdn: str, mem: str) -> bool:
+    """Le golden mémoire appartient-il encore au domaine du même nom ?
+
+    libvirt REFUSE de restaurer un état mémoire vers un domaine dont l'UUID
+    diffère (« cannot restore domain X uuid A from a file which belongs to
+    domain X uuid B »), et c'est le piège : le nom, lui, ne change pas.
+
+    Or tout `dsoxlab provision` recrée les domaines (Terraform leur attribue
+    un UUID neuf) tout en RÉUTILISANT les volumes disques existants. Les
+    `.postboot` restent donc valides quand les `.mem.save` sont déjà morts :
+    la seule présence des fichiers ne prouve rien, et la branche rapide partait
+    quand même. Chaque lab tentait alors un restore voué à l'échec, laissait sa
+    VM éteinte, puis attendait 240 s de `_wait_ssh` par hôte. Sur 113 labs, la
+    suite paraissait figée sans qu'aucune ligne ne l'explique.
+
+    On compare donc les UUID avant de choisir la branche rapide. Un golden
+    périmé fait retomber sur le repli (boot complet, lent mais correct) au lieu
+    de casser, et le dit explicitement.
+    """
+    domain = _domain_uuid(fqdn)
+    saved = _saved_image_uuid(mem)
+    if domain is None or saved is None or domain == saved:
+        return True
+    print(
+        f"\n[isolation] {fqdn} : état mémoire figé périmé "
+        f"(golden={saved}, domaine={domain}) : un provision a recréé le "
+        f"domaine. Repli sur un boot complet. Pour retrouver le reset rapide, "
+        f"DSOXLAB_SNAPSHOT_ISOLATION=1 pytest <un lab>.",
+        file=sys.stderr,
+    )
+    return False
+
+
 def _wait_ssh(fqdns: list[str], timeout: int = 240) -> None:
     """Attend que chaque VM ait FINI de démarrer après un reset/reboot.
 
@@ -637,7 +699,11 @@ def snapshot_reset(fqdns: list[str]) -> bool:
             continue
         mem = _mem_save_path(fqdn)
         postboots = [d + ".postboot" for d in disks]
-        if Path(mem).exists() and all(Path(p).exists() for p in postboots):
+        if (
+            Path(mem).exists()
+            and all(Path(p).exists() for p in postboots)
+            and _golden_is_usable(fqdn, mem)
+        ):
             reset_any = True
             subprocess.run(["sudo", "virsh", "destroy", fqdn], capture_output=True)
             for disk in disks:

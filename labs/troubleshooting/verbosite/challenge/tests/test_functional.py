@@ -66,10 +66,19 @@ def test_ansible_cfg_livrable_existe():
 
 
 def test_ansible_cfg_active_profile_tasks():
-    """L'ansible.cfg du lab doit activer profile_tasks et le callback yaml.
+    """L'ansible.cfg du lab doit activer profile_tasks et la sortie YAML.
 
     C'est le cœur du sujet : sans ce callback, aucun timing par tâche n'est
     produit. On lit le livrable lui-même, pas la config effective du dépôt.
+
+    La sortie YAML ne s'obtient plus par le callback `yaml` : ce plugin a été
+    SUPPRIMÉ en ansible-core 2.19 au profit d'une option du callback `default`.
+
+    Attention au nom : l'option se documente `result_format` (ansible-doc), mais
+    sa clé INI est `callback_result_format`. Écrire `result_format = yaml` dans
+    un ansible.cfg ne produit rien et ne lève rien : la sortie reste en JSON.
+    C'est le piège que ce test doit attraper, et qu'il laissait passer tant
+    qu'il se contentait de relire la valeur déclarée.
     """
     lab_cfg = LAB_ROOT / "ansible.cfg"
     parser = configparser.ConfigParser(interpolation=None)
@@ -80,8 +89,9 @@ def test_ansible_cfg_active_profile_tasks():
         f"ansible.posix.profile_tasks absent de callbacks_enabled dans "
         f"{lab_cfg}. callbacks_enabled vu : {callbacks}"
     )
-    assert parser.get("defaults", "stdout_callback", fallback="") == "yaml", (
-        f"L'ansible.cfg du lab doit définir stdout_callback = yaml dans {lab_cfg}."
+    assert parser.get("defaults", "callback_result_format", fallback="") == "yaml", (
+        f"L'ansible.cfg du lab doit définir callback_result_format = yaml dans {lab_cfg} "
+        "(le callback `yaml` n'existe plus depuis ansible-core 2.19)."
     )
 
 

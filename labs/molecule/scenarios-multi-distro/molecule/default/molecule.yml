@@ -27,7 +27,7 @@ platforms:
   # Les images « -init » embarquent systemd en PID 1. Leur équivalent de
   # base (docker.io/rockylinux/rockylinux:9) n'a même pas /sbin/init : le
   # rôle ne pourrait pas y démarrer nginx.
-  - name: alma9
+  - name: alma10
     image: docker.io/almalinux/10-init:latest
     pre_build_image: true
     privileged: true
@@ -60,8 +60,11 @@ provisioner:
   name: ansible
   config_options:
     defaults:
-      stdout_callback: yaml
-      callback_enabled: profile_tasks
+      # Molecule 26 ne met plus le roles/ du projet dans le roles path :
+      # sans cette ligne, converge échoue sur « the role was not found ».
+      roles_path: ${MOLECULE_PROJECT_DIRECTORY}/roles
+      callback_result_format: yaml
+      callbacks_enabled: ansible.posix.profile_tasks
 
 verifier:
   name: ansible

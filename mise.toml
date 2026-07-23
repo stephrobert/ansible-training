@@ -101,8 +101,12 @@ run = "./scripts/manage-ssh-config.sh add"
 description = "Retire le fragment SSH du lab"
 run = "./scripts/manage-ssh-config.sh remove"
 
+[tasks.rebase]
+description = "Refige l'état de base des VM (OBLIGATOIRE après tout dsoxlab provision)"
+run = "./scripts/rebase-vms.sh"
+
 [tasks.snapshot]
-description = "Snapshot des 4 VMs (avant un lab destructif)"
+description = "Snapshot libvirt ponctuel (≠ isolation des labs : voir mise run rebase)"
 run = "./scripts/snapshot-vms.sh"
 
 [tasks.restore]

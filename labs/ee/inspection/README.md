@@ -13,7 +13,7 @@ Before **building your own EE** (lab 86), you must know how to **inspect** an ex
 By the end of this lab, you will know how to:
 
 1. **List** the collections of an EE (`ansible-navigator images` or `podman run ... ansible-galaxy`).
-2. **Compare** 3 community EEs: `creator-ee`, `awx-ee`, `community-ee-minimal`.
+2. **Compare** 3 community EEs: `community-ansible-dev-tools`, `awx-ee`, `community-ee-minimal`.
 3. **Read the doc** of a module in the context of the EE (`ansible-navigator doc`).
 4. **Choose** the EE suited to a use case: training, AWX, minimalist production.
 
@@ -38,7 +38,7 @@ labs/ee/inspection/
 ## 📚 Exercise 1 — TUI inspection with ansible-navigator images
 
 ```bash
-ansible-navigator images --eei quay.io/ansible/creator-ee:latest
+ansible-navigator images --eei ghcr.io/ansible/community-ansible-dev-tools:latest
 ```
 
 The TUI opens with **5 sections** numbered:
@@ -56,13 +56,13 @@ The TUI opens with **5 sections** numbered:
 
 Navigate into `5` (collections): there you find `ansible.posix`, `community.general`, `ansible.utils`, `community.kubernetes`, etc., **with their exact versions**.
 
-🔍 **Observation**: this is **the** command to answer "before building my EE, what is already in `creator-ee`?". It avoids reinstalling collections that are already present.
+🔍 **Observation**: this is **the** command to answer "before building my EE, what is already in `community-ansible-dev-tools`?". It avoids reinstalling collections that are already present.
 
 ## 📚 Exercise 2 — Compare 3 community EEs
 
 | EE | Size | Use case |
 |----|--------|-------------|
-| **`quay.io/ansible/creator-ee`** | ~1.2 GB | Training, dev. Rich: ansible-lint, navigator deps, many collections. |
+| **`ghcr.io/ansible/community-ansible-dev-tools`** | ~1.2 GB | Training, dev. Rich: ansible-lint, navigator deps, many collections. |
 | **`quay.io/ansible/awx-ee`** | ~900 MB | AWX upstream. AWX collections by default. |
 | **`ghcr.io/ansible-community/community-ee-minimal`** | ~400 MB | **Minimal** base: starting point for a custom EE. |
 
@@ -72,14 +72,14 @@ Run the script:
 ./inspect.sh
 ```
 
-The script pulls the 3 EEs, displays the sizes, lists the collections of creator-ee, and compares the ansible-core versions.
+The script pulls the 3 EEs, displays the sizes, lists the collections of community-ansible-dev-tools, and compares the ansible-core versions.
 
 🔍 **Observation**: for **a custom production EE**, starting from **`community-ee-minimal`** and adding **only** the necessary collections is the strategy that produces the smallest and least exposed image.
 
 ## 📚 Exercise 3 — Read the doc of a module in the EE
 
 ```bash
-ansible-navigator doc ansible.builtin.copy --eei quay.io/ansible/creator-ee:latest
+ansible-navigator doc ansible.builtin.copy --eei ghcr.io/ansible/community-ansible-dev-tools:latest
 ```
 
 The TUI displays:
@@ -94,7 +94,7 @@ The TUI displays:
 ## 📚 Exercise 4 — List the embedded collections (CLI mode)
 
 ```bash
-ansible-navigator collections --eei quay.io/ansible/creator-ee:latest
+ansible-navigator collections --eei ghcr.io/ansible/community-ansible-dev-tools:latest
 ```
 
 Output:
@@ -110,7 +110,7 @@ Output:
 For a scriptable format:
 
 ```bash
-podman run --rm quay.io/ansible/creator-ee:latest \
+podman run --rm ghcr.io/ansible/community-ansible-dev-tools:latest \
   ansible-galaxy collection list --format json | jq
 ```
 
@@ -135,7 +135,7 @@ podman run --rm quay.io/ansible/creator-ee:latest \
 
 3. How do you **verify** that an EE contains a specific collection and its version, **without** pulling it locally?
 
-4. Why is `creator-ee` the largest? What can you remove to make your own lighter EE?
+4. Why is `community-ansible-dev-tools` the largest? What can you remove to make your own lighter EE?
 
 ## 🚀 Final challenge
 

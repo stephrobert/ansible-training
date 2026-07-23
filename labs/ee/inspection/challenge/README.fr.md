@@ -7,7 +7,7 @@ et produire un rapport de comparaison factuel.
 
 | Livrable | Attente |
 | --- | --- |
-| `inspect.sh` | complété (plus de `???`), exécutable, syntaxe bash valide. Inspecte les 3 EE `creator-ee`, `awx-ee`, `community-ee-minimal` avec podman et ansible-navigator |
+| `inspect.sh` | complété (plus de `???`), exécutable, syntaxe bash valide. Inspecte les 3 EE `community-ansible-dev-tools`, `awx-ee`, `community-ee-minimal` avec podman et ansible-navigator |
 | `inspect-output/comparison.md` | généré par VOTRE script : un tableau Markdown avec, pour chacun des 3 EE, la version d'ansible-core constatée et la taille d'image |
 
 Le rapport doit venir de l'exécution réelle du script (`./inspect.sh`),
@@ -61,4 +61,4 @@ dsoxlab clean ee-inspection
 
 - `skopeo inspect docker://<ee>` : métadonnées sans pull complet.
 - Choisir son EE : minimal pour lab et démos, awx-ee pour AWX/AAP,
-  creator-ee pour le développement de collections.
+  community-ansible-dev-tools pour le développement de collections.

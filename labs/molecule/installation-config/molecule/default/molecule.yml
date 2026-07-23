@@ -28,7 +28,7 @@ driver:
     login_cmd_template: "podman exec -ti {instance} bash"
 
 platforms:
-  - name: instance-alma9
+  - name: instance-alma10
     # Image « init » : systemd tourne en PID 1, sans quoi le rôle ne peut
     # pas démarrer nginx. AlmaLinux 9 est la distribution de la formation.
     image: docker.io/almalinux/10-init:latest
@@ -46,8 +46,8 @@ provisioner:
       #  - le temps passé PAR tâche (le coupable quand un converge prend trois
       #    minutes) ET la durée totale du play. Les deux se cumulent dans une
       #    seule liste, séparés par une virgule.
-      stdout_callback: ???
-      callback_enabled: ???
+      result_format: ???
+      callbacks_enabled: ???
 
   inventory:
     # À COMPLÉTER : surcharger le port d'écoute pour l'instance de test.

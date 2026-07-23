@@ -13,7 +13,7 @@ Your mission:
 1. Write a **project `ansible.cfg`** that raises parallelism to **`forks = 20`**,
    switches output to the **`yaml` callback** and enables **`profile_tasks`** so
    the slow tasks name themselves.
-2. Check what is **really active** with `ansible-config dump --only-changed`,
+2. Check what is **really active** with `ansible-config dump --only-changed --type all`,
    and understand why your file only wins when the run starts from its
    directory.
 3. Archive the proof: drop that dump on `db1.lab` as `/tmp/lab03a-config.txt`,

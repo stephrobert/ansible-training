@@ -41,7 +41,7 @@ Le test pytest+testinfra valide :
 - `/tmp/lab89-profile.txt` existe sur `db1.lab` avec mode `0644`.
 - Le fichier contient **exactement 3 lignes** non vides (les 3 noms de tâches).
 - L'`ansible.cfg` de niveau lab existe et active `ansible.posix.profile_tasks`
-  (avec `stdout_callback = yaml`) : le callback qui est tout le sujet du lab.
+  (avec `callback_result_format = yaml`) : le callback qui est tout le sujet du lab.
 
 ## 🧹 Reset
 

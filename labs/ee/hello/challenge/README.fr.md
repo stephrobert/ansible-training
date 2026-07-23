@@ -4,14 +4,14 @@
 
 À la racine du lab, produire 4 fichiers qui démontrent l'utilisation
 d'`ansible-navigator` avec un Execution Environment officiel
-(`creator-ee`).
+(`community-ansible-dev-tools`).
 
 | Fichier | Attente |
 | --- | --- |
 | `setup-ee.sh` | Exécutable. Vérifie/installe `podman` et `ansible-navigator`. |
 | `inventory.yml` | YAML valide. Hôtes `web1.lab` et `db1.lab` dans le groupe `all`, chacun déclarant son `ansible_host` (IP joignable). |
 | `ping.yml` | Module FQCN `ansible.builtin.ping`. |
-| `ansible-navigator.yml` | Référence l'image `creator-ee` dans `execution-environment.image:`. |
+| `ansible-navigator.yml` | Référence l'image `community-ansible-dev-tools` dans `execution-environment.image:`. |
 
 ## 🧩 Bloqué ?
 
@@ -48,7 +48,7 @@ pytest -v labs/ee/hello/challenge/tests/
 Les tests exécutent réellement `bash -n` sur votre script,
 `ansible-inventory` sur votre inventaire et `ansible-playbook
 --syntax-check` sur votre playbook. Seul le run dans l'EE (Podman + pull
-de creator-ee) reste manuel.
+de community-ansible-dev-tools) reste manuel.
 
 ## 🧹 Reset
 

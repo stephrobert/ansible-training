@@ -2,15 +2,15 @@
 
 ## ✅ Objectif
 
-Créer un `ansible.cfg` au niveau du lab qui active **`profile_tasks`** + force **`forks=20`** + utilise **`stdout_callback = yaml`**, puis lancer un playbook qui dépose **la sortie de `ansible-config dump --only-changed`** dans un fichier sur `db1.lab`.
+Créer un `ansible.cfg` au niveau du lab qui active **`profile_tasks`** + force **`forks=20`** + utilise **`callback_result_format = yaml`**, puis lancer un playbook qui dépose **la sortie de `ansible-config dump --only-changed --type all`** dans un fichier sur `db1.lab`.
 
 | Élément | Valeur attendue |
 | --- | --- |
 | Hôte cible | `db1.lab` |
 | Fichier produit | `/tmp/lab03a-config.txt` |
 | Permissions | `0644`, owner `root` |
-| Contenu | Sortie de `ansible-config dump --only-changed` (≥3 lignes non vides) |
-| `ansible.cfg` doit contenir | `forks = 20`, `stdout_callback = yaml`, `callbacks_enabled = ansible.posix.profile_tasks` |
+| Contenu | Sortie de `ansible-config dump --only-changed --type all` (≥3 lignes non vides) |
+| `ansible.cfg` doit contenir | `forks = 20`, `callback_result_format = yaml`, `callbacks_enabled = ansible.posix.profile_tasks` |
 
 ## 🧩 Bloqué ?
 
@@ -38,7 +38,7 @@ Le test pytest valide :
 
 - `/tmp/lab03a-config.txt` existe sur `db1.lab` avec mode `0644`, owner `root`.
 - ≥3 lignes non vides dans le contenu.
-- L'`ansible.cfg` du lab contient bien `forks = 20`, `stdout_callback = yaml`, `callbacks_enabled = ansible.posix.profile_tasks`.
+- L'`ansible.cfg` du lab contient bien `forks = 20`, `callback_result_format = yaml`, `callbacks_enabled = ansible.posix.profile_tasks`.
 
 ## 🧹 Reset
 

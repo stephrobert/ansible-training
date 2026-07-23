@@ -17,7 +17,7 @@ LAB_DIR = Path(__file__).resolve().parents[2]
 INSPECT = LAB_DIR / "inspect.sh"
 REPORT = LAB_DIR / "inspect-output" / "comparison.md"
 
-EES = ("creator-ee", "awx-ee", "community-ee-minimal")
+EES = ("community-ansible-dev-tools", "awx-ee", "community-ee-minimal")
 
 
 def _code(script):
@@ -25,7 +25,7 @@ def _code(script):
 
     Les tests cherchaient leurs chaînes dans le fichier entier. Or le squelette
     porte son cahier des charges en commentaire, et ce cahier des charges cite
-    justement `creator-ee`, `awx-ee`, `podman`, `ansible-navigator` : quatre
+    justement `community-ansible-dev-tools`, `awx-ee`, `podman`, `ansible-navigator` : quatre
     tests sur cinq passaient donc sans qu'une ligne de code soit écrite. Le
     test validait l'énoncé.
 

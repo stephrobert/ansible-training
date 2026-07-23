@@ -9,7 +9,7 @@ qui teste le rôle `webserver` sur plusieurs versions d'ansible-core.
 
 | Élément | Attente |
 | --- | --- |
-| `[tox] envlist` | syntaxe range `ansible-2.{...}` couvrant au moins 3 versions récentes d'ansible-core |
+| `[tox] envlist` | syntaxe range `ansible2.{...}` couvrant au moins 3 versions récentes d'ansible-core |
 | `[testenv]` | `commands` lance `molecule test` |
 | `[testenv:ansible-X]` | au moins 3 sections, chacune épinglant `ansible-core` dans ses `deps` |
 | `[testenv:lint]` | environnement séparé pour yamllint + ansible-lint (fail-fast, sans monter d'instance) |

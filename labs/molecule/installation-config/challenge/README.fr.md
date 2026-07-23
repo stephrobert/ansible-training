@@ -20,7 +20,7 @@ c'est précisément l'objet de ce lab. Sans lui, l'instance reste nue et le
 | `molecule/default/prepare.yml` | À créer : play de préparation de l'instance (prérequis hors du périmètre du rôle) |
 | `molecule.yml` : `host_vars` | `provisioner.inventory.host_vars` surcharge `webserver_listen_port: 8080` pour l'instance |
 | `molecule.yml` : `test_sequence` | séquence personnalisée sous `scenario:`, incluant `prepare`, `converge`, `idempotence` et `verify` |
-| `molecule.yml` : callbacks | `callback_enabled` avec `profile_tasks` et `timer` |
+| `molecule.yml` : callbacks | `callbacks_enabled` avec `profile_tasks` et `timer` |
 | Le tout | `molecule syntax` passe (pytest l'exécute réellement) |
 
 Attention : `verify.yml` (livré) vérifie que nginx écoute sur le port

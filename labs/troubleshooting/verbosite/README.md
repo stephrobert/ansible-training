@@ -34,7 +34,7 @@ By the end of this lab, you will know how to:
 1. **Choose** the right `-v` level based on the symptom (Jinja variable vs SSH vs other).
 2. **Enable** a `profile_tasks` callback via `ansible.cfg` to measure performance.
 3. **Distinguish** the **post-template** arguments (`-vv`) from the SSH connections (`-vvv`).
-4. **Enable** `stdout_callback = yaml` for readable multi-line output.
+4. **Enable** `callback_result_format = yaml` for readable multi-line output.
 5. **Leak a secret** by accident **and** understand why `no_log: true` is mandatory.
 
 ## 🔧 Preparation
@@ -142,7 +142,7 @@ Create `ansible.cfg` at the lab root:
 
 ```ini
 [defaults]
-stdout_callback = yaml
+callback_result_format = yaml
 callbacks_enabled = ansible.posix.profile_tasks, ansible.posix.timer
 
 [callback_profile_tasks]
@@ -182,7 +182,7 @@ Playbook run took 0 days, 0 hours, 0 minutes, 4 seconds
 
 🔍 **Observation**: `profile_tasks` sorts tasks by descending duration. **Essential** for spotting the slowest tasks on a production fleet. The `timer` callback adds the playbook's **total time**.
 
-## 📚 Exercise 5 — `stdout_callback = yaml` for readable output
+## 📚 Exercise 5 — `callback_result_format = yaml` for readable output
 
 Without the `yaml` callback, a complex `set_fact` shows:
 
@@ -190,7 +190,7 @@ Without the `yaml` callback, a complex `set_fact` shows:
 ok: [db1.lab] => {"ansible_facts": {"my_data": [{"name": "alice", "age": 30}, {"name": "bob", "age": 25}]}}
 ```
 
-With `stdout_callback = yaml`:
+With `callback_result_format = yaml`:
 
 ```yaml
 ok: [db1.lab] => 
@@ -241,7 +241,7 @@ ok: [db1.lab] =>
 - **`-vv`** = file path + templated args. Jinja2 bug → use `-vv`.
 - **`-vvv`** = exact SSH command. Network / connection bug → use `-vvv`.
 - **`-vvvv`** = connection plugin internals. Very rare, mostly for ControlMaster.
-- **Callbacks**: `profile_tasks` + `timer` + `stdout_callback=yaml` in `ansible.cfg`.
+- **Callbacks**: `profile_tasks` + `timer` + `callback_result_format=yaml` in `ansible.cfg`.
 - **`no_log: true`** systematically on any task handling a secret.
 
 ## 🤔 Reflection questions

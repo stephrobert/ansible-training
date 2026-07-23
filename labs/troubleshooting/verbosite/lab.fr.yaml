@@ -1,4 +1,4 @@
 ---
 id: troubleshooting-verbosite
 title: "Niveaux de verbosité et callback plugins"
-description: "Choisir le niveau -v adapté au symptôme, activer profile_tasks et stdout_callback yaml, et constater ce qu'un no_log manquant laisse fuiter."
+description: "Choisir le niveau -v adapté au symptôme, activer profile_tasks et la sortie YAML (callback_result_format), et constater ce qu'un no_log manquant laisse fuiter."

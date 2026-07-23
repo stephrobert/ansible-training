@@ -156,7 +156,7 @@ ansible-navigator run test.yml \
   -m stdout
 ```
 
-🔍 **Observation**: navigator launches Podman with your custom EE, not with creator-ee. You **control** what runs, **line by line** in `execution-environment.yml`.
+🔍 **Observation**: navigator launches Podman with your custom EE, not with community-ansible-dev-tools. You **control** what runs, **line by line** in `execution-environment.yml`.
 
 ## 📚 Exercise 5 — Rigorous pinning and reproducibility
 

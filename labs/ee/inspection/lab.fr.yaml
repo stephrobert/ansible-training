@@ -1,4 +1,4 @@
 ---
 id: ee-inspection
 title: "Inspecter un Execution Environment et choisir le bon"
-description: "Lister le contenu d'un EE avec ansible-navigator, comparer creator-ee, awx-ee et community-ee-minimal, puis choisir selon le cas d'usage."
+description: "Lister le contenu d'un EE avec ansible-navigator, comparer community-ansible-dev-tools, awx-ee et community-ee-minimal, puis choisir selon le cas d'usage."

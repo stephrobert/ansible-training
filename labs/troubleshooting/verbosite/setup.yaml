@@ -18,5 +18,5 @@
     - name: What this lab expects from you
       ansible.builtin.debug:
         msg: >-
-          Pick the -v level that matches the symptom, enable profile_tasks and the yaml stdout_callback, and see what a missing no_log leaks
+          Pick the -v level that matches the symptom, enable profile_tasks and YAML output (callback_result_format), and see what a missing no_log leaks
       run_once: true

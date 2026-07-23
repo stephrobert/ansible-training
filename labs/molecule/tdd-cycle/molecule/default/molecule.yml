@@ -32,8 +32,9 @@ provisioner:
   name: ansible
   config_options:
     defaults:
-      stdout_callback: yaml
-      callback_enabled: profile_tasks
+      stdout_callback: ansible.builtin.default
+      callback_result_format: yaml
+      callbacks_enabled: ansible.posix.profile_tasks
 
 verifier:
   name: ansible
