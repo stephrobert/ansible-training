@@ -66,9 +66,9 @@ ANSIBLE_TRAINING = "{{ config_root }}"
 # sur la CLI ment au lecteur.
 
 [tasks.provision]
-description = "Monte les 4 VMs et prépare les managed nodes (dsoxlab + bootstrap)"
+description = "Monte les 4 VMs, prépare les managed nodes et rend le lab utilisable (hosts + ssh)"
 # `dsoxlab provision` crée des VMs NUES : cloud-init pose le compte et la clé,
-# rien de plus. Or les labs ciblent des managed nodes équipés — sans
+# rien de plus. Or les labs ciblent des managed nodes équipés : sans
 # python3-firewall, tout lab touchant au pare-feu échoue sur « Failed to import
 # the required Python library (firewall) ». Mesuré : 133 tests en échec sans
 # cette étape, 17 avec.
@@ -76,9 +76,18 @@ description = "Monte les 4 VMs et prépare les managed nodes (dsoxlab + bootstra
 # Le contrat dsoxlab n'a pas de crochet post-provision : le dépôt enchaîne donc
 # lui-même. `dsoxlab provision` seul reste valide, il laisse juste les nodes
 # nus.
+#
+# Les deux dernières étapes rendent le lab directement jouable après un seul
+# `mise run provision` (c'était la demande de l'issue #34) : résolution des noms
+# du lab dans /etc/hosts et fragment SSH dans ~/.ssh/config.d. Toutes deux sont
+# idempotentes (elles vérifient leur marqueur avant d'écrire), donc sans effet
+# si elles ont déjà tourné. Pour les jouer séparément : `mise run setup-hosts`
+# et `mise run setup-ssh` ; pour défaire : `mise run remove-hosts` / `remove-ssh`.
 run = [
     "dsoxlab provision",
     "ansible-playbook -i inventory/hosts.yml labs/bootstrap/prepare-managed-nodes/playbook.yml",
+    "./scripts/manage-hosts.sh add",
+    "./scripts/manage-ssh-config.sh add",
 ]
 
 [tasks.bootstrap-nodes]
