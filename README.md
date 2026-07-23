@@ -1,233 +1,236 @@
 # Ansible Training — RHCE EX294
 
+**Language:** [English](./README.md) · [Français](./README.fr.md)
+
 [![CI](https://github.com/stephrobert/ansible-training/actions/workflows/ci.yml/badge.svg)](https://github.com/stephrobert/ansible-training/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/stephrobert/ansible-training?label=OpenSSF%20Scorecard)](https://securityscorecards.dev/viewer/?uri=github.com/stephrobert/ansible-training)
 [![Plumber compliance](https://score.getplumber.io/github.com/stephrobert/ansible-training.svg)](https://score.getplumber.io/github.com/stephrobert/ansible-training)
 [![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
 [![License: CC BY-SA 4.0](https://img.shields.io/badge/License-CC%20BY--SA%204.0-lightgrey.svg)](./LICENSE)
 
-Formation **Ansible** pratique, pilotée par la CLI
-[`dsoxlab`](https://github.com/stephrobert/dsoxlab). Ce dépôt est le **catalogue
-de labs** de la formation Ansible de
+Hands-on **Ansible** training, driven by the
+[`dsoxlab`](https://github.com/stephrobert/dsoxlab) CLI. This repository is the
+**lab catalog** for the Ansible track of
 [blog.stephane-robert.info](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/),
-orientée certification **RHCE (EX294)**, avec l'idempotence comme fil rouge.
+aimed at the **RHCE (EX294)** certification, with idempotency as its common
+thread.
 
-## Ce que c'est
+## What this is
 
-`ansible-training` est un **dépôt de contenu**, pas une application. Il fournit :
+`ansible-training` is a **content repository**, not an application. It provides:
 
-- des **labs guidés**, avec des instructions précises,
-- des **challenges** sans pas-à-pas, pour vérifier l'autonomie,
-- un **examen blanc** EX294 qui synthétise l'ensemble,
-- une **validation automatisée** qui prouve l'état des managed nodes (et non
-  qu'un playbook a été écrit),
-- un **scoring** avec des indices à coût variable.
+- **guided labs**, with precise instructions,
+- **challenges** with no walkthrough, to check you can work on your own,
+- an **EX294 mock exam** that pulls everything together,
+- **automated validation** that proves the state of the managed nodes (rather
+  than that a playbook was written),
+- **scoring** with cost-weighted hints.
 
-La CLI `dsoxlab` est le point d'entrée unique : elle prépare un lab, affiche la
-mission, valide, note et rend compte. Elle vit dans **son propre dépôt** et
-s'installe **séparément** : elle ne fait pas partie de ce dépôt.
+The `dsoxlab` CLI is the single entry point: it prepares a lab, shows the
+mission, validates, scores and reports. It lives in **its own repository** and
+is installed **separately**: it is not part of this repo.
 
-## Pré-requis
+## Requirements
 
-- Python 3.11+ et [`uv`](https://docs.astral.sh/uv/)
-- [`mise`](https://mise.jdx.dev/) pour la chaîne Ansible (voir ci-dessous)
+- Python 3.11+ and [`uv`](https://docs.astral.sh/uv/)
+- [`mise`](https://mise.jdx.dev/) for the Ansible toolchain (see below)
 - `git`
-- **KVM/libvirt** : les labs ont besoin de 4 VMs AlmaLinux 9 (1 control node,
-  3 managed nodes). Comptez ~6 Go de RAM et ~55 Go de disque.
+- **KVM/libvirt**: the labs need 4 AlmaLinux 9 VMs (1 control node, 3 managed
+  nodes). Budget around 6 GB of RAM and 55 GB of disk.
 
 ## Installation
 
 ```bash
-# 1. La CLI dsoxlab (outil externe, hors de ce dépôt)
-uv tool install dsoxlab        # ou : pipx install dsoxlab
+# 1. The dsoxlab CLI (external tool, stays out of this repo)
+uv tool install dsoxlab        # or: pipx install dsoxlab
 
-# 2. Ce catalogue de labs
+# 2. This lab catalog
 git clone https://github.com/stephrobert/ansible-training.git
 cd ansible-training
 
-# 3. La chaîne Ansible, aux versions de l'examen
+# 3. The Ansible toolchain, at exam versions
 mise install                   # ansible-core 2.18, ansible-lint, molecule, yamllint
 
-# 4. Les 4 VMs, préparées (~5 min)
+# 4. The 4 VMs, prepared (~5 min)
 mise run provision
 
-# 5. Parcourir et jouer
+# 5. Browse and play
 dsoxlab list-labs
-dsoxlab run <id-du-lab>
-dsoxlab check <id-du-lab>
+dsoxlab run <lab-id>
+dsoxlab check <lab-id>
 ```
 
-> ⚠️ **`mise run provision`, et non `dsoxlab provision` seul.** La CLI monte les
-> VMs, mais elle les livre **nues** : cloud-init pose le compte et la clé, rien
-> de plus. Les labs, eux, ciblent des managed nodes équipés (`firewalld`,
-> `python3-firewall`, `chrony`). Sans cette préparation, tout lab touchant au
-> pare-feu échoue sur « Failed to import the required Python library (firewall) ».
-> La tâche `mise` enchaîne le provisioning et l'amorçage.
+> ⚠️ **`mise run provision`, not `dsoxlab provision` on its own.** The CLI brings
+> the VMs up, but it delivers them **bare**: cloud-init sets the account and the
+> key, nothing more. The labs, however, target equipped managed nodes
+> (`firewalld`, `python3-firewall`, `chrony`). Without that preparation, any lab
+> touching the firewall fails with "Failed to import the required Python library
+> (firewall)". The `mise` task chains provisioning and bootstrap.
 >
-> Pour rejouer la seule préparation : `mise run bootstrap-nodes`.
+> To replay the preparation alone: `mise run bootstrap-nodes`.
 
-`dsoxlab doctor` vérifie l'environnement (Python, pytest, runtimes, labs
-détectés). `mise run setup-hosts` et `mise run setup-ssh` rendent les noms du lab
-résolvables et configurent SSH pour utiliser la clé du dépôt.
+`dsoxlab doctor` checks your environment (Python, pytest, runtimes, detected
+labs). `mise run setup-hosts` and `mise run setup-ssh` make the lab names
+resolvable and configure SSH to use the repository key.
 
-**Pourquoi `mise` en plus de `dsoxlab`** : la version d'`ansible-core` fait
-partie de l'exercice. Un playbook qui passe en 2.18 peut échouer en 2.19, et
-l'EX294 se passe sur une version précise. `mise` la pin, avec la chaîne de lint
-qui va avec. `dsoxlab`, lui, ne pilote que les labs.
+**Why `mise` on top of `dsoxlab`**: the `ansible-core` version is part of the
+exercise. A playbook that passes on 2.18 may fail on 2.19, and the EX294 is sat
+on a specific version. `mise` pins it, along with the matching lint toolchain.
+`dsoxlab` only drives the labs.
 
-### Rester à jour
+### Staying up to date
 
-Les labs arrivent dans ce dépôt, la CLI évolue de son côté. Mettez chacun à jour
-séparément :
-
-```bash
-git pull                       # nouveaux labs
-uv tool upgrade dsoxlab        # la CLI (ou : pipx upgrade dsoxlab)
-mise install                   # la chaîne Ansible si les versions ont bougé
-```
-
-Votre travail en cours vit dans le `challenge/` de chaque lab et n'est pas
-versionné : `git pull` apporte les nouveaux labs sans jamais y toucher.
-
-## Comment ça marche
-
-### Le contrat déclaratif (deux niveaux)
-
-Le catalogue est décrit par des données, pas par du code : le moteur `dsoxlab`
-reste neutre vis-à-vis du domaine et lit deux niveaux de fichiers.
-
-- **`meta.yml`** à la racine déclare l'identité du dépôt, la topologie
-  d'infrastructure (réseau, hôtes, provider) et l'**ordre** des sections
-  qu'affiche `list-labs`.
-- **`lab.yaml`** par lab (sous `labs/<section>/<lab>/`) déclare ses `skills`,
-  son `level`, son `runtime` (`vm` ou `shell`, avec les hôtes visés), ses
-  `distros`, son `doc_url` et un bloc `validation`. Un `lab.fr.yaml` optionnel
-  surcharge le `title` et la `description` en français.
-
-`dsoxlab validate-structure` vérifie le contrat des labs **découverts** :
-fichiers requis présents, métadonnées complètes, cohérence des cibles. Attention,
-il ne signale pas un lab déclaré dans `meta.yml` mais absent du disque : la
-découverte se fait par un glob sur `labs/**/lab.yaml`, et un `lab.yaml` invalide
-disparaît **silencieusement** du catalogue. D'où la règle : `dsoxlab list-labs`
-d'abord, `validate-structure` ensuite.
-
-### Le cycle de vie d'un lab
-
-L'apprenant pilote tout par la CLI :
+Labs land in this repository, the CLI evolves on its own. Update each
+separately:
 
 ```bash
-dsoxlab doctor                        # vérifier l'environnement
-dsoxlab list-labs                     # parcourir le catalogue
-dsoxlab show <id>                     # métadonnées et statut d'un lab
-dsoxlab run <id>                      # préparer et démarrer l'environnement
-dsoxlab challenge <id>                # lire la mission (sans pas-à-pas)
-dsoxlab hint <id>                     # révéler un indice (déduit du score)
-dsoxlab check <id>                    # jouer les tests, calculer et noter
-dsoxlab submit <id>                   # soumission finale, clôt la session
-dsoxlab progress                      # avancement par section, score moyen
+git pull                       # new labs
+uv tool upgrade dsoxlab        # the CLI (or: pipx upgrade dsoxlab)
+mise install                   # the Ansible toolchain if versions moved
 ```
 
-`run` est le moment où l'environnement se monte. Pour un lab **shell**, la CLI
-crée le `workdir` et copie les fixtures déclarées. Pour un lab **vm**, elle joue
-le `setup.yaml` du lab sur les managed nodes et ouvre un accès au control node,
-là où vous écrivez vos playbooks.
+Your work in progress lives in each lab's `challenge/` and is not versioned:
+`git pull` brings in new labs without ever touching it.
 
-### Topologie
+## How it works
 
-Réseau libvirt dédié `lab-ansible` (10.10.20.0/24), pour cohabiter avec les
-autres labs sans collision.
+### The declarative contract (two levels)
 
-| Hôte | Rôle | RAM | vCPU |
+The catalog is described by data, not code: the `dsoxlab` engine stays
+domain-agnostic and reads two levels of files.
+
+- **`meta.yml`** at the root declares the repository identity, the
+  infrastructure topology (network, hosts, provider) and the **order** of the
+  sections shown by `list-labs`.
+- **`lab.yaml`** per lab (under `labs/<section>/<lab>/`) declares its `skills`,
+  its `level`, its `runtime` (`vm` or `shell`, with the hosts it targets), its
+  `distros`, its `doc_url` and a `validation` block. An optional `lab.fr.yaml`
+  overrides `title` and `description` in French.
+
+`dsoxlab validate-structure` checks the contract of the labs it **discovered**:
+required files present, complete metadata, consistent targets. Careful though,
+it does not report a lab declared in `meta.yml` but missing from disk:
+discovery is a glob over `labs/**/lab.yaml`, and an invalid `lab.yaml`
+disappears from the catalog **silently**. Hence the rule: `dsoxlab list-labs`
+first, `validate-structure` second.
+
+### The life cycle of a lab
+
+The learner drives everything from the CLI:
+
+```bash
+dsoxlab doctor                        # check the environment
+dsoxlab list-labs                     # browse the catalog
+dsoxlab show <id>                     # metadata and status of a lab
+dsoxlab run <id>                      # prepare and start the environment
+dsoxlab challenge <id>                # read the mission (no walkthrough)
+dsoxlab hint <id>                     # reveal a hint (deducted from the score)
+dsoxlab check <id>                    # run the tests, compute and score
+dsoxlab submit <id>                   # final submission, closes the session
+dsoxlab progress                      # progress per section, average score
+```
+
+`run` is when the environment comes up. For a **shell** lab, the CLI creates the
+`workdir` and copies the declared fixtures. For a **vm** lab, it plays the lab's
+`setup.yaml` on the managed nodes and opens access to the control node, where
+you write your playbooks.
+
+### Topology
+
+A dedicated `lab-ansible` libvirt network (10.10.20.0/24), so it coexists with
+the other labs without subnet collisions.
+
+| Host | Role | RAM | vCPU |
 | --- | --- | --- | --- |
-| `control-node.lab` | control node : vous y écrivez vos playbooks | 2048 | 2 |
+| `control-node.lab` | control node: where you write your playbooks | 2048 | 2 |
 | `web1.lab` | managed node | 1024 | 1 |
 | `web2.lab` | managed node | 1024 | 1 |
 | `db1.lab` | managed node | 1536 | 1 |
 
-Les IP ne sont pas déclarées : Terraform les attribue et l'inventaire les lit.
-`dsoxlab` injecte à l'exécution les groupes que ciblent les playbooks des labs :
-`lab_target` (le control node), `lab_<role>` (un par managed node utilisé) et
-`labenv` (tous). Un lab ne code jamais un FQDN en dur.
+IPs are not declared: Terraform assigns them and the inventory reads them. At
+run time `dsoxlab` injects the groups that lab playbooks target: `lab_target`
+(the control node), `lab_<role>` (one per managed node in use) and `labenv`
+(all of them). A lab never hardcodes a FQDN.
 
-### Les comptes : `ansible` (service) et `student` (humain)
+### The accounts: `ansible` (service) and `student` (human)
 
-Le cloud-init pose **deux comptes** sur chaque nœud, tous deux durcis de la même
-façon : connexion par **clé SSH uniquement** (`ssh_pwauth: false`), **aucun mot de
-passe de login**, et `sudo NOPASSWD:ALL`.
+cloud-init sets up **two accounts** on every node, both hardened the same way:
+**SSH key only** (`ssh_pwauth: false`), **no login password**, and
+`sudo NOPASSWD:ALL`.
 
-- **`ansible`** : le compte de **service** par lequel toute l'automatisation se
-  connecte, dsoxlab comme les playbooks des labs. C'est le `ansible_user` de
-  l'inventaire et l'utilisateur du `ssh_config` généré. Se connecter via un compte
-  de service dédié, distinct de l'humain, est la **bonne pratique** : les actions
-  d'automatisation sont attribuables et le compte se révoque indépendamment. Son
-  `NOPASSWD:ALL` est assumé : une automatisation RHCE touche à tout (dnf, systemd,
-  LVM, SELinux, firewalld) ; la sécurité tient à la **dédicace** du compte, pas à
-  un `sudo` bridé qui casserait l'automatisation.
-- **`student`** : le compte **humain**, celui depuis lequel vous lancez `dsoxlab`
-  et `ansible` sur le control node. Il existe aussi sur les managed nodes pour le
-  debug, mais ce n'est **jamais** lui qui pilote l'automatisation.
+- **`ansible`** is the **service** account through which all automation
+  connects, `dsoxlab` as well as the lab playbooks. It is the inventory's
+  `ansible_user` and the user in the generated `ssh_config`. Connecting through
+  a dedicated service account, separate from the human one, is the **good
+  practice**: automation actions are attributable and the account can be revoked
+  independently. Its `NOPASSWD:ALL` is deliberate: RHCE automation touches
+  everything (dnf, systemd, LVM, SELinux, firewalld); security rests on the
+  account being **dedicated**, not on a crippled `sudo` that would break
+  automation.
+- **`student`** is the **human** account, the one you run `dsoxlab` and
+  `ansible` from on the control node. It also exists on the managed nodes for
+  debugging, but it is **never** the one driving automation.
 
-Conséquence pratique : quand un lab restreint l'accès SSH (`AllowUsers`) ou fixe un
-`remote_user`, c'est **`ansible`** qu'il vise ; restreindre à un autre compte
-couperait la connexion de l'automatisation. Pour inspecter un nœud à la main,
-`dsoxlab ssh <host>` vous y connecte avec le compte `ansible`.
+Practical consequence: when a lab restricts SSH access (`AllowUsers`) or sets a
+`remote_user`, it targets **`ansible`**; restricting it to any other account
+would cut automation off. To inspect a node by hand, `dsoxlab ssh <host>`
+connects you as `ansible`.
 
 ### Runtimes
 
-| Runtime | Ce qu'il apporte |
+| Runtime | What it brings |
 | --- | --- |
-| `vm` | Terraform + libvirt. Les vrais managed nodes : services, paquets, utilisateurs, stockage, et la **persistance après reboot**. 84 labs. |
-| `shell` | Ce qui reste local au poste : écrire du YAML, un template Jinja2, un inventaire, jouer Molecule ou ansible-lint. 24 labs. |
+| `vm` | Terraform + libvirt. Real managed nodes: services, packages, users, storage, and **persistence across reboot**. 88 labs. |
+| `shell` | What stays local to your box: writing YAML, a Jinja2 template, an inventory, running Molecule or ansible-lint. 25 labs. |
 
-Les VMs se provisionnent une fois avec `dsoxlab provision` et se détruisent avec
+VMs are provisioned once with `dsoxlab provision` and torn down with
 `dsoxlab destroy`.
 
-### Le modèle de validation
+### The validation model
 
-La validation **prouve l'état du système, elle ne fait pas confiance**. Chaque
-lab livre des tests `pytest` / `pytest-testinfra` sous `challenge/tests/` qui
-vérifient des faits sur la machine : le service tourne **et** est activé, le
-fichier déployé a le bon contenu **et** le bon propriétaire. Un test qui se
-contente de vérifier qu'une commande a été tapée est refusé.
+Validation **proves the state of the system, it does not take your word for
+it**. Every lab ships `pytest` / `pytest-testinfra` tests under
+`challenge/tests/` that check facts on the machine: the service runs **and** is
+enabled, the deployed file has the right content **and** the right owner. A test
+that merely checks a command was typed is rejected.
 
-Deuxième exigence, propre à Ansible : **l'idempotence**. Un lab dont la solution
-rejouée annonce encore des `changed` est un lab faux. C'est le piège qui fait
-échouer les candidats RHCE, donc les tests le prouvent quand le sujet le
-justifie.
+Second requirement, specific to Ansible: **idempotency**. A lab whose solution
+still reports `changed` when replayed is a broken lab. That is the trap RHCE
+candidates fall into, so the tests prove it whenever the subject warrants it.
 
-- En mode formateur, une fixture du `conftest.py` racine **rejoue la solution de
-  référence** avant les tests, pour prouver que la solution elle-même est juste.
-- Dans `dsoxlab check` (le chemin de l'apprenant), ce rejeu est **désactivé**
-  (`LAB_NO_REPLAY=1`) : les tests valident son propre travail.
+- In instructor mode, a fixture in the root `conftest.py` **replays the
+  reference solution** before the tests, to prove the solution itself is
+  correct.
+- In `dsoxlab check` (the learner's path), that replay is **disabled**
+  (`LAB_NO_REPLAY=1`): the tests validate their own work.
 
-### Scoring, indices, avancement
+### Scoring, hints, progress
 
-`check` enregistre un score (tests passés sur total, moins le coût des indices
-utilisés). Les indices sont **à coût variable** : en révéler un retire des
-points, d'où leur caractère volontaire. L'historique vit dans une base SQLite
-locale au dépôt (`.dsoxlab.db`, non versionnée) ; `dsoxlab scores` et
-`dsoxlab progress` la lisent.
+`check` records a score (tests passed out of total, minus the cost of any hints
+used). Hints are **cost-weighted**: revealing one removes points, which is why
+they are opt-in. History lives in a SQLite database local to the repository
+(`.dsoxlab.db`, not versioned); `dsoxlab scores` and `dsoxlab progress` read it.
 
-### Les solutions restent chiffrées
+### Solutions stay encrypted
 
-Les solutions de référence vivent dans `solution/`, **chiffrées avec
-`ansible-vault`**. Une solution en clair spoile le lab pour tout le monde, et
-l'historique git la garde même après suppression. Un hook `pre-commit` vérifie
-l'en-tête de chiffrement à chaque commit plutôt que de faire confiance.
+Reference solutions live in `solution/`, **encrypted with `ansible-vault`**. A
+plain-text solution spoils the lab for everyone, and git history keeps it even
+after deletion. A `pre-commit` hook checks the encryption header on every commit
+rather than taking it on trust.
 
 ```bash
-mise run solutions-status      # vérifie que tout est chiffré
-mise run solve <section>/<lab> # pose la solution officielle (formateur)
+mise run solutions-status      # check everything is encrypted
+mise run solve <section>/<lab> # apply the official solution (instructor)
 ```
 
-## Catalogue
+## Catalog
 
-Les labs vivent sous `labs/` et sont ordonnés par `meta.yml`. La liste ci-dessous
-est générée : lancez `python3 scripts/render-readme.py` pour la rafraîchir.
+Labs live under `labs/` and are ordered by `meta.yml`. The list below is
+generated: run `python3 scripts/render-readme.py` to refresh it.
 
 <!-- LABS_LIST_START -->
 
-**108 labs** répartis en **23 sections** (source de vérité : [`meta.yml`](./meta.yml)).
+**113 labs** across **23 sections** (source of truth: [`meta.yml`](./meta.yml)).
 
 ### Bootstrap
 
@@ -259,15 +262,15 @@ Structure d'un play, contrôle d'exécution, variables, Jinja2, conditions, bouc
 - [`handlers`](./labs/ecrire-code/handlers/)
 - [`tags`](./labs/ecrire-code/tags/)
 - [`checkmode diff`](./labs/ecrire-code/checkmode-diff/)
-- [`parallelisme strategies`](./labs/ecrire-code/parallelisme-strategies/)
-- [`async poll`](./labs/ecrire-code/async-poll/)
-- [`delegation`](./labs/ecrire-code/delegation/)
 - [`variables base`](./labs/ecrire-code/variables-base/)
 - [`types collections`](./labs/ecrire-code/types-collections/)
 - [`facts magic vars`](./labs/ecrire-code/facts-magic-vars/)
 - [`custom facts`](./labs/ecrire-code/custom-facts/)
 - [`precedence variables`](./labs/ecrire-code/precedence-variables/)
 - [`register set fact`](./labs/ecrire-code/register-set-fact/)
+- [`parallelisme strategies`](./labs/ecrire-code/parallelisme-strategies/)
+- [`async poll`](./labs/ecrire-code/async-poll/)
+- [`delegation`](./labs/ecrire-code/delegation/)
 - [`lookups`](./labs/ecrire-code/lookups/)
 - [`jinja2 base`](./labs/ecrire-code/jinja2-base/)
 - [`filtres jinja essentiels`](./labs/ecrire-code/filtres-jinja-essentiels/)
@@ -325,8 +328,8 @@ Gestion users, groups, clés SSH, sudoers.
 Spécificités RHEL : firewalld, SELinux, sysctl, mount, parted, filesystem, LVM.
 
 - [`firewalld`](./labs/modules-rhel/firewalld/)
-- [`selinux`](./labs/modules-rhel/selinux/)
 - [`sysctl`](./labs/modules-rhel/sysctl/)
+- [`selinux`](./labs/modules-rhel/selinux/)
 - [`mount`](./labs/modules-rhel/mount/)
 - [`parted`](./labs/modules-rhel/parted/)
 - [`filesystem`](./labs/modules-rhel/filesystem/)
@@ -352,13 +355,14 @@ Inspection et synchronisation : stat, find, assert/fail, wait_for/pause.
 
 group_vars/host_vars, patterns d'hôtes, inventaire dynamique libvirt.
 
+- [`statiques`](./labs/inventaires/statiques/)
 - [`group vars host vars`](./labs/inventaires/group-vars-host-vars/)
 - [`patterns hotes`](./labs/inventaires/patterns-hotes/)
 - [`dynamique kvm`](./labs/inventaires/dynamique-kvm/)
 
 ### Rôles
 
-Anatomie d'un rôle, variables, handlers, argument_specs, consommation, dépendances.
+Anatomie d'un rôle, variables, handlers, argument_specs, consommation, dépendances, rôles système RHEL.
 
 - [`creer premier role`](./labs/roles/creer-premier-role/)
 - [`variables defaults vars`](./labs/roles/variables-defaults-vars/)
@@ -366,6 +370,7 @@ Anatomie d'un rôle, variables, handlers, argument_specs, consommation, dépenda
 - [`argument specs`](./labs/roles/argument-specs/)
 - [`consommer role`](./labs/roles/consommer-role/)
 - [`dependencies`](./labs/roles/dependencies/)
+- [`system roles`](./labs/roles/system-roles/)
 
 ### Tests Molecule
 
@@ -435,6 +440,7 @@ Verbosité, debugger interactif, idempotence et performance.
 Découverte, requirements, création, CI tests, migration depuis un rôle.
 
 - [`decouvrir`](./labs/collections/decouvrir/)
+- [`navigator`](./labs/collections/navigator/)
 - [`requirements`](./labs/collections/requirements/)
 - [`creer custom`](./labs/collections/creer-custom/)
 - [`ci tests`](./labs/collections/ci-tests/)
@@ -442,31 +448,33 @@ Découverte, requirements, création, CI tests, migration depuis un rôle.
 
 ### Pratiques avancées
 
-ansible-pull mode GitOps.
+Versionner ses playbooks avec Git, ansible-pull mode GitOps.
 
+- [`versionner git`](./labs/pratiques/versionner-git/)
 - [`ansible pull gitops`](./labs/pratiques/ansible-pull-gitops/)
 
 ### Examen RHCE EX294
 
-Mock examen complet 4h avec 12 tâches.
+Mocks examen complets 4h, 19 tâches chacun, validées par pytest.
 
 - [`mock ex294`](./labs/rhce/mock-ex294/)
+- [`mock ex294 2`](./labs/rhce/mock-ex294-2/)
 
 <!-- LABS_LIST_END -->
 
-## Dépannage
+## Troubleshooting
 
-| Symptôme | Piste |
+| Symptom | Where to look |
 | --- | --- |
-| `UNREACHABLE` sur un managed node | `dsoxlab status` ; les VMs tournent-elles (`virsh list --all`) ? |
-| `dsoxlab list-labs` ne montre pas votre lab | son `lab.yaml` lève au parsing : il disparaît sans message |
-| Un test passe « sans raison » | cache de facts : `rm -rf .ansible_facts/` |
-| Un lab échoue après un autre | état hérité : `dsoxlab clean <id-du-lab>` |
-| Lab risqué à jouer | `mise run snapshot` avant, `mise run restore` après |
+| `UNREACHABLE` on a managed node | `dsoxlab status`; are the VMs running (`virsh list --all`)? |
+| `dsoxlab list-labs` does not show your lab | its `lab.yaml` raises while parsing: it vanishes with no message |
+| A test passes "for no reason" | facts cache: `rm -rf .ansible_facts/` |
+| A lab fails right after another | inherited state: `dsoxlab clean <lab-id>` |
+| Risky lab to play | `mise run snapshot` before, `mise run restore` after |
 
-## Contribuer & licence
+## Contributing & license
 
-- Contributions : voir [CONTRIBUTING](./CONTRIBUTING.md).
-- Conduite : [Code de conduite](./CODE_OF_CONDUCT.md) · Sécurité : [SECURITY](./SECURITY.md).
-- Publication : [RELEASING](./RELEASING.md) (bundles tar.gz, pas de PyPI).
-- Licence : [CC BY-SA 4.0](./LICENSE).
+- Contributions: see [CONTRIBUTING](./CONTRIBUTING.md).
+- Conduct: [Code of Conduct](./CODE_OF_CONDUCT.md) · Security: [SECURITY](./SECURITY.md).
+- Publishing: [RELEASING](./RELEASING.md) (tar.gz bundles, no PyPI).
+- License: [CC BY-SA 4.0](./LICENSE).
