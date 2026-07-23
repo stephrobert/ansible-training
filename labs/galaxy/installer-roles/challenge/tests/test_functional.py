@@ -9,6 +9,7 @@ disque après installation ; ils n'ont eux-mêmes pas besoin du réseau
 
 import json
 from pathlib import Path
+from urllib.parse import urlparse
 
 import yaml
 
@@ -55,9 +56,20 @@ def test_roles_pinned_by_version():
         )
 
 
+def _is_github_src(src: str) -> bool:
+    """Rôle hébergé sur github.com, comparé sur le HOST exact.
+
+    `"github.com" in src` matcherait `evil-github.com` ou un chemin qui contient
+    la chaîne : on extrait le netloc de l'URL et on le compare, ce que demande
+    CodeQL (py/incomplete-url-substring-sanitization).
+    """
+    netloc = urlparse(src.replace("git+", "")).netloc.rsplit("@", 1)[-1].split(":")[0]
+    return netloc == "github.com" or netloc.endswith(".github.com")
+
+
 def test_at_least_one_git_role():
     git_roles = [
-        r for r in _config()["roles"] if "github.com" in str(r.get("src", ""))
+        r for r in _config()["roles"] if _is_github_src(str(r.get("src", "")))
     ]
     assert git_roles, (
         "Au moins un rôle doit venir de Git (src: https://github.com/...) : "

@@ -26,7 +26,11 @@ def test_file_existe(host):
 
 def test_url_https(host):
     content = _content(host)
-    assert "https://api.example.com" in content, (
+    # Membership de la LIGNE entière (pas une sous-chaîne d'URL) : on prouve que
+    # le remplacement a produit la nouvelle URL, et CodeQL ne voit plus une
+    # sanitization d'URL incomplète (py/incomplete-url-substring-sanitization).
+    lines = [line.strip() for line in content.splitlines()]
+    assert "url=https://api.example.com/v1" in lines, (
         "L'URL doit avoir été remplacée par https://api.example.com (replace simple)."
     )
     assert "api-old.example.com" not in content, (
