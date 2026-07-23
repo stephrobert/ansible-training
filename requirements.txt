@@ -10,7 +10,7 @@ ansible-navigator>=25.0
 ansible-lint>=25.0
 molecule>=25.0
 molecule-plugins[docker,libvirt]
-yamllint>=1.35
+yamllint>=1.38.0
 
 # Tests des challenges (pattern repris de l'ancien lab ansible-training)
 # pytest + testinfra valident chaque solution de challenge.
