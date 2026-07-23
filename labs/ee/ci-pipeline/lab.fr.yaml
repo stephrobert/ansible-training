@@ -1,0 +1,4 @@
+---
+id: ee-ci-pipeline
+title: "Pipeline CI/CD pour Execution Environments"
+description: "Builder un EE en CI, le scanner avec Trivy en mode bloquant, le signer avec cosign keyless et le publier, actions épinglées par SHA et permissions minimales."

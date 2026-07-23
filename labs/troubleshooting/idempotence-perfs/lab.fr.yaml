@@ -1,0 +1,4 @@
+---
+id: troubleshooting-idempotence-perfs
+title: "Réparer l'idempotence cassée et optimiser les performances"
+description: "Rendre idempotent un shell avec creates ou changed_when, mesurer un baseline avec profile_tasks, puis activer pipelining, forks et ControlPersist."

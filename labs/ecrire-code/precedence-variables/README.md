@@ -1,77 +1,91 @@
-# Lab 15 — Précédence des variables (22 niveaux RHCE EX294)
+# Lab 15 — Variable precedence (22 RHCE EX294 levels)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Précédence des variables Ansible (les 22 niveaux officiels)**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/precedence-variables/)
+🔗 [**Ansible variable precedence (the 22 official levels)**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/precedence-variables/)
 
-Ansible définit **22 niveaux de précédence** pour les variables. Quand la même
-variable est définie à plusieurs endroits, le **niveau le plus haut gagne**. Cette
-mécanique est **explicitement testée à la RHCE EX294** — c'est un piège classique :
-"j'ai bien défini `app_env: prod` dans `vars:` mais Ansible voit `dev` !". La réponse
-est presque toujours dans la précédence.
+Ansible defines **22 precedence levels** for variables. When the same
+variable is defined in several places, the **highest level wins**. This
+mechanic is **explicitly tested at the RHCE EX294**, it is a classic trap:
+"I did define `app_env: prod` in `vars:` but Ansible sees `dev`!". The answer
+is almost always in the precedence.
 
-L'ordre relatif **stable** à retenir (du plus faible au plus fort) :
+The official order (from weakest to strongest), as the Ansible doc gives it,
+[« Understanding variable precedence »](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#understanding-variable-precedence):
 
 ```
-role defaults (1)
-< group_vars all (5)
-< group_vars groupes (6)
-< host_vars (8)
-< facts / play vars (12-14)
-< vars_files (13)
-< set_fact (18)
-< include_vars (19)
+role defaults (2)
+< group_vars all (4 inventory, 5 playbook)
+< group_vars groups (6 inventory, 7 playbook)
+< host_vars (9 inventory, 10 playbook)
+< cached facts / set_facts (11)
+< play vars: (12)
+< vars_prompt (13)
+< vars_files: (14)
+< role vars, roles/<role>/vars/main.yml (15)
+< block vars (16)
+< task vars (17)
+< include_vars (18)
+< set_fact / registered variables (19)
 < role params (20)
-< -e --extra-vars (22 — gagne sur TOUT)
+< include params (21)
+< -e --extra-vars (22, wins over EVERYTHING)
 ```
 
-## 🎯 Objectifs
+⚠️ **The trap that costs the most**: `vars_files:` (14) **beats** the play
+`vars:` (12). Intuition says the opposite ("what I write in my play is
+closer, so stronger"), and it is wrong. The loaded file wins. This is
+**what** you must memorize for the EX294, and it is what you will measure in
+exercise 3.
 
-À la fin de ce lab, vous saurez :
+## 🎯 Objectives
 
-1. **Démontrer** mécaniquement quel niveau gagne en superposant la même variable.
-2. **Comprendre** pourquoi `--extra-vars` est l'arme finale.
-3. **Distinguer** `vars:` du play (niveau 14) de `vars_files:` (niveau 13).
-4. **Diagnostiquer** une variable qui "ne prend pas la valeur attendue".
-5. **Choisir** le bon niveau pour chaque cas (default, override env, override CLI).
+By the end of this lab, you will know how to:
 
-## 🔧 Préparation
+1. **Demonstrate** mechanically which level wins by stacking the same variable.
+2. **Understand** why `--extra-vars` is the final weapon.
+3. **Distinguish** the play `vars:` (level 12) from `vars_files:` (level 14), and
+   know **which one wins** when both carry the same variable.
+4. **Diagnose** a variable that "does not take the expected value".
+5. **Choose** the right level for each case (default, env override, CLI override).
+
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
-mkdir -p labs/ecrire-code/precedence-variables/{group_vars,host_vars}
+cd $ANSIBLE_TRAINING
+mkdir -p labs/ecrire-code/precedence-variables/{group_vars,host_vars,vars}
 ansible db1.lab -m ping
 ```
 
-## 📚 Exercice 1 — Démonstration de base : 3 niveaux
+## 📚 Exercise 1 — Basic demonstration: 3 levels
 
-Créez `group_vars/all.yml` :
+Create `group_vars/all.yml`:
 
 ```yaml
 ---
 priority_test: "from_group_vars_all"
 ```
 
-Créez `group_vars/dbservers.yml` :
+Create `group_vars/dbservers.yml`:
 
 ```yaml
 ---
 priority_test: "from_group_vars_dbservers"
 ```
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -86,43 +100,95 @@ Créez `lab.yml` :
         var: priority_test
 ```
 
-**Avant de lancer**, **devinez** : qui gagne ?
+**Before running**, **guess**: who wins?
 
 ```bash
 ansible-playbook labs/ecrire-code/precedence-variables/lab.yml
 ```
 
-🔍 **Observation** : `priority_test = from_play_vars`. Pourquoi ? Parce que :
+🔍 **Observation**: `priority_test = from_play_vars`. Why? Because
+these `group_vars/` are placed next to the playbook, so:
 
-- `group_vars/all.yml` (niveau 5) ← le plus faible.
-- `group_vars/dbservers.yml` (niveau 6) ← bat all (groupe plus spécifique).
-- **`vars:` du play (niveau 14) ← bat les group_vars**.
+- `group_vars/all.yml` (level 5) ← the weakest of the three.
+- `group_vars/dbservers.yml` (level 7) ← beats all (more specific group).
+- **play `vars:` (level 12) ← beats the group_vars**.
 
-## 📚 Exercice 2 — Ajouter `host_vars/`
+## 📚 Exercise 2 — Add `host_vars/`
 
-Créez `host_vars/db1.lab.yml` :
+Create `host_vars/db1.lab.yml`:
 
 ```yaml
 ---
 priority_test: "from_host_vars"
 ```
 
-**Relancez** :
+**Rerun**:
 
 ```bash
 ansible-playbook labs/ecrire-code/precedence-variables/lab.yml
 ```
 
-🔍 **Observation** : toujours `from_play_vars`. Pourquoi ? `host_vars/` (niveau 8)
-est plus spécifique que `group_vars/`, mais **toujours moins prioritaire que `vars:`
-du play (niveau 14)**.
+🔍 **Observation**: still `from_play_vars`. Why? `host_vars/` (level 10
+here, placed next to the playbook) is more specific than `group_vars/`, but
+**still lower priority than the play `vars:` (level 12)**.
 
-**À retenir** : la **spécificité de l'inventaire** (host > group) ne bat pas la
-**spécificité du play** (vars > vars_files).
+**Takeaway**: all the **inventory specificity** (host > group) stays
+**under** the play. As soon as a variable is written in the play, the inventory
+no longer takes it over. Careful: this does not mean the play `vars:` are
+unbeatable, exercise 3 shows it.
 
-## 📚 Exercice 3 — Ajouter `set_fact` (niveau 18)
+## 📚 Exercise 3 — `vars_files:` (14) against the play `vars:` (12)
 
-Modifiez `lab.yml` pour ajouter un `set_fact` :
+This is **the** duel of the lab, and the one intuition loses. Create `vars/loader.yml`:
+
+```yaml
+---
+priority_test: "from_vars_files"
+```
+
+Modify `lab.yml` to load this file **in addition to** the play `vars:`:
+
+```yaml
+---
+- name: Demo precedence vars_files
+  hosts: db1.lab
+  become: true
+  vars:
+    priority_test: "from_play_vars"
+  vars_files:
+    - vars/loader.yml
+  tasks:
+    - name: Quelle valeur gagne ?
+      ansible.builtin.debug:
+        var: priority_test
+```
+
+**Before running**, place your bet. Most people bet `from_play_vars`: the
+`vars:` is written in the play, in plain sight, while the file is "next to
+it". Run:
+
+```bash
+ansible-playbook labs/ecrire-code/precedence-variables/lab.yml
+```
+
+🔍 **Observation**: `priority_test = from_vars_files`. **`vars_files:`
+(level 14) beats the play `vars:` (level 12)**, and there is no exception:
+the declaration order in the play changes nothing, putting `vars_files:` before
+or after `vars:` does not either. The level alone decides.
+
+**Why this direction?** The play `vars:` are designed as **default values of
+the play**; a `vars_files:` is an **operations decision** (the environment, the
+site, the client). It is therefore normal that the file wins: it is the one
+that carries the choice, the play only carries the fallback.
+
+**To memorize for the EX294**: if you place a value in `vars:` and it "does
+not take", look for a `vars_files:` before blaming Ansible. And if you
+want a play value to be **unbeatable** by a file, it is not `vars:` you
+must use, but a higher level (`set_fact`, exercise 4).
+
+## 📚 Exercise 4 — Add `set_fact` (level 19)
+
+Modify `lab.yml` to add a `set_fact`:
 
 ```yaml
 - name: Demo precedence avec set_fact
@@ -140,36 +206,38 @@ Modifiez `lab.yml` pour ajouter un `set_fact` :
         var: priority_test
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/ecrire-code/precedence-variables/lab.yml
 ```
 
-🔍 **Observation** : `priority_test = from_set_fact`. **`set_fact` (niveau 18)** bat
-**`vars:` du play (niveau 14)**. C'est utile quand vous voulez **calculer** une
-variable à partir d'autres et que cette valeur **doit gagner** sur les défauts.
+🔍 **Observation**: `priority_test = from_set_fact`. **`set_fact` (level 19)**
+beats the **play `vars:` (level 12)** and also the **`vars_files:` (level 14)** from
+the previous exercise. This is useful when you want to **compute** a variable
+from others and this value **must win** over the defaults as over
+the files.
 
-## 📚 Exercice 4 — `--extra-vars` (niveau 22 — l'arme finale)
+## 📚 Exercise 5 — `--extra-vars` (level 22, the final weapon)
 
 ```bash
 ansible-playbook labs/ecrire-code/precedence-variables/lab.yml \
   --extra-vars "priority_test=from_extra_vars"
 ```
 
-🔍 **Observation** : `priority_test = from_extra_vars`. **`--extra-vars` (niveau 22)
-bat même `set_fact` (niveau 18)**. Aucun mécanisme dans le playbook ne peut surcharger
+🔍 **Observation**: `priority_test = from_extra_vars`. **`--extra-vars` (level 22)
+beats even `set_fact` (level 19)**. No mechanism in the playbook can override
 `--extra-vars`.
 
-**Cas d'usage typique** : un opérateur force une valeur lors d'un run d'urgence sans
-modifier le code, ou la CI/CD passe `--extra-vars` calculés à partir de l'environnement.
+**Typical use case**: an operator forces a value during an emergency run without
+modifying the code, or the CI/CD passes `--extra-vars` computed from the environment.
 
-## 📚 Exercice 5 — Le piège des dicts : merge vs override
+## 📚 Exercise 6 — The dict trap: merge vs override
 
-Avec un **dict**, la précédence ne fait pas un merge intelligent — elle **remplace
-complètement**. Démonstration :
+With a **dict**, precedence does not do a smart merge, it **completely
+replaces**. Demonstration:
 
-Créez `group_vars/dbservers-dict.yml` :
+Create `group_vars/dbservers-dict.yml`:
 
 ```yaml
 ---
@@ -179,7 +247,7 @@ db_config:
   pool_size: 10
 ```
 
-Modifiez `lab.yml` :
+Modify `lab.yml`:
 
 ```yaml
 - name: Demo precedence dicts
@@ -195,108 +263,116 @@ Modifiez `lab.yml` :
         var: db_config
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/ecrire-code/precedence-variables/lab.yml
 ```
 
-🔍 **Observation** : `db_config` a **3 clés** : `host`, `port`, `timeout`. **PAS de
-`pool_size`**. Pourquoi ? Parce que `vars:` du play **a remplacé complètement** le
-dict des group_vars — pas de merge.
+🔍 **Observation**: `db_config` has **3 keys**: `host`, `port`, `timeout`. **NO
+`pool_size`**. Why? Because the play `vars:` **completely replaced** the
+dict of the group_vars, no merge.
 
-**Solution** : utiliser le filtre **`combine`** ou activer
-`hash_behaviour = merge` dans `ansible.cfg` (déconseillé car implicite et global).
+**Solution**: use the **`combine`** filter or enable
+`hash_behaviour = merge` in `ansible.cfg` (not recommended because implicit and global).
 
 ```yaml
 vars:
   db_config: "{{ db_config_base | combine({'timeout': 30}, recursive=True) }}"
 ```
 
-## 📚 Exercice 6 — Diagnostic : pourquoi ma variable est-elle bizarre ?
+## 📚 Exercise 7 — Diagnosis: why is my variable weird?
 
-Outil n°1 : afficher **toutes les vars** vues par Ansible :
+Tool number 1: display **all the vars** seen by Ansible:
 
 ```bash
 ansible-playbook labs/ecrire-code/precedence-variables/lab.yml -vvv 2>&1 | grep -A2 "priority_test"
 ```
 
-🔍 **Observation** : avec `-vvv`, Ansible affiche les vars chargées et leur source.
-Cherchez la **dernière** mention de `priority_test` — c'est la valeur effective.
+🔍 **Observation**: with `-vvv`, Ansible displays the loaded vars and their source.
+Look for the **last** mention of `priority_test`, it is the effective value.
 
-Outil n°2 : poser un `debug:` au début et à la fin du play pour comparer :
+Tool number 2: place a `debug:` at the start and the end of the play to compare:
 
 ```yaml
 - name: Diagnostic debut play
   ansible.builtin.debug:
     var: priority_test
 
-# ... vos taches ...
+# ... your tasks ...
 
 - name: Diagnostic fin play
   ansible.builtin.debug:
     var: priority_test
 ```
 
-Si la valeur change entre les deux, c'est qu'un `set_fact` ou `register: + with_*`
-intermédiaire a tapé dessus.
+If the value changes between the two, it means an intermediate `set_fact` or
+`register: + with_*` hit it.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`--extra-vars` (22)** > `set_fact` (18) > `vars:` du play (14) > `vars_files:` (13) > `host_vars` (8) > `group_vars/<grp>` (6) > `group_vars/all` (5) > `role defaults` (1).
-- **Spécificité d'inventaire** (host > group) **ne bat pas** spécificité de play (vars > vars_files).
-- **Dicts** ne sont **pas merged** par défaut — un niveau supérieur **remplace** complètement.
-- **`combine(recursive=True)`** est l'outil pour un vrai merge de dicts.
-- **`-vvv`** + grep permet de tracer la source d'une valeur.
+- **`--extra-vars` (22)** > `role params` (20) > `set_fact` (19) > `include_vars` (18) > `role vars` (15) > **`vars_files:` (14)** > **play `vars:` (12)** > `facts` (11) > `host_vars` (9-10) > `group_vars/<grp>` (6-7) > `group_vars/all` (4-5) > `role defaults` (2).
+- **`vars_files:` (14) BEATS the play `vars:` (12)**. This is the counter-intuitive point of the lab: the loaded file wins over what is written in the play.
+- **Inventory specificity** (host > group) **does not beat** the play: all the inventory stays under level 12.
+- **Dicts** are **not merged** by default, a higher level **replaces** completely.
+- **`combine(recursive=True)`** is the tool for a real dict merge.
+- **`-vvv`** + grep lets you trace the source of a value.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voulez qu'un opérateur puisse forcer `app_env=prod` lors d'un déploiement
-   d'urgence sans toucher au code. Quel niveau utilisez-vous, et pourquoi pas
-   `host_vars/` (niveau 8) qui semble "plus officiel" ?
+1. You want an operator to be able to force `app_env=prod` during an emergency
+   deployment without touching the code. Which level do you use, and why not
+   `host_vars/` (level 9-10) which seems "more official"?
 
-2. Vous avez un dict `database:` défini dans `group_vars/all.yml` avec 5 clés. Vous
-   voulez **ajouter** une 6e clé pour le groupe `dbservers` sans réécrire les 5
-   premières. Comment ?
+2. You have a dict `database:` defined in `group_vars/all.yml` with 5 keys. You
+   want to **add** a 6th key for the `dbservers` group without rewriting the 5
+   first ones. How?
 
-3. Pourquoi `set_fact` (niveau 18) est-il **plus prioritaire** que `vars:` du play
-   (niveau 14) ? Quel est le **cas d'usage** qui justifie cette précédence ?
+3. Why is `set_fact` (level 19) **higher priority** than the play `vars:`
+   (level 12)? What is the **use case** that justifies this precedence?
 
-## 🚀 Challenge final
+4. A colleague claims: "my play `vars:` are the strongest thing there is,
+   apart from `--extra-vars`". Give them **two** counter-examples taken from this lab,
+   including one that requires **no** task to execute.
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+## 🚀 Final challenge
 
-## 💡 Pour aller plus loin
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-- **`include_vars:` dynamique** (niveau 19) : charger un fichier de vars selon une
-  condition runtime — niveau supérieur à `vars_files:` (statique, niveau 13).
-- **Role defaults vs role vars** : `roles/<role>/defaults/main.yml` (niveau 1, le
-  plus faible — facile à override) vs `roles/<role>/vars/main.yml` (niveau 16,
-  difficile à override). À choisir selon l'intention.
-- **`ANSIBLE_HASH_BEHAVIOUR=merge`** : variable d'env qui change globalement le
-  comportement des dicts. **Déconseillé** — préférer `combine` explicite par variable.
-- **Pattern `var | default(<lookup_chaine>)`** : fallback en chaîne pour reproduire
-  une logique de précédence custom.
+## 💡 Going further
 
-## 🔍 Linter avec `ansible-lint`
+- **Dynamic `include_vars:`** (level 18): load a vars file according to a
+  runtime condition, higher level than `vars_files:` (static, level 14).
+  Careful: `set_fact` (19) stays **above** `include_vars` (18), even if
+  the `include_vars` executes **after** in the play. The level takes precedence over
+  the chronological order.
+- **Role defaults vs role vars**: `roles/<role>/defaults/main.yml` (level 2, the
+  weakest, easy to override) vs `roles/<role>/vars/main.yml` (level 15,
+  above `vars_files:`, hard to override). To choose according to intent.
+- **`ANSIBLE_HASH_BEHAVIOUR=merge`**: env variable that globally changes the
+  behavior of dicts. **Not recommended**, prefer explicit `combine` per variable.
+- **`var | default(<lookup_string>)` pattern**: chained fallback to reproduce
+  a custom precedence logic.
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+## 🔍 Linting with `ansible-lint`
+
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/ecrire-code/precedence-variables/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/ecrire-code/precedence-variables/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/ecrire-code/precedence-variables/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

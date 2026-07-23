@@ -1,0 +1,25 @@
+---
+id: collections-creer-custom
+title: "Build your own collection with a custom Python module"
+description: "Init a collection, fill in galaxy.yml and meta/runtime.yml, add a role and a documented Python module, then build the tarball."
+section: collections
+level: l3
+difficulty: advanced
+lab_type: lab
+estimated_time: "55m"
+skills:
+  - collection-init
+  - custom-module
+  - collection-build
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/creer-collection-custom/
+track:
+  - au-dela-ex294
+runtime:
+  type: shell
+  workdir: challenge/work
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

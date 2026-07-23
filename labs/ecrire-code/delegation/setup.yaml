@@ -1,0 +1,23 @@
+---
+# Mise en place du lab delegation : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup delegation lab (labenv)
+  hosts: labenv
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (delegation)
+      ansible.builtin.shell: |
+        rm -f /tmp/delegation-on-*.txt
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (delegation)
+  hosts: labenv
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Redirect a task to another host, run it only once in a multi-host play and target the control node with local_action
+      run_once: true

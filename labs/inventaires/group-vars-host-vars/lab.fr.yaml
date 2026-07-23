@@ -1,0 +1,4 @@
+---
+id: inventaires-group-vars-host-vars
+title: "group_vars et host_vars : structurer les variables"
+description: "Répartir les variables d'inventaire entre all, groupe et host, puis vérifier la valeur résolue avec ansible-inventory --host."

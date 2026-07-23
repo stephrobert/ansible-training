@@ -1,0 +1,4 @@
+---
+id: ecrire-code-tests-jinja
+title: "Tests Jinja2 : is defined, is mapping, is sequence"
+description: "Tester la définition et le type d'une variable, matcher une regex avec is match et is search, et combiner ces tests dans when et {% if %}."

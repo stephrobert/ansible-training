@@ -1,0 +1,18 @@
+---
+# Reset du lab wait-for-pause : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup wait-for-pause lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    # Les deux fichiers du lab, pas seulement le marqueur : ce qui traîne ici
+    # fausse le run suivant, sur des VMs partagées entre labs.
+    - name: Reset path, state (wait-for-pause)
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: "absent"
+      loop:
+        - /tmp/lab-waitfor-marker.txt
+        - /tmp/lab-waitfor-success.txt
+      failed_when: false

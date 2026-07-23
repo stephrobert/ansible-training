@@ -1,0 +1,4 @@
+---
+id: modules-paquets-yum-repository
+title: "Module yum_repository : déclarer un dépôt RPM"
+description: "Déclarer un dépôt yum/dnf avec gpgcheck, importer sa clé GPG via rpm_key et désactiver un dépôt sans le supprimer."

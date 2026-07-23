@@ -1,0 +1,196 @@
+---
+# Mise en place du lab mock-ex294 : l'état « salle d'examen », puis le brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+#
+# Ce playbook ne se contente pas de nettoyer : il DÉFAIT l'état final attendu
+# par les 18 tâches. C'est le cœur d'un examen blanc. Tant que le booléen
+# SELinux restait « on », que les services firewalld restaient ouverts et que
+# le serveur web restait installé d'un run précédent, les tests 5, 6, 8 et 9
+# étaient verts sans que le candidat ait écrit une ligne : le mock certifiait
+# à tort.
+#
+# Il pose aussi les trois pré-requis que l'énoncé déclare fournis par
+# l'environnement (comme à l'examen Red Hat réel) : le VG `vg_lab`, l'UID 2001
+# libre, le port 80 libre. C'était le rôle d'un script bash livré à côté, que
+# la doc du lab faisait lancer par un `make prep` disparu et un `dsoxlab prep`
+# qui n'a jamais existé. Le setup.yaml, lui, est joué automatiquement par
+# `dsoxlab run` comme par pytest : l'environnement est posé, pas espéré.
+
+- name: Défaire l'état attendu et libérer l'UID 2001 (mock-ex294)
+  hosts: labenv
+  become: true
+  gather_facts: false
+  tasks:
+    # Le glob /tmp/lab100-* couvre d'un coup les marqueurs des tâches 2, 3, 4,
+    # 13 (incident et fin de bloc), 14 (vagues), 15 (journal délégué) et
+    # 17 (tags) : ils portent tous ce préfixe, par convention du lab.
+    #
+    # Pour la tâche 14, c'est vital : la preuve du séquencement est le mtime des
+    # marqueurs de vague. Un marqueur laissé par un run précédent ne serait pas
+    # réécrit (contenu stable), et le test mesurerait l'écart d'hier.
+    - name: Retirer les artefacts déposés par les tâches 2, 3, 4, 12, 13, 14, 15 et 17
+      ansible.builtin.shell: |
+        rm -f /tmp/lab100-* /tmp/file{1..5} 2>/dev/null; true
+      changed_when: false
+      failed_when: false
+
+    - name: Retirer la règle sudo de la tâche 7
+      ansible.builtin.file:
+        path: /etc/sudoers.d/appuser-systemctl
+        state: absent
+
+    # La crontab d'appuser est le seul état de la tâche 16. On ne s'en remet pas
+    # à `userdel -r` : la crontab doit disparaître même si l'utilisateur a déjà
+    # été retiré par un passage précédent.
+    - name: Retirer la crontab d'appuser (tâche 16)
+      ansible.builtin.file:
+        path: /var/spool/cron/appuser
+        state: absent
+
+    # On ne retire QUE notre fact : /etc/ansible/facts.d est partagé avec le lab
+    # custom-facts, qui y dépose les siens. Supprimer le répertoire entier
+    # casserait le voisin sur des VMs qui sont mutualisées.
+    - name: Retirer le fact personnalisé de la tâche 18
+      ansible.builtin.file:
+        path: /etc/ansible/facts.d/lab100.fact
+        state: absent
+
+    - name: Retirer appuser (tâche 7)
+      ansible.builtin.user:
+        name: appuser
+        state: absent
+        remove: true
+
+    - name: Retirer appgroup (tâche 7)
+      ansible.builtin.group:
+        name: appgroup
+        state: absent
+
+    - name: Libérer l'UID et le GID 2001, qu'un lab voisin a pu occuper
+      ansible.builtin.shell: |
+        squatter=$(getent passwd 2001 | cut -d: -f1)
+        if [ -n "$squatter" ]; then userdel -r "$squatter" 2>/dev/null || true; fi
+        squatter_grp=$(getent group 2001 | cut -d: -f1)
+        if [ -n "$squatter_grp" ]; then groupdel "$squatter_grp" 2>/dev/null || true; fi
+        true
+      changed_when: false
+      failed_when: false
+
+- name: Désinstaller ce que la tâche 5 doit installer (mock-ex294)
+  hosts: lab_web1:lab_web2:lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    # python3-libselinux n'est pas dans la liste : c'est une dépendance de
+    # l'outillage système, la retirer casserait la gestion SELinux d'Ansible
+    # elle-même. La tâche 5 n'est donc prouvée que sur deux paquets sur trois.
+    - name: Retirer nginx et mariadb-server
+      ansible.builtin.dnf:
+        name:
+          - nginx
+          - mariadb-server
+        state: absent
+
+- name: Rendre les webservers à leur état d'avant-examen (mock-ex294)
+  hosts: lab_web1:lab_web2
+  become: true
+  gather_facts: false
+  tasks:
+    # Sans ce paquet, la valeur PERSISTANTE du booléen SELinux n'est pas
+    # lisible (semanage boolean -l) et la tâche 8 n'est pas vérifiable. Il fait
+    # partie de l'environnement d'examen, pas du travail du candidat :
+    # l'installer ici, et non dans la solution, évite d'exiger du candidat un
+    # paquet que l'énoncé de la tâche 5 ne demande pas.
+    - name: Outillage SELinux requis pour vérifier la tâche 8
+      ansible.builtin.dnf:
+        name: policycoreutils-python-utils
+        state: present
+
+    # La tâche « Libérer le port 80 occupé par nginx » vivait ici : la
+    # formation faisait cohabiter nginx et httpd sur les mêmes machines, et
+    # ils se disputaient le port 80. C'était un pansement sur ce conflit. La
+    # formation n'a plus qu'un seul serveur web, nginx, que la tâche 5 du
+    # candidat désinstalle puis réinstalle : plus rien à libérer.
+
+    - name: Retirer l'index.html de la tâche 11
+      ansible.builtin.file:
+        path: /usr/share/nginx/html/index.html
+        state: absent
+
+    - name: Désactiver httpd_can_network_connect, runtime et persistant
+      ansible.posix.seboolean:
+        name: httpd_can_network_connect
+        state: false
+        persistent: true
+
+    - name: Refermer les services firewalld de la tâche 9
+      ansible.posix.firewalld:
+        service: "{{ item }}"
+        permanent: true
+        immediate: true
+        state: disabled
+      loop:
+        - http
+        - https
+
+- name: Poser le VG vg_lab et refermer db1 (mock-ex294)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Refermer le service firewalld de la tâche 9
+      ansible.posix.firewalld:
+        service: mysql
+        permanent: true
+        immediate: true
+        state: disabled
+
+    # L'énoncé de la tâche 10 dit « dans le VG existant vg_lab » : le VG est un
+    # pré-requis de l'environnement, pas une étape de l'examen. On repart du
+    # disque secondaire réel /dev/vdb, comme les trois labs de stockage qui le
+    # partagent et le rendent vierge de la même façon dans leur propre setup.
+    # Un VG adossé à un disque réel survit au reboot : l'entrée fstab de la
+    # tâche 10 n'est pas un piège à démarrage, contrairement au loop device
+    # qu'on fabriquait avant sur /opt/lab100-disk.img, et qui laissait db1 avec
+    # une entrée fstab pointant un volume disparu au boot suivant.
+    - name: Reprendre /dev/vdb et effacer la pile LVM du mock
+      ansible.builtin.shell: |
+        umount -l /mnt/data 2>/dev/null || true
+        sed -i -e '\|/mnt/data|d' -e '\|vg_lab|d' -e '\|/dev/vdb|d' \
+               /etc/fstab 2>/dev/null || true
+        dmsetup remove vg_lab-lv_data 2>/dev/null || true
+        lvremove -f /dev/vg_lab/lv_data 2>/dev/null || true
+        vgchange -an vg_lab 2>/dev/null || true
+        vgremove -f vg_lab 2>/dev/null || true
+        pvremove -ff -y /dev/vdb 2>/dev/null || true
+        # vgremove laisse un /dev/vg_lab vide derrière lui, et vgcreate refuse
+        # alors de repartir sur « already exists in filesystem ».
+        rm -rf /dev/vg_lab || true
+        # Partitions, swap et signatures laissés par les labs de stockage.
+        swapoff /dev/vdb1 2>/dev/null || true
+        for p in /dev/vdb[0-9]*; do test -b "$p" && wipefs -af "$p" || true; done
+        wipefs -af /dev/vdb || true
+        sgdisk --zap-all /dev/vdb || true
+        partprobe /dev/vdb || true
+        rmdir /mnt/data 2>/dev/null || true
+      changed_when: false
+      failed_when: false
+
+    - name: Créer le VG vg_lab sur le disque secondaire
+      community.general.lvg:
+        vg: vg_lab
+        pvs: /dev/vdb
+        state: present
+
+- name: Brief the learner (mock-ex294)
+  hosts: labenv
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Work through 19 timed tasks covering inventories, variables, vault,
+          files, packages, services, roles, error handling, rolling waves,
+          delegation, tags, scheduled jobs, custom facts and content
+          collections, each validated by pytest
+      run_once: true

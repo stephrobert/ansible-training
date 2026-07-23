@@ -1,0 +1,29 @@
+---
+# Mise en place du lab wait-for-pause : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup wait-for-pause lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    # Le marqueur ET le fichier de succès sont remis à zéro : ne nettoyer que le
+    # premier laissait le second traîner d'un run à l'autre, et son test passait
+    # alors sur un vestige au lieu de prouver le travail de l'apprenant.
+    - name: Reset path, state (wait-for-pause)
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: "absent"
+      loop:
+        - /tmp/lab-waitfor-marker.txt
+        - /tmp/lab-waitfor-success.txt
+      failed_when: false
+
+- name: Brief the learner (wait-for-pause)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Wait for a TCP port to open or close, for a file or a regex to appear, and add a timed or interactive pause
+      run_once: true

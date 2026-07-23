@@ -1,0 +1,23 @@
+---
+# Mise en place du lab archive-unarchive : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup archive-unarchive lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (archive-unarchive)
+      ansible.builtin.shell: |
+        rm -rf /opt/data-source /opt/backup /opt/restored
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (archive-unarchive)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Create a tar.gz archive on the managed node and extract local, remote or already-present tarballs idempotently with creates
+      run_once: true

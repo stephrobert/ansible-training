@@ -46,4 +46,4 @@ done
 echo ""
 echo "[unlock] ${n_unlocked} fichier(s) déchiffré(s), ${n_skipped} déjà en clair sur ${n_total} total."
 echo ""
-echo "⚠️  Pense à relancer 'make solutions-lock' avant de commiter."
+echo "⚠️  Pense à relancer 'mise run solutions-lock' avant de commiter."

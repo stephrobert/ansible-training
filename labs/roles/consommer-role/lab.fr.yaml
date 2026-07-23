@@ -1,0 +1,4 @@
+---
+id: roles-consommer-role
+title: "Consommer un rôle : roles:, import_role, include_role"
+description: "Appeler un même rôle des trois façons possibles et choisir entre statique et dynamique, notamment quand un when: entre en jeu."

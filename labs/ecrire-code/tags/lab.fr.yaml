@@ -1,0 +1,4 @@
+---
+id: ecrire-code-tags
+title: "Tags : cibler ou ignorer un sous-ensemble de tâches"
+description: "Poser des tags, cibler avec --tags et exclure avec --skip-tags, inspecter le plan via --list-tasks et exploiter les tags spéciaux always et never."

@@ -1,15 +1,42 @@
 ---
-# Plugin community.libvirt.libvirt — interroge l'API libvirt locale.
+# Plugin community.libvirt.libvirt : interroge l'API libvirt locale et génère
+# l'inventaire à chaque exécution d'Ansible.
 # Documentation : ansible-doc -t inventory community.libvirt.libvirt
 plugin: community.libvirt.libvirt
 uri: qemu:///system
+
+# 'name' : l'hôte d'inventaire porte le NOM DU DOMAINE libvirt, tel que
+# l'affiche `virsh -c qemu:///system list --all`. Ici les domaines s'appellent
+# 'web1.lab', 'db1.lab'… : c'est donc ça, et rien d'autre, que voient les
+# filtres ci-dessous.
 inventory_hostname: name
 
-# Création de groupes logiques basés sur le nom de la VM.
-# Toute VM dont le nom commence par 'web' va dans le groupe 'webservers',
-# etc. Permet de cibler le sous-ensemble du parc qu'on gère via Ansible.
+# strict: false : une condition Jinja qui référence une variable absente écarte
+# l'hôte du groupe au lieu de faire échouer tout le run. C'est ce qui permet au
+# lab de survivre aux domaines étrangers, dont ceux que libvirt refuse de
+# détailler (« domain is not running »). Le passer à true ferait tomber
+# l'inventaire entier à cause d'une VM qui ne nous concerne pas.
+strict: false
+
+# Groupes logiques construits par condition Jinja, évaluée VM par VM.
+#
+# La machine porte souvent d'autres domaines libvirt que ceux du lab (serveur
+# GitLab perso, nœuds Chef…) : le plugin les remonte TOUS, c'est son travail.
+# 'lab_vms' est la liste blanche explicite des seules VMs que ce lab s'autorise
+# à toucher. Un playbook qui ciblerait 'all' irait écrire sur vos machines
+# personnelles.
 groups:
-  lab_vms: inventory_hostname in ['control-node', 'web1', 'web2', 'db1']
-  webservers: inventory_hostname in ['web1', 'web2']
-  dbservers: inventory_hostname == 'db1'
-  control: inventory_hostname == 'control-node'
+  lab_vms: inventory_hostname in ['control-node.lab', 'web1.lab', 'web2.lab', 'db1.lab']
+  webservers: inventory_hostname in ['web1.lab', 'web2.lab']
+  dbservers: inventory_hostname == 'db1.lab'
+  control: inventory_hostname == 'control-node.lab'
+
+# Un groupe par valeur de la variable : 'state_running', 'state_shutoff'…
+# La clé est 'info.state' et non 'state' : le plugin range l'état du domaine
+# dans le dictionnaire 'info' (le vérifier avec `ansible-inventory
+# -i inventory/ --host web1.lab`). Avec 'state' seul, la variable n'existe pas,
+# le groupe n'est jamais créé, et 'lab_vms:&state_running' ne matche
+# silencieusement personne.
+keyed_groups:
+  - prefix: state
+    key: info.state

@@ -1,0 +1,4 @@
+---
+id: collections-ci-tests
+title: "Matrice CI pour une collection : ansible-core x Python"
+description: "Croiser les versions d'ansible-core et de Python dans une matrice, lancer ansible-test sanity et units en conteneur, épingler les actions par SHA."

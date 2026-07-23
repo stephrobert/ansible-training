@@ -1,0 +1,35 @@
+---
+id: pratiques-ansible-pull-gitops
+title: "ansible-pull: GitOps and Edge pattern"
+description: "Run ansible-pull against a Git repository, schedule it with cron or a systemd timer, bootstrap it from cloud-init, then choose push or pull per use case."
+section: pratiques
+level: l3
+difficulty: advanced
+lab_type: lab
+estimated_time: "50m"
+skills:
+  - pull-mode
+  - gitops
+  - cloud-init-bootstrap
+  - scheduling
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/pratiques/ansible-pull-gitops/
+track:
+  - au-dela-ex294
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+        web1: web1.lab
+        web2: web2.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

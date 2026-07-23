@@ -1,8 +1,9 @@
 ---
-# converge.yml — playbook qui appelle le rôle à tester.
+# converge.yml : À COMPLÉTER PAR VOS SOINS.
+#
+# Ce playbook doit appliquer le rôle `webserver` (livré dans roles/) sur
+# l'instance de test, avec élévation de privilèges.
+
 - name: Converge
   hosts: all
-  become: true
-
-  roles:
-    - role: webserver
+  tasks: []

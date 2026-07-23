@@ -1,0 +1,4 @@
+---
+id: modules-fichiers-replace
+title: "Module replace : remplacer un motif dans un fichier"
+description: "Substituer un motif regex dans tout un fichier, borner la zone avec before/after et préserver une partie via groupes de capture."

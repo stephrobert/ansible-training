@@ -1,0 +1,4 @@
+---
+id: ee-debug
+title: "Déboguer un Execution Environment cassé"
+description: "Diagnostiquer un EE qui build sans erreur mais reste vide : version de schéma oubliée, collection ou version PyPI inexistante, puis corriger et vérifier."

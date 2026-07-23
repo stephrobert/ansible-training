@@ -1,5 +1,3 @@
-# Dépendances système requises par les collections (bindep format).
-# Profil platform:rpm pour UBI 9 / RHEL 9 / AlmaLinux.
-git [platform:rpm]
-openssh-clients [platform:rpm]
-sshpass [platform:rpm]
+# bindep.txt : À COMPLÉTER PAR VOS SOINS.
+# Paquets système requis par les collections, au format bindep, avec le
+# profil adapté à une base UBI/RHEL.

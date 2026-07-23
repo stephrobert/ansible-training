@@ -1,5 +1,10 @@
 ---
-# molecule.yml — verifier testinfra (Python) au lieu de verify.yml (Ansible).
+# Scénario identique au lab 62, à UNE ligne près : le verifier.
+#
+# C'est tout l'intérêt de la manoeuvre : create, converge et le rôle ne
+# bougent pas, seul le juge change. Molecule ne connaît qu'un contrat,
+# « vérifie l'instance » ; qui le remplit reste un choix d'équipe.
+
 dependency:
   name: galaxy
 
@@ -17,6 +22,14 @@ provisioner:
   name: ansible
 
 verifier:
-  name: testinfra      # ← Python plutôt qu'Ansible
-  options:
-    v: true
+  # testinfra à la place d'ansible : les assertions quittent verify.yml
+  # pour des tests Python dans molecule/default/tests/. Molecule lance
+  # alors pytest en lui passant l'inventaire du scénario, et chaque test
+  # reçoit l'instance via la fixture « host ».
+  #
+  # Ce qu'on y gagne : la puissance de pytest (paramétrage, fixtures,
+  # -k, assertions introspectées). Ce qu'on y perd : une dépendance et un
+  # second langage dans le dépôt. verify.yml reste le bon choix par
+  # défaut ; testinfra se justifie quand les assertions deviennent
+  # combinatoires, comme la paramétrisation ci-dessous le montre.
+  name: testinfra

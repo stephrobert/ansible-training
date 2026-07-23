@@ -1,0 +1,4 @@
+---
+id: ecrire-code-async-poll
+title: "Async et poll : tâches longues sans bloquer SSH"
+description: "Détacher une tâche longue en async + poll: 0, récupérer son résultat via async_status, faire du polling actif et diagnostiquer un job orphelin."

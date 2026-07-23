@@ -1,0 +1,22 @@
+---
+# Mise en place du lab fetch : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup fetch lab (lab_web1)
+  hosts: lab_web1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (fetch)
+      ansible.builtin.file:
+        path: "/etc/lab-tag.txt"
+        state: "absent"
+
+- name: Brief the learner (fetch)
+  hosts: lab_web1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Collect logs and configs from managed nodes to the control node, per-host tree or flat mode with inventory_hostname
+      run_once: true

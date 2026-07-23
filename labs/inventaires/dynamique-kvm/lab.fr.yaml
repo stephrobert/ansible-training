@@ -1,0 +1,4 @@
+---
+id: inventaires-dynamique-kvm
+title: "Inventaire dynamique KVM avec community.libvirt"
+description: "Découvrir automatiquement les VMs libvirt via le plugin d'inventaire, créer des groupes Jinja et keyed_groups, sans inventaire manuel."

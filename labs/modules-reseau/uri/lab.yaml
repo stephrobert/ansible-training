@@ -1,0 +1,38 @@
+---
+id: modules-reseau-uri
+title: "uri module: REST API calls"
+description: "Call a REST API with GET/POST and a JSON body, accept several status_code values, and loop a healthcheck with until/retries."
+section: modules-reseau
+level: l3
+difficulty: advanced
+lab_type: lab
+estimated_time: "50m"
+skills:
+  - uri
+  - rest-api
+  - json-parsing
+  - healthcheck
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/reseau/module-uri/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+        # Hôte qui sert l'API REST interne du lab (nginx). web2 est le seul
+        # managed node dont le nginx.conf est celui du paquet : les labs de la
+        # section « roles » remplacent celui de db1 et désinstallent le paquet,
+        # et « declaratif-vs-imperatif » fait de même sur web1.
+        api: web2.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

@@ -1,0 +1,23 @@
+---
+# Mise en place du lab stat : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup stat lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (stat)
+      ansible.builtin.file:
+        path: "/tmp/lab-stat-report.txt"
+        state: "absent"
+      failed_when: false
+
+- name: Brief the learner (stat)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Check existence, type, size, mode and checksum of a file without modifying it, to drive conditional logic
+      run_once: true

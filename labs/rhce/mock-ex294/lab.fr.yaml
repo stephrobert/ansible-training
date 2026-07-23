@@ -1,0 +1,4 @@
+---
+id: rhce-mock-ex294
+title: "Examen blanc RHCE EX294 : 18 tâches en 4 heures"
+description: "Traiter sous chrono 18 tâches couvrant inventaires, variables, vault, fichiers, paquets, services, rôles, gestion d'erreur, déploiement par vagues, délégation, tags, tâches planifiées et facts personnalisés, chacune validée par pytest."

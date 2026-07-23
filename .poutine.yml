@@ -1,0 +1,29 @@
+# Poutine — CI/CD exploit-chain analysis.
+#
+# Targeted acknowledgements ONLY. The rule stays globally enabled so any OTHER
+# third-party action keeps being flagged: each skip below names one exact purl.
+#
+# `github_action_from_unverified_creator_used` fires on any action whose owner
+# is not a Marketplace "verified creator". That status is a Marketplace
+# publishing formality, not a security verdict — several first-class security
+# tools do not carry it. Each action below is pinned by commit SHA, listed in
+# `.plumber.yaml: trustedGithubActions`, and vetted by hand.
+skip:
+  - rule: github_action_from_unverified_creator_used
+    purl:
+      # Official action of the plumber scanner itself (getplumber.io), which
+      # gates this very repo's compliance.
+      - pkg:githubactions/getplumber/plumber
+      # Official action of the zizmor scanner (zizmorcore), the workflow static
+      # analysis gate in ci.yml.
+      - pkg:githubactions/zizmorcore/zizmor-action
+      # Official action of poutine itself (BoostSecurity), the scanner running
+      # this very configuration.
+      - pkg:githubactions/boostsecurityio/poutine-action
+      # Astral — maintainer of uv and ruff, the toolchain this repo builds on.
+      - pkg:githubactions/astral-sh/setup-uv
+      # StepSecurity — harden-runner, the egress-monitoring baseline required as
+      # the first step of every job.
+      - pkg:githubactions/step-security/harden-runner
+      # Sigstore — the upstream project behind cosign keyless signing.
+      - pkg:githubactions/sigstore/cosign-installer

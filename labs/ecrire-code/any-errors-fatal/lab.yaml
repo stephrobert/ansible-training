@@ -1,0 +1,33 @@
+---
+id: ecrire-code-any-errors-fatal
+title: "any_errors_fatal: stop the play on the first error"
+description: "Enable any_errors_fatal on a multi-host play, compare it with the default and with max_fail_percentage, and combine it with serial."
+section: ecrire-code
+level: l3
+difficulty: advanced
+lab_type: lab
+estimated_time: "50m"
+skills:
+  - any-errors-fatal
+  - max-fail-percentage
+  - error-handling
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/any-errors-fatal/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        web1: web1.lab
+        web2: web2.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

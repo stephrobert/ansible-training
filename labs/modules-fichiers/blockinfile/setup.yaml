@@ -1,0 +1,22 @@
+---
+# Mise en place du lab blockinfile : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup blockinfile lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (blockinfile)
+      ansible.builtin.file:
+        path: "/etc/profile.d/aliases-rhce.sh"
+        state: "absent"
+
+- name: Brief the learner (blockinfile)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Insert and maintain a multi-line block in an existing file with custom markers, insertafter/insertbefore and idempotence
+      run_once: true

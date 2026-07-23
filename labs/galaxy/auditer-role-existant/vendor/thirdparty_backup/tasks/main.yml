@@ -1,0 +1,20 @@
+---
+- name: install backup tools
+  yum:
+    name: rsync
+    state: present
+
+- name: download backup helper
+  get_url:
+    url: http://tools.example.com/backup-helper.sh
+    dest: /usr/local/bin/backup-helper.sh
+    mode: 0755
+
+- name: create backup directory
+  file:
+    path: "{{ backup_dir }}"
+    state: directory
+
+- name: install cron job
+  shell: echo "0 3 * * * root /usr/local/bin/backup-helper.sh {{ backup_password }}" >> /etc/crontab
+  ignore_errors: true

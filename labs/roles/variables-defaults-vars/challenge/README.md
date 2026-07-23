@@ -1,20 +1,20 @@
-# 🎯 Challenge — Override de variables au niveau du play
+# 🎯 Challenge — Override variables at play level
 
-Vous avez vu le rôle `webserver` paramétré par `defaults/main.yml`. Le challenge consiste à **override** ces valeurs depuis un playbook qui appelle le rôle, et à **prouver** que les nouvelles valeurs sont bien appliquées.
+You have seen the `webserver` role parameterized by `defaults/main.yml`. The challenge is to **override** these values from a playbook that calls the role, and to **prove** that the new values are indeed applied.
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `solution.yml` qui :
+Write `solution.yml` that:
 
-1. Cible **`db1.lab`** uniquement.
-2. Appelle le rôle `webserver` avec **3 variables overridées** :
-   - `webserver_listen_port: 8080` (au lieu de 80)
-   - `webserver_worker_connections: 2048` (au lieu de 1024)
+1. Targets **`db1.lab`** only.
+2. Calls the `webserver` role with **3 overridden variables**:
+   - `webserver_listen_port: 8080` (instead of 80)
+   - `webserver_worker_connections: 2048` (instead of 1024)
    - `webserver_index_content: "Custom page from challenge lab 59 on {{ inventory_hostname }}"`
 
-## 🧩 Consignes
+## 🧩 Instructions
 
-Squelette à compléter (`challenge/solution.yml`) :
+Skeleton to complete (`challenge/solution.yml`):
 
 ```yaml
 ---
@@ -23,73 +23,73 @@ Squelette à compléter (`challenge/solution.yml`) :
   become: ???
   roles:
     - role: webserver
-      vars:                              # vars du play : priorité 13
+      vars:                              # play vars: priority 12
         webserver_listen_port: ???       # 8080
         webserver_worker_connections: ???    # 2048
-        webserver_index_content: "{{ ??? }}"   # avec inventory_hostname
+        webserver_index_content: "{{ ??? }}"   # with inventory_hostname
 ```
 
-Lancement (note l'env var `ANSIBLE_ROLES_PATH`, pas `-e`) :
+Run (note the env var `ANSIBLE_ROLES_PATH`, not `-e`):
 
 ```bash
 ANSIBLE_ROLES_PATH=labs/roles/variables-defaults-vars/roles \
 ansible-playbook labs/roles/variables-defaults-vars/challenge/solution.yml
 ```
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
-> - **Précédence** : `vars/` du rôle (priorité 18) > `vars:` du play
->   (priorité 13) > `defaults/` du rôle (priorité 1). Si vous tentez
->   d'override `__webserver_html_dir` (défini dans `vars/main.yml`), ça
->   **ne marche pas**. Pour overrider, modifier le rôle ou utiliser
->   `--extra-vars` (priorité 22, top du top).
-> - **`ANSIBLE_ROLES_PATH`** est une env var Ansible, **pas un `-e`** du
->   playbook. Le `-e ansible_roles_path=...` ne configure rien (c'est une
->   extra-var inutile au play).
-> - **Variables avec `inventory_hostname`** : pensez à les poser entre
->   guillemets car `{{ }}` peut être interprété par YAML (`"{{ ... }}"`).
+> - **Precedence**: the role's `vars/` (priority 15) > the play's `vars:`
+>   (priority 12) > the role's `defaults/` (priority 2). If you try
+>   to override `__webserver_html_dir` (defined in `vars/main.yml`), it
+>   **does not work**. To override, modify the role or use
+>   `--extra-vars` (priority 22, the very top).
+> - **`ANSIBLE_ROLES_PATH`** is an Ansible env var, **not a `-e`** of the
+>   playbook. The `-e ansible_roles_path=...` configures nothing (it is an
+>   extra-var useless to the play).
+> - **Variables with `inventory_hostname`**: remember to put them in
+>   quotes because `{{ }}` can be interpreted by YAML (`"{{ ... }}"`).
 
-Vérifier sur `db1.lab` :
+Check on `db1.lab`:
 
    ```bash
-   ssh ansible@db1.lab "sudo firewall-cmd --zone=public --list-ports"
-   # → 8080/tcp doit apparaître
+   ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab "sudo firewall-cmd --zone=public --list-ports"
+   # → 8080/tcp must appear
 
-   ssh ansible@db1.lab "cat /usr/share/nginx/html/index.html"
+   ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab "cat /usr/share/nginx/html/index.html"
    # → Custom page from challenge lab 59 on db1.lab
    ```
 
 ## 🧪 Validation
 
-Le test pytest vérifie automatiquement :
+The pytest test automatically checks:
 
-- nginx installé.
-- Service nginx running.
-- Firewalld a le port **8080/tcp** ouvert (preuve que `webserver_listen_port=8080` est passé via le `vars:` du play, **pas** la valeur 80 des `defaults/`).
-- Le fichier `/usr/share/nginx/html/index.html` contient le **custom message**.
+- nginx installed.
+- nginx service running.
+- Firewalld has port **8080/tcp** open (proof that `webserver_listen_port=8080` was passed via the play's `vars:`, **not** the value 80 from `defaults/`).
+- The file `/usr/share/nginx/html/index.html` contains the **custom message**.
 
 ```bash
 pytest -v challenge/tests/
 ```
 
-## 🚀 Pour aller plus loin
+## 🚀 Going further
 
-- Modifier `defaults/main.yml` du rôle pour mettre `webserver_listen_port: 80` (déjà la valeur par défaut). Re-lancer la solution. Le résultat est le **même** — preuve que **les `vars:` du play override les `defaults/`**.
-- Tenter d'override `__webserver_html_dir` (qui est dans `vars/main.yml`). Observer que la valeur d'override **n'est pas prise en compte** — `vars/` (priorité 18) gagne sur `vars:` du play (priorité 13).
-- Combiner `--extra-vars "webserver_listen_port=9999"` en CLI : cette valeur **gagne sur tout** (priorité 22, le top de la précédence).
+- Modify the role's `defaults/main.yml` to set `webserver_listen_port: 80` (already the default value). Re-run the solution. The result is the **same**: proof that **the play's `vars:` override the `defaults/`**.
+- Try to override `__webserver_html_dir` (which is in `vars/main.yml`). Observe that the override value **is not taken into account**: `vars/` (priority 15) wins over the play's `vars:` (priority 12). Caution: a `vars:` placed under `- role:` is a role param (priority 20), and it WINS.
+- Combine `--extra-vars "webserver_listen_port=9999"` on the CLI: this value **wins over everything** (priority 22, the top of the precedence).
 
 ---
 
-Bonne chance ! 🧠
+Good luck! 🧠
 
 ## 🧹 Reset
 
-Pour rejouer le challenge dans un état neutre :
+To replay the challenge in a neutral state:
 
 ```bash
-make -C labs/roles/variables-defaults-vars/ clean
+dsoxlab clean roles-variables-defaults-vars
 ```
 
-Cette cible désinstalle/supprime ce que la solution a posé sur les managed
-nodes (paquets, fichiers, services, règles firewall) afin que vous puissiez
-relancer la solution from scratch.
+This target uninstalls/removes what the solution set up on the managed
+nodes (packages, files, services, firewall rules) so that you can
+re-run the solution from scratch.

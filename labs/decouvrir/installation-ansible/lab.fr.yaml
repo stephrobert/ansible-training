@@ -1,0 +1,4 @@
+---
+id: decouvrir-installation-ansible
+title: "Installation d'Ansible : vérifier son poste de contrôle"
+description: "Identifier sa méthode d'installation, vérifier les 8 binaires du PATH, les modules accessibles via ansible-doc et les collections du dépôt."

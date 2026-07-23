@@ -1,19 +1,14 @@
 ---
+# ansible-navigator.yml : À COMPLÉTER PAR VOS SOINS.
+# Configurez l'exécution dans l'EE officiel community-ansible-dev-tools :
+#   - image : l'EE community-ansible-dev-tools (registre officiel)
+#   - moteur de conteneurs : celui préconisé par Red Hat
+#   - politique de pull : tirer seulement si l'image est absente
+#   - mode : celui qui convient aux scripts et à la CI (non interactif)
 ansible-navigator:
   execution-environment:
-    image: quay.io/ansible/creator-ee:latest
-    container-engine: podman
+    image: ???
+    container-engine: ???
     pull:
-      policy: missing
-    volume-mounts:
-      - src: "{{ HOME }}/.ssh"
-        dest: "/home/runner/.ssh"
-        options: "ro,Z"
-      - src: "{{ playbook_dir }}/../../ssh"
-        dest: "/runner/ssh"
-        options: "ro,Z"
-  mode: stdout
-  playbook-artifact:
-    enable: false
-  logging:
-    level: warning
+      policy: ???
+  mode: ???

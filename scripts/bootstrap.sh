@@ -139,4 +139,4 @@ fi
 echo ""
 ok "Bootstrap terminé."
 echo ""
-log "Prochaine étape : make provision"
+log "Prochaine étape : dsoxlab provision"

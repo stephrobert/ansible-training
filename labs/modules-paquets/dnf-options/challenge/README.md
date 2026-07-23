@@ -1,26 +1,26 @@
-# 🎯 Challenge — `dnf:` avec options EPEL
+# 🎯 Challenge — `dnf:` with EPEL options
 
-## ✅ Objectif
+## ✅ Objective
 
-Sur **db1.lab**, activer le dépôt **EPEL** (Extra Packages for Enterprise
-Linux) et installer 2 paquets qui n'existent que dans EPEL.
+On **db1.lab**, enable the **EPEL** repository (Extra Packages for Enterprise
+Linux) and install 2 packages that only exist in EPEL.
 
-C'est l'occasion d'utiliser **les options avancées** du module
-`ansible.builtin.dnf` qui n'existent pas dans `ansible.builtin.package` :
+This is the chance to use **the advanced options** of the
+`ansible.builtin.dnf` module that do not exist in `ansible.builtin.package`:
 `enablerepo`, `update_cache`, `exclude`.
 
-## 🧩 Étapes
+## 🧩 Steps
 
-1. **Installer `epel-release`** (paquet officiel qui ajoute le repo EPEL à
+1. **Install `epel-release`** (official package that adds the EPEL repo to
    `/etc/yum.repos.d/`).
-2. **Installer `htop` et `ncdu`** (deux outils EPEL) avec :
-   - `enablerepo: epel` — active explicitement le repo (par sécurité, même
-     s'il est déjà activé après `epel-release`).
-   - `update_cache: true` — refresh du cache dnf avant l'install.
-   - `exclude: kernel*` — protège contre une mise à jour kernel par effet de
-     bord (un metapackage qui tirerait du kernel).
+2. **Install `htop` and `ncdu`** (two EPEL tools) with:
+   - `enablerepo: epel`: enables the repo explicitly (for safety, even
+     if it is already enabled after `epel-release`).
+   - `update_cache: true`: refresh the dnf cache before the install.
+   - `exclude: kernel*`: protects against a kernel update as a side
+     effect (a metapackage that would pull in the kernel).
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -43,20 +43,20 @@ C'est l'occasion d'utiliser **les options avancées** du module
         exclude: ???
 ```
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **`enablerepo:`** active un repo **temporairement** pour cette
->   transaction (équivalent `dnf --enablerepo=`). Pour persister, modifier
+> - **`enablerepo:`** enables a repo **temporarily** for this
+>   transaction (equivalent to `dnf --enablerepo=`). To persist, modify
 >   `/etc/yum.repos.d/<repo>.repo`.
-> - **`update_cache: true`** rafraîchit la metadata. Coûteux (réseau) —
->   éviter sur chaque tâche, faire une seule fois en `pre_tasks`.
-> - **`exclude:`** : liste de paquets à NE PAS toucher. Utile pour pinner
->   un paquet à une version spécifique.
-> - **`security: true`** : installe seulement les advisories sécurité.
->   Combiné avec `state: latest`, applique les patches sans bumper
->   d'autres versions.
+> - **`update_cache: true`** refreshes the metadata. Costly (network):
+>   avoid it on every task, do it only once in `pre_tasks`.
+> - **`exclude:`**: list of packages NOT to touch. Useful to pin
+>   a package to a specific version.
+> - **`security: true`**: installs only the security advisories.
+>   Combined with `state: latest`, applies the patches without bumping
+>   other versions.
 
-## 🚀 Lancement
+## 🚀 Launch
 
 ```bash
 ansible-playbook labs/modules-paquets/dnf-options/challenge/solution.yml
@@ -64,7 +64,7 @@ ansible db1.lab -m ansible.builtin.command -a "rpm -q epel-release htop ncdu"
 ansible db1.lab -m ansible.builtin.command -a "ls /etc/yum.repos.d/ | grep -i epel"
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-paquets/dnf-options/challenge/tests/
@@ -73,20 +73,20 @@ pytest -v labs/modules-paquets/dnf-options/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/modules-paquets/dnf-options clean
+dsoxlab clean modules-paquets-dnf-options
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`disablerepo: '*'` + `enablerepo: epel`** : ne tire **que** du repo EPEL.
-  Utile pour des audits où on veut isoler une source de paquets.
-- **`disable_gpg_check: false`** (défaut) : exige une signature GPG valide.
-  En production, **gardez ce défaut**.
-- **`security: true`** : n'installe que les **mises à jour de sécurité**
-  (combiné à `state: latest`).
-- **`autoremove: true`** : enlève les dépendances orphelines après
-  désinstallation.
-- **Lint** :
+- **`disablerepo: '*'` + `enablerepo: epel`**: pulls **only** from the EPEL repo.
+  Useful for audits where you want to isolate a package source.
+- **`disable_gpg_check: false`** (default): requires a valid GPG signature.
+  In production, **keep this default**.
+- **`security: true`**: installs only the **security updates**
+  (combined with `state: latest`).
+- **`autoremove: true`**: removes orphaned dependencies after
+  uninstallation.
+- **Lint**:
 
    ```bash
    ansible-lint labs/modules-paquets/dnf-options/challenge/solution.yml

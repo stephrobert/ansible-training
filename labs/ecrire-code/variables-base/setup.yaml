@@ -1,0 +1,22 @@
+---
+# Mise en place du lab variables-base : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup variables-base lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (variables-base)
+      ansible.builtin.file:
+        path: "/tmp/challenge-vars.txt"
+        state: "absent"
+
+- name: Brief the learner (variables-base)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Declare variables with vars and vars_files, override them with --extra-vars and diagnose an unexpected value caused by YAML typing
+      run_once: true

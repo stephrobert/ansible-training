@@ -1,107 +1,56 @@
-# 🎯 Challenge — Profiler 3 tâches sur `db1.lab`
+# 🎯 Challenge — Profile 3 tasks on `db1.lab`
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire un playbook qui exécute **3 tâches mesurables** sur `db1.lab`, activer le callback `profile_tasks`, et déposer un fichier `/tmp/lab89-profile.txt` qui contient les **noms** des 3 tâches dans l'ordre où elles ont été exécutées.
+Write a playbook that runs **3 measurable tasks** on `db1.lab`, enable the `profile_tasks` callback, and drop a `/tmp/lab89-profile.txt` file containing the **names** of the 3 tasks in the order they were executed.
 
-| Élément | Valeur attendue |
+| Item | Expected value |
 | --- | --- |
-| Hôte cible | `db1.lab` |
-| Fichier produit | `/tmp/lab89-profile.txt` |
+| Target host | `db1.lab` |
+| Produced file | `/tmp/lab89-profile.txt` |
 | Permissions | `0644`, owner `root` |
-| Contenu | Les 3 noms de tâches séparés par `\n` (un par ligne) |
-| Callbacks activés | `ansible.posix.profile_tasks` (visible dans la sortie) |
+| Content | The 3 task names separated by `\n` (one per line) |
+| Enabled callbacks | `ansible.posix.profile_tasks` (visible in the output) |
 
-## 🧩 Indices
+## 🧩 Stuck?
 
-### Étape 1 — Créer `ansible.cfg` au niveau du lab
-
-```ini
-[defaults]
-stdout_callback = ???
-callbacks_enabled = ansible.posix.profile_tasks, ???
-
-[callback_profile_tasks]
-task_output_limit = ???
+```bash
+dsoxlab hint troubleshooting-verbosite
 ```
 
-### Étape 2 — Squelette de `solution.yml`
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
-```yaml
----
-- name: Challenge 89 — profile 3 tâches
-  hosts: ???
-  become: ???
-  gather_facts: false
-  tasks:
-    - name: ???                                   # tâche 1
-      ansible.builtin.shell: sleep 1
-      changed_when: false
+## 🚀 Running
 
-    - name: ???                                   # tâche 2
-      ansible.builtin.shell: ???
-      changed_when: false
-
-    - name: ???                                   # tâche 3 : dépose le fichier preuve
-      ansible.builtin.copy:
-        dest: /tmp/lab89-profile.txt
-        content: |
-          ???
-          ???
-          ???
-        owner: ???
-        group: ???
-        mode: ???
-```
-
-### Étape 3 — Activer le profile via `ANSIBLE_CONFIG`
+From the repo root:
 
 ```bash
 ANSIBLE_CONFIG=labs/troubleshooting/verbosite/ansible.cfg \
   ansible-playbook labs/troubleshooting/verbosite/challenge/solution.yml
 ```
 
-> 💡 **Pièges** :
->
-> - **`-v` à `-vvvv`** : 4 niveaux. `-v` = recap par hôte ; `-vv` = +
->   variables ; `-vvv` = + commands SSH ; `-vvvv` = + connection
->   establishment.
-> - **`ANSIBLE_DEBUG=1`** : output massif (debug interne Ansible). À
->   utiliser **uniquement** quand `-vvvv` ne suffit pas.
-> - **Callback plugins** : `yaml`, `default`, `unixy`, `dense`, `null`,
->   `oneline`, `selective`. Définir dans `ansible.cfg` via
->   `stdout_callback = yaml`.
-> - **`no_log: true`** masque la sortie même en `-vvvv` — protection des
->   secrets. À garder en prod.
-
-## 🚀 Lancement
-
-Depuis la racine du repo :
-
-```bash
-ANSIBLE_CONFIG=labs/troubleshooting/verbosite/ansible.cfg \
-  ansible-playbook labs/troubleshooting/verbosite/challenge/solution.yml
-```
-
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/troubleshooting/verbosite/challenge/tests/
 ```
 
-Le test pytest+testinfra valide :
+The pytest+testinfra test validates:
 
-- `/tmp/lab89-profile.txt` existe sur `db1.lab` avec mode `0644`.
-- Le fichier contient **exactement 3 lignes** non vides (les 3 noms de tâches).
+- `/tmp/lab89-profile.txt` exists on `db1.lab` with mode `0644`.
+- The file contains **exactly 3** non-empty **lines** (the 3 task names).
+- The lab-level `ansible.cfg` exists and enables `ansible.posix.profile_tasks`
+  (with `callback_result_format = yaml`): the callback that is the whole point of the lab.
 
 ## 🧹 Reset
 
 ```bash
-make -C labs/troubleshooting/verbosite/ clean
+dsoxlab clean troubleshooting-verbosite
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Plusieurs callbacks combinés** : ajouter `ansible.posix.timer` pour le temps total.
-- **Capture de timing** : rediriger la sortie `ansible-playbook` vers un fichier, parser avec `grep -E 'TASK execution time'`.
-- **`ansible-lint`** : `ansible-lint --profile production challenge/solution.yml` doit retourner vert.
+- **Several combined callbacks**: add `ansible.posix.timer` for total time.
+- **Timing capture**: redirect the `ansible-playbook` output to a file, parse it with `grep -E 'TASK execution time'`.
+- **`ansible-lint`**: `ansible-lint --profile production challenge/solution.yml` must return green.

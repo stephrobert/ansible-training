@@ -1,0 +1,4 @@
+---
+id: ecrire-code-lookups
+title: "Lookups : récupérer des données externes"
+description: "Lire un fichier, une variable d'environnement ou la sortie d'une commande côté control node, générer un mot de passe et distinguer lookup de query."

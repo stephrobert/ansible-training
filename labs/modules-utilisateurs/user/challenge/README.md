@@ -1,36 +1,34 @@
-# 🎯 Challenge — Provisionner 3 comptes RHCE
+# 🎯 Challenge — Provision 3 RHCE accounts
 
-## ✅ Objectif
+## ✅ Objective
 
-Sur **db1.lab**, créer 1 groupe + 3 comptes utilisateur avec des attributs
-spécifiques à chacun.
+On **db1.lab**, create 1 group + 3 user accounts with attributes specific to
+each one.
 
-## 🧩 Spécifications
+## 🧩 Specifications
 
-### Groupe préalable
+### Preliminary group
 
-- `rhce-team` — groupe primaire des 3 users.
+- `rhce-team`: primary group of the 3 users.
 
-### Utilisateurs à créer
+### Users to create
 
-| Nom | Shell | Comment | Groupe primaire | Groupes secondaires | UID forcé | Home |
+| Name | Shell | Comment | Primary group | Secondary groups | Forced UID | Home |
 | --- | --- | --- | --- | --- | --- | --- |
-| `alice` | `/bin/bash` | `Alice — admin` | `rhce-team` | `wheel` | (auto) | (défaut) |
-| `bob` | `/bin/bash` | `Bob — dev` | `rhce-team` | — | **2001** | (défaut) |
+| `alice` | `/bin/bash` | `Alice — admin` | `rhce-team` | `wheel` | (auto) | (default) |
+| `bob` | `/bin/bash` | `Bob — dev` | `rhce-team` | — | **2001** | (default) |
 | `deploy` | `/bin/bash` | `Compte applicatif deploy` | `rhce-team` | — | **2000** | `/opt/deploy/` |
 
-## 🧩 Indices clés
+## 🧩 Stuck?
 
-- `ansible.builtin.user` est idempotent : un user déjà conforme → `ok` (pas
-  changed).
-- **`group:`** (singulier) = groupe primaire. **`groups:`** (pluriel) =
-  liste de groupes secondaires.
-- **`append: true`** sur `groups:` ajoute au lieu de **remplacer**. Sans ça,
-  un user déjà membre d'autres groupes les **perdrait**.
-- **`uid:`** force un UID. Si l'UID est déjà pris, la tâche échoue.
-- **`create_home: true`** sur `deploy` (pour créer `/opt/deploy/`).
+```bash
+dsoxlab hint modules-utilisateurs-user
+```
 
-## 🧩 Squelette
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
+
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -75,27 +73,27 @@ spécifiques à chacun.
         state: present
 ```
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **UID conflit** : si l'UID est déjà pris (héritage d'un lab
->   précédent), `useradd` plante avec "UID is not unique". Le `make
->   clean` du lab amont doit nettoyer.
-> - **`group:`** vs **`groups:`** : `group` = groupe primaire (un seul),
->   `groups` = groupes secondaires (liste). Confusion classique.
-> - **`append: true`** avec `groups:` : ajoute aux groupes existants
->   sans les écraser. Sans, l'user perd ses anciens groupes !
-> - **`password:`** doit être un **hash** (`crypt('motdepasse', 'sha512')`).
->   Pas la chaîne en clair. Pour un user sans password : `password: !`
->   (locked) ou `password: '*'`.
+> - **UID conflict**: if the UID is already taken (inheritance from a
+>   previous lab), `useradd` crashes with "UID is not unique". The `make
+>   clean` of the upstream lab must clean it up.
+> - **`group:`** vs **`groups:`**: `group` = primary group (a single one),
+>   `groups` = secondary groups (list). Classic confusion.
+> - **`append: true`** with `groups:`: adds to the existing groups
+>   without overwriting them. Without it, the user loses their old groups!
+> - **`password:`** must be a **hash** (`crypt('motdepasse', 'sha512')`).
+>   Not the plaintext string. For a user without a password: `password: !`
+>   (locked) or `password: '*'`.
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-utilisateurs/user/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "id alice bob deploy"
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-utilisateurs/user/challenge/tests/
@@ -104,17 +102,17 @@ pytest -v labs/modules-utilisateurs/user/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/modules-utilisateurs/user clean
+dsoxlab clean modules-utilisateurs-user
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`generate_ssh_key: true`** : crée une paire de clés SSH dans
-  `~/.ssh/` du user au moment de la création.
-- **`password:`** : positionne un mot de passe (déjà hashé). Utilisez
+- **`generate_ssh_key: true`**: creates an SSH key pair in the user's `~/.ssh/`
+  at the time of creation.
+- **`password:`**: sets a password (already hashed). Use
   `password: "{{ 'monpassword' | password_hash('sha512') }}"`.
-- **`expires:`** : timestamp Unix d'expiration du compte.
-- **Lint** :
+- **`expires:`**: Unix timestamp of the account expiration.
+- **Lint**:
 
    ```bash
    ansible-lint labs/modules-utilisateurs/user/challenge/solution.yml

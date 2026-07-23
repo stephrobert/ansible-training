@@ -1,0 +1,22 @@
+---
+# Mise en place du lab sysctl : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup sysctl lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (sysctl)
+      ansible.builtin.file:
+        path: "/etc/sysctl.d/99-rhce-lab.conf"
+        state: "absent"
+
+- name: Brief the learner (sysctl)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Change kernel parameters (ip_forward, tcp_syncookies, swappiness) with immediate effect and persistence through /etc/sysctl.d/
+      run_once: true

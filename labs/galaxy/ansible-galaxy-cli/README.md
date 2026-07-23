@@ -1,63 +1,62 @@
-# Lab 73 — `ansible-galaxy` CLI : tour complet
+# Lab 73 — `ansible-galaxy` CLI: full tour
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Pré-requis : Ansible installé. Pas besoin des VMs (lab purement local).
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Prerequisite: Ansible installed. No VMs needed (purely local lab).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**ansible-galaxy CLI**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-roles/ansible-galaxy-cli/)
+🔗 [**ansible-galaxy CLI**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ansible-galaxy-cli/)
 
-`ansible-galaxy` est l'outil CLI pour **gérer les rôles et collections** :
-créer, installer, lister, vérifier, builder, publier. Il y a **2 sous-commandes**
-parallèles : `role` et `collection`.
+`ansible-galaxy` is the CLI tool to **manage roles and collections**:
+create, install, list, verify, build, publish. There are **2 parallel
+subcommands**: `role` and `collection`.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Initialiser un nouveau rôle avec `ansible-galaxy role init`.
-2. Initialiser une collection avec `ansible-galaxy collection init`.
-3. Installer un rôle/collection depuis Galaxy ou Git.
-4. Lister ce qui est installé localement.
-5. Builder une collection (`.tar.gz`).
-6. Publier sur Galaxy avec un token API.
-7. Vérifier l'intégrité (`verify`).
+1. Initialize a new role with `ansible-galaxy role init`.
+2. Initialize a collection with `ansible-galaxy collection init`.
+3. Install a role/collection from Galaxy or Git.
+4. List what is installed locally.
+5. Build a collection (`.tar.gz`).
+6. Publish to Galaxy with an API token.
+7. Verify integrity (`verify`).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
 ansible-galaxy --version
 ```
 
-## ⚙️ Arborescence
+## ⚙️ Directory tree
 
 ```text
 labs/galaxy/ansible-galaxy-cli/
 ├── README.md
-├── Makefile
-├── cheatsheet.md          ← référence rapide des commandes (à étudier)
-└── roles/webserver/        ← rôle exemple
+├── cheatsheet.md          ← quick command reference (to study)
+└── roles/webserver/        ← example role
 ```
 
-## 📚 Exercice 1 — Lire `cheatsheet.md`
+## 📚 Exercise 1 — Read `cheatsheet.md`
 
-Le fichier livré couvre toutes les sous-commandes essentielles :
+The shipped file covers all the essential subcommands:
 
-| Commande | Effet |
+| Command | Effect |
 | --- | --- |
-| `ansible-galaxy role init <nom>` | Crée le squelette d'un nouveau rôle |
-| `ansible-galaxy collection init <ns.col>` | Crée le squelette d'une collection |
-| `ansible-galaxy role install <user.role>` | Installe un rôle depuis Galaxy |
-| `ansible-galaxy collection install <user.col>` | Installe une collection depuis Galaxy |
-| `ansible-galaxy role install -r requirements.yml` | Installe depuis un fichier de requirements |
-| `ansible-galaxy collection install -r requirements.yml` | Idem pour collections |
-| `ansible-galaxy role list` | Liste les rôles installés |
-| `ansible-galaxy collection list` | Liste les collections installées |
-| `ansible-galaxy collection build` | Crée un `.tar.gz` à partir d'une collection |
-| `ansible-galaxy collection publish *.tar.gz --token=TOK` | Publie sur Galaxy |
-| `ansible-galaxy collection verify <user.col>` | Vérifie l'intégrité (signature) |
+| `ansible-galaxy role init <nom>` | Creates the skeleton of a new role |
+| `ansible-galaxy collection init <ns.col>` | Creates the skeleton of a collection |
+| `ansible-galaxy role install <user.role>` | Installs a role from Galaxy |
+| `ansible-galaxy collection install <user.col>` | Installs a collection from Galaxy |
+| `ansible-galaxy role install -r requirements.yml` | Installs from a requirements file |
+| `ansible-galaxy collection install -r requirements.yml` | Same for collections |
+| `ansible-galaxy role list` | Lists the installed roles |
+| `ansible-galaxy collection list` | Lists the installed collections |
+| `ansible-galaxy collection build` | Creates a `.tar.gz` from a collection |
+| `ansible-galaxy collection publish *.tar.gz --token=TOK` | Publishes to Galaxy |
+| `ansible-galaxy collection verify <user.col>` | Verifies integrity (signature) |
 
-## 📚 Exercice 2 — Initialiser un rôle
+## 📚 Exercise 2 — Initialize a role
 
 ```bash
 cd /tmp
@@ -66,10 +65,10 @@ ls mon_role/
 # defaults/  files/  handlers/  meta/  README.md  tasks/  templates/  tests/  vars/
 ```
 
-🔍 **Observation** : 8 dossiers + README + tests/. C'est le **squelette
-standard** d'un rôle Galaxy.
+🔍 **Observation**: 8 folders + README + tests/. This is the **standard
+skeleton** of a Galaxy role.
 
-## 📚 Exercice 3 — Initialiser une collection
+## 📚 Exercise 3 — Initialize a collection
 
 ```bash
 ansible-galaxy collection init monorg.macollection
@@ -77,30 +76,30 @@ ls monorg/macollection/
 # docs/  galaxy.yml  meta/  plugins/  README.md  roles/
 ```
 
-🔍 **Observation** : `galaxy.yml` est le **manifeste** de la collection
-(équivalent du `meta/main.yml` d'un rôle, mais pour une collection).
+🔍 **Observation**: `galaxy.yml` is the collection **manifest**
+(equivalent of a role's `meta/main.yml`, but for a collection).
 
-## 📚 Exercice 4 — Installer un rôle
+## 📚 Exercise 4 — Install a role
 
 ```bash
 ansible-galaxy role install geerlingguy.docker
 # → ~/.ansible/roles/geerlingguy.docker/
 
 ansible-galaxy role list
-# → liste tous les rôles installés avec leur version
+# → lists all installed roles with their version
 ```
 
-## 📚 Exercice 5 — Installer une collection
+## 📚 Exercise 5 — Install a collection
 
 ```bash
 ansible-galaxy collection install community.docker
 # → ~/.ansible/collections/ansible_collections/community/docker/
 
 ansible-galaxy collection list
-# → liste toutes les collections installées
+# → lists all installed collections
 ```
 
-## 📚 Exercice 6 — Build + Publish d'une collection
+## 📚 Exercise 6 — Build + Publish a collection
 
 ```bash
 cd monorg/macollection
@@ -111,50 +110,50 @@ ansible-galaxy collection publish monorg-macollection-1.0.0.tar.gz \
     --token=$GALAXY_API_TOKEN
 ```
 
-🔍 **Observation** : pour publier, il faut un **token Galaxy** (compte sur
+🔍 **Observation**: to publish, you need a **Galaxy token** (account on
 [galaxy.ansible.com](https://galaxy.ansible.com/) → Preferences → API Key).
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Rôle vs Collection** : un rôle est plus simple (un seul rôle), une
-  collection peut grouper rôles + plugins + modules + docs.
-- **Galaxy 2026** privilégie les **collections** sur les rôles seuls. Un
-  rôle isolé peut être encapsulé dans une collection pour la
+- **Role vs Collection**: a role is simpler (a single role), a
+  collection can group roles + plugins + modules + docs.
+- **Galaxy 2026** favors **collections** over standalone roles. A
+  standalone role can be wrapped in a collection for the
   publication.
-- **`requirements.yml`** est l'équivalent de `package.json` Node ou
-  `requirements.txt` Python. Couvert au lab 74.
-- **`collection verify`** : vérifie l'intégrité (hash). Important si
-  vous distribuez via un repo privé.
+- **`requirements.yml`** is the equivalent of Node's `package.json` or
+  Python's `requirements.txt`. Covered in lab 74.
+- **`collection verify`**: verifies integrity (hash). Important if
+  you distribute via a private repo.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Comment adapter votre solution si la cible passait de **1 host** à un
-   parc de **50 serveurs** ? Quels paramètres (`forks`, `serial`, `strategy`)
-   faudrait-il ajuster pour conserver des temps d'exécution acceptables ?
+1. How would you adapt your solution if the target went from **1 host** to a
+   fleet of **50 servers**? Which parameters (`forks`, `serial`, `strategy`)
+   would you need to tune to keep execution times acceptable?
 
-2. Quels modules Ansible alternatifs auriez-vous pu utiliser pour atteindre
-   le même résultat ? Quels sont leurs trade-offs (idempotence garantie,
-   performance, dépendances de collection externe) ?
+2. Which alternative Ansible modules could you have used to reach
+   the same result? What are their trade-offs (guaranteed idempotence,
+   performance, external collection dependency)?
 
-3. Si une étape du playbook échoue en cours d'exécution, quel est l'impact
-   sur les hôtes déjà traités ? Comment rendre le scénario reprenable
-   (`block/rescue/always`, `--start-at-task`, `serial`) ?
+3. If a playbook step fails mid-run, what is the impact
+   on the hosts already processed? How do you make the scenario resumable
+   (`block/rescue/always`, `--start-at-task`, `serial`)?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md).
+See [`challenge/README.md`](challenge/README.md).
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`--ignore-errors`** : continue malgré une erreur sur un des items
-  (utile en CI).
-- **`--force`** : réinstalle même si déjà présent.
-- **`--namespace`** : préfixe de namespace (vous pouvez avoir plusieurs).
-- **Token dans `~/.ansible.cfg`** au lieu de `--token=` :
+- **`--ignore-errors`**: continues despite an error on one of the items
+  (useful in CI).
+- **`--force`**: reinstalls even if already present.
+- **`--namespace`**: namespace prefix (you can have several).
+- **Token in `~/.ansible.cfg`** instead of `--token=`:
   `[galaxy] server_list = primary; [galaxy_server.primary]
   url=https://galaxy.ansible.com/ token=...`.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint labs/galaxy/ansible-galaxy-cli/

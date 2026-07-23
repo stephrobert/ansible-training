@@ -1,0 +1,4 @@
+---
+id: modules-diagnostic-find
+title: "Module find : recherche multi-fichiers"
+description: "Rechercher des fichiers par glob, regex, âge, taille et type, puis enchaîner loop et file pour un cleanup ciblé et idempotent."

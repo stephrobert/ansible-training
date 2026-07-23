@@ -1,0 +1,23 @@
+---
+# Mise en place du lab playbooks-mixtes : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup playbooks-mixtes lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (playbooks-mixtes)
+      ansible.builtin.file:
+        path: "/tmp/lab80-challenge.txt"
+        state: "absent"
+      failed_when: false
+
+- name: Brief the learner (playbooks-mixtes)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Split public variables from secrets inside each group_vars, adopt the vault_* convention, and confirm Ansible merges both files transparently
+      run_once: true

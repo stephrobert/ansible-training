@@ -1,0 +1,26 @@
+---
+# Mise en place du lab custom-facts : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup custom-facts lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (custom-facts)
+      ansible.builtin.file:
+        path: "/etc/ansible/facts.d"
+        state: "absent"
+    - name: Reset path, state (custom-facts)
+      ansible.builtin.file:
+        path: "/tmp/lab14a-custom-facts.txt"
+        state: "absent"
+
+- name: Brief the learner (custom-facts)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Drop an INI custom fact then an executable script returning JSON into /etc/ansible/facts.d, and read them back through ansible_local
+      run_once: true

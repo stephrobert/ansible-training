@@ -1,0 +1,4 @@
+---
+id: ecrire-code-lineinfile-vs-template
+title: "lineinfile vs template : quand utiliser quoi"
+description: "Arbitrer entre lineinfile, blockinfile et template, les combiner (base plus overrides) et diagnostiquer un lineinfile qui empile faute de regexp."

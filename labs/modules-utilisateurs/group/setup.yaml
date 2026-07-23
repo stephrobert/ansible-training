@@ -1,0 +1,23 @@
+---
+# Mise en place du lab group : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup group lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (group)
+      ansible.builtin.shell: |
+        groupdel rhce-shared 2>/dev/null; groupdel rhce-admins 2>/dev/null; groupdel rhce-readonly 2>/dev/null; groupdel myapp-system 2>/dev/null; true
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (group)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Create groups with a forced GID, tell system groups from user groups, and order group creation before the users that reference it
+      run_once: true

@@ -1,0 +1,23 @@
+---
+# Mise en place du lab file : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup file lab (lab_web1)
+  hosts: lab_web1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (file)
+      ansible.builtin.shell: |
+        rm -rf /opt/myapp /var/log/myapp-init.timestamp /etc/myapp-old.conf
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (file)
+  hosts: lab_web1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Manage the state of a file or directory (directory, absent, link, hard, touch), recursive permissions and symbolic links
+      run_once: true

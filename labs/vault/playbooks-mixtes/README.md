@@ -1,86 +1,86 @@
-# Lab 80 — Playbooks mixtes : main.yml + vault.yml par groupe
+# Lab 80 — Mixed playbooks: main.yml + vault.yml per group
 
-> 💡 **Pré-requis** : `ansible all -m ansible.builtin.ping` répond `pong` sur les 4 VMs.
+> 💡 **Prerequisite**: `ansible all -m ansible.builtin.ping` replies `pong` on the 4 VMs.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Playbooks mixtes (clair + chiffré)**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/playbooks-mixtes/)
+🔗 [**Mixed playbooks (cleartext + encrypted)**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/playbooks-mixtes/)
 
-**Pattern recommandé 2026** : séparer les **variables publiques** (clair) des **secrets** (chiffrés) dans deux fichiers distincts au sein de chaque `group_vars/<groupe>/` :
+**Recommended 2026 pattern**: separate the **public variables** (cleartext) from the **secrets** (encrypted) into two distinct files inside each `group_vars/<group>/`:
 
 ```text
 inventory/group_vars/
 ├── all/
-│   ├── main.yml        ← variables publiques partagées (port, version, env)
-│   └── vault.yml       ← secrets partagés (chiffré)
+│   ├── main.yml        ← shared public variables (port, version, env)
+│   └── vault.yml       ← shared secrets (encrypted)
 ├── webservers/
-│   ├── main.yml        ← config publique webservers
-│   └── vault.yml       ← secrets webservers (chiffré)
+│   ├── main.yml        ← webservers public config
+│   └── vault.yml       ← webservers secrets (encrypted)
 └── dbservers/
     ├── main.yml
     └── vault.yml
 ```
 
-**Convention de nommage** : préfixer les variables vault par **`vault_*`** (ex: `vault_admin_token`, `vault_db_password`). Permet un coup d'œil rapide pour distinguer une variable sensible.
+**Naming convention**: prefix the vault variables with **`vault_*`** (e.g. `vault_admin_token`, `vault_db_password`). Allows a quick glance to distinguish a sensitive variable.
 
-**Avantages** :
+**Advantages**:
 
-- **Diff Git lisibles** sur les variables publiques (`main.yml` change souvent, `vault.yml` rarement).
-- **Lecture du main.yml sans déchiffrer** — pas besoin du mot de passe vault pour comprendre la config.
-- **Secrets isolés** : un seul fichier à protéger par groupe.
+- **Readable Git diffs** on the public variables (`main.yml` changes often, `vault.yml` rarely).
+- **Reading main.yml without decrypting**: no need for the vault password to understand the config.
+- **Isolated secrets**: a single file to protect per group.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Structurer **`group_vars/<groupe>/main.yml + vault.yml`**.
-2. **Ne chiffrer que les secrets**, pas les configurations publiques.
-3. Adopter la convention **`vault_*`** pour les variables sensibles.
-4. Voir Ansible **fusionner automatiquement** main.yml et vault.yml (même variable globale).
-5. **Référencer** les vault_* depuis le playbook comme des variables normales.
+1. Structure **`group_vars/<group>/main.yml + vault.yml`**.
+2. **Encrypt only the secrets**, not the public configurations.
+3. Adopt the **`vault_*`** convention for the sensitive variables.
+4. See Ansible **merge automatically** main.yml and vault.yml (same global variable).
+5. **Reference** the vault_* from the playbook as normal variables.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training/labs/vault/playbooks-mixtes/
+cd $ANSIBLE_TRAINING/labs/vault/playbooks-mixtes/
 ls inventory/group_vars/all/        # main.yml + vault.yml
 ls inventory/group_vars/webservers/ # main.yml + vault.yml
 ```
 
-## ⚙️ Arborescence cible
+## ⚙️ Target tree
 
 ```text
 labs/vault/playbooks-mixtes/
 ├── README.md
-├── .vault_password                 ← mot de passe vault unique (mode 0600)
+├── .vault_password                 ← single vault password (mode 0600)
 ├── inventory/
 │   ├── hosts.yml
 │   └── group_vars/
 │       ├── all/
-│       │   ├── main.yml            ← deployment_environment (clair)
-│       │   └── vault.yml           ← vault_admin_token (chiffré)
+│       │   ├── main.yml            ← deployment_environment (cleartext)
+│       │   └── vault.yml           ← vault_admin_token (encrypted)
 │       └── webservers/
-│           ├── main.yml            ← http_port, worker_count (clair)
-│           └── vault.yml           ← vault_web_secret, vault_web_db_password (chiffré)
+│           ├── main.yml            ← http_port, worker_count (cleartext)
+│           └── vault.yml           ← vault_web_secret, vault_web_db_password (encrypted)
 ├── playbook.yml
 └── challenge/
     ├── solution.yml
     └── tests/
 ```
 
-## 📚 Exercice 1 — Inspecter la structure mixte
+## 📚 Exercise 1 — Inspect the mixed structure
 
 ```bash
 cat inventory/group_vars/all/main.yml
-# → deployment_environment: lab80 (clair)
+# → deployment_environment: lab80 (cleartext)
 
 cat inventory/group_vars/all/vault.yml | head -3
-# → $ANSIBLE_VAULT;1.1;AES256 (chiffré)
+# → $ANSIBLE_VAULT;1.1;AES256 (encrypted)
 ```
 
-🔍 **Observation** : les **2 fichiers** sont **fusionnés** automatiquement par Ansible — un host du groupe `all` voit **toutes** les variables (claires + chiffrées) comme un seul namespace.
+🔍 **Observation**: the **2 files** are **merged** automatically by Ansible: a host of the `all` group sees **all** the variables (cleartext + encrypted) as a single namespace.
 
-## 📚 Exercice 2 — Lancer le playbook
+## 📚 Exercise 2 — Run the playbook
 
 ```bash
 ansible-playbook -i inventory/hosts.yml \
@@ -88,15 +88,15 @@ ansible-playbook -i inventory/hosts.yml \
   playbook.yml
 ```
 
-Sortie : `changed=1` sur web1.lab. Le playbook accède à 5 variables (3 claires, 3 chiffrées) **sans distinction** dans les `{{ var }}`.
+Output: `changed=1` on web1.lab. The playbook accesses 5 variables (3 cleartext, 3 encrypted) **without distinction** in the `{{ var }}`.
 
-## 📚 Exercice 3 — Vérifier le résultat
+## 📚 Exercise 3 — Check the result
 
 ```bash
-ssh ansible@web1.lab "sudo cat /tmp/lab80-mixte.txt"
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab "sudo cat /tmp/lab80-mixte.txt"
 ```
 
-Sortie :
+Output:
 
 ```text
 === Lab 80 — playbook mixte ===
@@ -112,75 +112,75 @@ Secrets CHIFFRÉS (group_vars/<group>/vault.yml) :
   vault_web_db_password length: 17
 ```
 
-🔍 **Observation** : les 6 variables sont accessibles transparentement. Le **préfixe `vault_*`** permet de distinguer **visuellement** dans le code les valeurs sensibles.
+🔍 **Observation**: the 6 variables are accessible transparently. The **`vault_*` prefix** lets you distinguish **visually** in the code the sensitive values.
 
-## 📚 Exercice 4 — Lire le main.yml SANS déchiffrer
+## 📚 Exercise 4 — Read main.yml WITHOUT decrypting
 
 ```bash
 cat inventory/group_vars/webservers/main.yml
-# → http_port, worker_count visibles
+# → http_port, worker_count visible
 ```
 
-🔍 **Observation crucial** : un **développeur sans mot de passe vault** peut lire le main.yml et comprendre la config (ports, versions). C'est exactement le bénéfice du pattern : **séparation lecture publique / lecture sensible**.
+🔍 **Crucial observation**: a **developer without the vault password** can read main.yml and understand the config (ports, versions). This is exactly the benefit of the pattern: **separation of public reading / sensitive reading**.
 
-## 📚 Exercice 5 — Diff Git typique
+## 📚 Exercise 5 — Typical Git diff
 
-Modifier le port http :
+Change the http port:
 
 ```bash
 sed -i 's/http_port: 80/http_port: 8080/' inventory/group_vars/webservers/main.yml
 git diff
 ```
 
-Diff Git **lisible et clair**. Avec un fichier complet chiffré, le diff serait **incompréhensible** (juste des changements hex aléatoires).
+A **readable and clear** Git diff. With a fully encrypted file, the diff would be **incomprehensible** (just random hex changes).
 
 ```bash
-# Restaurer
+# Restore
 sed -i 's/http_port: 8080/http_port: 80/' inventory/group_vars/webservers/main.yml
 ```
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Idempotence** : un second run de votre solution doit afficher `changed=0`
-  partout dans le `PLAY RECAP`. C'est le signal mécanique d'un playbook
-  conforme aux bonnes pratiques.
-- **FQCN explicite** : préférez toujours `ansible.builtin.<module>` (ou la
-  collection appropriée) plutôt que le nom court — `ansible-lint --profile
-  production` le vérifie.
-- **Convention de ciblage** : ce lab cible db1.lab ; pour adapter à un
-  autre groupe, ajustez `hosts:` dans `lab.yml`/`solution.yml` puis relancez.
-- **Reset isolé** : `make clean` à la racine du lab désinstalle proprement
-  ce que la solution a posé pour pouvoir rejouer le scénario.
+- **Idempotence**: a second run of your solution must display `changed=0`
+  everywhere in the `PLAY RECAP`. This is the mechanical signal of a playbook
+  that follows best practices.
+- **Explicit FQCN**: always prefer `ansible.builtin.<module>` (or the
+  appropriate collection) rather than the short name (`ansible-lint --profile
+  production` checks this).
+- **Targeting convention**: this lab targets web1.lab; to adapt it to another
+  group, adjust `hosts:` in `lab.yml`/`solution.yml` then run it again.
+- **Isolated reset**: `dsoxlab clean <id-du-lab>` at the lab root cleanly uninstalls
+  what the solution set up so you can replay the scenario.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Pourquoi préfixer les variables sensibles par **`vault_*`** plutôt que par `_secret_*` ou autre ?
+1. Why prefix the sensitive variables with **`vault_*`** rather than with `_secret_*` or something else?
 
-2. Que se passe-t-il si **`main.yml`** et **`vault.yml`** définissent la même variable ? (Test : ajouter `vault_admin_token: clair` dans main.yml)
+2. What happens if **`main.yml`** and **`vault.yml`** define the same variable? (Test: add `vault_admin_token: clair` in main.yml)
 
-3. Comment **rotater UNIQUEMENT** les secrets de `webservers/` sans toucher à `all/vault.yml` ?
+3. How do you **rotate ONLY** the secrets of `webservers/` without touching `all/vault.yml`?
 
-4. Pourquoi **séparer** par groupe (`all/`, `webservers/`) plutôt que tout dans `all/` ?
+4. Why **separate** by group (`all/`, `webservers/`) rather than everything in `all/`?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Le challenge ([`challenge/solution.yml`](challenge/solution.yml)) déploie sur webservers et prouve que les variables main.yml + vault.yml fusionnent correctement. Tests automatisés (4 tests).
+The challenge ([`challenge/solution.yml`](challenge/solution.yml)) deploys on webservers and proves that the main.yml + vault.yml variables merge correctly. Automated tests (4 tests).
 
 ```bash
 pytest -v challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Pattern dans les rôles** (lab 81) : `defaults/main.yml` + `vars/vault.yml` du rôle.
-- **Multi vault-id** (lab 79) : appliquer ce pattern par environnement (dev/prod).
-- **gitignore .vault_password** : `.vault_password*` dans `.gitignore` racine du repo (le mot de passe ne doit JAMAIS être commit).
-- **`ansible.cfg [defaults] vault_password_file`** pour fixer le mot de passe par défaut sans `--vault-password-file` à chaque commande.
+- **Pattern in roles** (lab 81): `defaults/main.yml` + `vars/vault.yml` of the role.
+- **Multi vault-id** (lab 79): apply this pattern per environment (dev/prod).
+- **gitignore .vault_password**: `.vault_password*` in the repo root `.gitignore` (the password must NEVER be committed).
+- **`ansible.cfg [defaults] vault_password_file`** to set the default password without `--vault-password-file` on every command.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint --profile=production .
 ```
 
-Le linter **ne touche pas** aux fichiers vault. Il vérifie le code Ansible classique (FQCN, mode, no_log).
+The linter **does not touch** the vault files. It checks the classic Ansible code (FQCN, mode, no_log).

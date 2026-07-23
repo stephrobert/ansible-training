@@ -1,0 +1,4 @@
+---
+id: rhce-mock-ex294-2
+title: "Examen blanc RHCE EX294 #2"
+description: "Un second examen blanc EX294 complet et chronométré : les 19 mêmes catégories que le mock #1, mais toutes les valeurs concrètes changent (pile Apache/valkey, autres utilisateurs, autre découpage LVM, autres ports, autre booléen SELinux, autre horaire de cron, autre collection). Rien ne se recopie de mémoire. Chaque tâche est prouvée par pytest."

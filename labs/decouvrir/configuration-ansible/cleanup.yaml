@@ -1,0 +1,22 @@
+---
+# Reset du lab configuration-ansible : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup configuration-ansible lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (configuration-ansible)
+      ansible.builtin.file:
+        path: "/tmp/lab03a-config.txt"
+        state: "absent"
+
+    # Le livrable local (cf. setup.yaml) : sans ça, `dsoxlab clean` laisserait
+    # le lab à moitié résolu et le run suivant partirait d'un faux départ.
+    - name: Reset le livrable local de l'apprenant (ansible.cfg du lab)
+      ansible.builtin.file:
+        path: "{{ inventory_dir | dirname }}/labs/decouvrir/configuration-ansible/ansible.cfg"
+        state: absent
+      delegate_to: localhost
+      become: false
+      run_once: true

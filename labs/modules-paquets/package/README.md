@@ -1,50 +1,50 @@
-# Lab 36 — Module `package:` (installation agnostique multi-distro)
+# Lab 36 — `package:` module (agnostic multi-distro installation)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Module package Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-package/)
+🔗 [**Ansible package module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-package/)
 
-`ansible.builtin.package:` installe des paquets de manière **agnostique** : Ansible
-détecte automatiquement le gestionnaire (`ansible_pkg_mgr`) et appelle `dnf:` sur
-RHEL, `apt:` sur Debian, `pacman:` sur Arch, `zypper:` sur SUSE. Idéal pour des
-**rôles multi-distros**.
+`ansible.builtin.package:` installs packages in an **agnostic** way: Ansible
+automatically detects the manager (`ansible_pkg_mgr`) and calls `dnf:` on
+RHEL, `apt:` on Debian, `pacman:` on Arch, `zypper:` on SUSE. Ideal for
+**multi-distro roles**.
 
-Sur un parc 100% RHEL/RockyLinux/AlmaLinux, préférer **`dnf:`** (lab 37) qui
-expose des options spécifiques (`enablerepo`, `security`, `bugfix`).
+On a 100% RHEL/RockyLinux/AlmaLinux fleet, prefer **`dnf:`** (lab 37) which
+exposes specific options (`enablerepo`, `security`, `bugfix`).
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Installer** un ou plusieurs paquets en une seule tâche.
-2. **Distinguer** `state: present` vs `state: latest` (et leurs risques).
-3. **Désinstaller** des paquets pour le durcissement (CIS Benchmark).
-4. **Comparer** la performance d'une **liste** vs `loop:` (ratio 4×).
-5. **Identifier** les cas où `package:` ne suffit plus (passage à `dnf:`).
+1. **Install** one or more packages in a single task.
+2. **Distinguish** `state: present` vs `state: latest` (and their risks).
+3. **Uninstall** packages for hardening (CIS Benchmark).
+4. **Compare** the performance of a **list** vs `loop:` (4× ratio).
+5. **Identify** the cases where `package:` is no longer enough (moving to `dnf:`).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible web1.lab -m ping
 ansible web1.lab -b -m shell -a "dnf -y remove tree htop ncdu telnet 2>/dev/null; true"
 ```
 
-## 📚 Exercice 1 — Installation d'un paquet unique
+## 📚 Exercise 1 — Installing a single package
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -58,20 +58,20 @@ Créez `lab.yml` :
         state: present
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/modules-paquets/package/lab.yml
-ssh ansible@web1.lab 'rpm -q vim-enhanced && which vim'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab 'rpm -q vim-enhanced && which vim'
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- Premier run : `changed=1` (installation).
-- Deuxième run : `changed=0` (déjà installé — idempotent).
-- Le binaire `vim` est dans `/usr/bin/` après installation.
+- First run: `changed=1` (installation).
+- Second run: `changed=0` (already installed, idempotent).
+- The `vim` binary is in `/usr/bin/` after installation.
 
-## 📚 Exercice 2 — Liste de paquets (1 tâche, N installations)
+## 📚 Exercise 2 — Package list (1 task, N installations)
 
 ```yaml
 - name: Installer plusieurs paquets en une fois
@@ -85,34 +85,34 @@ ssh ansible@web1.lab 'rpm -q vim-enhanced && which vim'
     state: present
 ```
 
-**Comparez les deux approches** (liste vs loop) :
+**Compare the two approaches** (list vs loop):
 
 ```yaml
-# A : liste (1 appel dnf, 5 paquets)
+# A: list (1 dnf call, 5 packages)
 - ansible.builtin.package:
     name: [vim-enhanced, bash-completion, tree, htop, ncdu]
     state: present
 
-# B : loop (5 appels dnf, 1 paquet chaque)
+# B: loop (5 dnf calls, 1 package each)
 - ansible.builtin.package:
     name: "{{ item }}"
     state: present
   loop: [vim-enhanced, bash-completion, tree, htop, ncdu]
 ```
 
-**Lancez** et comparez les durées :
+**Run** and compare the durations:
 
 ```bash
 time ansible-playbook labs/modules-paquets/package/lab.yml
 ```
 
-🔍 **Observation** : la version **liste** est **3-5× plus rapide** que la version
-loop. Une seule transaction `dnf install pkg1 pkg2 pkg3 ...` au lieu de 5
-transactions séparées (résolution de dépendances, lock yum, etc.).
+🔍 **Observation**: the **list** version is **3-5× faster** than the loop
+version. A single `dnf install pkg1 pkg2 pkg3 ...` transaction instead of 5
+separate transactions (dependency resolution, yum lock, etc.).
 
-**Règle** : pour des paquets **indépendants**, **toujours** la liste.
+**Rule**: for **independent** packages, **always** the list.
 
-## 📚 Exercice 3 — `state: present` vs `state: latest`
+## 📚 Exercise 3 — `state: present` vs `state: latest`
 
 ```yaml
 - name: present (installe si absent, ne mets PAS a jour)
@@ -126,20 +126,20 @@ transactions séparées (résolution de dépendances, lock yum, etc.).
     state: latest
 ```
 
-| `state:` | Comportement | Risque |
+| `state:` | Behavior | Risk |
 |---|---|---|
-| `present` (défaut) | Installe si absent, **n'upgrade pas** | Faible |
-| `latest` | Installe **et upgrade systématiquement** | **Mise à jour non maîtrisée** en prod |
-| `absent` | Désinstalle si présent | Faible (idempotent) |
+| `present` (default) | Installs if absent, **does not upgrade** | Low |
+| `latest` | Installs **and always upgrades** | **Uncontrolled update** in prod |
+| `absent` | Uninstalls if present | Low (idempotent) |
 
-🔍 **Observation** : `state: latest` est **dangereux** sur un paquet critique en
-prod — chaque run peut faire un upgrade silencieux. Préférer `state: present` +
-**cycle de patching dédié** (`dnf:` avec `security: true`).
+🔍 **Observation**: `state: latest` is **dangerous** on a critical package in
+prod: each run can do a silent upgrade. Prefer `state: present` +
+**dedicated patching cycle** (`dnf:` with `security: true`).
 
-## 📚 Exercice 4 — Désinstallation pour durcissement (CIS)
+## 📚 Exercise 4 — Uninstallation for hardening (CIS)
 
-Le **CIS Benchmark** demande de désinstaller plusieurs paquets dangereux par
-défaut sur RHEL.
+The **CIS Benchmark** requires uninstalling several packages that are dangerous
+by default on RHEL.
 
 ```yaml
 - name: Durcissement CIS - retirer paquets dangereux
@@ -153,15 +153,15 @@ défaut sur RHEL.
     state: absent
 ```
 
-🔍 **Observation** : `state: absent` est **idempotent** — si le paquet n'est pas
-installé, tâche `ok`. Si installé, désinstallation propre. Pattern
-**audit-friendly** : à chaque run, on vérifie que ces paquets sont bien absents.
+🔍 **Observation**: `state: absent` is **idempotent**: if the package is not
+installed, task `ok`. If installed, clean uninstallation. Pattern
+**audit-friendly**: on each run, you check that these packages are indeed absent.
 
-**`telnet`** est la cible n°1 — protocole en clair, équivalent SSH des années 90.
+**`telnet`** is target #1: cleartext protocol, the SSH equivalent of the 90s.
 
-## 📚 Exercice 5 — `use:` (forcer le gestionnaire)
+## 📚 Exercise 5 — `use:` (force the manager)
 
-Par défaut, Ansible auto-détecte (`use: auto`). Vous pouvez forcer :
+By default, Ansible auto-detects (`use: auto`). You can force:
 
 ```yaml
 - name: Forcer dnf meme si Ansible detecte autre chose
@@ -171,110 +171,120 @@ Par défaut, Ansible auto-détecte (`use: auto`). Vous pouvez forcer :
     use: dnf
 ```
 
-🔍 **Observation** : utile sur des **images Docker exotiques** où plusieurs
-gestionnaires coexistent (rare mais arrive). Par défaut, ne rien spécifier — la
-détection automatique marche dans 99% des cas.
+🔍 **Observation**: useful on **exotic Docker images** where several
+managers coexist (rare but it happens). By default, specify nothing: the
+auto-detection works in 99% of cases.
 
-## 📚 Exercice 6 — Le piège : nom de paquet différent selon la distro
+## 📚 Exercise 6 — The trap: package name differs by distro
 
-Le module `package:` est agnostique sur le **gestionnaire**, mais **pas sur les
-noms de paquets** !
+The `package:` module is agnostic about the **manager**, but **not about the
+package names**!
 
-| Sur RHEL | Sur Debian |
+| On RHEL | On Debian |
 |---|---|
+| `vim-enhanced` | `vim` |
 | `httpd` | `apache2` |
+| `dnf-utils` | (n/a) |
+| `nginx` | `nginx` |
 | `mariadb-server` | `mariadb-server` |
 | `python3` | `python3` |
-| `vim-enhanced` | `vim` |
-| `dnf-utils` | (n/a) |
+
+The first three lines diverge, the last three do not: that is exactly the
+problem, **nothing lets you guess it**, you have to know it or check it.
 
 ```yaml
-# ❌ Ne marche que sur RHEL
+# ❌ Only works on RHEL: on Debian, the package is called "vim"
 - ansible.builtin.package:
-    name: httpd
+    name: vim-enhanced
     state: present
 
-# ✅ Pattern multi-distro
+# ✅ Multi-distro pattern
 - ansible.builtin.package:
-    name: "{{ apache_package_name }}"
+    name: "{{ vim_package_name }}"
     state: present
   vars:
-    apache_package_name: "{{ 'httpd' if ansible_os_family == 'RedHat' else 'apache2' }}"
+    vim_package_name: "{{ 'vim-enhanced' if ansible_os_family == 'RedHat' else 'vim' }}"
 ```
 
-🔍 **Observation** : le module est **multi-distro**, mais **vous** devez gérer la
-correspondance des noms via `when:`, `vars:`, ou des `group_vars/<distribution>.yml`.
+> 💡 The example uses `vim-enhanced` because it is a package that **this lab
+> actually installs**: you can check its name on the VM. The best-known
+> textbook case remains `httpd` (RHEL) versus `apache2` (Debian). Conversely,
+> `nginx` (this training's web server) has the same name everywhere: the
+> divergence is not a rule, it is an occasional trap.
 
-## 📚 Exercice 7 — Quand `package:` ne suffit plus
+🔍 **Observation**: the module is **multi-distro**, but **you** must handle the
+name mapping via `when:`, `vars:`, or `group_vars/<distribution>.yml`.
 
-`package:` n'expose **que les options communes**. Pour ces cas, passer à `dnf:`
-ou `apt:` directement :
+## 📚 Exercise 7 — When `package:` is no longer enough
 
-| Besoin | Module |
+`package:` exposes **only the common options**. For these cases, move to `dnf:`
+or `apt:` directly:
+
+| Need | Module |
 |---|---|
-| Activer un repo temporairement | `dnf: enablerepo:` |
-| Mises à jour de **sécurité** uniquement | `dnf: security: true` |
+| Enable a repo temporarily | `dnf: enablerepo:` |
+| **Security** updates only | `dnf: security: true` |
 | Update cache (refresh repos) | `dnf: update_cache:` |
-| Installation **groupes** (`@web-server`) | `dnf: name: '@web-server'` |
-| Pré-télécharger sans installer | `dnf: download_only:` |
+| **Group** installation (`@web-server`) | `dnf: name: '@web-server'` |
+| Pre-download without installing | `dnf: download_only:` |
 
-🔍 **Observation** : ces options sont **spécifiques** à `dnf` (RHEL) ou `apt`
-(Debian). Pour les utiliser, abandonner `package:` au profit du module spécifique.
+🔍 **Observation**: these options are **specific** to `dnf` (RHEL) or `apt`
+(Debian). To use them, drop `package:` in favor of the specific module.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`package:`** = multi-distro (auto-détection du gestionnaire).
-- **Liste de paquets** dans `name:` est **3-5× plus rapide** qu'une boucle.
-- **`state: latest`** est dangereux en prod — préférer `present` + cycle de patching.
-- **`state: absent`** = outil de **durcissement** (CIS Benchmark).
-- **Noms de paquets diffèrent** entre distros (`httpd` vs `apache2`).
-- **`package:` n'expose pas** `enablerepo`, `security`, `update_cache` — passer à `dnf:` (lab 37).
+- **`package:`** = multi-distro (auto-detection of the manager).
+- **A package list** in `name:` is **3-5× faster** than a loop.
+- **`state: latest`** is dangerous in prod: prefer `present` + a patching cycle.
+- **`state: absent`** = a **hardening** tool (CIS Benchmark).
+- **Package names differ** between distros (`vim-enhanced` vs `vim`, `httpd` vs `apache2`), but not always (`nginx` everywhere).
+- **`package:` does not expose** `enablerepo`, `security`, `update_cache`: move to `dnf:` (lab 37).
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous écrivez un rôle pour **AlmaLinux + Ubuntu**. Quelle structure pour gérer
-   les noms de paquets différents ? (indice : `vars:` + `ansible_os_family`).
+1. You write a role for **AlmaLinux + Ubuntu**. What structure to handle
+   the different package names? (hint: `vars:` + `ansible_os_family`).
 
-2. Un collègue propose `state: latest` sur tous les paquets "pour avoir les
-   dernières versions". Quels sont les **3 risques** en prod ?
+2. A colleague suggests `state: latest` on all packages "to have the
+   latest versions". What are the **3 risks** in prod?
 
-3. Quand passer de `package:` à `dnf:` directement ? Donnez **3 cas
-   spécifiques**.
+3. When to move from `package:` to `dnf:` directly? Give **3 specific
+   cases**.
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`package_facts:`** : module qui retourne **tous les paquets installés** sur
-  le managed node (en dict). Utile pour audit ou conditionnel.
-- **`dnf:`** (lab 37) : version spécifique RHEL avec options avancées.
-- **`apt:`** : équivalent Debian — options `update_cache`, `cache_valid_time`.
-- **Pattern `package_install_pre`** : un play d'audit qui collecte les paquets
-  manquants avant un grand deploy, pour ne lancer que les installations
-  nécessaires.
-- **`yum:`** : alias **legacy** de `dnf:` — fonctionne mais déprécié sur RHEL 8+.
+- **`package_facts:`**: module that returns **all installed packages** on
+  the managed node (as a dict). Useful for audit or conditional.
+- **`dnf:`** (lab 37): RHEL-specific version with advanced options.
+- **`apt:`**: Debian equivalent, options `update_cache`, `cache_valid_time`.
+- **`package_install_pre` pattern**: an audit play that collects the missing
+  packages before a big deploy, to run only the necessary
+  installations.
+- **`yum:`**: **legacy** alias of `dnf:`, works but deprecated on RHEL 8+.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/modules-paquets/package/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/modules-paquets/package/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/modules-paquets/package/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

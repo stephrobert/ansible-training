@@ -1,0 +1,34 @@
+---
+id: bootstrap-prepare-managed-nodes
+title: "Prepare Ansible managed nodes"
+description: "Converge the 5 managed node prerequisites (Python 3, SSH, NOPASSWD sudo, chrony, SELinux) with an idempotent bootstrap playbook."
+section: bootstrap
+level: l1
+difficulty: beginner
+lab_type: lab
+estimated_time: "25m"
+skills:
+  - managed-node-prereqs
+  - bootstrap-playbook
+  - idempotence
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas/preparer-noeuds-geres/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+        web1: web1.lab
+        web2: web2.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

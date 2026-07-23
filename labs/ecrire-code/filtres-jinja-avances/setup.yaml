@@ -1,0 +1,22 @@
+---
+# Mise en place du lab filtres-jinja-avances : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup filtres-jinja-avances lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (filtres-jinja-avances)
+      ansible.builtin.file:
+        path: "/tmp/filtres-avances.txt"
+        state: "absent"
+
+- name: Brief the learner (filtres-jinja-avances)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Extract with regex_search, encode to base64, hash a password with sha512, query JSON with json_query and handle IPs and CIDRs
+      run_once: true

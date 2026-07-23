@@ -1,0 +1,13 @@
+---
+# Reset du lab user : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup user lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (user)
+      ansible.builtin.shell: |
+        userdel -r alice 2>/dev/null; userdel -r bob 2>/dev/null; userdel -r deploy 2>/dev/null; rm -rf /opt/deploy; groupdel rhce-team 2>/dev/null; true
+      changed_when: false
+      failed_when: false

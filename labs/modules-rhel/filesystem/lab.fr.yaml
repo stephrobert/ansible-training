@@ -1,0 +1,4 @@
+---
+id: modules-rhel-filesystem
+title: "Module filesystem : créer un système de fichiers"
+description: "Formater des partitions en ext4 et xfs, choisir le bon fstype selon l'usage et forcer une recréation avec force: true."

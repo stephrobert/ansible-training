@@ -1,36 +1,36 @@
-# 🎯 Challenge — `register` puis `set_fact` pour calculer un identifiant
+# 🎯 Challenge — `register` then `set_fact` to compute an identifier
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `challenge/solution.yml` qui sur **db1.lab** :
+Write `challenge/solution.yml` that, on **db1.lab**:
 
-1. Récupère 2 informations système via `ansible.builtin.command` + `register`.
-2. Combine ces 2 informations dans un **fact runtime** via `set_fact`.
-3. Pose le résultat dans `/tmp/system-id.txt` (format `system_id=<hostname>:<kernel>`).
+1. Retrieves 2 pieces of system information via `ansible.builtin.command` + `register`.
+2. Combines these 2 pieces of information into a **runtime fact** via `set_fact`.
+3. Places the result into `/tmp/system-id.txt` (format `system_id=<hostname>:<kernel>`).
 
-## 🧩 Pattern register → set_fact
+## 🧩 The register → set_fact pattern
 
-C'est un schéma très courant en production : on **lit** plusieurs valeurs avec
-`command:`, on les **assemble** avec `set_fact:`, puis on les **utilise** dans
-les tâches suivantes (template, copy, debug…).
+This is a very common pattern in production: you **read** several values with
+`command:`, you **assemble** them with `set_fact:`, then you **use** them in
+the following tasks (template, copy, debug…).
 
-### Squelette
+### Skeleton
 
 ```yaml
 ---
 - name: Challenge - register puis set_fact
   hosts: db1.lab
   become: true
-  gather_facts: false   # on prouve qu'on peut tout faire sans gather
+  gather_facts: false   # we prove we can do everything without gather
 
   tasks:
     - name: Récupérer le hostname court
-      ansible.builtin.command: ???      # commande shell qui retourne le hostname court
+      ansible.builtin.command: ???      # shell command that returns the short hostname
       register: ???
-      changed_when: false               # cmd lecture-seule, donc never changed
+      changed_when: false               # read-only cmd, so never changed
 
     - name: Récupérer la version du noyau
-      ansible.builtin.command: ???      # commande shell qui retourne la version du kernel
+      ansible.builtin.command: ???      # shell command that returns the kernel version
       register: ???
       changed_when: false
 
@@ -45,75 +45,75 @@ les tâches suivantes (template, copy, debug…).
         mode: "0644"
 ```
 
-### Indices commandes
+### Command hints
 
-- Hostname court : la commande `hostname -s` (Linux) retourne `db1` (sans le
-  domaine `.lab`).
-- Version noyau : la commande `uname -r` retourne quelque chose comme
-  `5.14.0-503.40.1.el10_1.x86_64`.
+- Short hostname: the `hostname -s` command (Linux) returns `db1` (without the
+  `.lab` domain).
+- Kernel version: the `uname -r` command returns something like
+  `5.14.0-503.40.1.el9_1.x86_64`.
 
-### Indices Ansible
+### Ansible hints
 
-- **`register: var_name`** capture le résultat d'une tâche dans une variable.
-  Le résultat contient `stdout`, `rc`, `start`, `end`, etc.
-- **`changed_when: false`** : indispensable sur des `command:` lecture-seule,
-  sinon Ansible marque la tâche comme `changed` à chaque run (`command:` n'est
-  pas idempotent par défaut).
-- **`set_fact:`** crée une variable de niveau **18** dans la précédence
-  (au-dessus de `vars:` du play, sous `--extra-vars`).
+- **`register: var_name`** captures a task's result into a variable.
+  The result contains `stdout`, `rc`, `start`, `end`, etc.
+- **`changed_when: false`**: indispensable on read-only `command:`,
+  otherwise Ansible marks the task as `changed` on every run (`command:` is
+  not idempotent by default).
+- **`set_fact:`** creates a variable at level **19** in the precedence
+  (above the play's `vars:` and `vars_files:`, below `--extra-vars`).
 
-## 🚀 Lancement
+## 🚀 Launch
 
 ```bash
 ansible-playbook labs/ecrire-code/register-set-fact/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "cat /tmp/system-id.txt"
-# Doit afficher : system_id=db1:5.14.0-...el10_x.x86_64
+# Must display: system_id=db1:5.14.0-...el9_x.x86_64
 ```
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **`register:`** capture `stdout`, `rc`, `failed`, `changed`, etc.
->   Pour le contenu utile : `<var>.stdout` (string brute), `.stdout_lines`
->   (liste).
-> - **`set_fact:`** crée une variable persistante au niveau du play (pas
->   du tout cas). Utile pour transformer un `register:` en variable
->   propre.
-> - **`changed_when: false`** sur `command:` / `shell:` lecture-seule —
->   sinon ils sont marqués `changed=1` à chaque run, brisant
->   l'idempotence. Pour un `hostname`, `uname`, etc.
-> - **`set_fact` est niveau 18**, plus haut que `vars:` du play (14)
->   mais sous `--extra-vars` (22). Donc un `--extra-vars` peut écraser
->   un `set_fact`.
+> - **`register:`** captures `stdout`, `rc`, `failed`, `changed`, etc.
+>   For the useful content: `<var>.stdout` (raw string), `.stdout_lines`
+>   (list).
+> - **`set_fact:`** creates a variable persistent at the play level (not
+>   at all cases). Useful to turn a `register:` into a clean
+>   variable.
+> - **`changed_when: false`** on read-only `command:` / `shell:`:
+>   otherwise they are marked `changed=1` on every run, breaking
+>   idempotence. For a `hostname`, `uname`, etc.
+> - **`set_fact` is level 19**, higher than the play's `vars:` (12) and
+>   than `vars_files:` (14), but below `--extra-vars` (22). So an
+>   `--extra-vars` can override a `set_fact`.
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/register-set-fact/challenge/tests/
 ```
 
-Le test vérifie sur db1 :
+The test verifies on db1:
 
-- `/tmp/system-id.txt` existe.
-- Contient `system_id=db1:` (preuve hostname capturé).
-- Contient `.el10` ou `.x86_64` (preuve kernel capturé).
+- `/tmp/system-id.txt` exists.
+- Contains `system_id=db1:` (proof the hostname was captured).
+- Contains `.el9` or `.x86_64` (proof the kernel was captured).
 
 ## 🧹 Reset
 
 ```bash
-make -C labs/ecrire-code/register-set-fact clean
+dsoxlab clean ecrire-code-register-set-fact
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Utiliser `ansible_facts`** au lieu de `command:` : `ansible_facts.hostname`
-  et `ansible_facts.kernel` sont déjà collectés par `gather_facts`. Comparez
-  les deux approches en termes de simplicité.
-- **Multi-host** : sur un play qui cible plusieurs hôtes, `set_fact` est
-  **par-hôte**. Démontrez-le en ciblant `webservers` et en posant un fichier
-  par hôte (`/tmp/system-id-{{ inventory_hostname }}.txt`).
-- **`cacheable: yes`** sur `set_fact` : la valeur est mise en cache (utile si
-  fact_caching est activé).
-- **Lint** :
+- **Using `ansible_facts`** instead of `command:`: `ansible_facts.hostname`
+  and `ansible_facts.kernel` are already collected by `gather_facts`. Compare
+  the two approaches in terms of simplicity.
+- **Multi-host**: on a play targeting several hosts, `set_fact` is
+  **per-host**. Demonstrate it by targeting `webservers` and placing a file
+  per host (`/tmp/system-id-{{ inventory_hostname }}.txt`).
+- **`cacheable: yes`** on `set_fact`: the value is cached (useful if
+  fact_caching is enabled).
+- **Lint**:
 
    ```bash
    ansible-lint labs/ecrire-code/register-set-fact/challenge/solution.yml

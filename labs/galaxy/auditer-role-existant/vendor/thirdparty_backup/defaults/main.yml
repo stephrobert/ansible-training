@@ -1,0 +1,4 @@
+---
+backup_dir: /var/backups/app
+backup_password: "S3cretBackup!2024"
+backup_schedule: "0 3 * * *"

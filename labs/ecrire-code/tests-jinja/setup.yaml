@@ -1,0 +1,29 @@
+---
+# Mise en place du lab tests-jinja : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup tests-jinja lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (tests-jinja)
+      ansible.builtin.file:
+        path: "/tmp/tests-jinja.txt"
+        state: "absent"
+
+- name: Brief the learner (tests-jinja)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    # Le brief cite « {% if %} », qui est la syntaxe même que le lab enseigne.
+    # Ansible templatise `msg` avant de l'afficher : sans {% raw %}, Jinja tente
+    # d'évaluer ce bloc, n'y trouve pas d'expression et le setup meurt sur
+    # « Expected an expression, got 'end of statement block' ». Le lab entier
+    # échouait donc avant son premier test, à cause de sa propre description.
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          {% raw %}Test a variable's definition and type, match a regex with is
+          match and is search, and combine those tests in when and in
+          {% if %}{% endraw %}
+      run_once: true

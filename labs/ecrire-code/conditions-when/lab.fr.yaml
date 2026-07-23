@@ -1,0 +1,4 @@
+---
+id: ecrire-code-conditions-when
+title: "Conditions when : opérateurs et tests Jinja"
+description: "Conditionner une tâche sur un fact, combiner plusieurs conditions, tester la définition d'une variable et diagnostiquer un when qui matche faux."

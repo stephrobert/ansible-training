@@ -1,27 +1,40 @@
-# 🎯 Challenge — Tester avec testinfra (verifier Python)
+# 🎯 Challenge: write the testinfra tests for the webserver role
 
-## ✅ Objectif
+## ✅ Mission
 
-Le test pytest valide la **structure** des fichiers livrés dans ce lab :
+The `webserver` role and `converge.yml` are delivered. Your job is to write
+the verification layer in Python:
 
-- Lab 66 : Tester avec testinfra (verifier Python).
+| Item | Expectation |
+| --- | --- |
+| `molecule/default/molecule.yml` | declare the `testinfra` verifier (replace the `???`) |
+| `molecule/default/tests/test_webserver.py` | at least 4 `test_*(host)` functions that prove the server state |
 
-## 🧩 Indices
+The 4 minimal expected proofs:
 
-C'est un challenge structurel. Posez `solution.sh` minimal :
+1. nginx package installed,
+2. nginx service started and enabled at boot,
+3. socket listening on port 8080,
+4. `nginx -t` returns 0 (valid configuration).
+
+## 🧩 Stuck?
 
 ```bash
-echo "Lab 66 : Tester avec testinfra (verifier Python) validé par pytest." > challenge/solution.sh
+dsoxlab hint tests-testinfra
+```
+
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
+
+## 📓 Command log
+
+When your tests are ready, record the commands you ran (`molecule verify`...)
+in `challenge/solution.sh`. This log must exist for
+pytest to run:
+
+```bash
 chmod +x challenge/solution.sh
 ```
-
-## 🚀 Lancement (optionnel)
-
-```bash
-cd labs/tests/testinfra/ && molecule test
-```
-
-Verify utilise désormais testinfra (Python) au lieu d'ansible (YAML).
 
 ## 🧪 Validation
 
@@ -29,26 +42,18 @@ Verify utilise désormais testinfra (Python) au lieu d'ansible (YAML).
 pytest -v labs/tests/testinfra/challenge/tests/
 ```
 
+The test analyzes your Python file (AST: real test functions
+using `host`, real assertions) and checks that pytest can
+collect it.
+
 ## 🧹 Reset
 
 ```bash
-make -C labs/tests/testinfra/ clean
+dsoxlab clean tests-testinfra
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`ansible-lint --profile production`** : validez la qualité de votre solution.
-
-  ```bash
-  ansible-lint --profile production labs/tests/testinfra/challenge/solution.yml
-  ```
-
-  Sortie attendue : `Passed: 0 failure(s), 0 warning(s)`.
-
-- **Idempotence** : relancez la solution une seconde fois — un `PLAY RECAP`
-  avec `changed=0` partout confirme un playbook propre.
-
-- **Cas limites** : pensez aux scénarios d'erreur (host indisponible,
-  dépendance manquante, valeur invalide) que votre solution pourrait
-  rencontrer en production. Comment les gérer (`block/rescue`,
-  `failed_when`, `assert`) ?
+- `host.file(...).content_string`: assert on a file's content.
+- Parametrize a single test over several packages with `@pytest.mark.parametrize`.
+- Compare with the Ansible verifier from lab 62: when to prefer one or the other?

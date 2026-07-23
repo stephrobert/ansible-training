@@ -1,28 +1,27 @@
-# 🎯 Challenge — 4 paramètres sysctl pour durcissement
+# 🎯 Challenge — 4 sysctl parameters for hardening
 
-## ✅ Objectif
+## ✅ Objective
 
-Sur **db1.lab**, configurer **4 paramètres `sysctl`** dans un fichier dédié
-**`/etc/sysctl.d/99-rhce-lab.conf`**, et les appliquer immédiatement.
+On **db1.lab**, configure **4 `sysctl` parameters** in a dedicated file
+**`/etc/sysctl.d/99-rhce-lab.conf`**, and apply them immediately.
 
-| Paramètre | Valeur | Effet |
+| Parameter | Value | Effect |
 | --- | --- | --- |
-| `net.ipv4.ip_forward` | `1` | Active le routage IPv4 (utile sur un firewall/NAT) |
-| `net.ipv4.tcp_syncookies` | `1` | Protection contre les SYN floods |
-| `kernel.kptr_restrict` | `2` | Cache les pointeurs kernel dans `/proc` (durcissement) |
-| `vm.swappiness` | `10` | Préfère la RAM au swap (perfs) |
+| `net.ipv4.ip_forward` | `1` | Enables IPv4 routing (useful on a firewall/NAT) |
+| `net.ipv4.tcp_syncookies` | `1` | Protection against SYN floods |
+| `kernel.kptr_restrict` | `2` | Hides kernel pointers in `/proc` (hardening) |
+| `vm.swappiness` | `10` | Prefers RAM over swap (perf) |
 
-## 🧩 Indices
+## 🧩 Stuck?
 
-- `ansible.posix.sysctl` est le module à utiliser.
-- **`sysctl_file:`** : fichier où écrire la valeur. Si vous l'omettez, le
-  paramètre est écrit dans `/etc/sysctl.conf` (file global). Préférez un
-  fichier dédié `/etc/sysctl.d/99-<rôle>.conf` (Ansible-friendly,
-  versionnable).
-- **`reload: true`** : applique immédiatement (`sysctl -p ...`). Sans ça, la
-  valeur n'est active **qu'après reboot**.
+```bash
+dsoxlab hint modules-rhel-sysctl
+```
 
-## 🧩 Squelette
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
+
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -43,26 +42,29 @@ Sur **db1.lab**, configurer **4 paramètres `sysctl`** dans un fichier dédié
         - { name: net.ipv4.tcp_syncookies, value: '1' }
         - { name: kernel.kptr_restrict, value: '2' }
         - { name: vm.swappiness, value: '10' }
+      # Already filled in: loop_control only changes what Ansible PRINTS
+      # for each iteration (the item's name rather than the whole
+      # dictionary). It is not the subject of this lab, and no test checks it.
       loop_control:
-        label: ???
+        label: "{{ item.name }}"
 ```
 
-> 💡 **Quote les `value:`** : `'1'`, `'2'`, etc. — `sysctl` aime les chaînes.
+> 💡 **Quote the `value:`**: `'1'`, `'2'`, etc.: `sysctl` likes strings.
 
-**Pièges** :
+**Traps**:
 
-> - **`sysctl_file:`** : par défaut `/etc/sysctl.conf` (déprécié sur
->   RHEL 9+). Préférer `/etc/sysctl.d/<NN>-<topic>.conf` (numéro de
->   priorité 99 = lu en dernier).
-> - **`reload: true`** (défaut) : applique le nouveau réglage **maintenant**
->   (pas seulement à la persistance). Si `false`, il faut un reboot ou
->   `sysctl -p`.
-> - **`name:`** = clé sysctl (`net.ipv4.ip_forward`). Format
->   point-séparé, **pas** slash-séparé (`/proc/sys/...`).
-> - **Idempotence** : `sysctl:` compare la valeur actuelle. Si elle
->   match, `changed=0`. Vrai pour persistance ET runtime simultanément.
+> - **`sysctl_file:`**: by default `/etc/sysctl.conf` (deprecated on
+>   RHEL 9+). Prefer `/etc/sysctl.d/<NN>-<topic>.conf` (priority
+>   number 99 = read last).
+> - **`reload: true`** (default): applies the new setting **now**
+>   (not only to persistence). If `false`, a reboot or
+>   `sysctl -p` is needed.
+> - **`name:`** = sysctl key (`net.ipv4.ip_forward`). Dot-separated
+>   format, **not** slash-separated (`/proc/sys/...`).
+> - **Idempotence**: `sysctl:` compares the current value. If it
+>   matches, `changed=0`. True for persistence AND runtime simultaneously.
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-rhel/sysctl/challenge/solution.yml
@@ -70,7 +72,18 @@ ansible db1.lab -m ansible.builtin.command -a "cat /etc/sysctl.d/99-rhce-lab.con
 ansible db1.lab -m ansible.builtin.command -a "sysctl -n net.ipv4.ip_forward vm.swappiness"
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
+
+> ⏱️ **One test reboots db1** (about 90 s). It is marked `slow`, and it is
+> there on purpose: persistence after a restart is the trap that fails RHCSA
+> and RHCE candidates, and reading the config file proves nothing about it.
+> While you iterate, you can leave it out:
+>
+> ```bash
+> pytest -m 'not slow' labs/modules-rhel/sysctl/challenge/tests/
+> ```
+>
+> Run the full suite at least once before considering the challenge done.
 
 ```bash
 pytest -v labs/modules-rhel/sysctl/challenge/tests/
@@ -79,18 +92,18 @@ pytest -v labs/modules-rhel/sysctl/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/modules-rhel/sysctl clean
+dsoxlab clean modules-rhel-sysctl
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`state: absent`** : supprime le paramètre du fichier (mais ne réinitialise
-  **pas** la valeur runtime — il faudra un reboot ou un sysctl explicite).
-- **Auditer les sysctl actifs** : `sysctl -a | grep ip_forward` ou
+- **`state: absent`**: removes the parameter from the file (but does **not**
+  reset the runtime value: a reboot or an explicit sysctl will be needed).
+- **Audit the active sysctl**: `sysctl -a | grep ip_forward` or
   `cat /proc/sys/...`.
-- **Pattern durcissement CIS** : un rôle Ansible « cis-rhel-baseline » pose
-  ~30 paramètres sysctl. C'est exactement le pattern à industrialiser.
-- **Lint** :
+- **CIS hardening pattern**: an Ansible role "cis-rhel-baseline" sets
+  ~30 sysctl parameters. This is exactly the pattern to industrialize.
+- **Lint**:
 
    ```bash
    ansible-lint labs/modules-rhel/sysctl/challenge/solution.yml

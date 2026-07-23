@@ -1,70 +1,69 @@
-# Lab 94 — `requirements.yml` complet (Galaxy + Git + signatures GPG)
+# Lab 94 — Complete `requirements.yml` (Galaxy + Git + GPG signatures)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo.
+> If it fails, run `mise install && dsoxlab provision` at the repo root.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**`requirements.yml` complet**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/requirements-yml/)
+🔗 [**Complete `requirements.yml`**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/requirements-yml/)
 
-Un projet Ansible mature **versionne ses dépendances** dans un fichier **`requirements.yml`** unique. Il liste les **collections** et **rôles** utilisés, leur **source** (Galaxy, Git, URL tarball, chemin local), leur **version pinnée** (semver strict), et optionnellement leurs **signatures GPG** pour vérification d'intégrité.
+A mature Ansible project **versions its dependencies** in a single **`requirements.yml`** file. It lists the **collections** and **roles** used, their **source** (Galaxy, Git, tarball URL, local path), their **pinned version** (strict semver), and optionally their **GPG signatures** for integrity verification.
 
-**Pourquoi c'est critique en 2026** :
-- Les **builds reproductibles** d'Execution Environments dépendent de `requirements.yml`.
-- Le **scan supply-chain** (Trivy, cosign, signatures) cible ce fichier.
-- Un projet sans pinning **dérive** au fil des jours et casse en prod sans avertissement.
+**Why it is critical in 2026**:
+- **Reproducible builds** of Execution Environments depend on `requirements.yml`.
+- The **supply-chain scan** (Trivy, cosign, signatures) targets this file.
+- A project without pinning **drifts** over the days and breaks in prod without warning.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Écrire un **`requirements.yml`** avec **4 sources** différentes (Galaxy, Git, URL, chemin local).
-2. **Pinner** strictement chaque version (semver `version: "X.Y.Z"`).
-3. Installer toutes les collections avec **`ansible-galaxy collection install -r`**.
-4. Vérifier l'intégrité avec **`ansible-galaxy collection verify`**.
-5. Comprendre les **signatures GPG** détachées (`signatures:` dans `requirements.yml`).
-6. Configurer **`ansible.cfg [galaxy]`** pour cibler **plusieurs serveurs** (Galaxy + Hub privé).
+1. Write a **`requirements.yml`** with **4 different sources** (Galaxy, Git, URL, local path).
+2. **Pin** each version strictly (semver `version: "X.Y.Z"`).
+3. Install all the collections with **`ansible-galaxy collection install -r`**.
+4. Verify integrity with **`ansible-galaxy collection verify`**.
+5. Understand the detached **GPG signatures** (`signatures:` in `requirements.yml`).
+6. Configure **`ansible.cfg [galaxy]`** to target **several servers** (Galaxy + private Hub).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible all -m ansible.builtin.ping
 ansible-galaxy --version
 mkdir -p labs/collections/requirements/local_collections
 rm -rf labs/collections/requirements/.collections-cache
 ```
 
-## ⚙️ Arborescence cible
+## ⚙️ Target layout
 
 ```text
 labs/collections/requirements/
-├── README.md                       ← ce fichier (tuto guidé)
-├── Makefile                        ← cible clean
+├── README.md                       ← this file (guided tutorial)
 └── challenge/
-    ├── README.md                   ← consigne challenge avec squelette
+    ├── README.md                   ← challenge brief with skeleton
     └── tests/
         └── test_requirements.py
 ```
 
-L'apprenant écrit lui-même `requirements.yml`, `lab.yml`, et `challenge/solution.yml`.
+The learner writes `requirements.yml`, `lab.yml`, and `challenge/solution.yml` themselves.
 
-## 📚 Exercice 1 — Source Galaxy avec pinning strict
+## 📚 Exercise 1 — Galaxy source with strict pinning
 
-Créer `requirements.yml` :
+Create `requirements.yml`:
 
 ```yaml
 ---
 collections:
-  # Source Galaxy par défaut (galaxy.ansible.com)
+  # Default Galaxy source (galaxy.ansible.com)
   - name: ansible.posix
     version: "2.0.0"
 
@@ -82,30 +81,30 @@ ansible-galaxy collection install \
   --force
 ```
 
-🔍 **Observation** : **`-p`** force l'installation dans un chemin **local au projet** (pas dans `~/.ansible/`). Permet **l'isolation** entre projets et la **reproductibilité** (le chemin est versionné).
+🔍 **Observation**: **`-p`** forces the installation into a path **local to the project** (not in `~/.ansible/`). Allows **isolation** between projects and **reproducibility** (the path is versioned).
 
-## 📚 Exercice 2 — Source Git avec tag, branche ou SHA
+## 📚 Exercise 2 — Git source with tag, branch or SHA
 
-Ajouter à `requirements.yml` :
+Add to `requirements.yml`:
 
 ```yaml
 collections:
   - name: https://github.com/ansible-collections/community.docker.git
     type: git
-    version: "4.0.0"           # tag Git
+    version: "4.0.0"           # Git tag
 ```
 
-Variantes acceptées dans **`version:`** :
+Accepted variants in **`version:`**:
 
-| Format | Exemple | Cas d'usage |
+| Format | Example | Use case |
 |--------|---------|-------------|
-| Tag | `version: v1.2.3` | Production stable (recommandé) |
-| Branche | `version: main` | Dev rapide (déconseillé en prod) |
-| SHA40 | `version: abc1234...` | Reproductibilité absolue |
+| Tag | `version: v1.2.3` | Stable production (recommended) |
+| Branch | `version: main` | Fast dev (discouraged in prod) |
+| SHA40 | `version: abc1234...` | Absolute reproducibility |
 
-🔍 **Observation** : **Git source** est utile pour les collections **non publiées sur Galaxy** (privées d'entreprise, fork interne, contributions en cours). En prod, **toujours** pinner par **tag** ou **SHA**, jamais par branche.
+🔍 **Observation**: **Git source** is useful for collections **not published on Galaxy** (private company ones, internal fork, ongoing contributions). In prod, **always** pin by **tag** or **SHA**, never by branch.
 
-## 📚 Exercice 3 — Source URL tarball
+## 📚 Exercise 3 — Tarball URL source
 
 ```yaml
 collections:
@@ -113,19 +112,19 @@ collections:
     type: url
 ```
 
-🔍 **Observation** : utile pour les **distributions internes airgap** où Galaxy n'est pas accessible. Pré-builder le tarball avec `ansible-galaxy collection build`, le poser sur un serveur HTTP local, le pointer ici.
+🔍 **Observation**: useful for **internal airgap distributions** where Galaxy is not reachable. Pre-build the tarball with `ansible-galaxy collection build`, put it on a local HTTP server, point to it here.
 
-## 📚 Exercice 4 — Source chemin local (dev)
+## 📚 Exercise 4 — Local path source (dev)
 
 ```yaml
 collections:
-  - name: /home/bob/dev/acme.webapp
+  - name: ~/dev/acme.webapp
     type: dir
 ```
 
-🔍 **Observation** : **mode dev** où on travaille sur sa collection en local. Modification immédiatement visible — pas besoin de rebuilder/réinstaller à chaque change. À retirer en prod (chemin absolu non portable).
+🔍 **Observation**: **dev mode** where you work on your collection locally. Change immediately visible: no need to rebuild/reinstall on each change. To be removed in prod (non-portable absolute path).
 
-## 📚 Exercice 5 — Lancer l'installation
+## 📚 Exercise 5 — Run the installation
 
 ```bash
 ansible-galaxy collection install \
@@ -134,7 +133,7 @@ ansible-galaxy collection install \
   --force
 ```
 
-Sortie typique :
+Typical output:
 
 ```text
 Starting galaxy collection install process
@@ -149,27 +148,27 @@ community.general:10.5.0 was installed successfully
 community.docker:4.0.0 was installed successfully
 ```
 
-🔍 **Observation** : `--force` réinstalle **même si la version est déjà présente**. Utile en dev pour s'assurer qu'on a bien la version pinnée. En CI, **omettre** `--force` (plus rapide).
+🔍 **Observation**: `--force` reinstalls **even if the version is already present**. Useful in dev to make sure you have the pinned version. In CI, **omit** `--force` (faster).
 
-## 📚 Exercice 6 — `ANSIBLE_COLLECTIONS_PATH`
+## 📚 Exercise 6 — `ANSIBLE_COLLECTIONS_PATH`
 
-Une fois installées en local, il faut indiquer à Ansible où chercher :
+Once installed locally, you must tell Ansible where to look:
 
 ```bash
 export ANSIBLE_COLLECTIONS_PATH=labs/collections/requirements/local_collections
 ansible-galaxy collection list -p labs/collections/requirements/local_collections
 ```
 
-Ou dans `ansible.cfg` :
+Or in `ansible.cfg`:
 
 ```ini
 [defaults]
 collections_path = labs/collections/requirements/local_collections
 ```
 
-🔍 **Observation** : la variable d'env **`ANSIBLE_COLLECTIONS_PATH`** est un `:` separator (comme `$PATH`). Permet d'enchaîner plusieurs paths (système + projet) avec priorité.
+🔍 **Observation**: the env variable **`ANSIBLE_COLLECTIONS_PATH`** is a `:` separator (like `$PATH`). Allows chaining several paths (system + project) with priority.
 
-## 📚 Exercice 7 — Vérification d'intégrité (`verify`)
+## 📚 Exercise 7 — Integrity verification (`verify`)
 
 ```bash
 ansible-galaxy collection verify \
@@ -177,7 +176,7 @@ ansible-galaxy collection verify \
   -p labs/collections/requirements/local_collections
 ```
 
-Sortie :
+Output:
 
 ```text
 Verifying 'ansible.posix:2.0.0'.
@@ -185,11 +184,11 @@ Found ansible.posix at /home/.../local_collections/ansible_collections/ansible/p
 Successfully verified that checksums for 'ansible.posix:2.0.0' match the remote collection
 ```
 
-🔍 **Observation** : `verify` compare les **checksums** des fichiers locaux avec ceux du serveur. **Détecte une corruption** (disque, modification manuelle) ou une **substitution** (attaque supply-chain). À automatiser en CI.
+🔍 **Observation**: `verify` compares the **checksums** of the local files with those of the server. **Detects a corruption** (disk, manual modification) or a **substitution** (supply-chain attack). To automate in CI.
 
-## 📚 Exercice 8 — Signatures GPG détachées
+## 📚 Exercise 8 — Detached GPG signatures
 
-Pour les collections **certifiées Red Hat** ou les forks privés, on ajoute des signatures :
+For **Red Hat certified** collections or private forks, you add signatures:
 
 ```yaml
 collections:
@@ -206,44 +205,44 @@ ansible-galaxy collection install \
   --keyring /etc/ansible/trustedkeys.gpg
 ```
 
-Variables associées :
+Associated variables:
 
-| Variable | Effet |
+| Variable | Effect |
 |----------|-------|
-| `GALAXY_REQUIRED_VALID_SIGNATURE_COUNT` | Nombre minimum de signatures valides (`+1`, `+all`) |
-| `GALAXY_DISABLE_GPG_VERIFY` | `1` désactive (debug uniquement) |
-| `--keyring` | Chemin vers le keyring GPG de confiance |
+| `GALAXY_REQUIRED_VALID_SIGNATURE_COUNT` | Minimum number of valid signatures (`+1`, `+all`) |
+| `GALAXY_DISABLE_GPG_VERIFY` | `1` disables (debug only) |
+| `--keyring` | Path to the trusted GPG keyring |
 
-🔍 **Observation** : exige **`ansible-core ≥ 2.13`**. Sans `--keyring`, l'install **échoue** si signatures déclarées. Pattern essentiel pour **airgap signé** (verify offline avec `--offline`).
+🔍 **Observation**: requires **`ansible-core ≥ 2.13`**. Without `--keyring`, the install **fails** if signatures are declared. Essential pattern for **signed airgap** (offline verify with `--offline`).
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`requirements.yml`** centralise toutes les dépendances Ansible.
-- **4 sources** : Galaxy (default), `type: git`, `type: url`, `type: dir`.
-- **Pinning strict** par **tag** ou **SHA** — jamais par branche en prod.
-- **`-p <chemin>`** isole les collections au niveau projet.
-- **`ansible-galaxy collection verify`** détecte les corruptions et les substitutions.
-- **Signatures GPG** via `signatures:` + `--keyring` pour la chaîne supply-chain.
+- **`requirements.yml`** centralizes all the Ansible dependencies.
+- **4 sources**: Galaxy (default), `type: git`, `type: url`, `type: dir`.
+- **Strict pinning** by **tag** or **SHA**: never by branch in prod.
+- **`-p <path>`** isolates the collections at the project level.
+- **`ansible-galaxy collection verify`** detects corruptions and substitutions.
+- **GPG signatures** via `signatures:` + `--keyring` for the supply-chain chain.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Quel est le risque de **`type: git, version: main`** en production ?
-2. Comment mettre à jour **automatiquement** les versions pinnées ? (Indice : Renovate / Dependabot).
-3. À quoi sert **`build_ignore:`** dans `galaxy.yml` ? Quel est l'équivalent côté `requirements.yml` ?
-4. Pourquoi un **registre privé** (Galaxy NG / Automation Hub) est-il préférable à Git pour les forks internes ?
+1. What is the risk of **`type: git, version: main`** in production?
+2. How do you update the pinned versions **automatically**? (Hint: Renovate / Dependabot).
+3. What is **`build_ignore:`** used for in `galaxy.yml`? What is the equivalent on the `requirements.yml` side?
+4. Why is a **private registry** (Galaxy NG / Automation Hub) preferable to Git for internal forks?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) — écrire un `requirements.yml` qui combine **3 sources** (Galaxy + Git + URL) avec pinning strict, l'installer via Ansible, et déposer la liste des collections sur `db1.lab`.
+See [`challenge/README.md`](challenge/README.md): write a `requirements.yml` that combines **3 sources** (Galaxy + Git + URL) with strict pinning, install it via Ansible, and deposit the list of collections on `db1.lab`.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Lab 95** : créer **votre propre collection** (init + structure + galaxy.yml).
-- **Lab 96** : pipeline CI matrice ansible-core × Python.
-- **Renovate** pour bumper auto les versions pinnées.
-- **Galaxy NG** : déployer un Automation Hub privé local.
+- **Lab 95**: create **your own collection** (init + structure + galaxy.yml).
+- **Lab 96**: CI matrix pipeline ansible-core × Python.
+- **Renovate** to auto-bump the pinned versions.
+- **Galaxy NG**: deploy a local private Automation Hub.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint labs/collections/requirements/lab.yml

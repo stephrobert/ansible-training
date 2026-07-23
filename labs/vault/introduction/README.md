@@ -1,68 +1,93 @@
-# Lab 77 — Introduction à Ansible Vault (chiffrement de fichier complet)
+# Lab 77 — Introduction to Ansible Vault (encrypting a complete file)
 
-> 💡 **Pré-requis** : `ansible all -m ansible.builtin.ping` répond `pong` sur les 4 VMs.
+> 💡 **Prerequisite**: `ansible all -m ansible.builtin.ping` replies `pong` on the 4 VMs.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Introduction à Ansible Vault**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/ansible-vault-introduction/)
+🔗 [**Introduction to Ansible Vault**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/ansible-vault-introduction/)
 
-**Ansible Vault** chiffre les fichiers contenant des secrets (mots de passe, tokens API, clés privées) avec **AES256**. Ces fichiers peuvent être commités dans Git **sans risque** — le chiffrement protège leur contenu. Au runtime, Ansible les **déchiffre à la volée** avec un mot de passe vault fourni via `--vault-password-file` ou `--ask-vault-pass`.
+**Ansible Vault** encrypts files containing secrets (passwords, API tokens, private keys) with **AES256**. These files can be committed to Git **safely**: the encryption protects their content. At runtime, Ansible **decrypts them on the fly** with a vault password provided via `--vault-password-file` or `--ask-vault-pass`.
 
-C'est le **mécanisme natif** Ansible pour gérer les secrets, sans dépendance externe (HashiCorp Vault, AWS Secrets Manager). Indispensable au RHCE EX294.
+It is Ansible's **native mechanism** for managing secrets, without any external dependency (HashiCorp Vault, AWS Secrets Manager). Essential for the RHCE EX294.
 
-**Format du fichier chiffré** :
+**Encrypted file format**:
 
 ```text
 $ANSIBLE_VAULT;1.1;AES256
-63373766303831373034386637393762353961...   ← payload chiffré (hex)
+63373766303831373034386637393762353961...   ← encrypted payload (hex)
 6136353338613232633836333261396531376630...
 ```
 
-Le **header** (`$ANSIBLE_VAULT;1.1;AES256`) permet à Ansible de reconnaître automatiquement le format.
+The **header** (`$ANSIBLE_VAULT;1.1;AES256`) lets Ansible recognize the format automatically.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Chiffrer** un fichier YAML complet avec `ansible-vault encrypt`.
-2. **Visualiser** un fichier chiffré sans le déchiffrer (`ansible-vault view`).
-3. **Modifier** un fichier chiffré (`ansible-vault edit`) — édition transparente.
-4. **Lancer un playbook** qui consomme un fichier chiffré.
-5. **Re-chiffrer** un fichier avec un nouveau mot de passe (`ansible-vault rekey`).
-6. **Déchiffrer** un fichier en clair (`ansible-vault decrypt`) — pour debug exceptionnel.
+1. **Encrypt** a complete YAML file with `ansible-vault encrypt`.
+2. **View** an encrypted file without decrypting it (`ansible-vault view`).
+3. **Edit** an encrypted file (`ansible-vault edit`), transparent editing.
+4. **Run a playbook** that consumes an encrypted file.
+5. **Re-encrypt** a file with a new password (`ansible-vault rekey`).
+6. **Decrypt** a file to cleartext (`ansible-vault decrypt`), for exceptional debugging.
 
-## 🔧 Préparation
+## 🔧 Preparation
+
+The vault password of this lab is **`lab77-vault-2026`**. It lives in
+`.vault_password`, which is **gitignored**: a password is never committed,
+even a pedagogical one. It is therefore absent from a fresh clone, and it is
+the following command that creates it:
 
 ```bash
-cd /home/bob/Projets/ansible-training/labs/vault/introduction/
-ls -la                         # voir la structure
-cat .vault_password            # mot de passe vault (mode 0600 imposé)
+scripts/setup-lab-vault-passwords.sh    # creates the .vault_password files of the vault labs
 ```
 
-## ⚙️ Arborescence cible
+```bash
+cd $ANSIBLE_TRAINING/labs/vault/introduction/
+ls -la                         # see the structure
+cat .vault_password            # → lab77-vault-2026 (mode 0600 enforced)
+```
+
+This same password opens the two encrypted files delivered with the challenge
+(`challenge/db_secrets.yml` and `challenge/api_secrets.yml`): it is **enforced**
+by them, it is not a free choice.
+
+## ⚙️ Target tree
 
 ```text
 labs/vault/introduction/
-├── README.md                  ← ce fichier
-├── .vault_password            ← mot de passe vault (mode 0600, gitignored en prod)
-├── secret.yml                 ← fichier YAML chiffré (commitable !)
-├── playbook.yml               ← consomme secret.yml via vars_files:
+├── README.md                  ← this file
+├── .vault_password            ← vault password (mode 0600, gitignored)
+├── secret.yml                 ← YOU create it in exercise 1 (encrypted, commitable!)
+├── playbook.yml               ← YOU create it in exercise 4 (consumes secret.yml)
 └── challenge/
     ├── README.md
-    ├── solution.yml           ← challenge sur db1.lab
-    ├── db_secrets.yml         ← chiffré
-    ├── api_secrets.yml        ← chiffré
+    ├── db_secrets.yml         ← delivered encrypted
+    ├── api_secrets.yml        ← delivered encrypted
+    ├── solution.yml           ← YOU write it (challenge on db1.lab)
     └── tests/
-        └── test_vault_intro.py
+        └── test_functional.py
 ```
 
-## 📚 Exercice 1 — Inspecter le fichier chiffré
+## 📚 Exercise 1: Create and encrypt a secrets file
+
+The tutorial works on **your own** `secret.yml` file: creating it is already
+the essential gesture to learn.
 
 ```bash
+cd $ANSIBLE_TRAINING/labs/vault/introduction/
+
+cat > secret.yml <<'EOF'
+---
+db_password: "MotDePasseDemo2026"
+api_token: "tok_demo_abc123xyz789"
+EOF
+
+ansible-vault encrypt secret.yml --vault-password-file=.vault_password
 cat secret.yml | head -3
 ```
 
-Sortie attendue :
+Expected output:
 
 ```text
 $ANSIBLE_VAULT;1.1;AES256
@@ -70,15 +95,15 @@ $ANSIBLE_VAULT;1.1;AES256
 6136353338613232633836333261396531376630623766330a663566666463...
 ```
 
-🔍 **Observation** : sans le mot de passe, **impossible** de retrouver le contenu original. Le fichier peut être commité sur GitHub public — la confidentialité est assurée par AES256.
+🔍 **Observation**: without the password, it is **impossible** to recover the original content. The file can be committed to public GitHub: confidentiality is guaranteed by AES256.
 
-## 📚 Exercice 2 — Visualiser le contenu chiffré
+## 📚 Exercise 2 — View the encrypted content
 
 ```bash
 ansible-vault view secret.yml --vault-password-file=.vault_password
 ```
 
-Sortie :
+Output:
 
 ```yaml
 ---
@@ -86,28 +111,53 @@ db_password: "MotDePasseDemo2026"
 api_token: "tok_demo_abc123xyz789"
 ```
 
-🔍 **Observation** : `view` déchiffre **temporairement en mémoire** pour affichage, **sans modifier** le fichier sur disque. Le fichier reste chiffré.
+🔍 **Observation**: `view` decrypts **temporarily in memory** for display, **without modifying** the file on disk. The file stays encrypted.
 
-## 📚 Exercice 3 — Modifier un fichier chiffré
+## 📚 Exercise 3 — Edit an encrypted file
 
 ```bash
 ansible-vault edit secret.yml --vault-password-file=.vault_password
 ```
 
-Ouvre dans `$EDITOR` (vim/nano), déchiffre **en mémoire**, vous éditez, sauvegarde, **re-chiffre** automatiquement à la fermeture. Le fichier reste chiffré sur disque.
+Opens in `$EDITOR` (vim/nano), decrypts **in memory**, you edit, save, and it **re-encrypts** automatically on close. The file stays encrypted on disk.
 
-🔍 **Observation** : workflow ergonomique pour les modifications quotidiennes — pas besoin de `decrypt` puis `encrypt` manuels.
+🔍 **Observation**: an ergonomic workflow for daily changes: no need for manual `decrypt` then `encrypt`.
 
-## 📚 Exercice 4 — Lancer le playbook avec déchiffrement
+## 📚 Exercise 4 — Run the playbook with decryption
+
+Create `playbook.yml` at the lab root: it consumes `secret.yml` via
+`vars_files:`, without ever decrypting it on disk.
 
 ```bash
+cat > playbook.yml <<'EOF'
+---
+- name: "Démonstration Ansible Vault : fichier chiffré"
+  hosts: web1.lab
+  become: true
+  gather_facts: false
+
+  vars_files:
+    - secret.yml          # fichier chiffré, déchiffré au runtime
+
+  tasks:
+    - name: Afficher que les variables sont disponibles
+      ansible.builtin.copy:
+        dest: /tmp/lab77-vault-test.txt
+        content: |
+          Lab 77 : vault déchiffrement OK
+          db_password length: {{ db_password | length }}
+          api_token starts: {{ api_token[:4] }}...
+        mode: "0600"
+      no_log: false       # pour la démo on ne masque pas
+EOF
+
 ansible-playbook playbook.yml --vault-password-file=.vault_password
 ```
 
-Sortie :
+Output:
 
 ```text
-PLAY [Démonstration Ansible Vault — fichier chiffré] *********
+PLAY [Démonstration Ansible Vault : fichier chiffré] *********
 
 TASK [Afficher que les variables sont disponibles] ***********
 changed: [web1.lab]
@@ -116,23 +166,23 @@ PLAY RECAP ***************************************************
 web1.lab : ok=1 changed=1 unreachable=0 failed=0
 ```
 
-🔍 **Observation** : Ansible déchiffre `secret.yml` **automatiquement** au runtime grâce à `vars_files: secret.yml`. Le playbook utilise `db_password` et `api_token` comme des variables normales.
+🔍 **Observation**: Ansible decrypts `secret.yml` **automatically** at runtime thanks to `vars_files: secret.yml`. The playbook uses `db_password` and `api_token` as normal variables.
 
-## 📚 Exercice 5 — Vérifier le résultat sur web1.lab
+## 📚 Exercise 5 — Check the result on web1.lab
 
 ```bash
-ssh ansible@web1.lab "sudo cat /tmp/lab77-vault-test.txt"
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab "sudo cat /tmp/lab77-vault-test.txt"
 ```
 
-Sortie attendue :
+Expected output:
 
 ```text
-Lab 77 — Vault déchiffrement OK
+Lab 77 : vault déchiffrement OK
 db_password length: 18
 api_token starts: tok_...
 ```
 
-## 📚 Exercice 6 — Re-chiffrer avec un nouveau mot de passe
+## 📚 Exercise 6 — Re-encrypt with a new password
 
 ```bash
 echo "NouveauMotDePasse2026!" > .vault_password_new
@@ -142,84 +192,84 @@ ansible-vault rekey secret.yml \
   --vault-password-file=.vault_password \
   --new-vault-password-file=.vault_password_new
 
-# Vérifier que l'ancien mot de passe ne marche plus
+# Check that the old password no longer works
 ansible-vault view secret.yml --vault-password-file=.vault_password
 # → ERROR: Decryption failed
 ```
 
-🔍 **Observation** : `rekey` permet de **rotater** le mot de passe vault sans modifier le contenu. Mandatory en cas de fuite ou de départ d'un membre de l'équipe.
+🔍 **Observation**: `rekey` lets you **rotate** the vault password without changing the content. Mandatory in case of a leak or the departure of a team member.
 
 ```bash
-# Restaurer pour les tests
+# Restore for the tests
 ansible-vault rekey secret.yml \
   --vault-password-file=.vault_password_new \
   --new-vault-password-file=.vault_password
 rm .vault_password_new
 ```
 
-## 📚 Exercice 7 — Déchiffrer définitivement (rare)
+## 📚 Exercise 7 — Decrypt permanently (rare)
 
 ```bash
 ansible-vault decrypt secret.yml --vault-password-file=.vault_password
-cat secret.yml                  # le fichier est en clair !
+cat secret.yml                  # the file is in cleartext!
 ```
 
-🔍 **Observation** : `decrypt` **modifie le fichier sur disque** (devient en clair). À utiliser **uniquement en debug exceptionnel** — sinon vous perdez la protection. Re-chiffrer ensuite :
+🔍 **Observation**: `decrypt` **modifies the file on disk** (becomes cleartext). To be used **only for exceptional debugging**: otherwise you lose the protection. Re-encrypt afterwards:
 
 ```bash
 ansible-vault encrypt secret.yml --vault-password-file=.vault_password
 ```
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Idempotence** : un second run de votre solution doit afficher `changed=0`
-  partout dans le `PLAY RECAP`. C'est le signal mécanique d'un playbook
-  conforme aux bonnes pratiques.
-- **FQCN explicite** : préférez toujours `ansible.builtin.<module>` (ou la
-  collection appropriée) plutôt que le nom court — `ansible-lint --profile
-  production` le vérifie.
-- **Convention de ciblage** : ce lab cible db1.lab ; pour adapter à un
-  autre groupe, ajustez `hosts:` dans `lab.yml`/`solution.yml` puis relancez.
-- **Reset isolé** : `make clean` à la racine du lab désinstalle proprement
-  ce que la solution a posé pour pouvoir rejouer le scénario.
+- **Idempotence**: a second run of your solution must display `changed=0`
+  everywhere in the `PLAY RECAP`. This is the mechanical signal of a playbook
+  that follows best practices.
+- **Explicit FQCN**: always prefer `ansible.builtin.<module>` (or the
+  appropriate collection) rather than the short name (`ansible-lint --profile
+  production` checks this).
+- **Targeting convention**: this lab targets db1.lab; to adapt it to another
+  group, adjust `hosts:` in `playbook.yml`/`solution.yml` then run it again.
+- **Isolated reset**: `dsoxlab clean <id-du-lab>` at the lab root cleanly uninstalls
+  what the solution set up so you can replay the scenario.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Pourquoi le fichier chiffré peut-il être commité dans Git **sans risque** ? Quelle est la garantie cryptographique ?
+1. Why can the encrypted file be committed to Git **safely**? What is the cryptographic guarantee?
 
-2. Que se passe-t-il si vous lancez le playbook **sans** `--vault-password-file` ? (Test : retirer l'option et observer)
+2. What happens if you run the playbook **without** `--vault-password-file`? (Test: remove the option and observe)
 
-3. Comment **détecter** qu'un secret a été commité en clair par accident ? (Indice : `gitleaks`, `git-secrets`, `pre-commit detect-private-key`)
+3. How do you **detect** that a secret was committed in cleartext by accident? (Hint: `gitleaks`, `git-secrets`, `pre-commit detect-private-key`)
 
-4. Pourquoi le mot de passe vault doit-il avoir **`mode 0600`** ?
+4. Why must the vault password have **`mode 0600`**?
 
-5. Comment partager un fichier vault avec **plusieurs personnes** sans partager le mot de passe en clair ? (Sujet du lab 79 : multi vault-id)
+5. How do you share a vault file with **several people** without sharing the password in cleartext? (Topic of lab 79: multi vault-id)
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Le challenge ([`challenge/README.md`](challenge/README.md)) demande d'**utiliser 2 fichiers chiffrés** (db_secrets.yml + api_secrets.yml) dans un playbook unifié sur `db1.lab`. Tests automatisés via `pytest+testinfra` (5 tests).
+The challenge ([`challenge/README.md`](challenge/README.md)) asks you to **use 2 encrypted files** (db_secrets.yml + api_secrets.yml) in a unified playbook on `db1.lab`. Automated tests via `pytest+testinfra` (5 tests).
 
 ```bash
 pytest -v challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`ansible-vault rekey` en CI/CD** : automatiser la rotation périodique des mots de passe vault.
-- **Variables d'environnement** : `ANSIBLE_VAULT_PASSWORD_FILE=.vault_password` évite de taper l'option à chaque commande.
-- **Multi vault-id** (lab 79) : un mot de passe différent par environnement (dev/staging/prod).
-- **Variables inline encrypt_string** (lab 78) : alternative plus lisible que le chiffrement de fichier complet.
-- **Intégration HashiCorp Vault** (lab 82) : externaliser les secrets dans un vault enterprise.
+- **`ansible-vault rekey` in CI/CD**: automate the periodic rotation of vault passwords.
+- **Environment variables**: `ANSIBLE_VAULT_PASSWORD_FILE=.vault_password` avoids typing the option on every command.
+- **Multi vault-id** (lab 79): a different password per environment (dev/staging/prod).
+- **Inline variables encrypt_string** (lab 78): a more readable alternative to encrypting a complete file.
+- **HashiCorp Vault integration** (lab 82): externalize secrets in an enterprise vault.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint --profile=production playbook.yml
 ```
 
-Le linter vérifie :
+The linter checks:
 
-- Pas de secret en clair dans le playbook (`no-log-password`).
-- FQCN sur tous les modules (`ansible.builtin.copy`).
-- Présence de `mode:` sur les fichiers déposés.
-- Pas de `command:` sans `creates:` ou `changed_when:`.
+- No cleartext secret in the playbook (`no-log-password`).
+- FQCN on all modules (`ansible.builtin.copy`).
+- Presence of `mode:` on the deposited files.
+- No `command:` without `creates:` or `changed_when:`.

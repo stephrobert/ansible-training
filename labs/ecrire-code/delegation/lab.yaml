@@ -1,0 +1,34 @@
+---
+id: ecrire-code-delegation
+title: "Delegation: delegate_to, run_once, local_action"
+description: "Redirect a task to another host, run it only once in a multi-host play and target the control node with local_action."
+section: ecrire-code
+level: l3
+difficulty: advanced
+lab_type: lab
+estimated_time: "45m"
+skills:
+  - delegate-to
+  - run-once
+  - delegate-facts
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/delegation/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+        web1: web1.lab
+        web2: web2.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

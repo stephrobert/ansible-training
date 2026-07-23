@@ -1,54 +1,54 @@
-# Lab 46 — Module `sysctl:` (paramètres kernel)
+# Lab 46 — Module `sysctl:` (kernel parameters)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Module sysctl Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/rhel-systeme/module-sysctl/)
+🔗 [**Ansible sysctl module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-sysctl/)
 
-`ansible.posix.sysctl:` gère les **paramètres kernel** runtime via `sysctl`
-(fichier `/etc/sysctl.conf` ou `/etc/sysctl.d/*.conf`). Cas d'usage RHCE
-2026 typiques : activer **IP forwarding**, ajuster les **buffers réseau**,
-durcir les paramètres de sécurité (`kernel.kptr_restrict`,
+`ansible.posix.sysctl:` manages runtime **kernel parameters** via `sysctl`
+(file `/etc/sysctl.conf` or `/etc/sysctl.d/*.conf`). Typical RHCE
+2026 use cases: enable **IP forwarding**, tune the **network buffers**,
+harden the security parameters (`kernel.kptr_restrict`,
 `net.ipv4.tcp_syncookies`).
 
-Module de la collection **`ansible.posix`**. Options critiques : **`name:`**,
-**`value:`**, **`state:`**, **`sysctl_file:`** (chemin custom dans
-`/etc/sysctl.d/`), **`reload:`** (applique maintenant).
+Module from the **`ansible.posix`** collection. Critical options: **`name:`**,
+**`value:`**, **`state:`**, **`sysctl_file:`** (custom path in
+`/etc/sysctl.d/`), **`reload:`** (applies now).
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Modifier** un paramètre kernel avec persistance et application immédiate.
-2. **Choisir** entre `/etc/sysctl.conf` (legacy) et `/etc/sysctl.d/<file>.conf`
-   (modulaire).
-3. **Distinguer** une modification **runtime** (sysctl -w) d'une modification
-   **persistée**.
-4. **Vérifier** le paramètre courant via `command: sysctl -n` ou
+1. **Modify** a kernel parameter with persistence and immediate application.
+2. **Choose** between `/etc/sysctl.conf` (legacy) and `/etc/sysctl.d/<file>.conf`
+   (modular).
+3. **Distinguish** a **runtime** modification (sysctl -w) from a
+   **persisted** one.
+4. **Check** the current parameter via `command: sysctl -n` or
    `register: + reload:`.
-5. **Diagnostiquer** un paramètre qui revient à sa valeur après reboot.
+5. **Diagnose** a parameter that reverts to its value after a reboot.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible-galaxy collection install ansible.posix
 ansible db1.lab -m ping
 ansible db1.lab -b -m shell -a "rm -f /etc/sysctl.d/99-rhce-lab.conf; sysctl -p; true"
 ```
 
-## 📚 Exercice 1 — Paramètre dans `/etc/sysctl.conf` (le défaut)
+## 📚 Exercise 1 — Parameter in `/etc/sysctl.conf` (the default)
 
 ```yaml
 ---
@@ -73,28 +73,28 @@ ansible db1.lab -b -m shell -a "rm -f /etc/sysctl.d/99-rhce-lab.conf; sysctl -p;
         msg: "ip_forward = {{ ip_fwd.stdout }}"
 ```
 
-**Lancez** :
+**Run it**:
 
 ```bash
 ansible-playbook labs/modules-rhel/sysctl/lab.yml
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- Le module modifie `/etc/sysctl.conf` (par défaut) ou crée la ligne si absente.
-- **`reload: true`** lance `sysctl -p` qui applique immédiatement les valeurs.
-- 2e run → `changed=0` (idempotent).
+- The module modifies `/etc/sysctl.conf` (by default) or creates the line if absent.
+- **`reload: true`** runs `sysctl -p` which applies the values immediately.
+- 2nd run → `changed=0` (idempotent).
 
-**Vérifier la persistance** :
+**Check persistence**:
 
 ```bash
-ssh ansible@db1.lab 'grep net.ipv4.ip_forward /etc/sysctl.conf /etc/sysctl.d/* 2>/dev/null'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'grep net.ipv4.ip_forward /etc/sysctl.conf /etc/sysctl.d/* 2>/dev/null'
 ```
 
-## 📚 Exercice 2 — `sysctl_file:` pour modulariser
+## 📚 Exercise 2 — `sysctl_file:` to modularize
 
-Plutôt que tout entasser dans `/etc/sysctl.conf`, mieux vaut **un fichier par
-rôle** dans `/etc/sysctl.d/`.
+Rather than piling everything into `/etc/sysctl.conf`, it is better to have **one file per
+role** in `/etc/sysctl.d/`.
 
 ```yaml
 - name: Tuning reseau dans /etc/sysctl.d/99-rhce-lab.conf
@@ -110,15 +110,15 @@ rôle** dans `/etc/sysctl.d/`.
     - { name: net.ipv4.tcp_syncookies, value: '1' }
 ```
 
-🔍 **Observation** : un seul fichier `/etc/sysctl.d/99-rhce-lab.conf` contient
-les 3 paramètres. **Avantages** :
+🔍 **Observation**: a single file `/etc/sysctl.d/99-rhce-lab.conf` holds
+the 3 parameters. **Advantages**:
 
-- **Versionné** dans le repo Ansible (`fetch:` pour audit).
-- **Supprimable proprement** : `state: absent` retire la ligne.
-- **Préfixe numérique** (`99-`) contrôle l'ordre de chargement (cf. doc
-  systemd-sysctl(8) : ordre alphabétique).
+- **Versioned** in the Ansible repo (`fetch:` for audit).
+- **Cleanly removable**: `state: absent` removes the line.
+- **Numeric prefix** (`99-`) controls the load order (see
+  systemd-sysctl(8) doc: alphabetical order).
 
-## 📚 Exercice 3 — Le piège : `reload: false`
+## 📚 Exercise 3 — The trap: `reload: false`
 
 ```yaml
 - name: Modifier sans reload
@@ -126,28 +126,28 @@ les 3 paramètres. **Avantages** :
     name: vm.swappiness
     value: '10'
     state: present
-    reload: false   # Defaut : false !
+    reload: false   # Default: false!
 ```
 
-**Vérifiez** :
+**Check**:
 
 ```bash
-ssh ansible@db1.lab 'sysctl -n vm.swappiness'
-# → 60 (l ancienne valeur, pas 10 !)
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'sysctl -n vm.swappiness'
+# → 60 (the old value, not 10!)
 
-ssh ansible@db1.lab 'cat /etc/sysctl.conf | grep swappiness'
-# → vm.swappiness = 10 (modifie en persistant)
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'cat /etc/sysctl.conf | grep swappiness'
+# → vm.swappiness = 10 (modified persistently)
 ```
 
-🔍 **Observation** : sans `reload: true`, le paramètre est modifié dans le
-fichier **mais pas appliqué** au runtime — il faudra un `sysctl -p` manuel
-ou un reboot pour prendre effet.
+🔍 **Observation**: without `reload: true`, the parameter is modified in the
+file **but not applied** to the runtime: it will need a manual `sysctl -p`
+or a reboot to take effect.
 
-**Règle** : **toujours** `reload: true` si vous voulez l'effet immédiat.
-Exception : si vous avez plusieurs `sysctl:` consécutifs, mettre `reload:
-false` partout SAUF sur la dernière (économie de N-1 reload).
+**Rule**: **always** `reload: true` if you want the immediate effect.
+Exception: if you have several consecutive `sysctl:`, set `reload:
+false` everywhere EXCEPT on the last one (saving N-1 reloads).
 
-## 📚 Exercice 4 — Suppression d'un paramètre
+## 📚 Exercise 4 — Removing a parameter
 
 ```yaml
 - name: Retirer le tuning si plus necessaire
@@ -158,12 +158,12 @@ false` partout SAUF sur la dernière (économie de N-1 reload).
     reload: true
 ```
 
-🔍 **Observation** : `state: absent` retire la ligne du fichier. Si le paramètre
-était surchargé via plusieurs fichiers (par exemple aussi dans
-`/etc/sysctl.conf`), le **deuxième** prend le relais — toujours auditer après
-suppression.
+🔍 **Observation**: `state: absent` removes the line from the file. If the parameter
+was overridden via several files (for example also in
+`/etc/sysctl.conf`), the **second** one takes over: always audit after
+removal.
 
-**Vérifier la valeur effective** :
+**Check the effective value**:
 
 ```yaml
 - ansible.builtin.command: sysctl -n net.core.somaxconn
@@ -172,13 +172,13 @@ suppression.
 
 - ansible.builtin.debug:
     msg: "Valeur courante : {{ somaxconn.stdout }}"
-    # → Sera la valeur kernel par defaut (4096 sur RHEL 10)
+    # → Will be the default kernel value (4096 on RHEL 10)
 ```
 
-## 📚 Exercice 5 — Pattern durcissement CIS
+## 📚 Exercise 5 — CIS hardening pattern
 
-Le CIS Benchmark RHEL impose une dizaine de paramètres `sysctl` pour le
-durcissement.
+The CIS Benchmark RHEL mandates about ten `sysctl` parameters for
+hardening.
 
 ```yaml
 - name: Durcissement CIS (sysctl)
@@ -189,14 +189,14 @@ durcissement.
     sysctl_file: /etc/sysctl.d/99-cis-hardening.conf
     reload: true
   loop:
-    # Reseau
+    # Network
     - { name: net.ipv4.conf.all.send_redirects, value: '0' }
     - { name: net.ipv4.conf.default.send_redirects, value: '0' }
     - { name: net.ipv4.conf.all.accept_redirects, value: '0' }
     - { name: net.ipv4.conf.all.accept_source_route, value: '0' }
     - { name: net.ipv4.tcp_syncookies, value: '1' }
 
-    # Securite kernel
+    # Kernel security
     - { name: kernel.kptr_restrict, value: '2' }
     - { name: kernel.dmesg_restrict, value: '1' }
     - { name: kernel.randomize_va_space, value: '2' }
@@ -205,25 +205,25 @@ durcissement.
     - { name: fs.suid_dumpable, value: '0' }
 ```
 
-🔍 **Observation** : pattern **liste de dicts** + `loop:` rend le code propre
-et auditable (un fichier dédié, paramètres groupés, modifiable sans toucher au
+🔍 **Observation**: the **list of dicts** + `loop:` pattern keeps the code clean
+and auditable (a dedicated file, grouped parameters, editable without touching the
 playbook).
 
-## 📚 Exercice 6 — Le piège : paramètres avec `.` ou `/`
+## 📚 Exercise 6 — The trap: parameters with `.` or `/`
 
-Certains paramètres incluent des **noms d'interface** :
+Some parameters include **interface names**:
 
 ```yaml
-# Pour eth0
+# For eth0
 - ansible.posix.sysctl:
     name: net.ipv4.conf.eth0.forwarding
     value: '1'
 ```
 
-Sur RHEL 10, les interfaces s'appellent souvent `enp0s3`, `ens18`, etc. — le
-nom doit **matcher exactement** ce que `ip a` renvoie.
+On RHEL 10, the interfaces are often named `enp0s3`, `ens18`, etc.: the
+name must **match exactly** what `ip a` returns.
 
-**Pattern défensif** :
+**Defensive pattern**:
 
 ```yaml
 - name: Activer forwarding sur l interface principale
@@ -234,70 +234,70 @@ nom doit **matcher exactement** ce que `ip a` renvoie.
     reload: true
 ```
 
-`ansible_default_ipv4.interface` est le **fact** qui donne le nom de
-l'interface principale — fonctionne sur n'importe quelle distro.
+`ansible_default_ipv4.interface` is the **fact** that gives the name of
+the main interface: it works on any distro.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`ansible.posix.sysctl:`** = paramètres kernel persistés.
-- **`reload: true`** pour appliquer immédiatement (sinon ça reste en fichier).
-- **`sysctl_file: /etc/sysctl.d/<name>.conf`** = pattern modulaire préféré.
-- **`state: absent`** retire la ligne (mais d'autres fichiers peuvent reprendre la main).
-- **Préfixe numérique** dans `sysctl.d/` contrôle l'ordre (`99-` = appliqué dernier).
-- **Pattern CIS** : un fichier dédié `/etc/sysctl.d/99-cis-hardening.conf`.
+- **`ansible.posix.sysctl:`** = persisted kernel parameters.
+- **`reload: true`** to apply immediately (otherwise it stays in the file).
+- **`sysctl_file: /etc/sysctl.d/<name>.conf`** = preferred modular pattern.
+- **`state: absent`** removes the line (but other files may take over).
+- **Numeric prefix** in `sysctl.d/` controls the order (`99-` = applied last).
+- **CIS pattern**: a dedicated file `/etc/sysctl.d/99-cis-hardening.conf`.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voulez **annuler** un paramètre `sysctl` posé par le système (defaults
-   RHEL). Suffit-il de `state: absent` ? Pourquoi le paramètre peut "revenir" ?
+1. You want to **cancel** a `sysctl` parameter set by the system (RHEL
+   defaults). Is `state: absent` enough? Why can the parameter "come back"?
 
-2. Vous avez 10 paramètres à modifier en une passe. Quel est l'**impact
-   performance** de `reload: true` sur chacun vs `reload: true` sur le dernier
-   uniquement ?
+2. You have 10 parameters to modify in one pass. What is the **performance
+   impact** of `reload: true` on each one vs `reload: true` on the last one
+   only?
 
-3. Un paramètre `sysctl` est modifié à plusieurs endroits
+3. A `sysctl` parameter is modified in several places
    (`/etc/sysctl.conf`, `/etc/sysctl.d/99-app.conf`, `/etc/sysctl.d/99-cis.conf`).
-   Lequel **gagne** au boot ?
+   Which one **wins** at boot?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`reload_required:`** : sur certains paramètres (`kernel.hostname`,
-  `kernel.modules_disabled`), le `reload` ne suffit pas — il faut un reboot.
-  Le module l'indique en sortie.
-- **Module `community.general.modprobe:`** : charger un module kernel
-  (`ip_vs`, `nf_conntrack`) — souvent prérequis pour des paramètres `sysctl`
-  spécifiques.
-- **`/run/sysctl.d/` vs `/etc/sysctl.d/`** : `/run/` est volatile (perdu au
-  reboot). Pour des configs **transitoires** (containers).
-- **Pattern `sysctl_set: true`** : option qui **vérifie** que le paramètre est
-  vraiment **lisible** par sysctl avant d'écrire dans le fichier. Sécurité
-  contre les typos.
-- **Lab 44 (firewalld)** + **45 (selinux)** + **46 (sysctl)** = la trinité du
-  durcissement RHEL.
+- **`reload_required:`**: on some parameters (`kernel.hostname`,
+  `kernel.modules_disabled`), the `reload` is not enough: a reboot is needed.
+  The module reports it in its output.
+- **Module `community.general.modprobe:`**: load a kernel module
+  (`ip_vs`, `nf_conntrack`), often a prerequisite for specific `sysctl`
+  parameters.
+- **`/run/sysctl.d/` vs `/etc/sysctl.d/`**: `/run/` is volatile (lost at
+  reboot). For **transient** configs (containers).
+- **`sysctl_set: true` pattern**: an option that **checks** that the parameter is
+  really **readable** by sysctl before writing into the file. Safety
+  against typos.
+- **Lab 44 (firewalld)** + **45 (selinux)** + **46 (sysctl)** = the RHEL
+  hardening trinity.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/modules-rhel/sysctl/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/modules-rhel/sysctl/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/modules-rhel/sysctl/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task,
+file modes as strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

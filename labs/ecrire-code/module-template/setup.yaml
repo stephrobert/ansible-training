@@ -1,0 +1,23 @@
+---
+# Mise en place du lab module-template : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup module-template lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (module-template)
+      ansible.builtin.shell: |
+        rm -f /etc/banner.txt /etc/banner.txt.*
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (module-template)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Render a config from a Jinja2 template, reject invalid syntax with validate, back up the previous file and set mode, owner and group
+      run_once: true

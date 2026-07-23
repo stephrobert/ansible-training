@@ -1,0 +1,25 @@
+---
+id: tests-testinfra
+title: "Molecule + testinfra: Python assertions on a role"
+description: "Switch the verifier to testinfra, write assertions with the host fixture, parametrize cases, and weigh it against verify.yml."
+section: tests
+level: l3
+difficulty: advanced
+lab_type: lab
+estimated_time: "40m"
+skills:
+  - testinfra
+  - molecule-verifier
+  - pytest-parametrize
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/tests-testinfra/
+track:
+  - au-dela-ex294
+runtime:
+  type: shell
+  workdir: challenge/work
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

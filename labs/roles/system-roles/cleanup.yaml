@@ -1,0 +1,95 @@
+---
+# Reset du lab « rôles système RHEL » : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+#
+# Le voisin direct est bootstrap/prepare-managed-nodes, qui exige chrony
+# installé et chronyd actif ET activé sur les managed nodes. On restaure donc
+# la configuration d'origine SANS jamais désinstaller chrony ni couper le
+# service : un lab qui casse ses voisins est un mauvais lab.
+- name: Cleanup RHEL system roles lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Restaurer la configuration chrony livrée par la distribution
+      ansible.builtin.copy:
+        dest: /etc/chrony.conf
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          # Use public servers from the pool.ntp.org project.
+          # Please consider joining the pool (https://www.pool.ntp.org/join.html).
+          pool 2.almalinux.pool.ntp.org iburst
+
+          # Use NTP servers from DHCP.
+          sourcedir /run/chrony-dhcp
+
+          # Record the rate at which the system clock gains/losses time.
+          driftfile /var/lib/chrony/drift
+
+          # Allow the system clock to be stepped in the first three updates
+          # if its offset is larger than 1 second.
+          makestep 1.0 3
+
+          # Enable kernel synchronization of the real-time clock (RTC).
+          rtcsync
+
+          # Increase the minimum number of selectable sources required to adjust
+          # the system clock.
+          #minsources 2
+
+          # Save NTS keys and cookies.
+          ntsdumpdir /var/lib/chrony
+
+          # Specify directory for log files.
+          logdir /var/log/chrony
+
+    - name: Restaurer les options de démarrage de chronyd
+      ansible.builtin.copy:
+        dest: /etc/sysconfig/chronyd
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          # Command-line options for chronyd
+          OPTIONS="-F 2"
+
+    - name: Vérifier la présence de /etc/sysconfig/network
+      ansible.builtin.stat:
+        path: /etc/sysconfig/network
+      register: network_sysconfig
+
+    - name: Retirer la directive PEERNTP posée par le rôle timesync
+      ansible.builtin.lineinfile:
+        path: /etc/sysconfig/network
+        regexp: '^PEERNTP='
+        state: absent
+      when: network_sysconfig.stat.exists
+
+    - name: Lister les sauvegardes horodatées laissées par le rôle
+      ansible.builtin.find:
+        paths:
+          - /etc
+          - /etc/sysconfig
+        patterns:
+          - "chrony.conf.*"
+          - "chronyd.*"
+          - "network.*"
+        file_type: file
+        recurse: false
+      register: role_backups
+
+    - name: Supprimer les sauvegardes horodatées laissées par le rôle
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ role_backups.files }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: Redémarrer chronyd sur la configuration d'origine
+      ansible.builtin.systemd_service:
+        name: chronyd
+        state: restarted
+        enabled: true

@@ -1,0 +1,45 @@
+---
+# Mise en place du lab declaratif-vs-imperatif : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup declaratif-vs-imperatif lab (lab_web1)
+  hosts: lab_web1
+  become: true
+  gather_facts: false
+  tasks:
+    # Ce lab a bel et bien un état à remettre à zéro, et c'est même tout son
+    # sujet : le script impératif ajoute une ligne « Servi par ... » à chaque
+    # exécution. Sans ce reset, l'apprenant qui a lancé le script trois fois
+    # garde trois lignes, et la démonstration de convergence du playbook ne
+    # veut plus rien dire. L'état vit sur web1.lab (lab_web1), pas sur le
+    # control node.
+    - name: Reset path, regexp, state (declaratif-vs-imperatif)
+      ansible.builtin.lineinfile:
+        path: "/usr/share/nginx/html/index.html"
+        regexp: "^<p>Servi par "
+        state: "absent"
+      failed_when: false
+    # La formation n'a qu'un seul serveur HTTP, nginx : plus aucun lab
+    # n'installe httpd, donc plus personne ne dispute le port 80 à nginx. La
+    # tâche qui arrêtait httpd ici était un pansement sur ce conflit, elle n'a
+    # plus d'objet.
+    #
+    # En revanche les labs de la section roles (argument-specs, dependencies)
+    # templatent nginx.conf sur un port non standard (8081). Le port reste non
+    # étiqueté pour SELinux, nginx échoue au bind, et ce lab-ci hérite du
+    # cadavre. On rétablit le port 80 du paquet.
+    - name: Reset path, regexp, line (declaratif-vs-imperatif)
+      ansible.builtin.lineinfile:
+        path: "/etc/nginx/nginx.conf"
+        regexp: '^(\s*)listen(\s+)[0-9]+;'
+        line: "        listen       80;"
+      failed_when: false
+
+- name: Brief the learner (declaratif-vs-imperatif)
+  hosts: lab_target
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Compare a Bash script that drifts on every run with a playbook that converges, and prove idempotence with changed=0 on the second pass
+      run_once: true

@@ -1,0 +1,4 @@
+---
+id: ecrire-code-delegation
+title: "Délégation : delegate_to, run_once, local_action"
+description: "Rediriger une tâche vers un autre hôte, ne l'exécuter qu'une fois dans un play multi-hôtes et cibler le control node avec local_action."

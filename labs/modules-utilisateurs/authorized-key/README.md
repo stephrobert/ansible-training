@@ -1,66 +1,65 @@
-# Lab 42 — Module `authorized_key:` (clés SSH des utilisateurs)
+# Lab 42 — `authorized_key:` module (users' SSH keys)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Module authorized_key Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-authorized-key/)
+🔗 [**Ansible authorized_key module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-authorized-key/)
 
-`ansible.posix.authorized_key:` gère les **clés SSH publiques** dans le fichier
-`~/.ssh/authorized_keys` d'un utilisateur. C'est l'outil du **provisioning des
-accès SSH** : ajouter, supprimer, ou **forcer la liste exclusive** des clés
-autorisées.
+`ansible.posix.authorized_key:` manages the **public SSH keys** in a user's
+`~/.ssh/authorized_keys` file. It is the tool for **provisioning SSH access**:
+add, remove, or **force the exclusive list** of authorized keys.
 
-Ce module appartient à la collection **`ansible.posix`** (pas builtin) — sur
-Ansible Core 2.20, il faut `ansible-galaxy collection install ansible.posix`.
+This module belongs to the **`ansible.posix`** collection (not builtin): on
+Ansible Core 2.20, you need `ansible-galaxy collection install ansible.posix`.
 
-Options principales : **`user:`**, **`key:`**, **`state:`**, **`exclusive: true`**
-(remplace toutes les clés existantes), **`comment:`**, **`key_options:`**.
+Main options: **`user:`**, **`key:`**, **`state:`**, **`exclusive: true`**
+(replaces all existing keys), **`comment:`**, **`key_options:`**.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Ajouter** une clé SSH à un utilisateur existant.
-2. **Distinguer** `state: present` (ajout) de `exclusive: true` (remplacement).
-3. **Restreindre** une clé avec `key_options:` (`from=`, `command=`, `no-pty`).
-4. **Charger** une clé depuis un fichier local (`lookup('file', ...)`).
-5. **Provisionner** plusieurs clés pour plusieurs users en une seule passe avec
+1. **Add** an SSH key to an existing user.
+2. **Distinguish** `state: present` (add) from `exclusive: true` (replace).
+3. **Restrict** a key with `key_options:` (`from=`, `command=`, `no-pty`).
+4. **Load** a key from a local file (`lookup('file', ...)`).
+5. **Provision** several keys for several users in a single pass with
    `subelements`.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible-galaxy collection install ansible.posix
 ansible db1.lab -m ping
 ansible db1.lab -b -m shell -a "for u in alice bob; do userdel -rf \$u 2>/dev/null; useradd \$u -m; done; true"
 mkdir -p labs/modules-utilisateurs/authorized-key/files
 ```
 
-Générez une clé SSH de test (locale) :
+Generate a test SSH key (local):
 
 ```bash
 ssh-keygen -t ed25519 -f labs/modules-utilisateurs/authorized-key/files/alice.pub.key -N "" -C "alice@laptop"
 ssh-keygen -t ed25519 -f labs/modules-utilisateurs/authorized-key/files/bob.pub.key -N "" -C "bob@laptop"
 ```
 
-(On utilise `.pub.key` pour récupérer la **clé publique** sans les `_rsa`/`_ed25519`
-qui pourraient être confondus avec un fichier de config SSH.)
+(We use `.pub.key` to retrieve the **public key** without the `_rsa`/`_ed25519`
+that could be confused with an SSH config file.)
 
-## 📚 Exercice 1 — Ajouter une clé à un user
+## 📚 Exercise 1 — Add a key to a user
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -75,25 +74,24 @@ Créez `lab.yml` :
         state: present
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/modules-utilisateurs/authorized-key/lab.yml
-ssh ansible@db1.lab 'sudo cat /home/alice/.ssh/authorized_keys'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'sudo cat /home/alice/.ssh/authorized_keys'
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- 1er run : `changed=1` — création de `/home/alice/.ssh/` avec mode `0700` et de
-  `authorized_keys` avec mode `0600` (Ansible respecte les permissions SSH
-  strictes).
-- 2ème run : `changed=0` — la clé est déjà présente.
+- 1st run: `changed=1`, creation of `/home/alice/.ssh/` with mode `0700` and of
+  `authorized_keys` with mode `0600` (Ansible respects the strict SSH permissions).
+- 2nd run: `changed=0`, the key is already present.
 
-**Lookup `file`** : Ansible **lit** le fichier local côté control node et
-**injecte** son contenu en string. La clé n'est **pas transférée** comme un
-fichier — c'est juste son contenu qui est ajouté à `authorized_keys`.
+**`file` lookup**: Ansible **reads** the local file on the control node and
+**injects** its content as a string. The key is **not transferred** as a file,
+it is just its content that is added to `authorized_keys`.
 
-## 📚 Exercice 2 — `exclusive: true` (remplacement complet)
+## 📚 Exercise 2 — `exclusive: true` (full replacement)
 
 ```yaml
 - name: Pre-creer une cle "manuelle" dans authorized_keys
@@ -113,22 +111,22 @@ fichier — c'est juste son contenu qui est ajouté à `authorized_keys`.
     exclusive: true
 ```
 
-**Vérifiez** :
+**Check**:
 
 ```bash
-ssh ansible@db1.lab 'sudo cat /home/alice/.ssh/authorized_keys'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'sudo cat /home/alice/.ssh/authorized_keys'
 ```
 
-🔍 **Observation** : seule la nouvelle clé est présente. **`exclusive: true`**
-**efface** toutes les clés existantes pour ne laisser que celles spécifiées.
+🔍 **Observation**: only the new key is present. **`exclusive: true`** **erases**
+all existing keys to leave only the specified ones.
 
-**Cas d'usage** : revoke d'accès massif (un développeur quitte l'équipe →
-relancer le play sans sa clé pour la révoquer partout).
+**Use case**: mass access revoke (a developer leaves the team → rerun the play
+without their key to revoke it everywhere).
 
-**Risque** : si `key:` est vide ou la lookup échoue, **toutes les clés sont
-effacées**. À utiliser avec un `assert:` préalable.
+**Risk**: if `key:` is empty or the lookup fails, **all the keys are erased**.
+To be used with a prior `assert:`.
 
-## 📚 Exercice 3 — `key_options:` (restrictions de la clé)
+## 📚 Exercise 3 — `key_options:` (key restrictions)
 
 ```yaml
 - name: Cle restreinte (from=IP + commande forcee)
@@ -139,29 +137,28 @@ effacées**. À utiliser avec un `assert:` préalable.
     key_options: 'from="10.10.20.0/24",command="/usr/local/bin/restricted-cmd",no-pty,no-X11-forwarding'
 ```
 
-🔍 **Observation** : la ligne dans `authorized_keys` est préfixée par les
-restrictions :
+🔍 **Observation**: the line in `authorized_keys` is prefixed by the restrictions:
 
 ```text
 from="10.10.20.0/24",command="/usr/local/bin/restricted-cmd",no-pty,no-X11-forwarding ssh-ed25519 AAAA... bob@laptop
 ```
 
-**Restrictions courantes** :
+**Common restrictions**:
 
-| Option | Effet |
+| Option | Effect |
 |---|---|
-| `from="IP_or_CIDR"` | Limite l'IP source autorisée |
-| `command="/path"` | Force l'exécution de cette commande (ignore SSH command client) |
-| `no-pty` | Pas de TTY (interdit `ssh user@host` interactif) |
-| `no-X11-forwarding` | Pas de forwarding X11 |
-| `no-port-forwarding` | Pas de tunnel SSH (`-L`, `-R`) |
-| `no-agent-forwarding` | Pas de forwarding de l'agent SSH |
+| `from="IP_or_CIDR"` | Limits the allowed source IP |
+| `command="/path"` | Forces the execution of this command (ignores the client SSH command) |
+| `no-pty` | No TTY (forbids interactive `ssh user@host`) |
+| `no-X11-forwarding` | No X11 forwarding |
+| `no-port-forwarding` | No SSH tunnel (`-L`, `-R`) |
+| `no-agent-forwarding` | No SSH agent forwarding |
 
-**Pattern security-hardened** : `from="" + command="" + no-pty + no-X11 + no-port`
-pour des **clés de service** (rsync, backup, monitoring) — un attaquant qui vole
-la clé ne peut **rien** faire d'autre que la commande imposée.
+**Security-hardened pattern**: `from="" + command="" + no-pty + no-X11 + no-port`
+for **service keys** (rsync, backup, monitoring): an attacker who steals the key
+can do **nothing** other than the enforced command.
 
-## 📚 Exercice 4 — Pattern multi-users avec `subelements`
+## 📚 Exercise 4 — Multi-user pattern with `subelements`
 
 ```yaml
 - name: Demo provisioning multi-users
@@ -187,13 +184,12 @@ la clé ne peut **rien** faire d'autre que la commande imposée.
         label: "{{ item.0.name }} key {{ item.1[0:30] }}..."
 ```
 
-🔍 **Observation** : `subelements` produit des paires `(parent, child)` —
-parfait pour **N users avec M clés chacun**. Une seule tâche, idempotente.
+🔍 **Observation**: `subelements` produces `(parent, child)` pairs, perfect for
+**N users with M keys each**. A single task, idempotent.
 
-Cf. lab 21 (with_subelements legacy) pour la migration depuis l'ancienne
-syntaxe.
+See lab 21 (with_subelements legacy) for the migration from the old syntax.
 
-## 📚 Exercice 5 — Suppression d'une clé (`state: absent`)
+## 📚 Exercise 5 — Removing a key (`state: absent`)
 
 ```yaml
 - name: Revoquer la cle d alice
@@ -203,17 +199,17 @@ syntaxe.
     state: absent
 ```
 
-🔍 **Observation** : Ansible matche **par contenu de la clé** (pas par commentaire
-ni par hash). Si vous générez une nouvelle clé, l'ancienne reste.
+🔍 **Observation**: Ansible matches **by key content** (not by comment nor by
+hash). If you generate a new key, the old one remains.
 
-**Pattern revoke complet** : `state: absent` + `key: "{{ ancienne_clé }}"`. Si
-vous avez plusieurs clés à révoquer, soit `loop:` sur les clés à enlever, soit
-`exclusive: true` avec la liste finale.
+**Full revoke pattern**: `state: absent` + `key: "{{ old_key }}"`. If you have
+several keys to revoke, either `loop:` over the keys to remove, or
+`exclusive: true` with the final list.
 
-## 📚 Exercice 6 — Charger les clés depuis un dossier (`*.pub`)
+## 📚 Exercise 6 — Load the keys from a folder (`*.pub`)
 
-Pattern réel : tous les développeurs déposent leur clé publique dans
-`files/users/<username>.pub`. Le playbook les charge automatiquement.
+Real pattern: every developer drops their public key into
+`files/users/<username>.pub`. The playbook loads them automatically.
 
 ```yaml
 - name: Recuperer la liste des fichiers .pub
@@ -233,25 +229,25 @@ Pattern réel : tous les développeurs déposent leur clé publique dans
     label: "{{ item.path | basename }}"
 ```
 
-🔍 **Observation** : Ansible **dérive** le nom d'utilisateur depuis le nom de
-fichier (`alice.pub` → user `alice`). Ajouter une nouvelle clé = juste déposer
-`carl.pub` dans le dossier — pas besoin de modifier le playbook.
+🔍 **Observation**: Ansible **derives** the username from the file name
+(`alice.pub` → user `alice`). Adding a new key = just drop `carl.pub` in the
+folder, no need to modify the playbook.
 
-## 📚 Exercice 7 — Le piège : permissions SSH strictes
+## 📚 Exercise 7 — The trap: strict SSH permissions
 
-Si vous créez `~/.ssh/authorized_keys` **manuellement** (ou via `copy:`) avec
-des permissions trop ouvertes, **SSH refuse** la clé.
+If you create `~/.ssh/authorized_keys` **manually** (or via `copy:`) with
+permissions that are too open, **SSH refuses** the key.
 
 ```yaml
-# ❌ Mauvais : pas de mode strict
+# ❌ Bad: no strict mode
 - ansible.builtin.copy:
     content: "ssh-ed25519 AAAA... alice@laptop\n"
     dest: /home/alice/.ssh/authorized_keys
     owner: alice
     group: alice
-    # Mode par defaut : 0644 → SSH REFUSE
+    # Default mode: 0644 → SSH REFUSES
 
-# ✅ Bon
+# ✅ Good
 - ansible.builtin.copy:
     content: "ssh-ed25519 AAAA... alice@laptop\n"
     dest: /home/alice/.ssh/authorized_keys
@@ -260,69 +256,68 @@ des permissions trop ouvertes, **SSH refuse** la clé.
     mode: "0600"
 ```
 
-🔍 **Observation** : `~/.ssh/` doit être **`0700`**, `~/.ssh/authorized_keys`
-**`0600`**. Sinon `sshd` refuse en silence (logs `Authentication refused: bad
-ownership or modes`). **`authorized_key:`** gère ça automatiquement — c'est une
-des raisons de **préférer ce module à un `copy:` brut**.
+🔍 **Observation**: `~/.ssh/` must be **`0700`**, `~/.ssh/authorized_keys`
+**`0600`**. Otherwise `sshd` refuses silently (logs `Authentication refused: bad
+ownership or modes`). **`authorized_key:`** handles this automatically, one of
+the reasons to **prefer this module to a raw `copy:`**.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Module `ansible.posix.authorized_key:`** (pas builtin — collection requise).
-- **`exclusive: true`** = remplace toutes les clés (utile pour révoque massive).
-- **`key_options:`** = restrictions SSH (`from=`, `command=`, `no-pty`).
-- **`lookup('file', ...)`** = charger la clé depuis un fichier local (control node).
-- **Pattern `subelements`** = N users × M clés en une tâche.
-- **`authorized_key:`** gère automatiquement les **permissions SSH strictes**
+- **`ansible.posix.authorized_key:` module** (not builtin, collection required).
+- **`exclusive: true`** = replaces all keys (useful for mass revoke).
+- **`key_options:`** = SSH restrictions (`from=`, `command=`, `no-pty`).
+- **`lookup('file', ...)`** = load the key from a local file (control node).
+- **`subelements` pattern** = N users × M keys in a single task.
+- **`authorized_key:`** automatically handles the **strict SSH permissions**
   (700/600).
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voulez **revoke** la clé d'un développeur qui quitte l'équipe sur 100
-   serveurs. Quel pattern : `state: absent` + clé exacte, ou `exclusive: true`
-   avec la liste finale ? Avantages de chacun ?
+1. You want to **revoke** the key of a developer who leaves the team on 100
+   servers. Which pattern: `state: absent` + exact key, or `exclusive: true`
+   with the final list? Advantages of each?
 
-2. Vous donnez une **clé de backup** à un script externe. Comment la limiter
-   pour qu'elle puisse **uniquement** lancer `/usr/local/bin/backup.sh` ?
-   (combinaison `key_options:`).
+2. You give a **backup key** to an external script. How do you restrict it so
+   that it can **only** run `/usr/local/bin/backup.sh`? (combination of
+   `key_options:`).
 
-3. Vous avez 50 développeurs et 10 serveurs. Faut-il **`loop:` sur les users**
-   ou **`loop:` sur les serveurs** ? (indice : `subelements` + `delegate_to`).
+3. You have 50 developers and 10 servers. Should it be **`loop:` over the users**
+   or **`loop:` over the servers**? (hint: `subelements` + `delegate_to`).
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`manage_dir: false`** : ne pas créer `~/.ssh/` automatiquement. À utiliser
-  si le home est sur NFS ou shared FS qui doit gérer ses propres permissions.
-- **`path:`** : forcer un chemin custom au lieu de `~/.ssh/authorized_keys`.
-  Pour des cas où SSH cherche les clés ailleurs (config sshd custom).
-- **`validate_certs:`** : pour les clés depuis des URLs HTTPS — vérification
-  TLS du serveur.
-- **Pattern `git pull` + clé déployée** : la clé fournie par le module sert à
-  un git pull automatisé. Combiner avec `key_options: command="git-shell -c"`.
-- **Lab 43 (sudoers)** : compléter les clés SSH par les droits sudo.
+- **`manage_dir: false`**: do not create `~/.ssh/` automatically. To be used if
+  the home is on NFS or a shared FS that must manage its own permissions.
+- **`path:`**: force a custom path instead of `~/.ssh/authorized_keys`. For
+  cases where SSH looks for the keys elsewhere (custom sshd config).
+- **`validate_certs:`**: for keys from HTTPS URLs, TLS verification of the server.
+- **`git pull` + deployed key pattern**: the key provided by the module serves
+  an automated git pull. Combine with `key_options: command="git-shell -c"`.
+- **Lab 43 (sudoers)**: complement the SSH keys with the sudo rights.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/modules-utilisateurs/authorized-key/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/modules-utilisateurs/authorized-key/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/modules-utilisateurs/authorized-key/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

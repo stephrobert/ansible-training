@@ -1,0 +1,26 @@
+---
+id: ci-gitlab
+title: "GitLab CI: parallel:matrix pipeline for a role"
+description: "Write a .gitlab-ci.yml with lint, test and release stages, spread the matrix with parallel:matrix and restrict Galaxy publishing to Git tags via rules:."
+section: ci
+level: l3
+difficulty: advanced
+lab_type: lab
+estimated_time: "40m"
+skills:
+  - ci-pipeline
+  - build-matrix
+  - pipeline-rules
+  - release-automation
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ci-gitlab/
+track:
+  - au-dela-ex294
+runtime:
+  type: shell
+  workdir: challenge/work
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

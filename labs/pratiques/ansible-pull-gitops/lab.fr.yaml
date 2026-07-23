@@ -1,0 +1,4 @@
+---
+id: pratiques-ansible-pull-gitops
+title: "ansible-pull : pattern GitOps et Edge"
+description: "Lancer ansible-pull contre un dépôt Git, le planifier par cron ou timer systemd, l'amorcer via cloud-init, puis arbitrer push ou pull selon le cas d'usage."

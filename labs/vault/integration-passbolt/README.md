@@ -1,76 +1,78 @@
-# Lab 83 — Intégration Passbolt (gestionnaire d'équipe OpenPGP)
+# Lab 83 — Passbolt integration (OpenPGP team manager)
 
-> 💡 **Pré-requis** :
-> - Podman installé.
-> - Collection `anatomicjc.passbolt` : `ansible-galaxy collection install anatomicjc.passbolt`.
-> - Module Python `py-passbolt` : `pip install py-passbolt` (ou `pipx inject ansible py-passbolt`).
-> - GnuPG (`gpg`) pour générer la clé OpenPGP utilisateur.
+> 💡 **Prerequisites**:
+> - Podman installed.
+> - Collection `anatomicjc.passbolt`: `ansible-galaxy collection install anatomicjc.passbolt`.
+> - Python module `py-passbolt`: `pip install py-passbolt` (or `pipx inject ansible py-passbolt`).
+> - GnuPG (`gpg`) to generate the user's OpenPGP key.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Intégration Passbolt avec Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/integration-passbolt/)
+🔗 [**Passbolt integration with Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/integration-passbolt/)
 
-**Passbolt** est un gestionnaire de mots de passe **orienté équipes** sous licence open-source (AGPL). Contrairement à HashiCorp Vault (lab 82), il vise un public différent :
+**Passbolt** is a **team-oriented** password manager under an open-source license (AGPL). Unlike HashiCorp Vault (lab 82), it aims at a different audience:
 
 | Aspect | HashiCorp Vault / OpenBao | Passbolt |
 |--------|---------------------------|----------|
-| **Cas d'usage** | Secrets infra, dynamic secrets, CI/CD | Mots de passe d'équipe (humains + machines) |
-| **Modèle** | Token / AppRole / IAM | Clé OpenPGP par utilisateur |
-| **Audit** | Lease + audit log natifs | Activity log + email notifications |
-| **UI** | Optionnelle (CLI-first) | Web UI riche (browser + extension) |
-| **Partage** | Policies HCL | Groupes + rôles + permissions par ressource |
-| **Rotation** | Automatique (dynamic secrets) | Manuelle (UI) |
+| **Use case** | Infra secrets, dynamic secrets, CI/CD | Team passwords (humans + machines) |
+| **Model** | Token / AppRole / IAM | OpenPGP key per user |
+| **Audit** | Native lease + audit log | Activity log + email notifications |
+| **UI** | Optional (CLI-first) | Rich web UI (browser + extension) |
+| **Sharing** | HCL policies | Groups + roles + permissions per resource |
+| **Rotation** | Automatic (dynamic secrets) | Manual (UI) |
 
-**Quand choisir Passbolt** ? Quand l'équipe humaine doit **partager des mots de passe** (admin db, comptes SaaS, certificats, API keys de tiers) et qu'on veut un workflow accessible **non-DevOps** (lecture par marketing, support, etc.) tout en gardant Ansible capable de récupérer ces secrets côté infrastructure.
+**When to choose Passbolt?** When the human team must **share passwords** (db admin, SaaS accounts, certificates, third-party API keys) and you want a workflow accessible to **non-DevOps** (reading by marketing, support, etc.) while keeping Ansible able to retrieve these secrets on the infrastructure side.
 
-**Quand garder HashiCorp Vault** ? Pour les secrets **dynamiques**, les **certificats X.509 PKI**, les **dynamic database credentials**, les besoins de **TTL automatique** et l'intégration **Cloud IAM**.
+**When to keep HashiCorp Vault?** For **dynamic** secrets, **X.509 PKI certificates**, **dynamic database credentials**, the needs for **automatic TTL** and **Cloud IAM** integration.
 
-⚠️ **Pas redondant** avec Vault : les deux outils répondent à des besoins **complémentaires**. Beaucoup d'organisations utilisent **les deux** (Passbolt pour humains, Vault pour infra).
+⚠️ **Not redundant** with Vault: the two tools answer **complementary** needs. Many organizations use **both** (Passbolt for humans, Vault for infra).
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Démarrer** un Passbolt CE local (Podman + MariaDB).
-2. Comprendre l'authentification **OpenPGP** (clé privée + passphrase).
-3. **Récupérer** un secret Passbolt depuis Ansible avec la collection **`anatomicjc.passbolt`**.
-4. Comparer **Passbolt** et **HashiCorp Vault** sur des cas concrets.
-5. **Sécuriser** la clé privée OpenPGP (pas de commit Git).
+1. **Start** a local Passbolt CE (Podman + MariaDB).
+2. Understand **OpenPGP** authentication (private key + passphrase).
+3. **Retrieve** a Passbolt secret from Ansible with the **`anatomicjc.passbolt`** collection.
+4. Compare **Passbolt** and **HashiCorp Vault** on concrete cases.
+5. **Secure** the OpenPGP private key (no Git commit).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training/labs/vault/integration-passbolt/
+cd $ANSIBLE_TRAINING/labs/vault/integration-passbolt/
 
-# Installer la collection Passbolt
+# Install the Passbolt collection
 ansible-galaxy collection install anatomicjc.passbolt
 
-# Installer py-passbolt (client Python)
+# Install py-passbolt (Python client)
 pipx inject ansible py-passbolt
 
-# Démarrer Passbolt local
+# Start local Passbolt
 ./setup-passbolt.sh
 ```
 
-## ⚙️ Arborescence cible
+## ⚙️ Target tree
 
 ```text
 labs/vault/integration-passbolt/
 ├── README.md
-├── setup-passbolt.sh                ← démarre Passbolt + MariaDB en containers
-├── playbook.yml                     ← lookup anatomicjc.passbolt.passbolt
+├── setup-passbolt.sh                ← starts Passbolt + MariaDB in containers
+├── .passbolt-private.asc            ← your exported private key (gitignored)
 └── challenge/
+    ├── README.md                    ← challenge contract
+    ├── solution.yml                 ← to write: lookup anatomicjc.passbolt
     └── tests/
-        └── test_passbolt_integration.py   ← tests structure
+        └── test_functional.py       ← tests against the running Passbolt
 ```
 
-## 📚 Exercice 1 — Démarrer Passbolt local
+## 📚 Exercise 1 — Start local Passbolt
 
 ```bash
 ./setup-passbolt.sh
 ```
 
-Sortie typique :
+Typical output:
 
 ```text
 [setup-passbolt] Création du réseau passbolt-lab83...
@@ -81,71 +83,70 @@ Sortie typique :
 [setup-passbolt] OK — Passbolt disponible sur https://localhost:8443
 ```
 
-🔍 **Observation** : Passbolt = **2 containers** (DB + app). Architecture proche d'une app Rails/Django classique. Pas de cluster HA inclus dans la version CE.
+🔍 **Observation**: Passbolt = **2 containers** (DB + app). An architecture close to a classic Rails/Django app. No HA cluster included in the CE version.
 
-## 📚 Exercice 2 — Compléter l'inscription via UI
+## 📚 Exercise 2 — Complete the registration via the UI
 
-La commande `register_user` retourne un **lien d'inscription unique**. L'inscription se fait dans le navigateur car elle nécessite la **génération d'une clé OpenPGP** côté client (jamais transmise au serveur).
+The `register_user` command returns a **unique registration link**. The registration is done in the browser because it requires the **generation of an OpenPGP key** on the client side (never transmitted to the server).
 
 ```text
-1. Ouvrir https://localhost:8443 (accepter le self-signed)
-2. Cliquer le lien d'inscription retourné par register_user
-3. Choisir une passphrase forte (sera demandée à chaque déchiffrement)
-4. L'extension Passbolt génère la clé GPG dans le navigateur
-5. TÉLÉCHARGER le fichier de récupération (kit) — IRRÉCUPÉRABLE sinon
+1. Open https://localhost:8443 (accept the self-signed)
+2. Click the registration link returned by register_user
+3. Choose a strong passphrase (it will be asked on every decryption)
+4. The Passbolt extension generates the GPG key in the browser
+5. DOWNLOAD the recovery file (kit), IRRECOVERABLE otherwise
 ```
 
-🔍 **Observation cruciale** : la **clé privée** ne quitte **jamais** le navigateur de l'utilisateur. Le serveur ne stocke que la **clé publique**. Si vous perdez la clé privée + le kit de récupération → **secrets perdus à jamais**. C'est une **différence majeure** avec Vault (où le serveur a "tout").
+🔍 **Crucial observation**: the **private key** **never** leaves the user's browser. The server only stores the **public key**. If you lose the private key + the recovery kit → **secrets lost forever**. This is a **major difference** with Vault (where the server has "everything").
 
-## 📚 Exercice 3 — Exporter la clé privée pour Ansible
+## 📚 Exercise 3 — Export the private key for Ansible
 
-Pour qu'Ansible utilise Passbolt, on a besoin de la clé privée d'un utilisateur dédié (pattern recommandé : créer un user `ansible@lab83.local` séparé de `admin@`).
+For Ansible to use Passbolt, we need the private key of a dedicated user (recommended pattern: create an `ansible@lab83.local` user separate from `admin@`).
 
 ```bash
-# Créer un user Ansible dédié
+# Create a dedicated Ansible user
 podman exec passbolt-app-lab83 su -m -c \
   "/usr/share/php/passbolt/bin/cake passbolt register_user \
     -u ansible@lab83.local -f Ansible -l Bot -r user" www-data
 
-# Compléter l'inscription via UI, puis exporter sa clé privée :
+# Complete the registration via the UI, then export its private key:
 mkdir -p .passbolt
-# (export GPG depuis le browser → coller dans .passbolt/private.key)
+# (export GPG from the browser → paste into .passbolt/private.key)
 chmod 600 .passbolt/private.key
 
-# .gitignore obligatoire :
+# .gitignore mandatory:
 echo ".passbolt/" >> ../../.gitignore
 ```
 
-🔍 **Observation** : un user Ansible **dédié** simplifie l'audit (qui a accédé : Ansible vs un humain). Permissions limitées sur les groupes "Infrastructure" uniquement.
+🔍 **Observation**: a **dedicated** Ansible user simplifies auditing (who accessed: Ansible vs a human). Limited permissions on the "Infrastructure" groups only.
 
-## 📚 Exercice 4 — Stocker un secret de démo dans Passbolt
+## 📚 Exercise 4 — Store a demo secret in Passbolt
 
-Via UI :
+Via the UI:
 
 ```text
-1. Se connecter en tant que admin@lab83.local
+1. Log in as admin@lab83.local
 2. New password → name=lab83-demo, password=DemoPassbolt2026!
-3. Partager avec ansible@lab83.local (lecture seule)
+3. Share with ansible@lab83.local (read only)
 ```
 
-Via API REST (pour automatisation, plus avancé) : voir [`anatomicjc.passbolt`](https://galaxy.ansible.com/ui/repo/published/anatomicjc/passbolt/) collection.
+Via the REST API (for automation, more advanced): see the [`anatomicjc.passbolt`](https://galaxy.ansible.com/ui/repo/published/anatomicjc/passbolt/) collection.
 
-🔍 **Observation** : **partage explicite** par ressource. Ansible ne voit **que** les secrets explicitement partagés avec lui. Pattern **least-privilege** par construction.
+🔍 **Observation**: **explicit sharing** per resource. Ansible sees **only** the secrets explicitly shared with it. A **least-privilege** pattern by construction.
 
-## 📚 Exercice 5 — Lookup depuis Ansible
+## 📚 Exercise 5 — Lookup from Ansible
+
+Write the challenge playbook (cf. [`challenge/README.md`](challenge/README.md)),
+then:
 
 ```bash
-export PASSBOLT_URI=https://localhost:8443
-export PASSBOLT_PRIVATE_KEY="$(cat .passbolt/private.key)"
+export PASSBOLT_URL=https://localhost:8443
 export PASSBOLT_PASSPHRASE="votre-passphrase"
 
-ansible-playbook playbook.yml \
-  -e "passbolt_uri=$PASSBOLT_URI" \
-  -e "passbolt_private_key=$PASSBOLT_PRIVATE_KEY" \
-  -e "passbolt_passphrase=$PASSBOLT_PASSPHRASE"
+ansible-playbook challenge/solution.yml
 ```
 
-Sortie :
+Output:
 
 ```text
 TASK [Récupérer le secret 'lab83-demo' depuis Passbolt] ***
@@ -156,73 +157,77 @@ ok: [localhost] =>
   msg: "Secret length: 19"
 ```
 
-🔍 **Observation** : `no_log: true` sur la `set_fact` pour ne **jamais** logger la valeur claire. Le `debug` final n'expose que la longueur.
+🔍 **Observation**: `no_log: true` on the `set_fact` to **never** log the cleartext value. The final `debug` only exposes the length.
 
-## 📚 Exercice 6 — Quand Passbolt complète Ansible Vault
+## 📚 Exercise 6 — When Passbolt complements Ansible Vault
 
-Pattern réaliste : **Passbolt** stocke le **mot de passe** Ansible Vault.
+A realistic pattern: **Passbolt** stores the Ansible Vault **password**.
 
 ```bash
-# 1. L'admin stocke "ansible-vault-master-password" dans Passbolt
-# 2. Le pipeline CI récupère ce mot de passe via lookup Passbolt
-# 3. Le pipeline déchiffre les fichiers Ansible Vault avec ce password
-# 4. Ansible exécute les playbooks
+# 1. The admin stores "ansible-vault-master-password" in Passbolt
+# 2. The CI pipeline retrieves this password via a Passbolt lookup
+# 3. The pipeline decrypts the Ansible Vault files with this password
+# 4. Ansible runs the playbooks
 ```
 
-🔍 **Observation** : **chaîne de confiance**. Passbolt protège le **master password**, qui protège les **vault files**. Rotation simple : changer le mot de passe vault → rechiffrer → mettre à jour dans Passbolt.
+🔍 **Observation**: a **chain of trust**. Passbolt protects the **master password**, which protects the **vault files**. Simple rotation: change the vault password → re-encrypt → update in Passbolt.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Idempotence** : un second run de votre solution doit afficher `changed=0`
-  partout dans le `PLAY RECAP`. C'est le signal mécanique d'un playbook
-  conforme aux bonnes pratiques.
-- **FQCN explicite** : préférez toujours `ansible.builtin.<module>` (ou la
-  collection appropriée) plutôt que le nom court — `ansible-lint --profile
-  production` le vérifie.
-- **Convention de ciblage** : ce lab cible db1.lab + une instance Passbolt ; pour adapter à un
-  autre groupe, ajustez `hosts:` dans `lab.yml`/`solution.yml` puis relancez.
-- **Reset isolé** : `make clean` à la racine du lab désinstalle proprement
-  ce que la solution a posé pour pouvoir rejouer le scénario.
+- **Idempotence**: a second run of your solution must display `changed=0`
+  everywhere in the `PLAY RECAP`. This is the mechanical signal of a playbook
+  that follows best practices.
+- **Explicit FQCN**: always prefer `ansible.builtin.<module>` (or the
+  appropriate collection) rather than the short name (`ansible-lint --profile
+  production` checks this).
+- **Targeting convention**: this lab targets db1.lab + a Passbolt instance; to adapt it to another
+  group, adjust `hosts:` in `lab.yml`/`solution.yml` then run it again.
+- **Isolated reset**: `dsoxlab clean <id-du-lab>` at the lab root cleanly uninstalls
+  what the solution set up so you can replay the scenario.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Pourquoi **Passbolt** plutôt qu'un coffre `pass(1)` GPG partagé via Git ?
+1. Why **Passbolt** rather than a `pass(1)` GPG vault shared via Git?
 
-2. Que se passe-t-il si le **kit de récupération** Ansible est perdu et que la passphrase est oubliée ?
+2. What happens if the Ansible **recovery kit** is lost and the passphrase is forgotten?
 
-3. Comment **rotater** un mot de passe stocké dans Passbolt sans casser les playbooks en cours ?
+3. How do you **rotate** a password stored in Passbolt without breaking the running playbooks?
 
-4. **Passbolt vs HashiCorp Vault** : pour un Bastion SSH partagé entre 5 admins, lequel choisir ? Pourquoi ?
+4. **Passbolt vs HashiCorp Vault**: for an SSH Bastion shared between 5 admins, which one to choose? Why?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Le challenge ([`challenge/tests/`](challenge/tests/)) valide la structure du lab via 7 tests pytest (script présent, podman + mariadb, lookup correct, no_log, pas de secret en clair, variables passbolt_*, README mentionne OpenPGP).
+The challenge ([`challenge/README.md`](challenge/README.md)) requires a running Passbolt,
+your exported OpenPGP key and the passphrase in the environment:
+the tests replay your playbook and check the deposited proof (mode
+`0600`, consistent length, no cleartext secret in the YAML). As long as
+the infrastructure is missing, they go into an explicit `skip`.
 
 ```bash
 pytest -v challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Passbolt PRO** : SSO (SAML, OIDC), MFA, audit logs avancés, teams.
-- **Self-hosted en prod** : Passbolt Helm chart (K8s) ou Ansible role officiel `passbolt.passbolt_collection`.
-- **API REST + JWT** : alternative à OpenPGP pour intégrations machine-to-machine (Passbolt 4.x+).
-- **Browser extension** : remplit auto les forms web (différenciateur vs Vault).
-- **Combo gagnant** : Passbolt (humains) + HashiCorp Vault (infra/dynamic) + Ansible Vault (configs sensibles versionnées).
+- **Passbolt PRO**: SSO (SAML, OIDC), MFA, advanced audit logs, teams.
+- **Self-hosted in prod**: Passbolt Helm chart (K8s) or the official Ansible role `passbolt.passbolt_collection`.
+- **REST API + JWT**: an alternative to OpenPGP for machine-to-machine integrations (Passbolt 4.x+).
+- **Browser extension**: auto-fills the web forms (a differentiator vs Vault).
+- **Winning combo**: Passbolt (humans) + HashiCorp Vault (infra/dynamic) + Ansible Vault (versioned sensitive configs).
 
-## 🔍 Sécurité — bonnes pratiques 2026
+## 🔍 Security — 2026 best practices
 
-- **Clé privée OpenPGP** : `chmod 600`, jamais commitée, idéalement dans un keystore (gnome-keyring, macOS Keychain).
-- **Passphrase** : passée par variable d'env, jamais en CLI (`ps aux` la révélerait).
-- **TLS valide** en prod (Let's Encrypt). Le self-signed du lab est uniquement pour dev local.
-- **MFA** sur tous les comptes humains (TOTP gratuit en CE).
-- **Audit log activé** (Passbolt 4.5+) : qui a accédé à quel secret, quand, depuis quelle IP.
-- **Backup base** : la DB MariaDB contient secrets chiffrés + clés publiques. Pas suffisant seul — chaque user doit aussi backup sa **clé privée + kit de récupération**.
+- **OpenPGP private key**: `chmod 600`, never committed, ideally in a keystore (gnome-keyring, macOS Keychain).
+- **Passphrase**: passed via an env variable, never on the CLI (`ps aux` would reveal it).
+- **Valid TLS** in prod (Let's Encrypt). The self-signed of the lab is only for local dev.
+- **MFA** on all human accounts (free TOTP in CE).
+- **Audit log enabled** (Passbolt 4.5+): who accessed which secret, when, from which IP.
+- **Database backup**: the MariaDB DB contains encrypted secrets + public keys. Not sufficient on its own, each user must also back up their **private key + recovery kit**.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 ansible-lint labs/vault/integration-passbolt/lab.yml
@@ -230,9 +235,9 @@ ansible-lint labs/vault/integration-passbolt/challenge/solution.yml
 ansible-lint --profile production labs/vault/integration-passbolt/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task,
+file modes as strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un
-> hook pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

@@ -1,42 +1,42 @@
-# Lab — Module `yum_repository:` (déclarer un dépôt RPM)
+# Lab — `yum_repository:` module (declaring an RPM repository)
 
-> 💡 **Lab autonome.** Pré-requis : VM RHEL/AlmaLinux/Rocky disponible et `ansible-galaxy collection install ansible.posix`.
+> 💡 **Self-contained lab.** Prerequisite: RHEL/AlmaLinux/Rocky VM available and `ansible-galaxy collection install ansible.posix`.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Module yum_repository Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-yum-repository/)
+🔗 [**Ansible yum_repository module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-yum-repository/)
 
-`ansible.builtin.yum_repository:` déclare un **dépôt RPM** (yum/dnf) en
-générant le fichier `.repo` dans `/etc/yum.repos.d/`. C'est l'outil pour
-**activer EPEL**, ajouter le dépôt **Docker CE**, déclarer un **dépôt
-interne**, ou désactiver un dépôt par défaut.
+`ansible.builtin.yum_repository:` declares an **RPM repository** (yum/dnf) by
+generating the `.repo` file in `/etc/yum.repos.d/`. It is the tool to
+**enable EPEL**, add the **Docker CE** repo, declare an **internal
+repo**, or disable a default repo.
 
-**Chaîne typique** : `rpm_key:` (importe la clé GPG) →
-`yum_repository:` (déclare le dépôt) → `dnf:` (installe les paquets).
+**Typical chain**: `rpm_key:` (imports the GPG key) →
+`yum_repository:` (declares the repo) → `dnf:` (installs the packages).
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Importer** une clé GPG avec `rpm_key:`.
-2. **Déclarer** un dépôt avec `yum_repository:` (gpgcheck mandatory).
-3. **Désactiver** un dépôt sans le supprimer (`enabled: false`).
-4. **Distinguer** `yum_repository:` (déclare un dépôt) de `dnf:` (installe).
-5. Comprendre les **macros** `$releasever`, `$basearch`.
+1. **Import** a GPG key with `rpm_key:`.
+2. **Declare** a repo with `yum_repository:` (gpgcheck mandatory).
+3. **Disable** a repo without removing it (`enabled: false`).
+4. **Distinguish** `yum_repository:` (declares a repo) from `dnf:` (installs).
+5. Understand the **macros** `$releasever`, `$basearch`.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
-ansible db1.lab -m ping        # supposer une VM AlmaLinux/Rocky
+cd $ANSIBLE_TRAINING
+ansible db1.lab -m ping        # assume an AlmaLinux/Rocky VM
 ```
 
-## 📚 Exercice 1 — Activer EPEL 9
+## 📚 Exercise 1 — Enable EPEL 9
 
 ```yaml
 ---
 - name: Activer EPEL 9
-  hosts: db1.lab    # idéalement une VM AlmaLinux 9 ou Rocky 9
+  hosts: db1.lab    # ideally an AlmaLinux 9 or Rocky 9 VM
   become: true
   tasks:
     - name: Importer la clé GPG EPEL 9
@@ -60,9 +60,9 @@ ansible db1.lab -m ping        # supposer une VM AlmaLinux/Rocky
         state: present
 ```
 
-Lancez 2 fois — 2e run `ok` (idempotent).
+Run it twice: 2nd run `ok` (idempotent).
 
-## 📚 Exercice 2 — Désactiver un dépôt sans le supprimer
+## 📚 Exercise 2 — Disable a repo without removing it
 
 ```yaml
 - name: Désactiver le dépôt epel sans supprimer le fichier
@@ -74,88 +74,88 @@ Lancez 2 fois — 2e run `ok` (idempotent).
     state: present
 ```
 
-**Vérifier** : `dnf repolist all | grep epel` montre `disabled`.
+**Verify**: `dnf repolist all | grep epel` shows `disabled`.
 
-## 📚 Exercice 3 — Dépôt local sans GPG (pour test, JAMAIS en prod)
+## 📚 Exercise 3 — Local repo without GPG (for testing, NEVER in prod)
 
 ```yaml
 - ansible.builtin.yum_repository:
     name: local-test
     description: "Dépôt local de test"
     baseurl: "file:///srv/repo/"
-    gpgcheck: false   # uniquement en lab
+    gpgcheck: false   # lab only
 ```
 
-**Lire la doc sur la sécurité** — `gpgcheck: false` est une faille en production.
+**Read the doc on security**: `gpgcheck: false` is a vulnerability in production.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Idempotence** : un second run du playbook doit afficher `changed=0` sur
-  toutes les tâches du module `ansible.builtin.yum_repository`. Si une tâche reste `changed=1`, c'est
-  que la regex/condition n'est pas ancrée correctement (cf. exercices).
-- **FQCN explicite** : `ansible.builtin.yum_repository` (et non son nom court) — `ansible-lint
-  --profile production` le vérifie.
-- **`validate:`** quand c'est disponible (lineinfile, copy, template) : un
-  binaire externe contrôle la syntaxe du fichier avant écriture, ce qui évite
-  de casser un service avec une config invalide.
-- **Convention de ciblage** : ce lab cible **db1.lab** (un seul host pour
-  isoler l'impact destructif).
+- **Idempotence**: a second run of the playbook must show `changed=0` on
+  all the tasks of the `ansible.builtin.yum_repository` module. If a task stays `changed=1`, it means
+  the regex/condition is not anchored correctly (see exercises).
+- **Explicit FQCN**: `ansible.builtin.yum_repository` (not its short name): `ansible-lint
+  --profile production` checks it.
+- **`validate:`** when available (lineinfile, copy, template): an
+  external binary checks the file syntax before writing, which avoids
+  breaking a service with an invalid config.
+- **Targeting convention**: this lab targets **db1.lab** (a single host to
+  isolate the destructive impact).
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Quand utiliser `ansible.builtin.yum_repository` plutôt que manipulation manuelle de `/etc/yum.repos.d/*.repo` via `copy:` (moins idempotent) ? Listez 2 cas où chaque
-   alternative serait préférable (lisibilité, idempotence, performance).
+1. When to use `ansible.builtin.yum_repository` rather than manual manipulation of `/etc/yum.repos.d/*.repo` via `copy:` (less idempotent)? List 2 cases where each
+   alternative would be preferable (readability, idempotence, performance).
 
-2. Si vous deviez déclarer ou désactiver un dépôt RPM sur **50 serveurs en parallèle**, quels
-   paramètres Ansible (`forks`, `serial`, `strategy`) ajusteriez-vous pour
-   tenir un SLA de 5 minutes ?
+2. If you had to declare or disable an RPM repo on **50 servers in parallel**, which
+   Ansible parameters (`forks`, `serial`, `strategy`) would you tune to
+   hold a 5-minute SLA?
 
-3. Comment gérer le cas où le module échoue **partiellement** (succès sur
-   certaines tâches, échec sur d'autres) ? Quelles stratégies permettent de
-   reprendre sans tout rejouer (`block/rescue`, `--start-at-task`, marqueur
-   d'état) ?
+3. How to handle the case where the module fails **partially** (success on
+   some tasks, failure on others)? Which strategies let you
+   resume without replaying everything (`block/rescue`, `--start-at-task`, state
+   marker)?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Une fois les exercices ci-dessus digérés, lancez le **challenge autonome** :
+Once the above exercises are digested, launch the **standalone challenge**:
 
 ```bash
 $ANSIBLE_TRAINING/bin/dsoxlab lab modules-paquets/yum-repository --challenge
-# ou
+# or
 cat labs/modules-paquets/yum-repository/challenge/README.md
 ```
 
-Le challenge demande d'écrire votre `challenge/solution.yml` sans regarder
-les exercices. Validation par `pytest` :
+The challenge asks you to write your `challenge/solution.yml` without looking
+at the exercises. Validation with `pytest`:
 
 ```bash
 pytest -v labs/modules-paquets/yum-repository/challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- Combinez `ansible.builtin.yum_repository` avec **`backup: true`** pour conserver une copie
-  horodatée du fichier original avant modification — utile pour rollback.
-- Étudiez **`check_mode: true`** + `--diff` : Ansible vous montre ce qu'il
-  ferait sans rien appliquer. Indispensable en production.
-- Comparez la **performance** entre 1 tâche `ansible.builtin.yum_repository` × 10 et 1 tâche
-  `template:` qui génère le fichier complet en une fois — souvent le
-  template est plus rapide ET plus lisible quand le nombre de modifs grossit.
+- Combine `ansible.builtin.yum_repository` with **`backup: true`** to keep a timestamped
+  copy of the original file before modification: useful for rollback.
+- Study **`check_mode: true`** + `--diff`: Ansible shows you what it
+  would do without applying anything. Essential in production.
+- Compare the **performance** between 1 `ansible.builtin.yum_repository` task × 10 and 1
+  `template:` task that generates the complete file in one go: often the
+  template is faster AND more readable when the number of changes grows.
 
 ## 🧹 Cleanup
 
 ```bash
-make clean
+`dsoxlab clean <id-du-lab>`
 ```
 
 ## 📂 Solution
 
-Voir `solution/modules-paquets/yum-repository/solution.yml`.
+See `solution/modules-paquets/yum-repository/solution.yml`.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 ansible-lint labs/modules-paquets/yum-repository/lab.yml
@@ -163,6 +163,5 @@ ansible-lint labs/modules-paquets/yum-repository/challenge/solution.yml
 ansible-lint --profile production labs/modules-paquets/yum-repository/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques RHCE 2026.
-
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows RHCE 2026 best practices.

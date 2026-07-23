@@ -1,49 +1,49 @@
-# Lab 21 — Boucles `loop:` (`loop_control`, `dict2items`)
+# Lab 21 — `loop:` loops (`loop_control`, `dict2items`)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Boucles Ansible : loop, loop_control, dict2items**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/boucles-loop/)
+🔗 [**Ansible loops: loop, loop_control, dict2items**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/boucles-loop/)
 
-`loop:` est la directive moderne (Ansible 2.5+) pour répéter une tâche sur une **liste**
-ou un **dict** (via `dict2items`). Elle remplace les anciennes formes `with_items:`,
-`with_dict:`, `with_*` (lab 21). `loop_control:` permet d'ajuster l'affichage
-(`label`), la pause (`pause`), l'index (`index_var`), et la variable de boucle
-(`loop_var`). C'est la base de tout playbook qui crée plusieurs ressources :
-utilisateurs, paquets, services, fichiers.
+`loop:` is the modern directive (Ansible 2.5+) to repeat a task over a **list**
+or a **dict** (via `dict2items`). It replaces the old `with_items:`,
+`with_dict:`, `with_*` forms (lab 21). `loop_control:` lets you adjust the display
+(`label`), the pause (`pause`), the index (`index_var`), and the loop variable
+(`loop_var`). It is the basis of any playbook that creates several resources:
+users, packages, services, files.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Boucler** sur une liste simple et une liste de dicts.
-2. **Utiliser** `loop_control: label:` pour rendre la sortie console lisible.
-3. **Boucler** sur un dict via `dict2items`.
-4. **Récupérer** l'index avec `loop_control: index_var:`.
-5. **Diagnostiquer** un cas où `item` est ambigu (boucle imbriquée).
+1. **Loop** over a simple list and a list of dicts.
+2. **Use** `loop_control: label:` to make the console output readable.
+3. **Loop** over a dict via `dict2items`.
+4. **Retrieve** the index with `loop_control: index_var:`.
+5. **Diagnose** a case where `item` is ambiguous (nested loop).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 ansible db1.lab -b -m shell -a "rm -f /tmp/loop-*.txt; userdel -rf alice 2>/dev/null; userdel -rf bob 2>/dev/null; userdel -rf charlie 2>/dev/null; true"
 ```
 
-## 📚 Exercice 1 — Boucle simple sur liste de strings
+## 📚 Exercise 1 — Simple loop over a list of strings
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -61,17 +61,17 @@ Créez `lab.yml` :
       loop: "{{ fruits }}"
 ```
 
-**Lancez** :
+**Run it**:
 
 ```bash
 ansible-playbook labs/ecrire-code/boucles-loop/lab.yml
 ```
 
-🔍 **Observation** : 3 itérations, 3 fichiers créés. La sortie console affiche
-`[item=pomme]`, `[item=banane]`, `[item=cerise]` — pour cette structure simple,
-c'est lisible. Sur des dicts, on aura besoin de `loop_control: label:`.
+🔍 **Observation**: 3 iterations, 3 files created. The console output shows
+`[item=pomme]`, `[item=banane]`, `[item=cerise]`: for this simple structure,
+it is readable. On dicts, you will need `loop_control: label:`.
 
-## 📚 Exercice 2 — Liste de dicts + `loop_control: label:`
+## 📚 Exercise 2 — List of dicts + `loop_control: label:`
 
 ```yaml
 - name: Creer 3 users
@@ -94,30 +94,30 @@ c'est lisible. Sur des dicts, on aura besoin de `loop_control: label:`.
       when: item.enabled
 ```
 
-**Lancez** :
+**Run it**:
 
 ```bash
 ansible-playbook labs/ecrire-code/boucles-loop/lab.yml
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **3 itérations**, **2 changed** (alice, charlie), **1 skipped** (bob, `enabled: false`).
-- La sortie affiche `[item=alice]` au lieu de `[item={'name': 'alice', 'shell': '/bin/bash', ...}]`.
+- **3 iterations**, **2 changed** (alice, charlie), **1 skipped** (bob, `enabled: false`).
+- The output shows `[item=alice]` instead of `[item={'name': 'alice', 'shell': '/bin/bash', ...}]`.
 
-**Sans `loop_control: label:`** la sortie est illisible :
+**Without `loop_control: label:`** the output is unreadable:
 
 ```
 [item={'name': 'alice', 'shell': '/bin/bash', 'enabled': True}]
 [item={'name': 'bob', 'shell': '/bin/zsh', 'enabled': False}]
 ```
 
-→ **Toujours** mettre un `label:` dans les boucles sur dicts.
+→ **Always** put a `label:` in loops over dicts.
 
-## 📚 Exercice 3 — Boucler sur un dict avec `dict2items`
+## 📚 Exercise 3 — Loop over a dict with `dict2items`
 
-`loop:` veut une **liste**. Pour boucler sur un **dict**, on utilise le filtre
-`dict2items` qui convertit `{a: 1, b: 2}` en `[{key: a, value: 1}, {key: b, value: 2}]`.
+`loop:` wants a **list**. To loop over a **dict**, you use the
+`dict2items` filter which converts `{a: 1, b: 2}` into `[{key: a, value: 1}, {key: b, value: 2}]`.
 
 ```yaml
 - name: Demo loop sur dict
@@ -139,10 +139,10 @@ ansible-playbook labs/ecrire-code/boucles-loop/lab.yml
         label: "{{ item.key }}={{ item.value }}"
 ```
 
-🔍 **Observation** : `item.key` = `nginx/redis/postgresql`, `item.value` = `80/6379/5432`.
-Le `label:` affiche `[item=nginx=80]` — lisible.
+🔍 **Observation**: `item.key` = `nginx/redis/postgresql`, `item.value` = `80/6379/5432`.
+The `label:` shows `[item=nginx=80]`: readable.
 
-## 📚 Exercice 4 — `index_var` et `pause`
+## 📚 Exercise 4 — `index_var` and `pause`
 
 ```yaml
 - name: Demo index_var et pause
@@ -163,17 +163,17 @@ Le `label:` affiche `[item=nginx=80]` — lisible.
         pause: 1
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **`index_var: idx`** = nom de la variable d'index (par défaut, pas exposé). Permet
-  de générer des noms uniques `loop-indexed-0.txt`, `loop-indexed-1.txt`, etc.
-- **`pause: 1`** = attente de 1 seconde **entre chaque itération**. Utile pour des
-  appels API rate-limités, ou des opérations longues à étaler.
+- **`index_var: idx`** = name of the index variable (by default, not exposed). Lets you
+  generate unique names `loop-indexed-0.txt`, `loop-indexed-1.txt`, etc.
+- **`pause: 1`** = wait of 1 second **between each iteration**. Useful for
+  rate-limited API calls, or long operations to spread out.
 
-## 📚 Exercice 5 — Boucle imbriquée et `loop_var`
+## 📚 Exercise 5 — Nested loop and `loop_var`
 
-Quand vous avez **deux boucles imbriquées** (ex : un block dans une boucle qui
-contient lui-même une boucle), `item` devient ambigu — il faut renommer.
+When you have **two nested loops** (e.g.: a block in a loop that
+itself contains a loop), `item` becomes ambiguous: you must rename it.
 
 ```yaml
 - name: Demo boucles imbriquees
@@ -198,11 +198,11 @@ contient lui-même une boucle), `item` devient ambigu — il faut renommer.
         label: "{{ user_item.name }}"
 ```
 
-🔍 **Observation** : `loop_var: user_item` renomme `item` de la boucle externe en
-`user_item`, et `loop_var: file_item` renomme la boucle interne en `file_item`.
-Sans ces renommages, l'inner aurait écrasé `item` de l'outer — bug silencieux.
+🔍 **Observation**: `loop_var: user_item` renames `item` of the outer loop to
+`user_item`, and `loop_var: file_item` renames the inner loop to `file_item`.
+Without these renamings, the inner loop would have overwritten the outer's `item`: a silent bug.
 
-## 📚 Exercice 6 — Le piège : `loop` avec une string (pas une liste)
+## 📚 Exercise 6 — The trap: `loop` with a string (not a list)
 
 ```yaml
 - name: Piege loop sur string
@@ -213,7 +213,7 @@ Sans ces renommages, l'inner aurait écrasé `item` de l'outer — bug silencieu
   loop: "{{ not_a_list }}"
 ```
 
-🔍 **Observation** : Ansible itère **caractère par caractère** ! Output :
+🔍 **Observation**: Ansible iterates **character by character**! Output:
 
 ```
 [item=a]
@@ -221,9 +221,9 @@ Sans ces renommages, l'inner aurait écrasé `item` de l'outer — bug silencieu
 [item=c]
 ```
 
-Une **string est itérable** en Python, mais ce n'est généralement pas ce qu'on veut.
+A **string is iterable** in Python, but this is generally not what you want.
 
-**Solutions** :
+**Solutions**:
 
 ```yaml
 # Forcer une liste a 1 element
@@ -233,49 +233,49 @@ loop: "{{ [not_a_list] }}"
 loop: "{{ not_a_list if not_a_list is sequence and not_a_list is not string else [not_a_list] }}"
 ```
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`loop:`** remplace tous les `with_*` legacy (depuis Ansible 2.5).
-- **`loop_control: label:`** est **obligatoire en pratique** sur les boucles de dicts.
-- **`dict2items`** convertit un dict en liste `[{key, value}]` pour boucler dessus.
-- **`index_var:`** + **`pause:`** = options utiles pour le rythme et l'identification.
-- **`loop_var:`** est obligatoire pour les boucles imbriquées.
-- **`loop:` sur une string** itère caractère par caractère — piège fréquent.
+- **`loop:`** replaces all the legacy `with_*` (since Ansible 2.5).
+- **`loop_control: label:`** is **mandatory in practice** on loops over dicts.
+- **`dict2items`** converts a dict into a `[{key, value}]` list to loop over.
+- **`index_var:`** + **`pause:`** = useful options for pacing and identification.
+- **`loop_var:`** is mandatory for nested loops.
+- **`loop:` over a string** iterates character by character: a frequent trap.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voulez créer des fichiers `/etc/myapp/conf.d/<name>.conf` à partir d'une
-   liste de dicts `{name, content}`. Comment articulez-vous `loop:`, `template:`,
-   et `loop_control:` ?
+1. You want to create `/etc/myapp/conf.d/<name>.conf` files from a
+   list of dicts `{name, content}`. How do you articulate `loop:`, `template:`,
+   and `loop_control:`?
 
-2. `loop:` accepte une string et itère caractère par caractère. Comment **forcer**
-   `loop:` à toujours traiter sa valeur comme **une seule itération** (qu'elle soit
-   string ou liste à 1 élément) ?
+2. `loop:` accepts a string and iterates character by character. How do you **force**
+   `loop:` to always treat its value as **a single iteration** (whether it is a
+   string or a 1-element list)?
 
-3. Vous bouclez sur 100 packages avec `package:` + `loop:`. C'est lent. Pourquoi
-   `package: name: [...]` (sans loop) est-il bien plus rapide ?
+3. You loop over 100 packages with `package:` + `loop:`. It is slow. Why
+   is `package: name: [...]` (without loop) much faster?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`loop_control: extended: true`** : expose `ansible_loop` avec
+- **`loop_control: extended: true`**: exposes `ansible_loop` with
   `index`, `index0`, `first`, `last`, `length`, `revindex`, `previtem`, `nextitem`.
-  Très utile pour des templates Jinja2 conditionnels (last item sans virgule, etc.).
-- **`until:` + `retries:` + `delay:`** : retry d'une tâche jusqu'à condition
-  satisfaite. Différent de `loop:` (qui itère sur des données).
-- **Pattern flatten** : `loop: "{{ [list1, list2] | flatten }}"` pour fusionner
-  plusieurs listes en une seule boucle.
-- **`subelements`** : boucler sur des **sous-éléments** d'une liste de dicts —
-  équivalent du SQL `JOIN`. Voir lab 21 (with-deprecated) pour la migration depuis
+  Very useful for conditional Jinja2 templates (last item without a comma, etc.).
+- **`until:` + `retries:` + `delay:`**: retry of a task until a condition is
+  satisfied. Different from `loop:` (which iterates over data).
+- **Flatten pattern**: `loop: "{{ [list1, list2] | flatten }}"` to merge
+  several lists into a single loop.
+- **`subelements`**: loop over **sub-elements** of a list of dicts,
+  equivalent of the SQL `JOIN`. See lab 21 (with-deprecated) for the migration from
   `with_subelements`.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 # Lint de votre fichier de lab (tutoriel guidé)
@@ -288,9 +288,9 @@ ansible-lint labs/ecrire-code/boucles-loop/challenge/solution.yml
 ansible-lint --profile production labs/ecrire-code/boucles-loop/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

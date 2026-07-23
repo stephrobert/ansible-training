@@ -1,0 +1,26 @@
+---
+id: ee-ci-pipeline
+title: "CI/CD pipeline for Execution Environments"
+description: "Build an EE in CI, scan it with Trivy in blocking mode, sign it with keyless cosign and publish it, with SHA-pinned actions and least-privilege permissions."
+section: ee
+level: l3
+difficulty: advanced
+lab_type: lab
+estimated_time: "55m"
+skills:
+  - ci-pipeline
+  - image-scanning
+  - image-signing
+  - supply-chain-security
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/exec-playbook/#pipeline-github-actions
+track:
+  - au-dela-ex294
+runtime:
+  type: shell
+  workdir: challenge/work
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

@@ -1,0 +1,22 @@
+---
+# Mise en place du lab async-poll : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup async-poll lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (async-poll)
+      ansible.builtin.file:
+        path: "/tmp/async-done.txt"
+        state: "absent"
+
+- name: Brief the learner (async-poll)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Detach a long task with async + poll: 0, collect its result via async_status, poll actively with until and diagnose an orphaned job
+      run_once: true

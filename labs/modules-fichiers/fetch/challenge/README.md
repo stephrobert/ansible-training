@@ -1,47 +1,42 @@
-# 🎯 Challenge — Collecter `os-release` avec `fetch:`
+# 🎯 Challenge — Collect `os-release` with `fetch:`
 
-## ✅ Objectif
+## ✅ Objective
 
-`fetch:` est l'**inverse** de `copy:` : il rapatrie un fichier du **managed
-node** vers le **control node**. Ce challenge le démontre sur **2 hôtes**.
+`fetch:` is the **inverse** of `copy:`: it pulls a file back from the **managed
+node** to the **control node**. This challenge demonstrates it on **2 hosts**.
 
-## 🧩 Tâches
+## 🧩 Tasks
 
-### Play 1 — Collecte sur web1 ET db1
+### Play 1 — Collection on web1 AND db1
 
-Cible : `hosts: web1.lab,db1.lab` (2 hôtes en pattern explicite).
+Target: `hosts: web1.lab,db1.lab` (2 hosts as an explicit pattern).
 
-Pour chaque hôte, **rapatrier `/etc/os-release`** dans un fichier local
-nommé d'après le hostname court (sans `.lab`) :
+For each host, **pull back `/etc/os-release`** into a local file named after
+the short hostname (without `.lab`):
 
-| Hôte | Fichier collecté côté control node |
+| Host | File collected on the control node |
 | --- | --- |
 | `web1.lab` | `collected/web1-os-release.txt` |
 | `db1.lab` | `collected/db1-os-release.txt` |
 
-### Play 2 — Tag spécifique web1
+### Play 2 — web1-specific tag
 
-Cible : `hosts: web1.lab` uniquement.
+Target: `hosts: web1.lab` only.
 
-1. Écrire (`copy: content:`) le fichier `/etc/lab-tag.txt` sur web1 avec le
-   contenu `RHCE-LAB-2026`.
-2. Le rapatrier (`fetch:`) côté control node dans `collected/web1-tag.txt`.
+1. Write (`copy: content:`) the file `/etc/lab-tag.txt` on web1 with the
+   content `RHCE-LAB-2026`.
+2. Pull it back (`fetch:`) to the control node into `collected/web1-tag.txt`.
 
-## 🧩 Indices clés
+## 🧩 Stuck?
 
-- **`fetch:` avec `flat: true`** est ce qui permet de poser un fichier unique
-  côté control node (sans le sous-arbre `<hostname>/<chemin>` que fetch crée
-  par défaut).
-- Pour interpoler le **hostname court** (sans `.lab`), utilisez :
+```bash
+dsoxlab hint modules-fichiers-fetch
+```
 
-  ```yaml
-  "{{ inventory_hostname | regex_replace('\\.lab$', '') }}"
-  ```
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
-- Le `dest:` du fetch peut utiliser **`{{ inventory_dir }}/../collected/...`**
-  pour rester relatif au repo, ou un chemin absolu côté control.
-
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -74,18 +69,18 @@ Cible : `hosts: web1.lab` uniquement.
         flat: ???
 ```
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
-> - **`fetch:`** copie **du managed node vers le control node** (inverse
->   de `copy:`). Pour les sauvegardes, audits, debug.
-> - **`flat: true`** : pas de sous-dossier par hôte (le fichier est posé
->   directement dans `dest`). Sans, `dest/<hostname>/<src>` est créé.
-> - **`fail_on_missing: true`** : échec si le fichier source absent. Par
->   défaut `false` — la tâche est marquée `skipped`.
-> - **`dest/<hostname>/`** : permet de différencier les fetch de plusieurs
->   hôtes. Ne pas combiner avec `flat: true`.
+> - **`fetch:`** copies **from the managed node to the control node** (inverse
+>   of `copy:`). For backups, audits, debugging.
+> - **`flat: true`**: no subdirectory per host (the file is placed directly
+>   in `dest`). Without it, `dest/<hostname>/<src>` is created.
+> - **`fail_on_missing: true`**: fails if the source file is absent. By
+>   default `false`, the task is marked `skipped`.
+> - **`dest/<hostname>/`**: lets you differentiate the fetches of several
+>   hosts. Do not combine with `flat: true`.
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-fichiers/fetch/challenge/solution.yml
@@ -93,28 +88,28 @@ ls -la collected/
 cat collected/web1-tag.txt
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-fichiers/fetch/challenge/tests/
 ```
 
-Le test inspecte des fichiers **côté control node** (pas testinfra/SSH).
+The test inspects files **on the control node** (not testinfra/SSH).
 
 ## 🧹 Reset
 
 ```bash
-make -C labs/modules-fichiers/fetch clean
+dsoxlab clean modules-fichiers-fetch
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`fetch: flat: false`** (défaut) : Ansible crée
-  `dest/<hostname>/<chemin_complet>`. Utile pour préserver l'arborescence
-  d'origine lors d'un audit multi-host.
-- **Cas d'usage typique** : collecte de logs, dump de configs, snapshots
-  pré-déploiement. Combinez avec `synchronize:` pour des dossiers entiers.
-- **Lint** :
+- **`fetch: flat: false`** (default): Ansible creates
+  `dest/<hostname>/<full_path>`. Useful to preserve the original tree during
+  a multi-host audit.
+- **Typical use case**: log collection, config dumps, pre-deployment snapshots.
+  Combine with `synchronize:` for entire directories.
+- **Lint**:
 
    ```bash
    ansible-lint labs/modules-fichiers/fetch/challenge/solution.yml

@@ -1,0 +1,26 @@
+---
+id: molecule-installation-config
+title: "Molecule: enrich a scenario beyond the defaults"
+description: "Add prepare.yml and requirements.yml, tune instances through host_vars, define a test_sequence including idempotence and enable profile_tasks."
+section: molecule
+level: l3
+difficulty: intermediate
+lab_type: lab
+estimated_time: "35m"
+skills:
+  - molecule-scenario
+  - test-sequence
+  - molecule-prepare
+  - callbacks
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/molecule-installation-config/
+track:
+  - au-dela-ex294
+runtime:
+  type: shell
+  workdir: challenge/work
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

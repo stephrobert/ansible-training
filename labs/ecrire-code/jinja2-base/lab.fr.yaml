@@ -1,0 +1,4 @@
+---
+id: ecrire-code-jinja2-base
+title: "Jinja2 : interpolation, logique et whitespace"
+description: "Interpoler des variables, boucler et conditionner dans un template, puis supprimer les sauts de ligne parasites par le whitespace control."

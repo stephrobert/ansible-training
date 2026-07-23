@@ -1,0 +1,4 @@
+---
+id: decouvrir-prise-en-main-cli
+title: "CLI Ansible : les 8 commandes du quotidien"
+description: "Enchaîner ad-hoc, ansible-doc, ansible-config, ansible-inventory, ansible-galaxy, ansible-vault et ansible-lint sur le lab."

@@ -1,0 +1,4 @@
+---
+id: molecule-introduction
+title: "Molecule : anatomie d'un scénario de test"
+description: "Lire un scénario molecule/default/ : molecule.yml, converge.yml, verify.yml, driver, plateformes, verifier, puis dérouler le cycle complet."

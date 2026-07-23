@@ -1,0 +1,66 @@
+---
+# Mise en place du lab premier-playbook : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup premier-playbook lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    # Le challenge démarre nginx lui-même, avec la configuration qu'il vient
+    # d'écrire. Si on laissait tourner le nginx d'un lab voisin, le
+    # `state: started` de l'apprenant serait un no-op : le service resterait
+    # sur son ancien port, et le test échouerait sans que le playbook soit en
+    # cause.
+    - name: Reset name, state (premier-playbook)
+      ansible.builtin.systemd_service:
+        name: "nginx"
+        state: "stopped"
+      failed_when: false
+
+    # Les labs de la section roles templatent nginx.conf sur un port non
+    # standard. On rétablit le port 80 du paquet : c'est à l'apprenant de le
+    # faire passer sur 8888.
+    - name: Reset path, regexp, line (premier-playbook)
+      ansible.builtin.lineinfile:
+        path: "/etc/nginx/nginx.conf"
+        regexp: '^(\s*)listen(\s+)[0-9]+;'
+        line: "        listen       80;"
+      failed_when: false
+
+    # Le DÉCLENCHEUR de la leçon SELinux doit être remis à zéro, pas seulement
+    # sa trace. Une fois le port 8888 étiqueté http_port_t par un run
+    # précédent, l'étiquette est PERSISTANTE : nginx s'y lierait sans rien
+    # demander, et l'apprenant qui OUBLIE la tâche seport passerait quand
+    # même. Le lab certifierait alors une compétence non acquise.
+    - name: Reset ports, setype, state (premier-playbook)
+      community.general.seport:
+        ports: 8888
+        proto: tcp
+        setype: http_port_t
+        state: absent
+      failed_when: false
+
+    - name: Reset port, state (premier-playbook)
+      ansible.posix.firewalld:
+        port: 8888/tcp
+        zone: public
+        permanent: true
+        immediate: true
+        state: disabled
+      failed_when: false
+
+    - name: Reset path, state (premier-playbook)
+      ansible.builtin.file:
+        path: "/usr/share/nginx/html/index.html"
+        state: "absent"
+      failed_when: false
+
+- name: Brief the learner (premier-playbook)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Write a 5-task playbook (dnf, systemd, firewalld), read the PLAY RECAP, capture output with register and check idempotence on the second pass
+      run_once: true

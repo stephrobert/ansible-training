@@ -1,0 +1,26 @@
+---
+# Mise en place du lab dnf-options : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup dnf-options lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset name, state (dnf-options)
+      ansible.builtin.dnf:
+        name: "htop,ncdu"
+        state: "absent"
+    - name: Reset name, state (dnf-options)
+      ansible.builtin.dnf:
+        name: "epel-release"
+        state: "absent"
+
+- name: Brief the learner (dnf-options)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Enable a repo on the fly, patch CVEs only, exclude the kernel from a bulk upgrade and clean up orphaned dependencies
+      run_once: true

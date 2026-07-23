@@ -41,6 +41,6 @@ echo "Total : ${n_locked} chiffré(s), ${n_clear} en clair sur ${#FILES[@]}."
 
 if [[ $n_clear -gt 0 ]]; then
     echo ""
-    echo "⚠️  Lance 'make solutions-lock' avant de commiter !"
+    echo "⚠️  Lance 'mise run solutions-lock' avant de commiter !"
     exit 1
 fi

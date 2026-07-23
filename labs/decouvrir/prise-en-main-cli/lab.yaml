@@ -1,0 +1,25 @@
+---
+id: decouvrir-prise-en-main-cli
+title: "Ansible CLI: the 8 everyday commands"
+description: "Chain ad-hoc runs, ansible-doc, ansible-config, ansible-inventory, ansible-galaxy, ansible-vault and ansible-lint across the lab."
+section: decouvrir
+level: l1
+difficulty: beginner
+lab_type: lab
+estimated_time: "20m"
+skills:
+  - cli-tooling
+  - ad-hoc-commands
+  - module-documentation
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/prise-en-main-cli/
+certification_tags:
+  - rhce
+runtime:
+  type: shell
+  workdir: challenge/work
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

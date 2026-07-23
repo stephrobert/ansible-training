@@ -1,54 +1,54 @@
-# Lab 18 — Jinja2 syntaxe de base (interpolation, logique, whitespace)
+# Lab 18 — Jinja2 basic syntax (interpolation, logic, whitespace)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Jinja2 syntaxe de base Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/jinja2-base/)
+🔗 [**Jinja2 basic syntax in Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/jinja2-base/)
 
-Jinja2 est le **moteur de templating** utilisé par Ansible (et de nombreux autres
-outils Python : Flask, Django, Salt). Il offre **3 syntaxes** :
+Jinja2 is the **templating engine** used by Ansible (and many other Python
+tools: Flask, Django, Salt). It offers **3 syntaxes**:
 
-- **`{{ expression }}`** : interpolation d'une expression (variable, filtre, calcul).
-- **`{% statement %}`** : logique (boucle `for`, condition `if`, set, etc.).
-- **`{# commentaire #}`** : commentaire jinja2 — **non rendu** dans la sortie.
+- **`{{ expression }}`**: interpolation of an expression (variable, filter, computation).
+- **`{% statement %}`**: logic (`for` loop, `if` condition, set, etc.).
+- **`{# comment #}`**: jinja2 comment, **not rendered** in the output.
 
-Le **whitespace control** (`{%-`, `-%}`, `lstrip_blocks`, `trim_blocks`) gère
-l'apparition d'espaces et sauts de ligne autour des blocs `{% %}` — un piège
-classique des fichiers de config générés.
+The **whitespace control** (`{%-`, `-%}`, `lstrip_blocks`, `trim_blocks`) manages
+the appearance of spaces and line breaks around `{% %}` blocks, a classic pitfall
+of generated config files.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Interpoler** des variables avec `{{ }}` et appliquer des filtres.
-2. **Boucler** avec `{% for %}` et conditionner avec `{% if %}`.
-3. **Commenter** avec `{# #}` (jinja2) vs `#` (commentaire de fichier final).
-4. **Maîtriser** le whitespace control (`{%- -%}`, `lstrip_blocks`, `trim_blocks`).
-5. **Diagnostiquer** un template qui produit des sauts de ligne parasites.
+1. **Interpolate** variables with `{{ }}` and apply filters.
+2. **Loop** with `{% for %}` and condition with `{% if %}`.
+3. **Comment** with `{# #}` (jinja2) vs `#` (final-file comment).
+4. **Master** the whitespace control (`{%- -%}`, `lstrip_blocks`, `trim_blocks`).
+5. **Diagnose** a template that produces spurious line breaks.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 mkdir -p labs/ecrire-code/jinja2-base/templates
 ansible db1.lab -b -m shell -a "rm -f /tmp/jinja-*.txt"
 ```
 
-## 📚 Exercice 1 — Interpolation simple `{{ }}`
+## 📚 Exercise 1 — Simple interpolation `{{ }}`
 
-Créez `templates/simple.j2` :
+Create `templates/simple.j2`:
 
 ```jinja
 Bonjour {{ name | default('inconnu') }} !
@@ -56,7 +56,7 @@ Vous avez {{ items | length }} items.
 Premier item : {{ items[0] | upper }}.
 ```
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -74,14 +74,14 @@ Créez `lab.yml` :
         mode: "0644"
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/ecrire-code/jinja2-base/lab.yml
-ssh ansible@db1.lab 'cat /tmp/jinja-simple.txt'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'cat /tmp/jinja-simple.txt'
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
 ```text
 Bonjour Alice !
@@ -89,12 +89,12 @@ Vous avez 3 items.
 Premier item : UN.
 ```
 
-`{{ }}` interpole l'expression. Les **filtres** (`| upper`, `| length`, `| default`)
-s'appliquent comme dans un `debug:` d'Ansible.
+`{{ }}` interpolates the expression. The **filters** (`| upper`, `| length`, `| default`)
+apply just like in an Ansible `debug:`.
 
-## 📚 Exercice 2 — Boucles `{% for %}`
+## 📚 Exercise 2 — Loops `{% for %}`
 
-Créez `templates/loop.j2` :
+Create `templates/loop.j2`:
 
 ```jinja
 [users]
@@ -103,7 +103,7 @@ Créez `templates/loop.j2` :
 {% endfor %}
 ```
 
-Modifiez `lab.yml` pour ajouter :
+Modify `lab.yml` to add:
 
 ```yaml
 vars:
@@ -113,7 +113,7 @@ vars:
     - { name: charlie, uid: 1003 }
 ```
 
-Et la tâche :
+And the task:
 
 ```yaml
 - name: Generer le fichier loop
@@ -123,14 +123,14 @@ Et la tâche :
     mode: "0644"
 ```
 
-**Lancez et inspectez** :
+**Run and inspect**:
 
 ```bash
 ansible-playbook labs/ecrire-code/jinja2-base/lab.yml
-ssh ansible@db1.lab 'cat -A /tmp/jinja-loop.txt'  # cat -A montre les sauts de ligne
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'cat -A /tmp/jinja-loop.txt'  # cat -A shows the line breaks
 ```
 
-🔍 **Observation** : output (avec `cat -A`) :
+🔍 **Observation**: output (with `cat -A`):
 
 ```text
 [users]$
@@ -143,12 +143,12 @@ charlie = 1003$
 $
 ```
 
-**Lignes vides parasites** entre les itérations ! C'est le **piège du whitespace** —
-le `\n` après `{% for %}` reste dans la sortie.
+**Spurious empty lines** between iterations! This is the **whitespace pitfall**:
+the `\n` after `{% for %}` stays in the output.
 
-## 📚 Exercice 3 — Whitespace control avec `{%- -%}`
+## 📚 Exercise 3 — Whitespace control with `{%- -%}`
 
-Modifiez `templates/loop.j2` pour ajouter `-` dans les blocs jinja :
+Modify `templates/loop.j2` to add `-` in the jinja blocks:
 
 ```jinja
 [users]
@@ -157,9 +157,9 @@ Modifiez `templates/loop.j2` pour ajouter `-` dans les blocs jinja :
 {% endfor %}
 ```
 
-🔍 **Observation** : `{%- ... -%}` retire les espaces/sauts de ligne **avant** ou
-**après** le bloc. `{% for user in users -%}` retire le `\n` qui suivrait. Output
-plus propre :
+🔍 **Observation**: `{%- ... -%}` removes spaces/line breaks **before** or
+**after** the block. `{% for user in users -%}` removes the `\n` that would follow.
+Cleaner output:
 
 ```text
 [users]
@@ -168,15 +168,15 @@ bob = 1002
 charlie = 1003
 ```
 
-**Convention** :
+**Convention**:
 
-- **`{%-`** retire les whitespaces **avant** le bloc.
-- **`-%}`** retire les whitespaces **après** le bloc.
+- **`{%-`** removes the whitespaces **before** the block.
+- **`-%}`** removes the whitespaces **after** the block.
 
-## 📚 Exercice 4 — `lstrip_blocks` et `trim_blocks` (config globale)
+## 📚 Exercise 4 — `lstrip_blocks` and `trim_blocks` (global config)
 
-Au lieu de mettre `-` partout, on peut activer ces options **au niveau du module
-template** :
+Instead of putting `-` everywhere, you can enable these options **at the template
+module level**:
 
 ```yaml
 - name: Generer avec whitespace control auto
@@ -188,13 +188,13 @@ template** :
     trim_blocks: true
 ```
 
-| Option | Effet |
+| Option | Effect |
 |---|---|
-| **`trim_blocks: true`** | Retire le **premier `\n` après** un bloc `{% %}`. |
-| **`lstrip_blocks: true`** | Retire les **whitespaces avant** un bloc `{% %}` (en début de ligne). |
+| **`trim_blocks: true`** | Removes the **first `\n` after** a `{% %}` block. |
+| **`lstrip_blocks: true`** | Removes the **whitespaces before** a `{% %}` block (at the start of a line). |
 
-🔍 **Observation** : avec ces deux options, votre template peut être **indenté**
-proprement (lecture facile) sans que l'indentation se retrouve dans la sortie :
+🔍 **Observation**: with these two options, your template can be **indented**
+cleanly (easy to read) without the indentation ending up in the output:
 
 ```jinja
 {% for user in users %}
@@ -204,26 +204,26 @@ proprement (lecture facile) sans que l'indentation se retrouve dans la sortie :
 {% endfor %}
 ```
 
-Les `    {% if %}` sont **lstripés**, les `\n` après `{% endif %}` sont **trim_blocked**.
-Output identique à du jinja2 sans indentation.
+The `    {% if %}` are **lstripped**, the `\n` after `{% endif %}` are **trim_blocked**.
+Output identical to jinja2 without indentation.
 
-**Convention RHCE** : **toujours** `lstrip_blocks: true` + `trim_blocks: true` sur
-les modules `template:`.
+**RHCE convention**: **always** `lstrip_blocks: true` + `trim_blocks: true` on
+`template:` modules.
 
-## 📚 Exercice 5 — Commentaires `{# #}` vs `#`
+## 📚 Exercise 5 — Comments `{# #}` vs `#`
 
 ```jinja
-{# Ce commentaire est jinja2 - ne sera PAS dans la sortie #}
+{# This is a jinja2 comment, it will NOT be in the output #}
 [server]
-# Ce commentaire INI restera dans la sortie
+# This INI comment stays in the output
 host = {{ ansible_default_ipv4.address }}
 ```
 
-🔍 **Observation** : `{# #}` est un commentaire jinja2 (filtré au rendu). `#` est
-juste du texte (qui se retrouve dans la sortie). Utilisez `{# #}` pour des **notes
-de template** que l'utilisateur final ne doit pas voir.
+🔍 **Observation**: `{# #}` is a jinja2 comment (filtered at render). `#` is
+just text (which ends up in the output). Use `{# #}` for **template notes**
+that the end user should not see.
 
-## 📚 Exercice 6 — Conditions `{% if %}` et `{% set %}`
+## 📚 Exercise 6 — Conditions `{% if %}` and `{% set %}`
 
 ```jinja
 {% set environment = ansible_env.MYAPP_ENV | default('dev') %}
@@ -242,88 +242,87 @@ debug = true
 {% endif %}
 ```
 
-🔍 **Observation** : `{% set %}` crée une variable **locale au template**. `{% if
-elif else endif %}` permet le branchement classique. Pratique pour générer des
-configs **adaptées à l'environnement** depuis un seul template.
+🔍 **Observation**: `{% set %}` creates a variable **local to the template**. `{% if
+elif else endif %}` allows classic branching. Handy to generate configs **tailored to
+the environment** from a single template.
 
-## 📚 Exercice 7 — Le piège : `{{ }}` à l'intérieur d'un `when:` Ansible
+## 📚 Exercise 7 — The pitfall: `{{ }}` inside an Ansible `when:`
 
 ```yaml
-# ❌ Mauvais
+# ❌ Wrong
 - name: Action conditionnee
   ansible.builtin.debug:
     msg: "OK"
   when: "{{ ansible_distribution == 'AlmaLinux' }}"   # ❌
 
-# ✅ Bon
+# ✅ Good
 - name: Action conditionnee
   ansible.builtin.debug:
     msg: "OK"
   when: ansible_distribution == 'AlmaLinux'   # ✅
 ```
 
-🔍 **Observation** : dans `when:`, **pas de `{{ }}`** — l'expression est déjà Jinja2.
-Ansible 2.16+ affiche un warning si vous mettez les `{{ }}` quand même. C'est une
-règle systématique pour `when:`, `failed_when:`, `changed_when:`, `loop_control:
-when:`.
+🔍 **Observation**: in `when:`, **no `{{ }}`**: the expression is already Jinja2.
+Ansible 2.16+ shows a warning if you add the `{{ }}` anyway. This is a systematic
+rule for `when:`, `failed_when:`, `changed_when:`, `loop_control: when:`.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`{{ expression }}`** = interpolation, **`{% statement %}`** = logique, **`{# commentaire #}`** = note jinja2.
-- **`{%- -%}`** (avec tirets) = retire whitespaces autour du bloc.
-- **`lstrip_blocks: true`** + **`trim_blocks: true`** sur `template:` = whitespace control automatique.
-- **`{% set %}`** crée une variable locale au template.
-- **Pas de `{{ }}`** dans `when:`, `failed_when:`, `changed_when:`.
-- **`{# #}`** = commentaire jinja2 (filtré), **`#`** = commentaire du fichier final (gardé).
+- **`{{ expression }}`** = interpolation, **`{% statement %}`** = logic, **`{# comment #}`** = jinja2 note.
+- **`{%- -%}`** (with dashes) = removes whitespaces around the block.
+- **`lstrip_blocks: true`** + **`trim_blocks: true`** on `template:` = automatic whitespace control.
+- **`{% set %}`** creates a variable local to the template.
+- **No `{{ }}`** in `when:`, `failed_when:`, `changed_when:`.
+- **`{# #}`** = jinja2 comment (filtered), **`#`** = final-file comment (kept).
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous générez un fichier `/etc/hosts` avec une boucle sur les `groups['all']`.
-   Sans `lstrip_blocks` et `trim_blocks`, qu'est-ce qui se passe avec votre
-   indentation jinja2 ?
+1. You generate an `/etc/hosts` file with a loop over `groups['all']`.
+   Without `lstrip_blocks` and `trim_blocks`, what happens with your
+   jinja2 indentation?
 
-2. Quelle est la différence sémantique entre `{% set x = expr %}` (dans un template)
-   et `set_fact: x: "{{ expr }}"` (dans un play) ?
+2. What is the semantic difference between `{% set x = expr %}` (in a template)
+   and `set_fact: x: "{{ expr }}"` (in a play)?
 
-3. Vous voulez **garder le `\n`** après un `{% if %}` (parce que c'est intentionnel).
-   Comment override `trim_blocks: true` localement ?
+3. You want to **keep the `\n`** after a `{% if %}` (because it is intentional).
+   How do you override `trim_blocks: true` locally?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`{% include %}`** : inclure un autre fichier `.j2` dans le template courant.
-  Permet de **factoriser** des fragments réutilisables (header, footer).
-- **`{% extends %}`** + **`{% block %}`** : héritage de templates (comme Django).
-  Surcouche pour les très gros projets — souvent overkill pour Ansible.
-- **`{% raw %}` / `{% endraw %}`** : zone où Jinja2 **n'interprète pas** `{{ }}` —
-  utile quand vous générez un fichier qui contient lui-même du jinja2 (ex : un
-  template Helm qui sera rendu plus tard).
-- **`autoescape: true`** : échappement automatique des caractères HTML — utile
-  uniquement si vous générez du HTML avec des données utilisateur.
-- **Tests jinja2** (lab 28) : `{% if x is defined %}`, `{% if x is mapping %}`, etc.
+- **`{% include %}`**: include another `.j2` file in the current template.
+  Lets you **factor out** reusable fragments (header, footer).
+- **`{% extends %}`** + **`{% block %}`**: template inheritance (like Django).
+  An extra layer for very large projects, often overkill for Ansible.
+- **`{% raw %}` / `{% endraw %}`**: a zone where Jinja2 **does not interpret** `{{ }}`,
+  useful when you generate a file that itself contains jinja2 (e.g. a
+  Helm template that will be rendered later).
+- **`autoescape: true`**: automatic escaping of HTML characters, useful
+  only if you generate HTML with user data.
+- **Jinja2 tests** (lab 28): `{% if x is defined %}`, `{% if x is mapping %}`, etc.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/ecrire-code/jinja2-base/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/ecrire-code/jinja2-base/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/ecrire-code/jinja2-base/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

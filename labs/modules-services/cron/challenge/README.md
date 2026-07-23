@@ -1,32 +1,32 @@
-# 🎯 Challenge — Module `cron:` (2 jobs via `cron_file:`)
+# 🎯 Challenge — `cron:` module (2 jobs via `cron_file:`)
 
-## ✅ Objectif
+## ✅ Objective
 
-Sur **db1.lab**, créer un fichier dédié **`/etc/cron.d/lab-rhce`** qui
-contient :
+On **db1.lab**, create a dedicated file **`/etc/cron.d/lab-rhce`** that
+contains:
 
-- Une variable d'environnement `MAILTO=admin@lab.local`
-- **Job 1** : `Backup horaire` à `0 * * * *` (minute 0 de chaque heure),
-  exécute `/usr/local/bin/backup.sh` en tant que `root`.
-- **Job 2** : `Cleanup quotidien` à `0 3 * * *` (3h du matin),
-  exécute `/usr/bin/find /tmp -mtime +7 -delete` en tant que `root`.
+- An environment variable `MAILTO=admin@lab.local`
+- **Job 1**: `Backup horaire` at `0 * * * *` (minute 0 of every hour),
+  runs `/usr/local/bin/backup.sh` as `root`.
+- **Job 2**: `Cleanup quotidien` at `0 3 * * *` (3 a.m.),
+  runs `/usr/bin/find /tmp -mtime +7 -delete` as `root`.
 
-> 💡 **Pourquoi `cron_file:` plutôt que la crontab utilisateur ?**
-> `/etc/cron.d/<fichier>` est versionné via Ansible, lisible directement,
-> et permet de poser une **configuration packageable** (un rôle pose son
-> fichier dédié, c'est plus propre que de patcher une crontab partagée).
+> 💡 **Why `cron_file:` rather than the user crontab?**
+> `/etc/cron.d/<file>` is versioned via Ansible, directly readable,
+> and lets you lay down a **packageable configuration** (a role drops its
+> dedicated file, which is cleaner than patching a shared crontab).
 
-## 🧩 Pattern `cron_file:`
+## 🧩 `cron_file:` pattern
 
-Avec `cron_file: lab-rhce`, **chaque appel** à `ansible.builtin.cron`
-écrit/modifie une ligne dans `/etc/cron.d/lab-rhce`. Pour
-qu'Ansible reconnaisse une ligne déjà posée et ne duplique pas, il utilise
-le `name:` (qui devient un commentaire `#Ansible: <name>` dans le fichier).
+With `cron_file: lab-rhce`, **each call** to `ansible.builtin.cron`
+writes/modifies a line in `/etc/cron.d/lab-rhce`. So that
+Ansible recognizes an already-placed line and does not duplicate it, it uses
+the `name:` (which becomes a `#Ansible: <name>` comment in the file).
 
-> ⚠️ **`name:`** est **obligatoire** quand vous utilisez `cron_file:` —
-> c'est l'identifiant d'idempotence.
+> ⚠️ **`name:`** is **mandatory** when you use `cron_file:`:
+> it is the idempotence identifier.
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -47,7 +47,7 @@ le `name:` (qui devient un commentaire `#Ansible: <name>` dans le fichier).
       ansible.builtin.cron:
         name: ???
         minute: ???
-        # hour: par défaut "*"
+        # hour: defaults to "*"
         job: ???
         cron_file: ???
         user: root
@@ -62,27 +62,27 @@ le `name:` (qui devient un commentaire `#Ansible: <name>` dans le fichier).
         user: root
 ```
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **`name:`** est le **marqueur d'idempotence** (commentaire `#Ansible:
->   <name>` dans le crontab). Sans, chaque run ajoute une nouvelle entrée.
-> - **`cron_file:`** crée `/etc/cron.d/<file>` (system-wide). Sans,
->   modifie le crontab user (`/var/spool/cron/<user>`).
-> - **`user:`** : pour `cron_file:`, c'est l'user qui exécute la tâche
->   (champ entre minute et commande). Pour crontab user, c'est le crontab
->   ciblé.
-> - **`@reboot`** comme `special_time:` : `special_time: reboot`,
->   `daily`, `weekly`, etc. Évite l'écriture manuelle de
+> - **`name:`** is the **idempotence marker** (`#Ansible: <name>`
+>   comment in the crontab). Without it, each run adds a new entry.
+> - **`cron_file:`** creates `/etc/cron.d/<file>` (system-wide). Without it,
+>   it modifies the user crontab (`/var/spool/cron/<user>`).
+> - **`user:`**: for `cron_file:`, it is the user that runs the task
+>   (field between minute and command). For the user crontab, it is the crontab
+>   targeted.
+> - **`@reboot`** as `special_time:`: `special_time: reboot`,
+>   `daily`, `weekly`, etc. Avoids the manual writing of
 >   `0 0 * * 0`.
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-services/cron/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "cat /etc/cron.d/lab-rhce"
 ```
 
-🔍 Sortie attendue (extrait) :
+🔍 Expected output (excerpt):
 
 ```text
 #Ansible: MAILTO
@@ -93,7 +93,7 @@ MAILTO=admin@lab.local
 0 3 * * * root /usr/bin/find /tmp -mtime +7 -delete
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-services/cron/challenge/tests/
@@ -102,18 +102,18 @@ pytest -v labs/modules-services/cron/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/modules-services/cron clean
+dsoxlab clean modules-services-cron
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Crontab utilisateur** : sans `cron_file:`, `cron:` modifie la crontab de
-  l'utilisateur cible (`crontab -e`). Plus standard mais moins versionnable.
-- **`special_time:`** : raccourci pour `@reboot`, `@hourly`, `@daily`,
+- **User crontab**: without `cron_file:`, `cron:` modifies the crontab of
+  the target user (`crontab -e`). More standard but less versionable.
+- **`special_time:`**: shortcut for `@reboot`, `@hourly`, `@daily`,
   `@weekly`, `@monthly`.
-- **`disabled: true`** : commente la ligne (au lieu de la supprimer). Permet
-  de désactiver temporairement un job sans perdre sa définition.
-- **Lint** :
+- **`disabled: true`**: comments out the line (instead of removing it). Lets
+  you temporarily disable a job without losing its definition.
+- **Lint**:
 
    ```bash
    ansible-lint labs/modules-services/cron/challenge/solution.yml

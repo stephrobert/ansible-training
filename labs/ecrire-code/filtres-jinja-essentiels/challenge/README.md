@@ -1,14 +1,14 @@
-# 🎯 Challenge — 6 filtres Jinja2 dans un fichier marqueur
+# 🎯 Challenge — 6 Jinja2 filters in a marker file
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `challenge/solution.yml` qui sur **db1.lab** pose
-`/tmp/filtres-result.txt` contenant **6 lignes**, chacune démontrant un filtre
-Jinja2 essentiel.
+Write `challenge/solution.yml` that, on **db1.lab**, writes
+`/tmp/filtres-result.txt` containing **6 lines**, each demonstrating an essential
+Jinja2 filter.
 
-## 🧩 Données d'entrée
+## 🧩 Input data
 
-Mettez ces variables dans `vars:` du play :
+Put these variables in the play's `vars:`:
 
 ```yaml
 raw_input: "  HELLO World  "
@@ -26,7 +26,7 @@ tls_overrides:
   tls: true
 ```
 
-## 🧩 Sortie attendue
+## 🧩 Expected output
 
 ```text
 trimmed=hello world
@@ -34,21 +34,21 @@ union=memcached,nginx,postgres,redis
 prod_services=api,cache
 merged=app=api port=443 tls=True
 default_value=fallback-OK
-yaml_safe=hello: world
+yaml_safe={hello: world}
 ```
 
-## 🧩 6 filtres à utiliser
+## 🧩 6 filters to use
 
-| Ligne | Filtres | Effet |
+| Line | Filters | Effect |
 | --- | --- | --- |
-| `trimmed` | `trim`, `lower` | Espaces enlevés + minuscules |
-| `union` | `+`, `unique`, `sort`, `join(',')` | Concaténation de listes, dédup, tri, join |
-| `prod_services` | `selectattr('env', 'equalto', 'prod')`, `map(attribute='name')`, `sort`, `join(',')` | Filtre + extraction + tri + join |
-| `merged` | `combine(...)` puis sérialisation `key=value` triée | Fusion de dicts |
-| `default_value` | `default('fallback-OK')` | Valeur par défaut sur variable inexistante |
-| `yaml_safe` | `to_yaml`, `trim` | Rendu YAML inline |
+| `trimmed` | `trim`, `lower` | Spaces removed + lowercase |
+| `union` | `+`, `unique`, `sort`, `join(',')` | List concatenation, dedup, sort, join |
+| `prod_services` | `selectattr('env', 'equalto', 'prod')`, `map(attribute='name')`, `sort`, `join(',')` | Filter + extraction + sort + join |
+| `merged` | `combine(...)` then sorted `key=value` serialization | Dict merge |
+| `default_value` | `default('fallback-OK')` | Default value on a nonexistent variable |
+| `yaml_safe` | `to_yaml`, `trim` | Inline YAML rendering |
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -57,7 +57,7 @@ yaml_safe=hello: world
   become: true
 
   vars:
-    # ... copier les 5 variables ci-dessus ...
+    # ... copy the 5 variables above ...
 
   tasks:
     - name: Poser /tmp/filtres-result.txt
@@ -73,33 +73,33 @@ yaml_safe=hello: world
           yaml_safe={{ {'hello': 'world'} | ??? | trim }}
 ```
 
-> 💡 **Indice pour `merged`** : `(base_config | combine(tls_overrides)).items()`
-> renvoie une liste de tuples `(clé, valeur)`. Vous pouvez ensuite
-> `map('join', '=')` pour transformer chaque tuple en `clé=valeur`, puis
-> `sort | join(' ')` pour ordonner et concaténer.
+> 💡 **Hint for `merged`**: `(base_config | combine(tls_overrides)).items()`
+> returns a list of tuples `(key, value)`. You can then
+> `map('join', '=')` to turn each tuple into `key=value`, then
+> `sort | join(' ')` to order and concatenate.
 
-**Pièges** :
+**Pitfalls**:
 
-> - **`combine`** est récursif (deep merge) seulement avec
->   `recursive=true`. Sinon il fait un merge plat (le dict de droite
->   écrase complètement le dict de gauche).
-> - **`map('attribute=...')`** vs **`map('extract', dict)`** : le premier
->   extrait un attribut de chaque élément, le second extrait par clé.
->   Confusion classique.
-> - **`| default([])`** sur une liste : indispensable avant `length` ou
->   itération si la variable peut être absente.
-> - **`to_yaml` / `to_json` / `to_nice_yaml`** : sortie YAML/JSON. La
->   version `nice` ajoute indentation et sauts de ligne (pour produire un
->   fichier lisible).
+> - **`combine`** is recursive (deep merge) only with
+>   `recursive=true`. Otherwise it does a flat merge (the right-hand dict
+>   completely overwrites the left-hand dict).
+> - **`map('attribute=...')`** vs **`map('extract', dict)`**: the first
+>   extracts an attribute from each element, the second extracts by key.
+>   Classic confusion.
+> - **`| default([])`** on a list: essential before `length` or
+>   iteration if the variable may be missing.
+> - **`to_yaml` / `to_json` / `to_nice_yaml`**: YAML/JSON output. The
+>   `nice` version adds indentation and line breaks (to produce a readable
+>   file).
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/ecrire-code/filtres-jinja-essentiels/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "cat /tmp/filtres-result.txt"
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/filtres-jinja-essentiels/challenge/tests/
@@ -108,18 +108,18 @@ pytest -v labs/ecrire-code/filtres-jinja-essentiels/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/ecrire-code/filtres-jinja-essentiels clean
+dsoxlab clean ecrire-code-filtres-jinja-essentiels
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`difference` / `intersect` / `symmetric_difference`** : opérations
-  ensemblistes sur des listes (au-delà de `union`).
-- **`regex_replace`** : substituer un motif. Exemple : `{{ "v1.2.3" |
+- **`difference` / `intersect` / `symmetric_difference`**: set operations
+  on lists (beyond `union`).
+- **`regex_replace`**: substitute a pattern. Example: `{{ "v1.2.3" |
   regex_replace('^v', '') }}` → `1.2.3`.
-- **`to_nice_json` / `to_nice_yaml`** : sérialisation indentée pour des
-  fichiers plus lisibles.
-- **Lint** :
+- **`to_nice_json` / `to_nice_yaml`**: indented serialization for more
+  readable files.
+- **Lint**:
 
    ```bash
    ansible-lint labs/ecrire-code/filtres-jinja-essentiels/challenge/solution.yml

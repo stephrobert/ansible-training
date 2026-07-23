@@ -1,0 +1,35 @@
+---
+# Mise en place du lab configuration-ansible : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup configuration-ansible lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (configuration-ansible)
+      ansible.builtin.file:
+        path: "/tmp/lab03a-config.txt"
+        state: "absent"
+
+    # Le livrable de ce lab n'est pas sur la VM : c'est l'ansible.cfg que
+    # l'apprenant écrit dans le dossier du lab (exercice 2 du README), et que
+    # les tests lisent. L'état de départ doit donc le remettre à zéro lui aussi,
+    # sinon le fichier laissé par un run précédent (ou par la solution de
+    # référence) ferait passer les tests sans que personne n'ait rien écrit.
+    - name: Reset le livrable local de l'apprenant (ansible.cfg du lab)
+      ansible.builtin.file:
+        path: "{{ inventory_dir | dirname }}/labs/decouvrir/configuration-ansible/ansible.cfg"
+        state: absent
+      delegate_to: localhost
+      become: false
+      run_once: true
+
+- name: Brief the learner (configuration-ansible)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Write a project ansible.cfg, check the active config with ansible-config dump, override an option by environment variable and enable a callback
+      run_once: true

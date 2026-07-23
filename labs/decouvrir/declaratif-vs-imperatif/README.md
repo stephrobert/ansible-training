@@ -1,21 +1,21 @@
-# Lab 01 — Déclaratif vs impératif (pourquoi Ansible n'est pas du Bash)
+# Lab 01 — Declarative vs imperative (why Ansible is not Bash)
 
-> ⚠️ **Premier lab — vérifiez que vos 4 VMs tournent avant de commencer.**
+> ⚠️ **First lab: check that your 4 VMs are running before you start.**
 >
-> Tous les labs s'exécutent sur **4 VMs AlmaLinux** provisionnées localement
-> via libvirt/KVM (`control-node`, `web1`, `web2`, `db1`). Si vous arrivez
-> sur ce repo pour la première fois, vous devez les créer **une seule fois** :
+> All labs run on **4 AlmaLinux VMs** provisioned locally via libvirt/KVM
+> (`control-node`, `web1`, `web2`, `db1`). If you are landing on this repo
+> for the first time, you must create them **only once**:
 >
 > ```bash
-> cd <ansible-training>          # racine du repo
-> make bootstrap                 # installe Ansible + libvirt + outils (~3 min, 1×)
-> make provision                 # crée les 4 VMs + prépare les managed nodes (~5 min)
-> make hosts-add                 # ajoute web1.lab/web2.lab/db1.lab dans /etc/hosts (sudo)
-> make ssh-config-add            # 'ssh ansible@web1.lab' utilise la clé du repo
-> make verify-conn               # → 4 "pong" attendus (validation finale)
+> cd <ansible-training>          # repo root
+> mise install                 # installs Ansible + libvirt + tools (~3 min, 1×)
+> dsoxlab provision                 # creates the 4 VMs + prepares the managed nodes (~5 min)
+> mise run setup-hosts                 # adds web1.lab/web2.lab/db1.lab to /etc/hosts (sudo)
+> mise run setup-ssh            # 'ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab' uses the repo key
+> `dsoxlab status`                          # → 4 "pong" expected (final validation)
 > ```
 >
-> Vérification rapide à tout moment :
+> Quick check at any time:
 >
 > ```bash
 > ansible all -m ansible.builtin.ping
@@ -25,99 +25,100 @@
 > # db1.lab          | SUCCESS => {"ping": "pong"}
 > ```
 >
-> | Action | Commande |
+> | Action | Command |
 > | --- | --- |
-> | Voir l'état des VMs | `virsh list --all` |
-> | Voir l'état des hostnames du lab | `make hosts-status` |
-> | Snapshot avant un lab risqué | `make snapshot` |
-> | Restaurer le snapshot | `make restore` |
-> | Détruire toutes les VMs (après formation) | `make destroy` |
-> | Retirer les hostnames de `/etc/hosts` | `make hosts-remove` |
-> | État de la config SSH du lab | `make ssh-config-status` |
-> | Retirer la config SSH du lab | `make ssh-config-remove` |
+> | Check the VMs state | `virsh list --all` |
+> | Check the lab hostnames state | `mise run setup-hosts` |
+> | Snapshot before a risky lab | `mise run snapshot` |
+> | Restore the snapshot | `mise run restore` |
+> | Destroy all VMs (after the training) | `dsoxlab destroy` |
+> | Remove the hostnames from `/etc/hosts` | `mise run remove-hosts` |
+> | State of the lab SSH config | `mise run setup-ssh` |
+> | Remove the lab SSH config | `mise run remove-ssh` |
 >
-> Pour les détails (topologie réseau, ressources requises, troubleshooting),
-> voir [README racine](../../README.md) sections « Topologie du lab » et
-> « Pré-requis poste de travail ».
+> For the details (network topology, required resources, troubleshooting),
+> see the [root README](../../../README.md), sections "Lab topology" and
+> "Workstation prerequisites".
 
-## 🧠 Rappel et lecture recommandée
+## 🧠 Recap and recommended reading
 
-> 📖 **Avant de pratiquer, lisez le guide blog associé** — il pose le contexte
-> théorique (histoire d'Ansible, Push vs Pull, idempotence) que ce lab vient
-> illustrer concrètement :
+> 📖 **Before practicing, read the companion blog guide.** It lays out the
+> theoretical context (Ansible history, Push vs Pull, idempotence) that this
+> lab illustrates concretely:
 >
-> 🔗 [**Déclaratif vs impératif : la même tâche, deux philosophies**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/declaratif-vs-imperatif/)
+> 🔗 [**Declarative vs imperative: the same task, two philosophies**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/declaratif-vs-imperatif/)
 >
-> ⏱ Temps de lecture : ~10 min. Le guide explique le **pourquoi**, ce lab vous
-> fait sentir le **comment** dans la pratique. Les deux ensemble = déclic
-> mental garanti.
+> ⏱ Reading time: ~10 min. The guide explains the **why**, this lab makes you
+> feel the **how** in practice. The two together = guaranteed mental click.
 
-### En 30 secondes
+### In 30 seconds
 
-**Impératif** = vous décrivez **les étapes** (« installe nginx, ajoute cette ligne, démarre le service »). À chaque relance, le script refait toutes les étapes — et **dérive** si l'une d'elles n'est pas idempotente (ex. ajouter une ligne).
+**Imperative** = you describe **the steps** ("install nginx, add this line, start the service"). On every rerun, the script redoes all the steps, and it **drifts** if one of them is not idempotent (e.g. appending a line).
 
-**Déclaratif** = vous décrivez **l'état désiré** (« nginx présent, page d'accueil contenant cette ligne, service démarré »). Ansible compare avec l'état actuel et **n'agit que si nécessaire**. Au second passage, plus rien à faire — c'est le signal `changed=0` du `PLAY RECAP`.
+**Declarative** = you describe **the desired state** ("nginx present, home page containing this line, service started"). Ansible compares with the current state and **acts only when needed**. On the second pass, nothing left to do: that is the `changed=0` signal in the `PLAY RECAP`.
 
-C'est le **déclic mental** de la formation : sans cette différence comprise, on écrit du Bash en YAML et on passe à côté de l'apport d'Ansible.
+This is the **mental click** of the training: without understanding this difference, you write Bash in YAML and miss what Ansible brings.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous aurez **vu de vos yeux** :
+By the end of this lab, you will have **seen with your own eyes**:
 
-1. Un script Bash naïf qui **dérive** à chaque exécution sur la même cible.
-2. Un playbook Ansible qui réalise le même objectif et **converge** vers l'état désiré.
-3. La différence concrète entre **idempotent** et **non-idempotent**.
-4. Le signal `changed=0` au second passage — la preuve mécanique de l'idempotence.
+1. A naive Bash script that **drifts** on every run against the same target.
+2. An Ansible playbook that achieves the same goal and **converges** toward the desired state.
+3. The concrete difference between **idempotent** and **non-idempotent**.
+4. The `changed=0` signal on the second pass: the mechanical proof of idempotence.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
-Vérifiez que les VMs du lab tournent et que `web1.lab` répond :
+Check that the lab VMs are running and that `web1.lab` responds:
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible web1.lab -m ping
 ```
 
-Réponse attendue : `web1.lab | SUCCESS => {"ping": "pong"}`. Si vous obtenez `UNREACHABLE`, lancez `make provision` à la racine du repo.
+Expected response: `web1.lab | SUCCESS => {"ping": "pong"}`. If you get `UNREACHABLE`, run `dsoxlab provision` at the repo root.
 
-> 💡 **Note** : ce lab est livré clé en main (`playbook.yml` + `Makefile` + script Bash). Vous n'avez **rien à écrire** — vous allez **observer** la différence. Les labs suivants à partir du 04 vous demanderont, eux, d'écrire le code.
+> 💡 **Note**: this lab ships turnkey (`playbook.yml` + Bash script). You have **nothing to write**: you are going to **observe** the difference. The following labs will ask you, in turn, to write the code.
 
-## ⚙️ Arborescence du lab
+## ⚙️ Lab tree
 
 ```text
 labs/decouvrir/declaratif-vs-imperatif/
-├── README.md                           ← ce fichier
-├── Makefile                            ← orchestre le scénario complet
-├── playbook.yml                        ← l'équivalent Ansible déclaratif
+├── README.md                           ← this file
+├── playbook.yml                        ← the declarative Ansible equivalent
 ├── scripts/
-│   └── install-nginx-impératif.sh      ← le script Bash naïf
+│   └── install-nginx-impératif.sh      ← the naive Bash script
 └── challenge/
     └── tests/
-        └── test_*.py                   ← pytest+testinfra qui valide la convergence
+        └── test_*.py                   ← pytest+testinfra that validates convergence
 ```
 
-## 📚 Exercice 1 — Lire le script Bash impératif
+## 📚 Exercise 1 — Read the imperative Bash script
 
-Ouvrez le script et lisez-le **avant de l'exécuter** :
+Open the script and read it **before running it**:
 
 ```bash
 cat labs/decouvrir/declaratif-vs-imperatif/scripts/install-nginx-impératif.sh
 ```
 
-Repérez les 3 étapes : (1) installer nginx, (2) **ajouter une ligne** `Servi par <hostname>` à `index.html`, (3) démarrer nginx.
+Spot the 3 steps: (1) install nginx, (2) **add a line** `Servi par <hostname>` to `index.html`, (3) start nginx.
 
-🔍 **Observation à anticiper** : l'étape (2) utilise `echo "..." >> index.html` — un **append**. Rien ne vérifie si la ligne est déjà là. À chaque relance, on ajoute une ligne en plus.
+🔍 **Observation to anticipate**: step (2) uses `echo "..." >> index.html`, an **append**. Nothing checks whether the line is already there. On every rerun, one more line is added.
 
-## 📚 Exercice 2 — Voir le script Bash dériver
+## 📚 Exercise 2 — Watch the Bash script drift
 
-Le `Makefile` du lab joue le script **3 fois** d'affilée :
+Run the script **3 times** in a row, and watch what piles up:
 
 ```bash
 cd labs/decouvrir/declaratif-vs-imperatif
-make run-bash
+for i in 1 2 3; do
+  ansible web1.lab -b -m ansible.builtin.script \
+    -a "scripts/install-nginx-impératif.sh"
+done
 ```
 
-🔍 **Observation** — sortie attendue :
+🔍 **Observation** (expected output):
 
 ```text
 --- Run #1 ---
@@ -128,104 +129,105 @@ OK : nginx déployé. Occurrences de 'Servi par' dans la page : 2
 OK : nginx déployé. Occurrences de 'Servi par' dans la page : 3
 ```
 
-À chaque run, **le compteur grimpe d'une ligne** — c'est la dérive. Vérifiez sur le managed node :
+On every run, **the counter climbs by one line**: that is the drift. Check on the managed node:
 
 ```bash
-ssh ansible@web1.lab 'sudo grep -n "Servi par" /usr/share/nginx/html/index.html'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab 'sudo grep -n "Servi par" /usr/share/nginx/html/index.html'
 ```
 
-Vous voyez **3 lignes** `<p>Servi par web1.lab</p>` accumulées. C'est la **dérive** typique du modèle impératif : le script ne vérifie pas l'état, il `tee -a` aveuglément à chaque appel.
+You see **3 accumulated** `<p>Servi par web1.lab</p>` lines. This is the **drift** typical of the imperative model: the script does not check the state, it `tee -a` blindly on every call.
 
-> 💡 **Détail technique** : `/usr/share/nginx/html/index.html` est en fait un **lien symbolique** vers `/usr/share/testpage/index.html` (un fichier livré par le paquet `almalinux-logos-httpd`, partagé avec Apache). Le `tee -a` modifie donc le **vrai fichier** pointé par le lien — et c'est lui qui persiste entre les runs si le `setup` ne le purge pas. Le `make setup` du lab fait précisément ce nettoyage via `sed -i '/<p>Servi par /d' ...`.
+> 💡 **Technical detail**: `/usr/share/nginx/html/index.html` is actually a **symbolic link** to `/usr/share/testpage/index.html`, a file shipped by the `almalinux-logos-httpd` package (nginx pulls it via `system-logos-httpd`: that `httpd` name is a historical legacy of the shared test page, not an Apache dependency). So `tee -a` modifies the **real file** pointed to by the link, and that is what persists between runs if nothing purges it. The lab's `cleanup.yaml` does precisely this cleanup via `sed -i '/<p>Servi par /d' ...`.
 
-## 📚 Exercice 3 — Voir le playbook Ansible converger
+## 📚 Exercise 3 — Watch the Ansible playbook converge
 
-Réinitialisez l'état (le `Makefile` désinstalle nginx et nettoie le fichier) puis lancez **3 fois** le playbook :
+Reset the state (`dsoxlab clean` uninstalls nginx and purges the file) then
+run the playbook **3 times**:
 
 ```bash
-make setup
-make run-ansible
+dsoxlab clean decouvrir-declaratif-vs-imperatif
+for i in 1 2 3; do ansible-playbook playbook.yml; done
 ```
 
-🔍 **Observation** : à chaque run, `index.html` contient **toujours 1 ligne**. Vérifiez :
+🔍 **Observation**: on every run, `index.html` **always contains 1 line**. Check:
 
 ```bash
-ssh ansible@web1.lab 'sudo cat /usr/share/nginx/html/index.html'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab 'sudo cat /usr/share/nginx/html/index.html'
 ```
 
-Le playbook a comparé l'état actuel à l'état désiré, vu qu'il était déjà conforme, et **n'a rien fait**. Regardez aussi le `PLAY RECAP` du second run — `changed=0` partout. C'est l'**idempotence** en action.
+The playbook compared the current state to the desired state, saw it was already compliant, and **did nothing**. Look also at the `PLAY RECAP` of the second run: `changed=0` everywhere. This is **idempotence** in action.
 
-## 📚 Exercice 4 — Comparer le `playbook.yml` et le script
+## 📚 Exercise 4 — Compare the `playbook.yml` and the script
 
-Ouvrez les deux fichiers côte à côte :
+Open the two files side by side:
 
 ```bash
 cat labs/decouvrir/declaratif-vs-imperatif/playbook.yml
 cat labs/decouvrir/declaratif-vs-imperatif/scripts/install-nginx-impératif.sh
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- Le script Bash **enchaîne des commandes**, sans état mémorisé.
-- Le playbook **déclare** un état (`state: present`, `state: started`, contenu exact via `copy:` + `content:`). Le module `copy:` **compare le checksum** avant d'écrire — pas d'écriture si identique.
-- Le playbook est **plus court** parce qu'il s'appuie sur l'idempotence native des modules `dnf`, `copy`, `systemd`.
+- The Bash script **chains commands**, with no memorized state.
+- The playbook **declares** a state (`state: present`, `state: started`, exact line via `lineinfile:` + `regexp:`). The `lineinfile:` module **compares the line matched by the regexp** before writing: no write if it already says the right thing.
+- The playbook is **shorter** because it relies on the native idempotence of the `dnf`, `lineinfile`, `systemd` modules.
 
-## 📚 Exercice 5 — Vérifier l'idempotence par les tests
-
-```bash
-make verify
-```
-
-Cette cible :
-
-1. Lance la suite `pytest+testinfra` (vérifie que nginx est installé/running, qu'`index.html` contient **exactement** une ligne `Servi par`).
-2. Relance le playbook une fois de plus et **grep** `changed=0` dans la sortie — preuve d'idempotence stricte.
-
-🔍 **Observation** : si vous aviez accidentellement écrit le playbook avec une tâche `shell:` non idempotente, le test `changed=0` échouerait. C'est la garantie automatique qu'on construit toute la formation autour.
-
-## 📚 Exercice 6 — Nettoyer
+## 📚 Exercise 5 — Verify idempotence through the tests
 
 ```bash
-make clean
+`dsoxlab check <id-du-lab>`
 ```
 
-Désinstalle nginx, retire la règle firewalld, supprime `index.html`. Le lab est prêt à être rejoué from scratch.
+This target:
 
-## 🔍 Observations à noter
+1. Runs the `pytest+testinfra` suite (checks that nginx is installed/running, that `index.html` contains **exactly** one `Servi par` line).
+2. Reruns the playbook one more time and **greps** `changed=0` in the output: proof of strict idempotence.
 
-- **Impératif** = suite d'étapes ; le résultat dépend du **nombre de fois** où on lance.
-- **Déclaratif** = état désiré ; le résultat dépend uniquement de la **cible décrite**.
-- Un module est dit **idempotent** si le second run ne change rien. La quasi-totalité des modules `ansible.builtin.*` le sont — sauf `shell:` et `command:` (qui ré-exécutent à chaque fois).
-- Le `PLAY RECAP` final affiche `changed=0` : c'est le **signal mécanique** d'un playbook idempotent. C'est le critère qu'on cherchera à tous les labs suivants.
-- `creates:` / `removes:` permettent de rendre un `shell:` idempotent (il ne s'exécute que si le marqueur de fichier est absent / présent).
+🔍 **Observation**: if you had accidentally written the playbook with a non-idempotent `shell:` task, the `changed=0` test would fail. This is the automatic guarantee the whole training is built around.
 
-## 🤔 Questions de réflexion
+## 📚 Exercise 6 — Clean up
 
-1. Imaginez un script Bash qui doit ajouter `PermitRootLogin no` à `/etc/ssh/sshd_config`. Comment le rendre idempotent **sans** Ansible ? Quels pièges (regex, ligne déjà commentée, ligne avec espaces différents) ?
+```bash
+`dsoxlab clean <id-du-lab>`
+```
 
-2. Le playbook utilise `copy:` + `content:` pour poser `index.html`. Pourquoi est-ce idempotent même si `index.html` existait déjà ? Que compare le module ?
+Uninstalls nginx, removes the firewalld rule, deletes `index.html`. The lab is ready to be replayed from scratch.
 
-3. Si une équipe livre 200 serveurs et que chacun reçoit ce lab, le **résultat final** est-il identique à 1 ou 200 runs du playbook ? Et avec le script Bash ?
+## 🔍 Observations to note
 
-## 🚀 Pour aller plus loin
+- **Imperative** = sequence of steps; the result depends on the **number of times** you run it.
+- **Declarative** = desired state; the result depends only on the **described target**.
+- A module is said to be **idempotent** if the second run changes nothing. Almost all `ansible.builtin.*` modules are, except `shell:` and `command:` (which re-execute every time).
+- The final `PLAY RECAP` shows `changed=0`: this is the **mechanical signal** of an idempotent playbook. It is the criterion we will look for in all the following labs.
+- `creates:` / `removes:` let you make a `shell:` idempotent (it runs only if the file marker is absent / present).
 
-- **Rendez le script Bash idempotent** : ajoutez `grep -q "Servi par" /usr/share/nginx/html/index.html || echo "..." >>` pour ne plus dériver. Constatez : c'est faisable, mais on a réinventé l'idempotence à la main pour **une seule** ligne. Imaginez sur 50 fichiers.
-- **Remplacez `copy:` par `lineinfile:`** dans `playbook.yml`. Comparez : `copy:` est idempotent par checksum (le fichier entier), `lineinfile:` par regex (une ligne). Quand préférer l'un ou l'autre ?
-- **Ajoutez `creates: /var/lib/nginx-installed.flag`** sur une fausse tâche `ansible.builtin.shell:` puis observez le `skipped` au second run — c'est le pont entre `shell:` et idempotence.
+## 🤔 Reflection questions
 
-## 🔍 Linter avec `ansible-lint`
+1. Imagine a Bash script that must add `PermitRootLogin no` to `/etc/ssh/sshd_config`. How do you make it idempotent **without** Ansible? What pitfalls (regex, already-commented line, line with different spacing)?
 
-Ce lab est livré clé en main — pas de `lab.yml` ni de `challenge/solution.yml`
-à écrire. Vous pouvez tout de même linter le `playbook.yml` du lab pour voir
-à quoi ressemble une sortie `ansible-lint` propre :
+2. The playbook uses `lineinfile:` + `regexp:` to set one line of `index.html`. Why is it idempotent even when the line is already there? What does the module compare?
+
+3. If a team ships 200 servers and each one receives this lab, is the **final result** identical for 1 or 200 runs of the playbook? And with the Bash script?
+
+## 🚀 Going further
+
+- **Make the Bash script idempotent**: add `grep -q "Servi par" /usr/share/nginx/html/index.html || echo "..." >>` to stop drifting. Notice: it is doable, but we reinvented idempotence by hand for **a single** line. Imagine it across 50 files.
+- **Replace `lineinfile:` with `copy:` + `content:`** in `playbook.yml`. Compare: `lineinfile:` is idempotent by regexp (one line, the rest of the file is left alone), `copy:` by checksum (the whole file, which it overwrites). When should you prefer one over the other?
+- **Add `creates: /var/lib/nginx-installed.flag`** on a dummy `ansible.builtin.shell:` task then observe the `skipped` on the second run: it is the bridge between `shell:` and idempotence.
+
+## 🔍 Linting with `ansible-lint`
+
+This lab ships turnkey: no `lab.yml` or `challenge/solution.yml` to write. You
+can still lint the lab's `playbook.yml` to see what a clean `ansible-lint`
+output looks like:
 
 ```bash
 ansible-lint labs/decouvrir/declaratif-vs-imperatif/playbook.yml
 ansible-lint --profile production labs/decouvrir/declaratif-vs-imperatif/playbook.yml
 ```
 
-Sortie attendue : `Passed: 0 failure(s), 0 warning(s)`.
+Expected output: `Passed: 0 failure(s), 0 warning(s)`.
 
-> 💡 **À retenir** : `ansible-lint --profile production` est le standard
-> RHCE 2026. Il vérifie FQCN, `name:` sur chaque tâche, modes quotés,
-> idempotence, modules non dépréciés. Adoptez-le dès vos premiers playbooks.
+> 💡 **Key takeaway**: `ansible-lint --profile production` is the RHCE 2026
+> standard. It checks FQCN, `name:` on every task, quoted modes,
+> idempotence, non-deprecated modules. Adopt it from your very first playbooks.

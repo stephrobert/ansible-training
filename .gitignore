@@ -231,11 +231,83 @@ labs/**/challenge/solution.yml
 labs/**/challenge/solution.sh
 labs/**/challenge/solution.py
 
+# Livrables des labs d'outillage écrits par l'apprenant : ne jamais committer
+# (les tests pytest vérifient ces fichiers/dossiers produits localement)
+labs/ee/debug/challenge/execution-environment.yml
+labs/ee/debug/challenge/requirements.yml
+labs/ee/debug/challenge/requirements.txt
+labs/ee/debug/challenge/bindep.txt
+labs/ee/inspection/inspect-output/
+labs/galaxy/ansible-galaxy-cli/challenge/build/
+labs/galaxy/installer-roles/challenge/deps/
+labs/galaxy/versionner-publier/challenge/work/
+labs/galaxy/auditer-role-existant/challenge/audit.yml
+labs/decouvrir/configuration-ansible/ansible.cfg
+
+# Le rôle que l'apprenant doit ÉCRIRE dans le challenge « créer son premier
+# rôle ». Il était commité fini : le challenge disait « créer vous-même un rôle
+# from scratch » et livrait le résultat, zéro `???`. La référence vit chiffrée
+# sous solution/roles/creer-premier-role/roles/.
+labs/roles/creer-premier-role/challenge/roles/
+
+# Fichiers que ces challenges disent « à créer » et qui étaient livrés FINIS,
+# zéro `???`. Les références vivent chiffrées sous solution/.
+labs/ecrire-code/jinja2-base/challenge/templates/
+labs/ecrire-code/module-template/challenge/templates/
+labs/ecrire-code/lineinfile-vs-template/challenge/templates/
+labs/ecrire-code/precedence-variables/challenge/vars/
+labs/ecrire-code/variables-base/challenge/vars/
+labs/collections/ci-tests/challenge/.gitlab-ci.yml
+labs/collections/ci-tests/challenge/.github/
+labs/collections/creer-custom/challenge/collection_root/
+labs/collections/migration-role/challenge/ansible_collections/
+
+# Artefacts que l'apprenant crée dans son scénario molecule. Ils traînaient
+# dans l'arbre (restes d'un run de référence) et CASSAIENT le contrôle négatif :
+# les tests passaient sans que personne n'ait travaillé.
+labs/molecule/installation-config/molecule/default/prepare.yml
+labs/molecule/installation-config/molecule/default/requirements.yml
+
+# Inventaire du capstone RHCE : c'est le LIVRABLE des tâches 1 et 2 de l'examen
+# blanc. Le committer revient à donner la réponse au candidat. La référence du
+# formateur vit dans solution/rhce/mock-ex294/inventory/, chiffrée.
+labs/rhce/mock-ex294/inventory/
+labs/rhce/mock-ex294-2/inventory/
+
+# Inventaire que l'apprenant ÉCRIT dans le lab « inventaire statique » : c'est le
+# livrable. La référence vit chiffrée sous solution/inventaires/statiques/.
+labs/inventaires/statiques/inventory/
+
+# Collections installées par ansible-galaxy pendant le lab collections/requirements.
+# 36 Mo de dépendances téléchargées : un `git add -A` les suit, et le hook
+# check-solutions-encrypted.sh refuse alors le commit en se plaignant du
+# chiffrement, message qui n'a rien à voir avec la cause.
+solution/collections/local_collections/
+labs/collections/requirements/local_collections/
+
+# Clé privée OpenPGP du lab Passbolt (exportée par l'apprenant) — jamais commit
+labs/**/.passbolt-private.asc
+
+# Dépôt Git local du lab ansible-pull (créé par l'apprenant)
+labs/pratiques/ansible-pull-gitops/repo-pull/
+
 # Artefacts générés par les challenges (ne jamais commit)
+#
+# Fichiers vault que le challenge demande a l'apprenant de CREER. Les
+# livrer chiffres ne protege rien : le mot de passe qui les ouvre est
+# celui que setup-lab-vault-passwords.sh distribue a tout le monde, donc
+# un `ansible-vault view` suffit a lire la reponse attendue.
+labs/vault/dans-roles/roles/secured_app/vars/main.yml
+labs/vault/playbooks-mixtes/inventory/group_vars/all/vault.yml
+labs/vault/playbooks-mixtes/inventory/group_vars/webservers/vault.yml
 labs/**/challenge/vault-secret.yml
 labs/**/challenge/.vault-pass
 labs/**/challenge/.vault_password
 labs/**/.vault_password
+# Les vault-id nommes suffixent le fichier (.vault_password_dev, _prod...).
+# Sans ce glob, la regle ci-dessus les rate et le secret part dans l index.
+labs/**/.vault_password_*
+labs/**/challenge/.vault_password_*
 labs/**/challenge/files/*.pub.key.pub
 
 # Clés SSH générées par les labs (PRIVÉES) — ne jamais commit.
@@ -256,8 +328,36 @@ collected/*
 .vault-pass
 .vault-pass.txt
 
-# CLI dsoxlab : la SQLite est locale à chaque apprenant
-# Stockée par défaut dans ~/.local/share/dsoxlab/progress.db (hors repo).
-# Override via env DSOXLAB_DB.
+# ── CLI dsoxlab : état runtime local (par dépôt) ──
+# Contexte de session posé par `dsoxlab use` et base de progression locale.
+# Ne jamais versionner : c'est l'avancement d'un apprenant, pas du contenu.
+.dsoxlab-context.json
+.dsoxlab.db
+
+# Bases de progression héritées (dsoxlab < 0.1.x, stockage XDG désormais :
+# ~/.local/share/dsoxlab/progress.db, hors dépôt. Override via DSOXLAB_DB).
 .progress.db
 progress.db
+
+# Workdirs apprenant : générés par `dsoxlab run` depuis fixtures/, ils
+# contiennent le travail en cours. Le fixture est versionné, le workdir non.
+labs/**/challenge/work/
+
+# Clé SSH privée du lab : JAMAIS commitée.
+# Régénérée par `dsoxlab instructor bootstrap`.
+ssh/id_ed25519
+ssh/id_rsa
+ssh/*_key
+
+# Vestiges d'un terraform lancé à la racine. Terraform tourne normalement
+# dans ~/.local/state/dsoxlab/<repo-id>/ via `dsoxlab provision`.
+terraform.tfstate
+terraform.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+
+# ── Environnement & caches ──
+.venv/
+.mypy_cache/
+.ruff_cache/
+labs/troubleshooting/verbosite/ansible.cfg

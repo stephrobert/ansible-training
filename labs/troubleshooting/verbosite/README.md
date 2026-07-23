@@ -1,68 +1,67 @@
-# Lab 89 — Verbosité progressive (`-v` à `-vvvv`) et callback plugins
+# Lab 89 — Progressive verbosity (`-v` to `-vvvv`) and callback plugins
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Verbosité Ansible : -v / -vv / -vvv / -vvvv**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/verbosite-vvv/)
+🔗 [**Ansible verbosity: -v / -vv / -vvv / -vvvv**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/verbosite-vvv/)
 
-Quand un playbook échoue, **les flags de verbosité** sont vos premiers outils. Chaque niveau ouvre un nouveau cran d'information :
+When a playbook fails, **the verbosity flags** are your first tools. Each level opens a new notch of information:
 
-| Flag | Apporte |
+| Flag | Provides |
 | --- | --- |
-| `-v` | Résultats des tâches enrichis |
-| `-vv` | Arguments réels passés au module (post-template Jinja2) |
-| `-vvv` | Détails connexion SSH, chemin tmp module sur la cible |
-| `-vvvv` | Internals plugin de connexion, scp/sftp raw, ControlMaster |
+| `-v` | Enriched task results |
+| `-vv` | Actual arguments passed to the module (post-Jinja2-template) |
+| `-vvv` | SSH connection details, module tmp path on the target |
+| `-vvvv` | Connection plugin internals, raw scp/sftp, ControlMaster |
 
-En complément, les **callback plugins** comme `ansible.posix.profile_tasks` mesurent le **temps par tâche** sans toucher au code du playbook. Maîtriser ces deux leviers résout 80 % des erreurs de production.
+On top of that, **callback plugins** like `ansible.posix.profile_tasks` measure the **time per task** without touching the playbook code. Mastering these two levers solves 80% of production errors.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Choisir** le bon niveau `-v` selon le symptôme (variable Jinja vs SSH vs autre).
-2. **Activer** un callback `profile_tasks` via `ansible.cfg` pour mesurer les performances.
-3. **Distinguer** les arguments **post-template** (`-vv`) des connexions SSH (`-vvv`).
-4. **Activer** `stdout_callback = yaml` pour des sorties multi-ligne lisibles.
-5. **Sortir un secret** par mégarde **et** comprendre pourquoi `no_log: true` est obligatoire.
+1. **Choose** the right `-v` level based on the symptom (Jinja variable vs SSH vs other).
+2. **Enable** a `profile_tasks` callback via `ansible.cfg` to measure performance.
+3. **Distinguish** the **post-template** arguments (`-vv`) from the SSH connections (`-vvv`).
+4. **Enable** `callback_result_format = yaml` for readable multi-line output.
+5. **Leak a secret** by accident **and** understand why `no_log: true` is mandatory.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible all -m ansible.builtin.ping
 ansible db1.lab -b -m ansible.builtin.file -a "path=/tmp/lab89-* state=absent" 2>&1 | tail -2
 ```
 
-## ⚙️ Arborescence cible
+## ⚙️ Target tree layout
 
 ```text
 labs/troubleshooting/verbosite/
-├── README.md                       ← ce fichier (tuto guidé)
-├── Makefile                        ← cible clean
-├── ansible.cfg                     ← (à créer en exercice 4)
+├── README.md                       ← this file (guided tutorial)
+├── ansible.cfg                     ← (to create in exercise 4)
 └── challenge/
-    ├── README.md                   ← consigne challenge avec squelette
+    ├── README.md                   ← challenge brief with skeleton
     └── tests/
-        └── test_verbosite.py       ← tests pytest+testinfra
+        └── test_verbosite.py       ← pytest+testinfra tests
 ```
 
-L'apprenant écrit lui-même `lab.yml` (au fil des exercices) et `challenge/solution.yml`.
+The learner writes `lab.yml` (over the exercises) and `challenge/solution.yml` themselves.
 
-## 📚 Exercice 1 — Provoquer une erreur Jinja2 et l'observer en `-v`
+## 📚 Exercise 1 — Trigger a Jinja2 error and observe it with `-v`
 
-Créez un `lab.yml` avec une **variable mal nommée** :
+Create a `lab.yml` with a **misnamed variable**:
 
 ```yaml
 ---
@@ -74,44 +73,44 @@ Créez un `lab.yml` avec une **variable mal nommée** :
   tasks:
     - name: Erreur volontaire — variable inexistante
       ansible.builtin.debug:
-        msg: "User: {{ db_use }}"     # ← typo volontaire (db_use au lieu de db_user)
+        msg: "User: {{ db_use }}"     # ← intentional typo (db_use instead of db_user)
 ```
 
-Lancer en mode normal :
+Run in normal mode:
 
 ```bash
 ansible-playbook labs/troubleshooting/verbosite/lab.yml
 ```
 
-Sortie typique :
+Typical output:
 
 ```text
 fatal: [db1.lab]: FAILED! => {"msg": "The task includes an option with an undefined variable. The error was: 'db_use' is undefined..."}
 ```
 
-🔍 **Observation** : sans `-v`, le message dit **où** ça plante mais **pas** ce que la variable contenait avant le template. Insuffisant pour des cas Jinja2 plus complexes.
+🔍 **Observation**: without `-v`, the message says **where** it breaks but **not** what the variable contained before templating. Not enough for more complex Jinja2 cases.
 
-## 📚 Exercice 2 — Voir les variables résolues avec `-vv`
+## 📚 Exercise 2 — See resolved variables with `-vv`
 
 ```bash
 ansible-playbook labs/troubleshooting/verbosite/lab.yml -vv
 ```
 
-Sortie complémentaire :
+Additional output:
 
 ```text
-task path: /home/bob/Projets/ansible-training/labs/89-…/lab.yml:7
+task path: $ANSIBLE_TRAINING/labs/troubleshooting/verbosite…/lab.yml:7
 The error appears to be in '…': line 7, column 7
 …
 TASK [Erreur volontaire — variable inexistante] ***
 fatal: [db1.lab]: FAILED! => {"msg": "...db_use is undefined..."}
 ```
 
-🔍 **Observation** : `-vv` ajoute le **chemin du fichier:ligne** et les **arguments réels** passés à chaque module. C'est le niveau **par défaut quotidien** quand on développe un playbook.
+🔍 **Observation**: `-vv` adds the **file:line path** and the **actual arguments** passed to each module. It is the **everyday default** level when developing a playbook.
 
-## 📚 Exercice 3 — Diagnostiquer un échec SSH avec `-vvv`
+## 📚 Exercise 3 — Diagnose an SSH failure with `-vvv`
 
-Modifier `lab.yml` pour cibler un host inexistant :
+Modify `lab.yml` to target a nonexistent host:
 
 ```yaml
 - name: Échec SSH volontaire
@@ -121,13 +120,13 @@ Modifier `lab.yml` pour cibler un host inexistant :
     - ansible.builtin.ping:
 ```
 
-Lancer :
+Run:
 
 ```bash
 ansible-playbook labs/troubleshooting/verbosite/lab.yml -vvv
 ```
 
-Sortie typique :
+Typical output:
 
 ```text
 ESTABLISH SSH CONNECTION FOR USER: ansible
@@ -135,22 +134,22 @@ SSH: EXEC ssh -C -o ControlMaster=auto -o ControlPersist=60s …
 ssh: Could not resolve hostname nonexistent.lab: Name or service not known
 ```
 
-🔍 **Observation** : `-vvv` montre la **commande SSH exacte** qu'Ansible exécute. Reproduisez-la à la main avec `ssh -vvv user@host` pour bypass complètement Ansible. C'est le niveau **incontournable** pour diagnostiquer du réseau.
+🔍 **Observation**: `-vvv` shows the **exact SSH command** Ansible runs. Reproduce it by hand with `ssh -vvv user@host` to bypass Ansible entirely. It is the **essential** level for diagnosing network issues.
 
-## 📚 Exercice 4 — Activer le callback `profile_tasks`
+## 📚 Exercise 4 — Enable the `profile_tasks` callback
 
-Créer `ansible.cfg` à la racine du lab :
+Create `ansible.cfg` at the lab root:
 
 ```ini
 [defaults]
-stdout_callback = yaml
+callback_result_format = yaml
 callbacks_enabled = ansible.posix.profile_tasks, ansible.posix.timer
 
 [callback_profile_tasks]
 task_output_limit = 10
 ```
 
-Avec un playbook qui fait plusieurs tâches :
+With a playbook that runs several tasks:
 
 ```yaml
 ---
@@ -164,14 +163,14 @@ Avec un playbook qui fait plusieurs tâches :
     - ansible.builtin.ping:
 ```
 
-Lancer :
+Run:
 
 ```bash
 ANSIBLE_CONFIG=labs/troubleshooting/verbosite/ansible.cfg \
   ansible-playbook labs/troubleshooting/verbosite/lab.yml
 ```
 
-Sortie en fin de run :
+Output at the end of the run:
 
 ```text
 TASK execution time:
@@ -181,17 +180,17 @@ TASK execution time:
 Playbook run took 0 days, 0 hours, 0 minutes, 4 seconds
 ```
 
-🔍 **Observation** : `profile_tasks` trie les tâches par durée descendante. **Indispensable** pour identifier le top des tâches lentes sur une fleet de production. Le callback `timer` ajoute le **temps total** du playbook.
+🔍 **Observation**: `profile_tasks` sorts tasks by descending duration. **Essential** for spotting the slowest tasks on a production fleet. The `timer` callback adds the playbook's **total time**.
 
-## 📚 Exercice 5 — `stdout_callback = yaml` pour sortie lisible
+## 📚 Exercise 5 — `callback_result_format = yaml` for readable output
 
-Sans le callback `yaml`, une `set_fact` complexe affiche :
+Without the `yaml` callback, a complex `set_fact` shows:
 
 ```text
 ok: [db1.lab] => {"ansible_facts": {"my_data": [{"name": "alice", "age": 30}, {"name": "bob", "age": 25}]}}
 ```
 
-Avec `stdout_callback = yaml` :
+With `callback_result_format = yaml`:
 
 ```yaml
 ok: [db1.lab] => 
@@ -203,11 +202,11 @@ ok: [db1.lab] =>
         age: 25
 ```
 
-🔍 **Observation** : sortie **multi-ligne**, lisible humainement, idéal pour debug. À activer par défaut dans `ansible.cfg`.
+🔍 **Observation**: **multi-line** output, human-readable, ideal for debugging. Enable it by default in `ansible.cfg`.
 
-## 📚 Exercice 6 — Le piège `-v` qui leak un secret
+## 📚 Exercise 6 — The `-v` trap that leaks a secret
 
-Avec ce playbook (sans `no_log:`) :
+With this playbook (without `no_log:`):
 
 ```yaml
 - ansible.builtin.shell: 'echo "Secret token: super_secret_token_42"'
@@ -215,58 +214,58 @@ Avec ce playbook (sans `no_log:`) :
 - debug: var=out.stdout
 ```
 
-Lancer en `-v` :
+Run with `-v`:
 
 ```bash
 ansible-playbook lab.yml -v
 ```
 
-Sortie :
+Output:
 
 ```text
 ok: [db1.lab] =>
   out.stdout: "Secret token: super_secret_token_42"
 ```
 
-🔍 **Observation cruciale** : **`-v` peut révéler des secrets** dans la sortie. **Toujours** ajouter **`no_log: true`** sur les tâches qui manipulent des credentials :
+🔍 **Crucial observation**: **`-v` can reveal secrets** in the output. **Always** add **`no_log: true`** on tasks that handle credentials:
 
 ```yaml
 - ansible.builtin.shell: 'echo "Secret token: super_secret_token_42"'
   register: out
-  no_log: true                  # ← bloque la sortie en -v
+  no_log: true                  # ← blocks the output under -v
 ```
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`-v`** = niveau quotidien dev pour voir résultats détaillés.
-- **`-vv`** = chemin fichier + args templatés. Bug Jinja2 → utiliser `-vv`.
-- **`-vvv`** = commande SSH exacte. Bug réseau / connexion → utiliser `-vvv`.
-- **`-vvvv`** = internals plugin de connexion. Très rare, surtout pour ControlMaster.
-- **Callbacks** : `profile_tasks` + `timer` + `stdout_callback=yaml` dans `ansible.cfg`.
-- **`no_log: true`** systématique sur toute tâche manipulant un secret.
+- **`-v`** = everyday dev level to see detailed results.
+- **`-vv`** = file path + templated args. Jinja2 bug → use `-vv`.
+- **`-vvv`** = exact SSH command. Network / connection bug → use `-vvv`.
+- **`-vvvv`** = connection plugin internals. Very rare, mostly for ControlMaster.
+- **Callbacks**: `profile_tasks` + `timer` + `callback_result_format=yaml` in `ansible.cfg`.
+- **`no_log: true`** systematically on any task handling a secret.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. À quel niveau de verbosité voit-on les **arguments substitués Jinja2** ?
-2. Pourquoi `-vvvv` est-il rarement utile en production ?
-3. Que se passe-t-il si `no_log: true` est posé sur le **module** au lieu de la **task** ?
-4. Comment **désactiver les couleurs** dans la sortie pour un log CI ? (Indice : `ANSIBLE_FORCE_COLOR=0` ou `--no-color`).
+1. At which verbosity level do you see the **Jinja2-substituted arguments**?
+2. Why is `-vvvv` rarely useful in production?
+3. What happens if `no_log: true` is placed on the **module** instead of the **task**?
+4. How do you **disable colors** in the output for a CI log? (Hint: `ANSIBLE_FORCE_COLOR=0` or `--no-color`).
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) — créer un playbook avec **3 tâches mesurées** par `profile_tasks` qui dépose un fichier de timing sur `db1.lab`.
+See [`challenge/README.md`](challenge/README.md): create a playbook with **3 tasks measured** by `profile_tasks` that drops a timing file on `db1.lab`.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Lab 90** : débogueur interactif `(debug)` REPL.
-- **Lab 91** : idempotence cassée + tuning forks/pipelining.
-- **Variable `ANSIBLE_DEBUG=1`** : debug du moteur Ansible (très verbeux).
-- **`ANSIBLE_KEEP_REMOTE_FILES=1`** : conserve les modules sur la cible pour inspection (lab 91).
+- **Lab 90**: interactive `(debug)` REPL debugger.
+- **Lab 91**: broken idempotence + forks/pipelining tuning.
+- **`ANSIBLE_DEBUG=1` variable**: Ansible engine debug (very verbose).
+- **`ANSIBLE_KEEP_REMOTE_FILES=1`**: keeps the modules on the target for inspection (lab 91).
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 ansible-lint labs/troubleshooting/verbosite/lab.yml
@@ -274,5 +273,5 @@ ansible-lint labs/troubleshooting/verbosite/challenge/solution.yml
 ansible-lint --profile production labs/troubleshooting/verbosite/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices.

@@ -1,0 +1,4 @@
+---
+id: roles-system-roles
+title: "Rôles système RHEL : converger la synchronisation horaire avec timesync"
+description: "Consommer un rôle éditeur de linux-system-roles : piloter chronyd sur db1.lab par les variables de timesync, sans écrire chrony.conf à la main."

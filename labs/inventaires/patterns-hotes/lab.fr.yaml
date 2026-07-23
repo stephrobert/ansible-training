@@ -1,0 +1,4 @@
+---
+id: inventaires-patterns-hotes
+title: "Patterns d'hôtes : wildcards et opérateurs :, &, !"
+description: "Cibler exactement les hôtes voulus avec --limit et les opérateurs union, intersection et exclusion, sans toucher au playbook."

@@ -1,0 +1,3 @@
+# Default owner for everything in the repository. Pull requests require a
+# review from a code owner (enforced by branch protection on `main`).
+* @stephrobert

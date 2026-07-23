@@ -1,67 +1,66 @@
-# Lab 93 — Découvrir les collections Ansible (FQCN, structure, `ansible-galaxy`)
+# Lab 93 — Discover Ansible collections (FQCN, structure, `ansible-galaxy`)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo.
+> If it fails, run `mise install && dsoxlab provision` at the repo root.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Découvrir les collections Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/)
+🔗 [**Discover Ansible collections**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/)
 
-Une **collection** est l'unité de distribution moderne pour les **modules**, **plugins** (filter, lookup, inventory…), **rôles**, **playbooks** et **docs** Ansible. Elle remplace définitivement les rôles standalone Galaxy v1.
+A **collection** is the modern distribution unit for Ansible **modules**, **plugins** (filter, lookup, inventory…), **roles**, **playbooks** and **docs**. It definitively replaces the standalone Galaxy v1 roles.
 
-Chaque ressource Ansible se nomme désormais avec un **FQCN** (Fully Qualified Collection Name) : **`namespace.collection.plugin`**. Exemples : `ansible.builtin.copy`, `community.general.archive`, `kubernetes.core.k8s`. Ce FQCN devient **obligatoire** sur tous les playbooks RHCE 2026 (règle `fqcn-builtins` d'`ansible-lint --profile production`).
+Every Ansible resource is now named with an **FQCN** (Fully Qualified Collection Name): **`namespace.collection.plugin`**. Examples: `ansible.builtin.copy`, `community.general.archive`, `kubernetes.core.k8s`. This FQCN becomes **mandatory** on all RHCE 2026 playbooks (`fqcn-builtins` rule of `ansible-lint --profile production`).
 
-Ce lab explore les collections **déjà installées** dans votre EE / venv : structure, métadonnées, modules disponibles, dépendances entre collections.
+This lab explores the collections **already installed** in your EE / venv: structure, metadata, available modules, dependencies between collections.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Lister** toutes les collections installées (`ansible-galaxy collection list`).
-2. **Inspecter** une collection spécifique (`ansible-galaxy collection info`).
-3. **Lire** un `galaxy.yml` (métadonnées + dépendances + tags).
-4. **Comprendre** la structure standard `plugins/`, `roles/`, `playbooks/`, `meta/runtime.yml`.
-5. **Distinguer** un **rôle standalone** d'un **rôle dans une collection**.
-6. **Trouver** un module avec son FQCN via `ansible-doc -l | grep`.
+1. **List** all installed collections (`ansible-galaxy collection list`).
+2. **Inspect** a specific collection (`ansible-galaxy collection info`).
+3. **Read** a `galaxy.yml` (metadata + dependencies + tags).
+4. **Understand** the standard structure `plugins/`, `roles/`, `playbooks/`, `meta/runtime.yml`.
+5. **Distinguish** a **standalone role** from a **role in a collection**.
+6. **Find** a module with its FQCN via `ansible-doc -l | grep`.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible all -m ansible.builtin.ping
 ansible-galaxy --version
 ansible-galaxy collection install community.general --force 2>&1 | tail -3
 ```
 
-## ⚙️ Arborescence cible
+## ⚙️ Target layout
 
 ```text
 labs/collections/decouvrir/
-├── README.md              ← ce fichier (tuto guidé)
-├── Makefile               ← cible clean
+├── README.md              ← this file (guided tutorial)
 └── challenge/
-    ├── README.md          ← consigne du challenge
+    ├── README.md          ← the challenge brief
     └── tests/
         └── test_decouvrir.py
 ```
 
-L'apprenant écrit lui-même `lab.yml` (au fil des exos) et `challenge/solution.yml`.
+The learner writes `lab.yml` themselves (as the exercises go) and `challenge/solution.yml`.
 
-## 📚 Exercice 1 — Lister les collections installées
+## 📚 Exercise 1 — List installed collections
 
 ```bash
 ansible-galaxy collection list
 ```
 
-Sortie typique :
+Typical output:
 
 ```text
 # /usr/share/ansible/collections/ansible_collections
@@ -71,21 +70,21 @@ ansible.posix                 2.0.0
 community.general             10.5.0
 kubernetes.core               5.1.1
 
-# /home/bob/.ansible/collections/ansible_collections
+# ~/.ansible/collections/ansible_collections
 Collection                    Version
 ----------------------------- -------
 community.docker              4.0.0
 ```
 
-🔍 **Observation** : la commande **agrège** toutes les sources : système (`/usr/share/ansible/`), user (`~/.ansible/`), virtualenv. Plusieurs versions d'une même collection peuvent coexister — celle utilisée dépend de l'ordre dans **`ANSIBLE_COLLECTIONS_PATH`**.
+🔍 **Observation**: the command **aggregates** all the sources: system (`/usr/share/ansible/`), user (`~/.ansible/`), virtualenv. Several versions of the same collection can coexist: the one used depends on the order in **`ANSIBLE_COLLECTIONS_PATH`**.
 
-## 📚 Exercice 2 — Inspecter une collection précise
+## 📚 Exercise 2 — Inspect a specific collection
 
 ```bash
 ansible-galaxy collection info community.general
 ```
 
-Sortie :
+Output:
 
 ```text
 Collection: community.general
@@ -99,35 +98,35 @@ Authors:
   - Ansible Community
 ```
 
-🔍 **Observation** : c'est l'équivalent de `dnf info` ou `apt show`. **Référence** pour vérifier qu'une collection vient bien de Galaxy public et pas d'une source compromise.
+🔍 **Observation**: it is the equivalent of `dnf info` or `apt show`. **Reference** to verify that a collection really comes from public Galaxy and not from a compromised source.
 
-## 📚 Exercice 3 — Lire le `galaxy.yml`
+## 📚 Exercise 3 — Read the `galaxy.yml`
 
 ```bash
 cat /usr/share/ansible/collections/ansible_collections/community/general/galaxy.yml | head -30
 ```
 
-Champs clés :
+Key fields:
 
-| Champ | Rôle |
+| Field | Role |
 |-------|------|
-| `namespace` | Préfixe du FQCN (ex: `community`, `kubernetes`, `acme`) |
-| `name` | Nom court de la collection |
-| `version` | Semver strict (ex: `10.5.0`) |
-| `dependencies` | Autres collections requises (avec contraintes de version) |
-| `tags` | Catégories (`linux`, `web`, `cloud`, `kubernetes`) |
-| `repository` | URL du repo Git source |
-| `documentation` | URL de la doc générée |
+| `namespace` | FQCN prefix (e.g. `community`, `kubernetes`, `acme`) |
+| `name` | Short name of the collection |
+| `version` | Strict semver (e.g. `10.5.0`) |
+| `dependencies` | Other required collections (with version constraints) |
+| `tags` | Categories (`linux`, `web`, `cloud`, `kubernetes`) |
+| `repository` | URL of the source Git repo |
+| `documentation` | URL of the generated doc |
 
-🔍 **Observation** : `tags:` est **obligatoire** pour publier sur Galaxy. Sans tags, l'import échoue avec un message peu explicite.
+🔍 **Observation**: `tags:` is **mandatory** to publish on Galaxy. Without tags, the import fails with an unclear message.
 
-## 📚 Exercice 4 — Explorer la structure interne
+## 📚 Exercise 4 — Explore the internal structure
 
 ```bash
 tree -L 2 /usr/share/ansible/collections/ansible_collections/community/general/
 ```
 
-Sortie typique :
+Typical output:
 
 ```text
 community.general/
@@ -136,26 +135,26 @@ community.general/
 ├── meta/
 │   └── runtime.yml
 ├── plugins/
-│   ├── modules/        ← modules Python (ex: archive.py)
-│   ├── filter/         ← filtres Jinja2 custom
-│   ├── lookup/         ← plugins lookup
-│   ├── inventory/      ← plugins d'inventaire
-│   └── callback/       ← plugins callback
-├── roles/              ← rôles inclus
-├── playbooks/          ← playbooks fournis
+│   ├── modules/        ← Python modules (e.g. archive.py)
+│   ├── filter/         ← custom Jinja2 filters
+│   ├── lookup/         ← lookup plugins
+│   ├── inventory/      ← inventory plugins
+│   └── callback/       ← callback plugins
+├── roles/              ← included roles
+├── playbooks/          ← provided playbooks
 ├── changelogs/
 └── docs/
 ```
 
-🔍 **Observation** : la structure est **fixe** depuis ansible-core 2.10. Un module custom **doit** se trouver dans `plugins/modules/`, jamais à la racine ni dans un `library/` (legacy).
+🔍 **Observation**: the structure is **fixed** since ansible-core 2.10. A custom module **must** be in `plugins/modules/`, never at the root nor in a `library/` (legacy).
 
-## 📚 Exercice 5 — `meta/runtime.yml` et le seuil ansible-core
+## 📚 Exercise 5 — `meta/runtime.yml` and the ansible-core threshold
 
 ```bash
 cat /usr/share/ansible/collections/ansible_collections/community/general/meta/runtime.yml | head -10
 ```
 
-Exemple typique :
+Typical example:
 
 ```yaml
 ---
@@ -167,22 +166,22 @@ plugin_routing:
       redirect: community.general.sudoers
 ```
 
-🔍 **Observation cruciale** : **`requires_ansible:`** déclare la version minimum d'ansible-core. **`plugin_routing.redirect`** sert quand un module est renommé : un playbook qui utilise l'ancien nom continue de marcher avec un warning de dépréciation. Pattern essentiel pour la rétrocompatibilité.
+🔍 **Crucial observation**: **`requires_ansible:`** declares the minimum ansible-core version. **`plugin_routing.redirect`** is used when a module is renamed: a playbook that uses the old name keeps working with a deprecation warning. Essential pattern for backward compatibility.
 
-## 📚 Exercice 6 — Trouver un module via FQCN
+## 📚 Exercise 6 — Find a module via FQCN
 
 ```bash
-# Lister tous les modules d'une collection
+# List all modules of a collection
 ansible-doc -l community.general | head -10
 
-# Trouver un module par mot-clé
+# Find a module by keyword
 ansible-doc -l | grep -i archive
 
-# Lire la doc d'un module
+# Read a module's doc
 ansible-doc community.general.archive
 ```
 
-Sortie :
+Output:
 
 ```text
 > COMMUNITY.GENERAL.ARCHIVE    (.../archive.py)
@@ -198,50 +197,50 @@ OPTIONS (= is mandatory):
         - "bz2", "gz", "tar", "xz", "zip"
 ```
 
-🔍 **Observation** : `ansible-doc <FQCN>` est **la** référence pour vérifier les paramètres avant d'utiliser un module. Préférer à la doc internet — la doc affichée est celle de la **version installée**.
+🔍 **Observation**: `ansible-doc <FQCN>` is **the** reference to check the parameters before using a module. Prefer it over the internet doc: the doc shown is that of the **installed version**.
 
-## 📚 Exercice 7 — Différence rôle standalone vs rôle dans collection
+## 📚 Exercise 7 — Difference between standalone role and role in a collection
 
-Galaxy distribue **deux types** de contenus :
+Galaxy distributes **two types** of content:
 
 | Type | Distribution | Installation | Usage |
 |------|-------------|--------------|-------|
-| **Rôle standalone** | `ansible-galaxy role install geerlingguy.docker` | `~/.ansible/roles/geerlingguy.docker/` | `roles: [geerlingguy.docker]` |
-| **Rôle dans collection** | `ansible-galaxy collection install community.general` | `~/.ansible/collections/.../community/general/roles/` | `roles: [community.general.bind]` |
+| **Standalone role** | `ansible-galaxy role install geerlingguy.docker` | `~/.ansible/roles/geerlingguy.docker/` | `roles: [geerlingguy.docker]` |
+| **Role in a collection** | `ansible-galaxy collection install community.general` | `~/.ansible/collections/.../community/general/roles/` | `roles: [community.general.bind]` |
 
-🔍 **Observation** : le format **standalone** est **legacy**. Toute nouvelle distribution publie en **collection**. Galaxy NG (backend Galaxy v3, 2026) ne supporte **que** les collections.
+🔍 **Observation**: the **standalone** format is **legacy**. Every new distribution publishes as a **collection**. Galaxy NG (Galaxy v3 backend, 2026) supports **only** collections.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **FQCN** = `namespace.collection.plugin`, **obligatoire** en 2026.
-- **`ansible-galaxy collection list/info`** pour explorer ce qui est installé.
-- **`galaxy.yml`** : métadonnées + dépendances + tags.
-- **`meta/runtime.yml`** : seuil ansible-core + redirects de modules.
-- **Structure fixe** : `plugins/{modules,filter,lookup,inventory,callback}/`, `roles/`, `playbooks/`, `docs/`.
-- **`ansible-doc`** : doc de la version installée, plus fiable que internet.
+- **FQCN** = `namespace.collection.plugin`, **mandatory** in 2026.
+- **`ansible-galaxy collection list/info`** to explore what is installed.
+- **`galaxy.yml`**: metadata + dependencies + tags.
+- **`meta/runtime.yml`**: ansible-core threshold + module redirects.
+- **Fixed structure**: `plugins/{modules,filter,lookup,inventory,callback}/`, `roles/`, `playbooks/`, `docs/`.
+- **`ansible-doc`**: doc of the installed version, more reliable than the internet.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Que se passe-t-il si **deux versions** de `community.general` sont installées dans des chemins différents ?
+1. What happens if **two versions** of `community.general` are installed in different paths?
 
-2. Pourquoi le FQCN est-il devenu **obligatoire** alors que les noms courts marchaient avant ?
+2. Why did the FQCN become **mandatory** when short names worked before?
 
-3. Comment connaître **toutes** les collections **dépendances** d'une collection donnée ?
+3. How do you know **all** the **dependency** collections of a given collection?
 
-4. À quoi sert **`build_ignore:`** dans `galaxy.yml` ? (Indice : exclure `.git/`, `.venv/`, secrets de tests du tarball publié).
+4. What is **`build_ignore:`** used for in `galaxy.yml`? (Hint: exclude `.git/`, `.venv/`, test secrets from the published tarball).
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) — produire un fichier d'inventaire des collections installées avec **leurs versions** et leurs **dépendances**, déposé sur `db1.lab`.
+See [`challenge/README.md`](challenge/README.md): produce an inventory file of the installed collections with **their versions** and their **path**, deposited on `db1.lab`.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Lab 94** : `requirements.yml` complet (Galaxy + Git + signatures GPG).
-- **Lab 95** : créer **votre propre collection** avec `ansible-galaxy collection init`.
-- **Galaxy public vs Automation Hub** : deux registres, deux écosystèmes.
-- **Validated Content Red Hat** : collections **certifiées + signées + scannées Trivy**.
+- **Lab 94**: complete `requirements.yml` (Galaxy + Git + GPG signatures).
+- **Lab 95**: create **your own collection** with `ansible-galaxy collection init`.
+- **Public Galaxy vs Automation Hub**: two registries, two ecosystems.
+- **Red Hat Validated Content**: collections **certified + signed + Trivy scanned**.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint labs/collections/decouvrir/lab.yml
@@ -249,4 +248,4 @@ ansible-lint labs/collections/decouvrir/challenge/solution.yml
 ansible-lint --profile production labs/collections/decouvrir/challenge/solution.yml
 ```
 
-> 💡 **Astuce** : la règle **`fqcn-builtins`** d'ansible-lint signale tout module utilisé sans FQCN. Indispensable pour préparer la RHCE.
+> 💡 **Tip**: the **`fqcn-builtins`** rule of ansible-lint flags any module used without FQCN. Essential to prepare the RHCE.

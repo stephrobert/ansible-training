@@ -1,0 +1,18 @@
+---
+# Reset du lab « écrire un inventaire statique de zéro ».
+#
+# Le livrable est un fichier LOCAL (inventory/, gitignoré) : rien n'est posé sur
+# les managed nodes, donc rien à nettoyer côté VMs. Ce playbook existe pour
+# satisfaire le contrat (runtime vm exige setup.yaml + cleanup.yaml) et rester
+# rejouable. Il ne touche jamais au travail de l'apprenant : effacer son
+# inventaire pour lui serait lui reprendre son ouvrage.
+- name: Cleanup statiques lab (labenv)
+  hosts: labenv
+  gather_facts: false
+  tasks:
+    - name: Rien à défaire sur les nœuds (le livrable est un fichier local)
+      ansible.builtin.debug:
+        msg: >-
+          Static inventory lab: the deliverable is a local file
+          (inventory/hosts.yml), nothing is provisioned on the nodes to reset
+      run_once: true

@@ -1,63 +1,63 @@
-# Lab 28 — Tests Jinja2 (`is defined`, `is mapping`, `is sequence`, `is regex`)
+# Lab 28 — Jinja2 Tests (`is defined`, `is mapping`, `is sequence`, `is regex`)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Tests Jinja2 Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/tests-jinja/)
+🔗 [**Ansible Jinja2 Tests**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/tests-jinja/)
 
-Les **tests Jinja2** s'écrivent avec **`is`** et retournent un booléen :
-`{{ var is defined }}`, `{{ var is mapping }}`, `{{ var is regex }}`. Différents
-des **filtres** (qui transforment), les tests **interrogent** une valeur.
+**Jinja2 tests** are written with **`is`** and return a boolean:
+`{{ var is defined }}`, `{{ var is mapping }}`, `{{ var is regex }}`. Unlike
+**filters** (which transform), tests **query** a value.
 
-Tests les plus utiles RHCE :
+The most useful RHCE tests:
 
-| Test | Vrai si... |
+| Test | True if... |
 |---|---|
-| `is defined` / `is undefined` | Variable existe / n'existe pas |
-| `is none` | Variable existe mais vaut `None` (`null` YAML) |
+| `is defined` / `is undefined` | Variable exists / does not exist |
+| `is none` | Variable exists but is `None` (YAML `null`) |
 | `is string` | Type `str` |
 | `is mapping` | Type `dict` |
-| `is sequence` | Liste, tuple, ou string |
-| `is iterable` | Boucle possible (sequence + mapping) |
-| `is number` / `is integer` / `is float` | Type numérique |
-| `is regex` / `is match` / `is search` | Match d'une regex |
-| `is in [list]` | Appartenance à une liste |
+| `is sequence` | List, tuple, or string |
+| `is iterable` | Loop possible (sequence + mapping) |
+| `is number` / `is integer` / `is float` | Numeric type |
+| `is regex` / `is match` / `is search` | Regex match |
+| `is in [list]` | Membership in a list |
 | `is divisibleby(n)` | Modulo |
-| `is even` / `is odd` | Parité |
+| `is even` / `is odd` | Parity |
 
-Les tests sont **chainables avec `not`** : `{{ var is not defined }}`.
+Tests are **chainable with `not`**: `{{ var is not defined }}`.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Tester** la définition d'une variable (`is defined`, `is undefined`).
-2. **Vérifier** le type (`is mapping`, `is sequence`, `is string`).
-3. **Matcher** une regex avec `is match` (anchored) et `is search` (n'importe où).
-4. **Tester** l'appartenance à une liste (`is in`).
-5. **Combiner** tests dans des `when:` Ansible et `{% if %}` Jinja2.
+1. **Test** whether a variable is defined (`is defined`, `is undefined`).
+2. **Check** the type (`is mapping`, `is sequence`, `is string`).
+3. **Match** a regex with `is match` (anchored) and `is search` (anywhere).
+4. **Test** membership in a list (`is in`).
+5. **Combine** tests in Ansible `when:` and Jinja2 `{% if %}`.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 ```
 
-## 📚 Exercice 1 — `is defined` / `is undefined`
+## 📚 Exercise 1 — `is defined` / `is undefined`
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -66,7 +66,7 @@ Créez `lab.yml` :
   vars:
     explicit_var: "hello"
     null_var: null
-    # implicit_var n'est pas defini
+    # implicit_var is not defined
   tasks:
     - name: explicit_var is defined
       ansible.builtin.debug:
@@ -84,16 +84,16 @@ Créez `lab.yml` :
         # → defined : True, none : True
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- `is defined` est vrai même si la variable vaut `null`.
-- Pour distinguer "absente" de "null", **combiner** `is defined and not is none`.
+- `is defined` is true even if the variable is `null`.
+- To distinguish "absent" from "null", **combine** `is defined and not is none`.
 
 ```yaml
 when: my_var is defined and my_var is not none
 ```
 
-## 📚 Exercice 2 — Tests de types
+## 📚 Exercise 2 — Type tests
 
 ```yaml
 - name: Demo tests de type
@@ -117,19 +117,19 @@ when: my_var is defined and my_var is not none
     - name: Tester une string (sequence aussi en Python !)
       ansible.builtin.debug:
         msg: "config_string is string : {{ config_string is string }}, sequence : {{ config_string is sequence }}"
-        # → string : True, sequence : True (piege)
+        # → string : True, sequence : True (trap)
 
     - name: Tester un int
       ansible.builtin.debug:
         msg: "config_int is integer : {{ config_int is integer }}, is number : {{ config_int is number }}"
 ```
 
-🔍 **Observation** : **piège classique** : une string est aussi une `sequence` en
-Python (itérable caractère par caractère). Donc `is sequence` matche aussi les
-strings — il faut combiner `is sequence and is not string` pour vraiment tester
-"liste/tuple".
+🔍 **Observation**: **classic trap**: a string is also a `sequence` in
+Python (iterable character by character). So `is sequence` also matches
+strings, you must combine `is sequence and is not string` to really test
+"list/tuple".
 
-## 📚 Exercice 3 — Tests de regex
+## 📚 Exercise 3 — Regex tests
 
 ```yaml
 - name: Demo tests regex
@@ -151,7 +151,7 @@ strings — il faut combiner `is sequence and is not string` pour vraiment teste
     - name: is regex (alias de is match)
       ansible.builtin.debug:
         msg: "{{ hostname2 is regex('\\.prod\\.') }}"
-        # → False (regex pas anchored doit matcher tout, sauf si .* explicit)
+        # → False (regex not anchored must match everything, unless .* explicit)
 
     - name: is regex avec .* implicite
       ansible.builtin.debug:
@@ -159,15 +159,15 @@ strings — il faut combiner `is sequence and is not string` pour vraiment teste
         # → True
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **`is match`** = anchored implicite (`^...$`) — comme Python `re.match`.
-- **`is search`** = n'importe où dans la string — comme Python `re.search`.
-- **`is regex`** = alias pour `is match` — donc anchored aussi.
+- **`is match`** = implicit anchoring (`^...$`), like Python `re.match`.
+- **`is search`** = anywhere in the string, like Python `re.search`.
+- **`is regex`** = alias for `is match`, so anchored too.
 
-Pour matcher une **partie** de la string, préférer `is search` ou ajouter `.*` autour.
+To match **part** of the string, prefer `is search` or add `.*` around it.
 
-## 📚 Exercice 4 — `is in [...]` (appartenance)
+## 📚 Exercise 4 — `is in [...]` (membership)
 
 ```yaml
 - name: Demo is in
@@ -186,11 +186,11 @@ Pour matcher une **partie** de la string, préférer `is search` ou ajouter `.*`
         # → True
 ```
 
-🔍 **Observation** : `is in` est plus lisible que `in` (Python natif) dans un
-contexte Ansible. Équivalent fonctionnel à `{{ user_role in allowed_roles }}` mais
-syntaxe **Test Jinja** explicite.
+🔍 **Observation**: `is in` is more readable than `in` (native Python) in an
+Ansible context. Functionally equivalent to `{{ user_role in allowed_roles }}`
+but with explicit **Jinja Test** syntax.
 
-## 📚 Exercice 5 — Combinaison tests dans un `when:`
+## 📚 Exercise 5 — Combining tests in a `when:`
 
 ```yaml
 - name: Tache conditionnee multi-tests
@@ -205,11 +205,11 @@ syntaxe **Test Jinja** explicite.
     - app_config.port < 65535
 ```
 
-🔍 **Observation** : la **liste** sous `when:` = AND implicite. Cette tâche tourne
-uniquement si **toutes** les conditions sont vraies. Pattern de **validation
-défensive** : avant d'utiliser une variable complexe, on vérifie sa structure.
+🔍 **Observation**: the **list** under `when:` = implicit AND. This task runs
+only if **all** conditions are true. **Defensive validation** pattern: before
+using a complex variable, you check its structure.
 
-**Variante avec `assert:`** :
+**Variant with `assert:`**:
 
 ```yaml
 - name: Valider la config app
@@ -222,7 +222,7 @@ défensive** : avant d'utiliser une variable complexe, on vérifie sa structure.
     success_msg: "Config valide"
 ```
 
-## 📚 Exercice 6 — Tests dans un template Jinja2
+## 📚 Exercise 6 — Tests in a Jinja2 template
 
 ```jinja
 {# templates/conditional.j2 #}
@@ -235,15 +235,15 @@ host = {{ app_config.host }}
 port = {{ app_config.port }}
 {% endif %}
 {% else %}
-# Config app non definie
+# App config not defined
 {% endif %}
 ```
 
-🔍 **Observation** : tests dans `{% if %}` permettent de **générer des templates
-défensifs** — qui ne génèrent une section que si les variables nécessaires sont
-définies et bien typées.
+🔍 **Observation**: tests in `{% if %}` let you **generate defensive
+templates**, ones that only render a section if the required variables are
+defined and correctly typed.
 
-## 📚 Exercice 7 — Le piège : `is not defined` vs `is undefined`
+## 📚 Exercise 7 — The trap: `is not defined` vs `is undefined`
 
 ```yaml
 - name: Test 1 (forme courte)
@@ -257,69 +257,69 @@ définies et bien typées.
   when: undefined_var is undefined
 ```
 
-🔍 **Observation** : les deux formes sont **équivalentes**. La forme courte
-(`is not defined`) est plus lisible. La forme `is undefined` est aussi correcte mais
-moins fréquente.
+🔍 **Observation**: both forms are **equivalent**. The short form
+(`is not defined`) is more readable. The `is undefined` form is also correct but
+less common.
 
-**Attention** : `is none` ≠ `is undefined`. Une variable définie qui vaut `null`
-passe `is defined: True` ET `is none: True`. Il faut distinguer.
+**Warning**: `is none` ≠ `is undefined`. A defined variable that is `null`
+passes `is defined: True` AND `is none: True`. You must distinguish them.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Tests Jinja2** = `var is test` — retourne un bool.
-- **`is defined` / `is undefined`** = existence de la variable.
-- **`is none`** = existe et vaut `null`.
-- **`is mapping` / `is sequence` / `is string`** = tests de type — attention `string is sequence: True`.
-- **`is match`** anchored, **`is search`** n'importe où, **`is regex`** alias de match.
-- **`is in [list]`** = appartenance.
-- **Combinaison dans `when:`** liste = AND implicite ; `assert:` pour validation explicite.
+- **Jinja2 tests** = `var is test`, returns a bool.
+- **`is defined` / `is undefined`** = variable existence.
+- **`is none`** = exists and is `null`.
+- **`is mapping` / `is sequence` / `is string`** = type tests, beware `string is sequence: True`.
+- **`is match`** anchored, **`is search`** anywhere, **`is regex`** alias of match.
+- **`is in [list]`** = membership.
+- **Combining in `when:`** a list = implicit AND; `assert:` for explicit validation.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voulez tester si `app_config.tags` contient le tag `"production"`. Quel
-   test (ou combinaison) utilisez-vous ?
+1. You want to test whether `app_config.tags` contains the tag `"production"`.
+   Which test (or combination) do you use?
 
-2. Quelle est la différence entre `var is none` et `var | length == 0` pour une
-   liste vide ?
+2. What is the difference between `var is none` and `var | length == 0` for an
+   empty list?
 
-3. Pourquoi `is match('lab')` matche-t-il `web1.lab` mais pas `lab.example.com` ?
-   (indice : ancrage implicite).
+3. Why does `is match('lab')` match `web1.lab` but not `lab.example.com`?
+   (hint: implicit anchoring).
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Tests custom** : on peut écrire ses propres tests Python dans
-  `plugins/test/mes_tests.py` (rare mais utile pour des tests métier).
-- **`is callable`** : tester si une valeur est appelable (objet Python avec
-  `__call__`). Marginal en Ansible.
-- **Différence `is in` vs `in`** : `is in` est un test Jinja, `in` est un opérateur
-  Python — les deux marchent dans Ansible mais `is in` est plus explicite.
-- **Pattern `var | default(...) | type_debug`** : afficher le type final d'une
-  variable après tous les filtres et défauts.
-- **`assert:` + tests** : pattern de validation **fail fast** au début d'un play.
+- **Custom tests**: you can write your own Python tests in
+  `plugins/test/mes_tests.py` (rare but useful for business-specific tests).
+- **`is callable`**: test whether a value is callable (Python object with
+  `__call__`). Marginal in Ansible.
+- **Difference `is in` vs `in`**: `is in` is a Jinja test, `in` is a Python
+  operator. Both work in Ansible but `is in` is more explicit.
+- **Pattern `var | default(...) | type_debug`**: display the final type of a
+  variable after all filters and defaults.
+- **`assert:` + tests**: **fail fast** validation pattern at the start of a play.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/ecrire-code/tests-jinja/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/ecrire-code/tests-jinja/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/ecrire-code/tests-jinja/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

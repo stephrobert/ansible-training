@@ -1,54 +1,53 @@
-# Lab 76 — Versionner & publier un rôle (semver, tags Git, Galaxy)
+# Lab 76 — Versioning & publishing a role (semver, Git tags, Galaxy)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Pré-requis : Ansible installé, `git` configuré. Pas besoin des VMs.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Prerequisite: Ansible installed, `git` configured. No VMs needed.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Versionner et publier un rôle Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-roles/versionner-publier/)
+🔗 [**Versioning and publishing an Ansible role**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/versionner-publier/)
 
-Un rôle Ansible **publié** doit être :
+A **published** Ansible role must be:
 
-- **Versionné** en SemVer (`MAJOR.MINOR.PATCH`).
-- Accompagné d'un **`CHANGELOG.md`** au format
-  [Keep a Changelog](https://keepachangelog.com/) (sections Added /
-  Changed / Fixed / Deprecated / Removed / Security).
-- **Tagué** sur Git (`git tag v1.2.0`).
-- **Pinable** depuis un `requirements.yml` consommateur.
+- **Versioned** in SemVer (`MAJOR.MINOR.PATCH`).
+- Accompanied by a **`CHANGELOG.md`** in
+  [Keep a Changelog](https://keepachangelog.com/) format (Added /
+  Changed / Fixed / Deprecated / Removed / Security sections).
+- **Tagged** in Git (`git tag v1.2.0`).
+- **Pinnable** from a consuming `requirements.yml`.
 
-C'est l'aboutissement du cycle de vie : **écrire → tester → publier →
-consommer pinné**.
+This is the culmination of the lifecycle: **write → test → publish →
+consume pinned**.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Appliquer **SemVer** : quand bumper MAJOR / MINOR / PATCH.
-2. Écrire un **`CHANGELOG.md`** au format Keep a Changelog.
-3. **Tagger** un release Git avec message annoté.
-4. **Publier** sur Galaxy via webhook GitHub ou via CLI.
-5. Documenter le **pinning** côté consommateur.
-6. Automatiser la release via **CI/CD** (workflow tag → publish).
+1. Apply **SemVer**: when to bump MAJOR / MINOR / PATCH.
+2. Write a **`CHANGELOG.md`** in Keep a Changelog format.
+3. **Tag** a Git release with an annotated message.
+4. **Publish** to Galaxy via GitHub webhook or via CLI.
+5. Document **pinning** on the consumer side.
+6. Automate the release via **CI/CD** (tag → publish workflow).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
 git --version
 ansible-galaxy --version
 ```
 
-## ⚙️ Arborescence
+## ⚙️ Directory tree
 
 ```text
 labs/galaxy/versionner-publier/
 ├── README.md
-├── Makefile
-├── CHANGELOG.md           ← Keep a Changelog avec ≥ 2 versions
-├── PUBLISH.md             ← procédure de publication
-└── roles/webserver/        ← rôle exemple à publier
+├── CHANGELOG.md           ← Keep a Changelog with ≥ 2 versions
+├── PUBLISH.md             ← publication procedure
+└── roles/webserver/        ← example role to publish
 ```
 
-## 📚 Exercice 1 — Lire `CHANGELOG.md`
+## 📚 Exercise 1 — Read `CHANGELOG.md`
 
 ```markdown
 # Changelog — rôle webserver
@@ -67,32 +66,32 @@ labs/galaxy/versionner-publier/
 - Idempotence handlers (Reload nginx déclenché 2× résolu)
 ```
 
-🔍 **Observation** : 3 sections distinctes (`Added`, `Changed`, `Fixed`)
-classifient les changements. **Sans `CHANGELOG.md`**, l'utilisateur d'un
-upgrade ne sait pas si c'est un breaking change.
+🔍 **Observation**: 3 distinct sections (`Added`, `Changed`, `Fixed`)
+classify the changes. **Without a `CHANGELOG.md`**, the user of an
+upgrade does not know whether it is a breaking change.
 
-## 📚 Exercice 2 — Règles SemVer
+## 📚 Exercise 2 — SemVer rules
 
-| Bump | Quand | Exemple |
+| Bump | When | Example |
 | --- | --- | --- |
-| **MAJOR** (1.x.x → 2.0.0) | Breaking change : variable supprimée/renommée, structure cassée | Renommer `nginx_listen` → `webserver_listen` |
-| **MINOR** (1.0.x → 1.1.0) | Nouvelle feature **rétrocompatible** | Ajouter `webserver_workers` (défaut = ancien comportement) |
-| **PATCH** (1.0.0 → 1.0.1) | Bugfix sans changement d'API | Fixer un handler qui se déclenche 2 fois |
+| **MAJOR** (1.x.x → 2.0.0) | Breaking change: variable removed/renamed, structure broken | Rename `nginx_listen` → `webserver_listen` |
+| **MINOR** (1.0.x → 1.1.0) | New **backward-compatible** feature | Add `webserver_workers` (default = old behavior) |
+| **PATCH** (1.0.0 → 1.0.1) | Bugfix without API change | Fix a handler that triggers twice |
 
-🔍 **Règle d'or** : **`1.0.0 → 2.0.0`** signale aux consommateurs qu'ils
-doivent **lire le CHANGELOG** et migrer leur code.
+🔍 **Golden rule**: **`1.0.0 → 2.0.0`** signals to consumers that they
+must **read the CHANGELOG** and migrate their code.
 
-## 📚 Exercice 3 — Tagger un release
+## 📚 Exercise 3 — Tag a release
 
 ```bash
-# 1. S'assurer que les tests passent
+# 1. Make sure the tests pass
 molecule test
 ansible-lint --profile production roles/webserver/
 
-# 2. Mettre à jour CHANGELOG.md (ajouter section [1.2.0])
+# 2. Update CHANGELOG.md (add the [1.2.0] section)
 $EDITOR CHANGELOG.md
 
-# 3. Commit + tag annoté
+# 3. Commit + annotated tag
 git add CHANGELOG.md
 git commit -m "release: v1.2.0"
 git tag -a v1.2.0 -m "Release v1.2.0 — Multi-distro support"
@@ -101,20 +100,20 @@ git tag -a v1.2.0 -m "Release v1.2.0 — Multi-distro support"
 git push origin main --tags
 ```
 
-🔍 **Observation** : `git tag -a` (annoté) **>>** `git tag` (lightweight) :
-le tag annoté contient un message + auteur + date, ce qui est ce que
-Galaxy lit pour la release notes.
+🔍 **Observation**: `git tag -a` (annotated) **>>** `git tag` (lightweight):
+the annotated tag contains a message + author + date, which is what
+Galaxy reads for the release notes.
 
-## 📚 Exercice 4 — Publication Galaxy
+## 📚 Exercise 4 — Galaxy publication
 
-### Méthode 1 — Webhook GitHub (rôles, recommandé)
+### Method 1 — GitHub webhook (roles, recommended)
 
-1. Sur https://galaxy.ansible.com → **My Content → Add Content → Import
+1. On https://galaxy.ansible.com → **My Content → Add Content → Import
    Role from GitHub**.
-2. Sélectionner `<user>/ansible-role-webserver`.
-3. À chaque **nouveau tag SemVer**, Galaxy déclenche un import automatique.
+2. Select `<user>/ansible-role-webserver`.
+3. On each **new SemVer tag**, Galaxy triggers an automatic import.
 
-### Méthode 2 — CLI (collections, mandatory)
+### Method 2 — CLI (collections, mandatory)
 
 ```bash
 cd path/to/collection/
@@ -124,69 +123,69 @@ ansible-galaxy collection publish \
   --api-key=$GALAXY_TOKEN
 ```
 
-🔍 **Observation** : `--api-key` (et non `--token`) accepte un token
-généré sur https://galaxy.ansible.com/me/preferences.
+🔍 **Observation**: `--api-key` (and not `--token`) accepts a token
+generated on https://galaxy.ansible.com/me/preferences.
 
-## 📚 Exercice 5 — Lire `PUBLISH.md`
+## 📚 Exercise 5 — Read `PUBLISH.md`
 
-Le fichier livré explique :
+The shipped file explains:
 
-- Le **workflow Git** (test → CHANGELOG → commit → tag → push).
-- Les **2 méthodes** de publication (webhook vs CLI).
-- Le **pinning consommateur** dans `requirements.yml`.
-- Le **CI/CD** automatisé (workflow GitHub Actions sur tag).
+- The **Git workflow** (test → CHANGELOG → commit → tag → push).
+- The **2 methods** of publication (webhook vs CLI).
+- The **consumer pinning** in `requirements.yml`.
+- The automated **CI/CD** (GitHub Actions workflow on tag).
 
-## 📚 Exercice 6 — Pinning chez le consommateur
+## 📚 Exercise 6 — Pinning on the consumer side
 
 ```yaml
-# requirements.yml d'un autre projet qui consomme votre rôle
+# requirements.yml of another project that consumes your role
 roles:
   - src: stephrobert.webserver
     version: 1.2.0          # exact match production
 
-  # Ou plage SemVer
+  # Or SemVer range
   - src: stephrobert.webserver
     version: ">=1.2.0,<2.0.0"
 ```
 
-🔍 **Observation** : la plage `>=1.2.0,<2.0.0` autorise les patch + minor
-(rétrocompat) mais bloque le saut MAJOR. C'est le pattern **prod
-pragmatique**.
+🔍 **Observation**: the `>=1.2.0,<2.0.0` range allows patch + minor
+(backward compat) but blocks the MAJOR jump. This is the **pragmatic prod**
+pattern.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **SemVer + CHANGELOG** = contrat de **stabilité** avec vos
-  utilisateurs.
-- **Tag annoté** (`git tag -a`) > tag lightweight pour Galaxy.
-- **Webhook Galaxy** est l'option **paresseuse efficace** pour les rôles.
-- **Collections** (publication) = obligatoirement via CLI + token.
-- **Releases automatisées** via CI/CD : tag → workflow → Galaxy publish.
+- **SemVer + CHANGELOG** = a **stability** contract with your
+  users.
+- **Annotated tag** (`git tag -a`) > lightweight tag for Galaxy.
+- **Galaxy webhook** is the **lazy efficient** option for roles.
+- **Collections** (publication) = mandatorily via CLI + token.
+- **Automated releases** via CI/CD: tag → workflow → Galaxy publish.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous renommez `nginx_user` → `webserver_user`. Quel bump SemVer ?
-   Comment migrer les utilisateurs sans casser ?
+1. You rename `nginx_user` → `webserver_user`. Which SemVer bump?
+   How do you migrate users without breaking them?
 
-2. Vous voulez **rétrograder** un release (rollback). Comment faire sur
-   Galaxy ? (Indice : il n'y a pas vraiment de delete propre.)
+2. You want to **roll back** a release. How do you do it on
+   Galaxy? (Hint: there is no really clean delete.)
 
-3. Différence entre publier un **rôle** (1 fichier `meta/main.yml`) et une
-   **collection** (`galaxy.yml` + `.tar.gz`) ?
+3. Difference between publishing a **role** (1 `meta/main.yml` file) and a
+   **collection** (`galaxy.yml` + `.tar.gz`)?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md).
+See [`challenge/README.md`](challenge/README.md).
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`towncrier`** : générateur automatique de CHANGELOG (Python, mais
-  applicable Ansible).
-- **`semantic-release`** : automatisation tag + CHANGELOG + publish.
-- **GitHub Releases** : génération auto des release notes depuis le
+- **`towncrier`**: automatic CHANGELOG generator (Python, but
+  applicable to Ansible).
+- **`semantic-release`**: tag + CHANGELOG + publish automation.
+- **GitHub Releases**: auto-generation of release notes from the
   CHANGELOG.
-- **Pre-release SemVer** : `1.2.0-rc1`, `1.2.0-beta.1` (acceptés Galaxy).
+- **Pre-release SemVer**: `1.2.0-rc1`, `1.2.0-beta.1` (accepted by Galaxy).
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint labs/galaxy/versionner-publier/

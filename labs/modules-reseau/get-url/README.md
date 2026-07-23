@@ -1,38 +1,39 @@
-# Lab 49 — Module `get_url:` (télécharger un fichier HTTP/HTTPS)
+# Lab 49 — Module `get_url:` (download an HTTP/HTTPS file)
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Module get_url Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/reseau/module-get-url/)
+🔗 [**Ansible get_url module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/reseau/module-get-url/)
 
-`ansible.builtin.get_url:` télécharge un fichier depuis une URL HTTP/HTTPS/FTP
-**directement sur le managed node** (pas de passage par le control node). C'est
-le module n°1 RHCE 2026 pour récupérer un binaire upstream, une **release
-applicative**, un **dépôt RPM** custom, ou un fichier de config externe.
+`ansible.builtin.get_url:` downloads a file from an HTTP/HTTPS/FTP URL
+**directly onto the managed node** (no round trip through the control node).
+It is the number 1 RHCE 2026 module to fetch an upstream binary, an
+**application release**, a custom **RPM repository**, or an external config
+file.
 
-Options critiques : **`url:`**, **`dest:`**, **`mode:`**, **`checksum:`**
-(vérification d'intégrité), **`force: true`** (override), **`headers:`**
-(authentification API), **`validate_certs:`** (TLS strict).
+Critical options: **`url:`**, **`dest:`**, **`mode:`**, **`checksum:`**
+(integrity check), **`force: true`** (override), **`headers:`**
+(API authentication), **`validate_certs:`** (strict TLS).
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Télécharger** un fichier avec `get_url:` (idempotent par défaut).
-2. **Vérifier l'intégrité** avec `checksum: sha256:...`.
-3. **Authentifier** un download avec `url_username:` / `url_password:` ou
+1. **Download** a file with `get_url:` (idempotent by default).
+2. **Check the integrity** with `checksum: sha256:...`.
+3. **Authenticate** a download with `url_username:` / `url_password:` or
    `headers:`.
-4. **Désactiver TLS strict** avec `validate_certs: false` (déconseillé en prod).
-5. **Choisir** entre `get_url:` (simple download) et `uri:` (appel API JSON).
+4. **Disable strict TLS** with `validate_certs: false` (not recommended in prod).
+5. **Choose** between `get_url:` (simple download) and `uri:` (JSON API call).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 ansible db1.lab -b -m shell -a "rm -f /opt/lab-download-* /tmp/lab-get-*"
 ```
 
-## 📚 Exercice 1 — Téléchargement basique
+## 📚 Exercise 1 — Basic download
 
 ```yaml
 ---
@@ -47,17 +48,17 @@ ansible db1.lab -b -m shell -a "rm -f /opt/lab-download-* /tmp/lab-get-*"
         mode: "0644"
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- 1er run : `changed=1` — fichier téléchargé.
-- 2e run : `changed=0` — Ansible vérifie l'**ETag** ou la **date de modification**
-  HTTP. Si le serveur n'a pas changé, pas de re-download.
+- 1st run: `changed=1`, file downloaded.
+- 2nd run: `changed=0`, Ansible checks the **ETag** or the HTTP **modification
+  date**. If the server has not changed, no re-download.
 
-**Idempotence par défaut** : `get_url` ne re-télécharge **que si nécessaire**.
-Pratique pour des artefacts versionnés où l'URL contient déjà la version
+**Idempotence by default**: `get_url` re-downloads **only if necessary**.
+Handy for versioned artifacts where the URL already contains the version
 (`myapp-1.0.0.tar.gz`).
 
-## 📚 Exercice 2 — Vérification d'intégrité (`checksum:`)
+## 📚 Exercise 2 — Integrity check (`checksum:`)
 
 ```yaml
 - name: Telecharger node_exporter avec verification SHA256
@@ -68,28 +69,28 @@ Pratique pour des artefacts versionnés où l'URL contient déjà la version
     mode: "0644"
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- Si le fichier téléchargé a un SHA256 **différent** de celui spécifié, la tâche
-  **failed**.
-- Si **identique**, idempotent — pas de re-download.
+- If the downloaded file has a SHA256 **different** from the one specified, the
+  task is **failed**.
+- If **identical**, idempotent, no re-download.
 
-**Formats supportés** :
+**Supported formats**:
 
-- **`sha256:<hex>`** — recommandé (collision-résistant).
-- **`sha512:<hex>`** — plus fort (overkill généralement).
-- **`sha1:<hex>`** — déprécié pour la sécurité.
-- **`md5:<hex>`** — ne **pas** utiliser (cassé cryptographiquement).
-- **`sha256:https://example.com/SHA256SUMS`** — récupère la liste des sums
-  depuis une URL et matche le filename.
+- **`sha256:<hex>`**, recommended (collision-resistant).
+- **`sha512:<hex>`**, stronger (generally overkill).
+- **`sha1:<hex>`**, deprecated for security.
+- **`md5:<hex>`**, do **not** use (cryptographically broken).
+- **`sha256:https://example.com/SHA256SUMS`**, fetches the list of sums from a
+  URL and matches the filename.
 
-**Pattern production** : **toujours** spécifier un checksum pour des binaires
-critiques. Sans ça, un MITM ou un repo compromis pousserait n'importe quoi.
+**Production pattern**: **always** specify a checksum for critical binaries.
+Without it, a MITM or a compromised repo could push anything.
 
-## 📚 Exercice 3 — Authentification
+## 📚 Exercise 3 — Authentication
 
 ```yaml
-# Authentification basique (HTTP Basic)
+# Basic authentication (HTTP Basic)
 - ansible.builtin.get_url:
     url: https://repo.private.com/files/private.tar.gz
     dest: /opt/private.tar.gz
@@ -97,7 +98,7 @@ critiques. Sans ça, un MITM ou un repo compromis pousserait n'importe quoi.
     url_password: "{{ vault_repo_password }}"
     mode: "0600"
 
-# Token Bearer (API moderne)
+# Bearer token (modern API)
 - ansible.builtin.get_url:
     url: https://api.github.com/repos/myorg/myapp/releases/latest
     dest: /opt/release-meta.json
@@ -107,16 +108,16 @@ critiques. Sans ça, un MITM ou un repo compromis pousserait n'importe quoi.
     mode: "0600"
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **`url_username` / `url_password`** : HTTP Basic Auth.
-- **`headers:`** : pour Bearer tokens, API keys custom, User-Agent.
-- **`mode: "0600"`** sur fichiers contenant du contenu auth (license, token).
+- **`url_username` / `url_password`**: HTTP Basic Auth.
+- **`headers:`**: for Bearer tokens, custom API keys, User-Agent.
+- **`mode: "0600"`** on files containing auth content (license, token).
 
-**Stockage des secrets** : **toujours** dans Ansible Vault (`vault_*` en
-convention) — jamais hardcodé dans le playbook.
+**Storage of secrets**: **always** in Ansible Vault (`vault_*` by convention),
+never hardcoded in the playbook.
 
-## 📚 Exercice 4 — `force: true` (override)
+## 📚 Exercise 4 — `force: true` (override)
 
 ```yaml
 - name: Forcer le re-download meme si checksum match
@@ -127,41 +128,41 @@ convention) — jamais hardcodé dans le playbook.
     mode: "0644"
 ```
 
-🔍 **Observation** : par défaut, `get_url` est idempotent — il ne re-télécharge
-**pas** si le fichier existe déjà avec le bon contenu. **`force: true`** force
-le download à chaque run.
+🔍 **Observation**: by default, `get_url` is idempotent, it does **not**
+re-download if the file already exists with the right content. **`force: true`**
+forces the download on every run.
 
-**Cas d'usage** :
+**Use cases**:
 
-- Endpoint qui retourne du contenu **dynamique** (token CSRF, snapshot horaire).
-- Re-télécharger pour **rotater** un artefact (ex : nouveau certif TLS).
+- Endpoint that returns **dynamic** content (CSRF token, hourly snapshot).
+- Re-download to **rotate** an artifact (for example a new TLS cert).
 
-## 📚 Exercice 5 — `validate_certs:` (TLS strict)
+## 📚 Exercise 5 — `validate_certs:` (strict TLS)
 
 ```yaml
 - name: Telecharger depuis un certif self-signed (DEV uniquement)
   ansible.builtin.get_url:
     url: https://internal-dev.lab/file.tar.gz
     dest: /opt/file.tar.gz
-    validate_certs: false   # DESACTIVE LE CHECK TLS — DANGER
+    validate_certs: false   # DISABLES THE TLS CHECK - DANGER
     mode: "0644"
 ```
 
-🔍 **Observation** : `validate_certs: false` désactive la vérification du
-certificat TLS. **Risque MITM**.
+🔍 **Observation**: `validate_certs: false` disables the verification of the
+TLS certificate. **MITM risk**.
 
-**Cas légitimes** :
+**Legitimate cases**:
 
-- Lab interne avec PKI self-signed (mais préférer ajouter le CA root au truststore).
-- Test temporaire sur un environnement dev.
+- Internal lab with self-signed PKI (but prefer adding the root CA to the truststore).
+- Temporary test on a dev environment.
 
-**Jamais en prod** : si vous voyez `validate_certs: false` en code de production,
-c'est une **faille de sécurité** — corrigez le truststore ou utilisez un certif
-valide (Let's Encrypt, internal CA).
+**Never in prod**: if you see `validate_certs: false` in production code, it is
+a **security flaw**, fix the truststore or use a valid cert (Let's Encrypt,
+internal CA).
 
-## 📚 Exercice 6 — Combiner avec `unarchive:`
+## 📚 Exercise 6 — Combine with `unarchive:`
 
-Pattern fréquent : télécharger un tarball + l'extraire en une chaîne.
+Frequent pattern: download a tarball + extract it in one chain.
 
 ```yaml
 - name: Telecharger et extraire node_exporter
@@ -180,23 +181,23 @@ Pattern fréquent : télécharger un tarball + l'extraire en une chaîne.
         creates: /opt/node_exporter-1.7.0.linux-amd64/node_exporter
 ```
 
-🔍 **Observation** : alternative plus directe — `unarchive: src:` accepte des
-URLs directement avec `remote_src: true`. Mais pas de `checksum:` côté
-`unarchive:` — si l'intégrité compte, faire `get_url:` puis `unarchive:` séparément.
+🔍 **Observation**: a more direct alternative, `unarchive: src:` accepts URLs
+directly with `remote_src: true`. But no `checksum:` on the `unarchive:` side,
+so if integrity matters, do `get_url:` then `unarchive:` separately.
 
-## 📚 Exercice 7 — Le piège : `url:` qui change vs contenu identique
+## 📚 Exercise 7 — The trap: a changing `url:` vs identical content
 
 ```yaml
-# La query string change a chaque run, mais le contenu serveur est identique
+# The query string changes on every run, but the server content is identical
 - ansible.builtin.get_url:
     url: "https://example.com/static.zip?cache_buster={{ ansible_date_time.epoch }}"
     dest: /opt/lab-download-static.zip
 ```
 
-🔍 **Observation** : si l'URL change à chaque run (timestamp, token), Ansible ne
-sait **pas** que le contenu est identique → **re-download à chaque run**.
+🔍 **Observation**: if the URL changes on every run (timestamp, token), Ansible
+does **not** know that the content is identical → **re-download on every run**.
 
-**Mitigation** : utiliser `checksum:` sur le **contenu** :
+**Mitigation**: use `checksum:` on the **content**:
 
 ```yaml
 - ansible.builtin.get_url:
@@ -205,49 +206,48 @@ sait **pas** que le contenu est identique → **re-download à chaque run**.
     checksum: sha256:abc123...
 ```
 
-Avec checksum, Ansible compare le **contenu local** au checksum attendu — si
-match, **skip** même si l'URL diffère.
+With a checksum, Ansible compares the **local content** to the expected
+checksum, and if it matches, **skips** even if the URL differs.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`get_url:`** télécharge **côté managed node** (pas via control node).
-- **Idempotent par défaut** via ETag / Last-Modified HTTP.
-- **`checksum: sha256:...`** pour vérification d'intégrité (mandatory en prod).
-- **`headers:`** pour Bearer tokens et API keys.
-- **`validate_certs: false`** = DANGER — uniquement en dev avec PKI interne.
-- **URL dynamique** (timestamp, token) → utiliser `checksum:` pour idempotence.
+- **`get_url:`** downloads **on the managed node side** (not via the control node).
+- **Idempotent by default** via HTTP ETag / Last-Modified.
+- **`checksum: sha256:...`** for the integrity check (mandatory in prod).
+- **`headers:`** for Bearer tokens and API keys.
+- **`validate_certs: false`** = DANGER, only in dev with an internal PKI.
+- **Dynamic URL** (timestamp, token) → use `checksum:` for idempotence.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous téléchargez `myapp-1.0.0.tar.gz` (URL stable) puis `myapp-1.1.0.tar.gz`
-   (URL différente). Comment **garder l'historique** des deux versions sur le
-   managed node, et basculer entre elles ?
+1. You download `myapp-1.0.0.tar.gz` (stable URL) then `myapp-1.1.0.tar.gz`
+   (different URL). How do you **keep the history** of the two versions on the
+   managed node, and switch between them?
 
-2. Pourquoi `checksum: sha256:...` est-il **plus sûr** que de comparer
-   `Content-Length` HTTP ? Donnez 2 raisons.
+2. Why is `checksum: sha256:...` **safer** than comparing HTTP
+   `Content-Length`? Give 2 reasons.
 
-3. `get_url:` télécharge un fichier de 5Go. La connexion coupe à 4Go. Quel est
-   le comportement par défaut au prochain run ?
+3. `get_url:` downloads a 5GB file. The connection drops at 4GB. What is the
+   default behavior on the next run?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`tmp_dest:`** : dossier temporaire de download (utile si `/tmp` est petit
-  ou en tmpfs).
-- **`backup: true`** : créer un backup du fichier précédent avant overwrite.
-- **`timeout:`** : timeout HTTP en secondes (défaut 10).
-- **Mirroring repo** : combinaison `get_url:` + `loop:` pour synchroniser
-  N fichiers depuis un repo, idempotent.
-- **Lab 50 (`uri:`)** : pour des appels **API REST** plutôt que des downloads
-  de fichiers.
+- **`tmp_dest:`**: temporary download folder (useful if `/tmp` is small or on
+  tmpfs).
+- **`backup: true`**: create a backup of the previous file before overwrite.
+- **`timeout:`**: HTTP timeout in seconds (default 10).
+- **Repo mirroring**: combination `get_url:` + `loop:` to synchronize N files
+  from a repo, idempotent.
+- **Lab 50 (`uri:`)**: for **REST API** calls rather than file downloads.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 ansible-lint labs/modules-reseau/get-url/lab.yml
@@ -255,9 +255,9 @@ ansible-lint labs/modules-reseau/get-url/challenge/solution.yml
 ansible-lint --profile production labs/modules-reseau/get-url/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un
-> hook pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

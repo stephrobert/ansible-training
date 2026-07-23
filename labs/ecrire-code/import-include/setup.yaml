@@ -1,0 +1,23 @@
+---
+# Mise en place du lab import-include : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup import-include lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (import-include)
+      ansible.builtin.shell: |
+        rm -f /tmp/lab30a-*
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (import-include)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Choose between import_* parsed at start and include_* resolved at runtime, and observe how tags and when behave differently in each case
+      run_once: true

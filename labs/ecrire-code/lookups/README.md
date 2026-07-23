@@ -1,57 +1,57 @@
-# Lab 17 — Lookups (récupérer des données externes)
+# Lab 17 — Lookups (retrieve external data)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Lookups Ansible : file, env, password, vars, hashi_vault**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/lookups/)
+🔗 [**Ansible lookups: file, env, password, vars, hashi_vault**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/lookups/)
 
-Un **lookup** récupère une donnée depuis une **source externe** au playbook : un
-fichier local, une variable d'environnement, une commande shell, un mot de passe
-généré, un secret stocké dans Vault. **L'exécution se fait côté control node**
-(votre machine), pas managed node — c'est une différence cruciale avec les modules
-classiques. La syntaxe : `{{ lookup('plugin_name', args) }}` ou `query('plugin_name')`
-qui renvoie toujours une liste.
+A **lookup** retrieves a piece of data from a **source external** to the playbook: a
+local file, an environment variable, a shell command, a generated password, a
+secret stored in Vault. **Execution happens on the control node**
+(your machine), not the managed node, which is a crucial difference from classic
+modules. The syntax: `{{ lookup('plugin_name', args) }}` or `query('plugin_name')`,
+which always returns a list.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Lire** le contenu d'un fichier local avec `lookup('file', ...)`.
-2. **Récupérer** une variable d'environnement avec `lookup('env', ...)`.
-3. **Exécuter** une commande shell sur le control node avec `lookup('pipe', ...)`.
-4. **Générer** un mot de passe via `lookup('password', ...)`.
-5. **Distinguer** `lookup` (renvoie 1 valeur ou 1 string) de `query` (renvoie une liste).
+1. **Read** the content of a local file with `lookup('file', ...)`.
+2. **Retrieve** an environment variable with `lookup('env', ...)`.
+3. **Run** a shell command on the control node with `lookup('pipe', ...)`.
+4. **Generate** a password via `lookup('password', ...)`.
+5. **Distinguish** `lookup` (returns 1 value or 1 string) from `query` (returns a list).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 mkdir -p labs/ecrire-code/lookups/files
 ansible db1.lab -b -m shell -a "rm -f /tmp/lookup-*.txt"
 ```
 
-## 📚 Exercice 1 — `lookup('file', ...)` lire un fichier local
+## 📚 Exercise 1 — `lookup('file', ...)` read a local file
 
-Créez `files/welcome.txt` :
+Create `files/welcome.txt`:
 
 ```text
 Bienvenue dans l environnement RHCE 2026
 Ansible Core 2.20 + ansible-navigator
 ```
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -66,23 +66,22 @@ Créez `lab.yml` :
         mode: "0644"
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/ecrire-code/lookups/lab.yml
-ssh ansible@db1.lab 'cat /tmp/lookup-file.txt'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'cat /tmp/lookup-file.txt'
 ```
 
-🔍 **Observation** : le contenu de `files/welcome.txt` (côté control node) a été
-**lu localement** par Ansible et **injecté** dans `content:` du `copy:`. Le fichier
-local **n'est jamais transféré** sur db1 — seul son contenu en string est utilisé.
+🔍 **Observation**: the content of `files/welcome.txt` (on the control node) was
+**read locally** by Ansible and **injected** into the `content:` of the `copy:`. The
+local file **is never transferred** to db1: only its content as a string is used.
 
-**Différence avec `copy: src:`** : avec `src:`, Ansible **transfère** le fichier
-binaire entièrement. Avec `lookup('file', ...)`, on lit la string et on l'utilise
-en variable Jinja2. Pratique pour **injecter** un fichier dans un template plus
-gros.
+**Difference with `copy: src:`**: with `src:`, Ansible **transfers** the binary
+file entirely. With `lookup('file', ...)`, you read the string and use it as a
+Jinja2 variable. Handy to **inject** a file into a larger template.
 
-## 📚 Exercice 2 — `lookup('env', ...)` variable d'environnement
+## 📚 Exercise 2 — `lookup('env', ...)` environment variable
 
 ```yaml
 - name: Lire l USER du control node
@@ -94,25 +93,25 @@ gros.
     msg: "MY_DEPLOY_KEY = {{ lookup('env', 'MY_DEPLOY_KEY') | default('non defini', true) }}"
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/ecrire-code/lookups/lab.yml
 ```
 
-🔍 **Observation** : `USER` est défini dans votre shell, donc affiché. `MY_DEPLOY_KEY`
-n'est probablement pas défini → renvoie une **string vide** (pas une erreur).
-Le filtre `default('non defini', true)` (avec `true` comme 2e arg) traite la string
-vide comme "absente".
+🔍 **Observation**: `USER` is defined in your shell, so it is displayed. `MY_DEPLOY_KEY`
+is probably not defined → returns an **empty string** (not an error).
+The filter `default('non defini', true)` (with `true` as the 2nd arg) treats the empty
+string as "missing".
 
-**Cas d'usage** : récupérer un token de CI (`CI_JOB_TOKEN`), un chemin
-(`HOME`), ou un secret injecté par Vault. Tester en local :
+**Use case**: retrieve a CI token (`CI_JOB_TOKEN`), a path
+(`HOME`), or a secret injected by Vault. Test locally:
 
 ```bash
 MY_DEPLOY_KEY=secret123 ansible-playbook labs/ecrire-code/lookups/lab.yml
 ```
 
-## 📚 Exercice 3 — `lookup('pipe', ...)` exécuter une commande locale
+## 📚 Exercise 3 — `lookup('pipe', ...)` run a local command
 
 ```yaml
 - name: Recuperer le SHA git du control node
@@ -126,14 +125,14 @@ MY_DEPLOY_KEY=secret123 ansible-playbook labs/ecrire-code/lookups/lab.yml
     mode: "0644"
 ```
 
-🔍 **Observation** : `pipe` exécute la commande **côté control node** et capture le
-stdout. Le timestamp ou le SHA git sont **figés au moment du run** — utile pour
-embarquer une **traçabilité** dans les fichiers déployés.
+🔍 **Observation**: `pipe` runs the command **on the control node** and captures
+stdout. The timestamp or the git SHA are **frozen at the moment of the run**, useful
+to embed **traceability** in the deployed files.
 
-**Sécurité** : `pipe` exécute n'importe quelle commande shell. Ne **jamais** passer
-une variable utilisateur non sanitizée dans `pipe` — risque d'injection shell.
+**Security**: `pipe` runs any shell command. **Never** pass an unsanitized
+user variable into `pipe`: risk of shell injection.
 
-## 📚 Exercice 4 — `lookup('password', ...)` génération de mot de passe
+## 📚 Exercise 4 — `lookup('password', ...)` password generation
 
 ```yaml
 - name: Generer un password persistant pour myapp
@@ -151,18 +150,18 @@ une variable utilisateur non sanitizée dans `pipe` — risque d'injection shell
     mode: "0600"
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **Premier run** : `lookup('password', ...)` **génère** un nouveau mot de passe et
-  l'**écrit** dans `/tmp/lookup-myapp-password.txt` côté control node.
-- **Runs suivants** : `lookup` **lit** le fichier existant — le password reste
-  **identique** entre les runs.
+- **First run**: `lookup('password', ...)` **generates** a new password and
+  **writes** it to `/tmp/lookup-myapp-password.txt` on the control node.
+- **Subsequent runs**: `lookup` **reads** the existing file, the password stays
+  **identical** across runs.
 
-C'est le pattern **génération idempotente de secrets** : générer une fois, persister,
-réutiliser. Combiné avec **Ansible Vault** sur le fichier de stockage, c'est une
-solution simple pour gérer des passwords sans WordPress / Vault HashiCorp.
+This is the **idempotent secret generation** pattern: generate once, persist,
+reuse. Combined with **Ansible Vault** on the storage file, it is a simple
+solution to manage passwords without WordPress / HashiCorp Vault.
 
-## 📚 Exercice 5 — `lookup` vs `query`
+## 📚 Exercise 5 — `lookup` vs `query`
 
 ```yaml
 - name: lookup file (renvoie une string)
@@ -178,16 +177,16 @@ solution simple pour gérer des passwords sans WordPress / Vault HashiCorp.
     msg: "type query file : {{ query('file', 'files/welcome.txt') | type_debug }}"
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- `lookup('file', ...)` → **string** (le contenu du fichier).
-- `query('lines', 'cat /etc/passwd')` → **liste de lignes**.
-- `query('file', ...)` → **liste à 1 élément** (toujours liste, même si une seule valeur).
+- `lookup('file', ...)` → **string** (the file content).
+- `query('lines', 'cat /etc/passwd')` → **list of lines**.
+- `query('file', ...)` → **list of 1 element** (always a list, even if a single value).
 
-**Règle** : utiliser `query` quand le résultat sert dans un `loop:` (qui veut une
-liste). Utiliser `lookup` pour une valeur unique.
+**Rule**: use `query` when the result is used in a `loop:` (which wants a
+list). Use `lookup` for a single value.
 
-## 📚 Exercice 6 — Le piège : `lookup` est exécuté **chaque fois** la variable est lue
+## 📚 Exercise 6 — The pitfall: `lookup` is run **each time** the variable is read
 
 ```yaml
 - name: Lookup avec random — 1ere fois
@@ -199,10 +198,10 @@ liste). Utiliser `lookup` pour une valeur unique.
     msg: "uuid 2 : {{ lookup('pipe', 'uuidgen') }}"
 ```
 
-🔍 **Observation** : les deux UUIDs sont **différents**. Chaque évaluation de `{{
-lookup(...) }}` re-exécute le lookup.
+🔍 **Observation**: the two UUIDs are **different**. Each evaluation of `{{
+lookup(...) }}` re-runs the lookup.
 
-**Pour figer la valeur** : capturer dans un `set_fact` :
+**To freeze the value**: capture it in a `set_fact`:
 
 ```yaml
 - name: Figer l uuid
@@ -214,64 +213,64 @@ lookup(...) }}` re-exécute le lookup.
     msg: "Meme uuid partout : {{ deploy_uuid }} == {{ deploy_uuid }}"
 ```
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Lookups exécutent côté control node**, pas managed node.
-- **`lookup` retourne une valeur**, **`query` retourne une liste** (toujours).
-- **`lookup('file', ...)`** = lire un fichier local sans le transférer.
-- **`lookup('env', ...)`** = lire une variable d'env du control node.
-- **`lookup('pipe', ...)`** = exécuter une commande shell locale (attention sécurité).
-- **`lookup('password', ...)`** = génération idempotente de password persisté.
-- **Lookups sont ré-évalués** à chaque accès — utiliser `set_fact` pour figer.
+- **Lookups run on the control node**, not the managed node.
+- **`lookup` returns a value**, **`query` returns a list** (always).
+- **`lookup('file', ...)`** = read a local file without transferring it.
+- **`lookup('env', ...)`** = read an env variable of the control node.
+- **`lookup('pipe', ...)`** = run a local shell command (mind the security).
+- **`lookup('password', ...)`** = idempotent generation of a persisted password.
+- **Lookups are re-evaluated** on each access, use `set_fact` to freeze.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voulez injecter le **commit SHA git** courant dans un fichier déployé sur
-   tous les managed nodes pour traçabilité. Lookup `file`, `env`, ou `pipe` ?
+1. You want to inject the current **git commit SHA** into a file deployed on
+   all the managed nodes for traceability. Lookup `file`, `env`, or `pipe`?
 
-2. `lookup('password', '~/secrets.txt')` génère un mot de passe persisté. Quelle
-   est la **conséquence** si plusieurs développeurs utilisent ce playbook depuis
-   leur machine ? (indice : le fichier est local au control node).
+2. `lookup('password', '~/secrets.txt')` generates a persisted password. What
+   is the **consequence** if several developers use this playbook from
+   their machine? (hint: the file is local to the control node).
 
-3. Vous voulez lire `/etc/passwd` du **managed node** dans une variable Ansible.
-   `lookup('file', '/etc/passwd')` ne marche pas (lit côté control node). Quelle
-   est l'alternative ?
+3. You want to read `/etc/passwd` from the **managed node** into an Ansible variable.
+   `lookup('file', '/etc/passwd')` does not work (reads on the control node). What
+   is the alternative?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`lookup('hashi_vault', 'secret=...')`** : récupérer un secret depuis HashiCorp
-  Vault. Authentification via `VAULT_TOKEN` env var.
-- **`lookup('csvfile', ...)`** : extraction d'une cellule dans un CSV — pratique
-  pour des configs métier en spreadsheet.
-- **`lookup('template', ...)`** : rendre un template Jinja2 sans le déployer —
-  utile pour pré-calculer un fichier qu'on injecte ailleurs.
-- **`lookup('vars', 'dynamic_var_name')`** : déréférencer une variable dont le
-  nom est lui-même dynamique (équivalent `vars[var_name]`).
-- **Plugin custom** : on peut écrire son propre lookup en Python (`plugins/lookup/mon_lookup.py`).
+- **`lookup('hashi_vault', 'secret=...')`**: retrieve a secret from HashiCorp
+  Vault. Authentication via the `VAULT_TOKEN` env var.
+- **`lookup('csvfile', ...)`**: extraction of a cell from a CSV, handy
+  for business configs in a spreadsheet.
+- **`lookup('template', ...)`**: render a Jinja2 template without deploying it,
+  useful to pre-compute a file that you inject elsewhere.
+- **`lookup('vars', 'dynamic_var_name')`**: dereference a variable whose
+  name is itself dynamic (equivalent to `vars[var_name]`).
+- **Custom plugin**: you can write your own lookup in Python (`plugins/lookup/mon_lookup.py`).
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/ecrire-code/lookups/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/ecrire-code/lookups/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/ecrire-code/lookups/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

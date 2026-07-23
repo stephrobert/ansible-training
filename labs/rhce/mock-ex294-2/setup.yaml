@@ -1,0 +1,219 @@
+---
+# Mise en place du lab mock-ex294-2 : l'état « salle d'examen », puis le brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+#
+# Comme le mock #1, ce playbook ne se contente pas de nettoyer : il DÉFAIT l'état
+# final attendu par les 19 tâches. Tant que le booléen SELinux reste « on », que
+# les règles firewalld restent ouvertes et que la pile Apache/valkey reste
+# installée d'un run précédent, les tests 5, 6, 8 et 9 sont verts sans que le
+# candidat ait écrit une ligne : le mock certifierait à tort.
+#
+# Il pose aussi les pré-requis que l'énoncé déclare fournis par l'environnement :
+# le VG `vg_lab`, l'UID/GID 3200 libres, le port 80 libre (nginx arrêté).
+
+- name: Défaire l'état attendu et libérer l'UID 3200 (mock-ex294-2)
+  hosts: labenv
+  become: true
+  gather_facts: false
+  tasks:
+    # Le glob /tmp/lab200-* couvre d'un coup les marqueurs des tâches 2, 3, 4,
+    # 13, 14, 15 et 17 : ils portent tous ce préfixe. /tmp/slot[1-6] couvre la
+    # tâche 12. Pour la tâche 14, c'est vital : la preuve du séquencement est le
+    # mtime des marqueurs de palier, un marqueur laissé par un run précédent
+    # fausserait la mesure.
+    - name: Retirer les artefacts déposés par les tâches 2, 3, 4, 12, 13, 14, 15 et 17
+      ansible.builtin.shell: |
+        rm -f /tmp/lab200-* /tmp/slot[1-6] 2>/dev/null; true
+      changed_when: false
+      failed_when: false
+
+    - name: Retirer la règle sudo de la tâche 7
+      ansible.builtin.file:
+        path: /etc/sudoers.d/svcuser-journalctl
+        state: absent
+
+    # La crontab de svcuser est le seul état de la tâche 16 : on la retire même
+    # si l'utilisateur a déjà été supprimé par un passage précédent.
+    - name: Retirer la crontab de svcuser (tâche 16)
+      ansible.builtin.file:
+        path: /var/spool/cron/svcuser
+        state: absent
+
+    # On ne retire QUE notre fact : /etc/ansible/facts.d est partagé avec le lab
+    # custom-facts et avec le mock #1.
+    - name: Retirer le fact personnalisé de la tâche 18
+      ansible.builtin.file:
+        path: /etc/ansible/facts.d/lab200.fact
+        state: absent
+
+    # Défaire l'état posé par la tâche 19 (sysctl) ET tout résidu d'AUTRE lab
+    # qui figerait vm.swappiness dans /etc/sysctl.d/ (ex. modules-rhel/sysctl,
+    # collections/navigator). Sans ce nettoyage, un de ces fichiers peut, au
+    # reboot, supplanter la valeur 25 posée par la solution selon l'ordre
+    # lexicographique de lecture de systemd-sysctl : la salle d'examen doit
+    # partir d'un /etc/sysctl.d/ propre côté vm.swappiness, sinon test_99
+    # (persistance après reboot) dépend de ce qu'un lab précédent a laissé.
+    - name: Recenser les fichiers sysctl.d de labs qui figent vm.swappiness
+      ansible.builtin.shell: >-
+        grep -lE '^[[:space:]]*vm\.swappiness' /etc/sysctl.d/*lab*.conf 2>/dev/null || true
+      register: swappiness_files
+      changed_when: false
+
+    - name: Retirer ces fichiers pour une salle d'examen propre
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ swappiness_files.stdout_lines }}"
+
+    - name: Ramener vm.swappiness à sa valeur par défaut (runtime)
+      ansible.builtin.shell: |
+        sysctl -w vm.swappiness=60 >/dev/null 2>&1; true
+      changed_when: false
+      failed_when: false
+
+    - name: Retirer svcuser (tâche 7)
+      ansible.builtin.user:
+        name: svcuser
+        state: absent
+        remove: true
+
+    - name: Retirer svcgroup (tâche 7)
+      ansible.builtin.group:
+        name: svcgroup
+        state: absent
+
+    - name: Libérer l'UID et le GID 3200, qu'un lab voisin a pu occuper
+      ansible.builtin.shell: |
+        squatter=$(getent passwd 3200 | cut -d: -f1)
+        if [ -n "$squatter" ]; then userdel -r "$squatter" 2>/dev/null || true; fi
+        squatter_grp=$(getent group 3200 | cut -d: -f1)
+        if [ -n "$squatter_grp" ]; then groupdel "$squatter_grp" 2>/dev/null || true; fi
+        true
+      changed_when: false
+      failed_when: false
+
+- name: Désinstaller ce que la tâche 5 doit installer (mock-ex294-2)
+  hosts: lab_web1:lab_web2:lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    # python3-libselinux n'est pas dans la liste : c'est une dépendance de
+    # l'outillage système Ansible, la retirer casserait sa gestion SELinux.
+    - name: Retirer httpd et valkey
+      ansible.builtin.dnf:
+        name:
+          - httpd
+          - valkey
+        state: absent
+
+- name: Rendre les frontends à leur état d'avant-examen (mock-ex294-2)
+  hosts: lab_web1:lab_web2
+  become: true
+  gather_facts: false
+  tasks:
+    # Sans ce paquet, la valeur PERSISTANTE du booléen SELinux n'est pas lisible
+    # (semanage boolean -l) et la tâche 8 n'est pas vérifiable. Il fait partie de
+    # l'environnement d'examen, pas du travail du candidat.
+    - name: Outillage SELinux requis pour vérifier la tâche 8
+      ansible.builtin.dnf:
+        name: policycoreutils-python-utils
+        state: present
+
+    # La formation a un nginx installé et actif (mock #1). Il tient le port 80,
+    # qu'Apache (tâche 6) doit prendre. On l'arrête et on le désactive : le port
+    # est libre, comme l'énoncé le déclare. failed_when: false car nginx peut
+    # être absent selon le dernier lab joué.
+    - name: Arrêter et désactiver nginx pour libérer le port 80
+      ansible.builtin.systemd_service:
+        name: nginx
+        state: stopped
+        enabled: false
+      failed_when: false
+
+    - name: Retirer l'index.html de la tâche 11
+      ansible.builtin.file:
+        path: /var/www/html/index.html
+        state: absent
+
+    - name: Désactiver httpd_can_network_connect_db, runtime et persistant
+      ansible.posix.seboolean:
+        name: httpd_can_network_connect_db
+        state: false
+        persistent: true
+
+    - name: Refermer les services firewalld de la tâche 9
+      ansible.posix.firewalld:
+        service: "{{ item }}"
+        permanent: true
+        immediate: true
+        state: disabled
+      loop:
+        - http
+        - https
+
+- name: Poser le VG vg_lab et refermer db1 (mock-ex294-2)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Refermer le port firewalld de la tâche 9
+      ansible.posix.firewalld:
+        port: 6379/tcp
+        permanent: true
+        immediate: true
+        state: disabled
+
+    # L'énoncé de la tâche 10 dit « dans le VG existant vg_lab » : le VG est un
+    # pré-requis de l'environnement, pas une étape de l'examen. On repart du
+    # disque secondaire réel /dev/vdb, comme les labs de stockage qui le
+    # partagent. Un VG adossé à un disque réel survit au reboot : l'entrée fstab
+    # de la tâche 10 n'est pas un piège à démarrage.
+    - name: Reprendre /dev/vdb et effacer la pile LVM du mock
+      ansible.builtin.shell: |
+        # /dev/vdb est partagé avec le mock #1 et les labs de stockage : il peut
+        # porter n'importe quel VG/LV/montage d'un run précédent. On reprend le
+        # disque de façon GÉNÉRIQUE, sans supposer un nom de LV précis.
+        for mp in $(findmnt -rno TARGET -S /dev/mapper/vg_lab-* 2>/dev/null); do
+          umount -l "$mp" 2>/dev/null || true
+        done
+        umount -l /srv/appdata /mnt/data 2>/dev/null || true
+        sed -i -e '\|/srv/appdata|d' -e '\|/mnt/data|d' -e '\|vg_lab|d' \
+               -e '\|/dev/vdb|d' /etc/fstab 2>/dev/null || true
+        vgchange -an vg_lab 2>/dev/null || true
+        lvremove -f vg_lab 2>/dev/null || true
+        vgremove -f vg_lab 2>/dev/null || true
+        # Un run précédent peut laisser un device-mapper vg_lab-* orphelin (VG
+        # déjà retiré des métadonnées) qui tient /dev/vdb exclusivement.
+        for dm in $(dmsetup ls 2>/dev/null | awk '/vg_lab/ {print $1}'); do
+          dmsetup remove "$dm" 2>/dev/null || true
+        done
+        pvremove -ff -y /dev/vdb 2>/dev/null || true
+        # vgremove laisse un /dev/vg_lab vide : vgcreate refuse alors de repartir.
+        rm -rf /dev/vg_lab || true
+        swapoff /dev/vdb1 2>/dev/null || true
+        for p in /dev/vdb[0-9]*; do test -b "$p" && wipefs -af "$p" || true; done
+        wipefs -af /dev/vdb || true
+        sgdisk --zap-all /dev/vdb || true
+        partprobe /dev/vdb || true
+        rmdir /srv/appdata 2>/dev/null || true
+      changed_when: false
+      failed_when: false
+
+    - name: Créer le VG vg_lab sur le disque secondaire
+      community.general.lvg:
+        vg: vg_lab
+        pvs: /dev/vdb
+        state: present
+
+- name: Brief the learner (mock-ex294-2)
+  hosts: labenv
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Work through 19 timed tasks (mock #2): inventories, variables, vault,
+          files, packages (httpd/valkey), services, users, SELinux, firewalld,
+          LVM, a role, error handling, rolling waves, delegation, scheduled jobs,
+          tags, custom facts and a content collection, each validated by pytest
+      run_once: true

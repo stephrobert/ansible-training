@@ -1,0 +1,26 @@
+---
+id: vault-integration-hashicorp
+title: "Fetch secrets from HashiCorp Vault or OpenBao"
+description: "Start a local Vault, store a secret in it, read it from Ansible with community.hashi_vault, and compare token, AppRole and JWT authentication."
+section: vault
+level: l3
+difficulty: advanced
+lab_type: lab
+estimated_time: "50m"
+skills:
+  - hashi-vault
+  - kv-v2
+  - approle-auth
+  - dynamic-secrets
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/integration-hashicorp-vault/
+certification_tags:
+  - rhce
+runtime:
+  type: shell
+  workdir: challenge/work
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

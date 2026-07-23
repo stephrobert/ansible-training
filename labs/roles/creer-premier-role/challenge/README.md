@@ -1,41 +1,41 @@
-# 🎯 Challenge — Réutiliser le rôle pattern sur db1.lab avec httpd
+# 🎯 Challenge — Write your own role and deploy it on db1.lab
 
-Vous avez déployé le rôle `webserver` (nginx) sur `web1.lab`. Le challenge consiste à **créer un second rôle** `httpd-server` sur le même modèle structurel, mais qui installe **Apache (httpd)** au lieu de nginx, et le déployer sur `db1.lab`.
+You deployed the `webserver` role on `web1.lab`, but that role was **provided ready-made**. The challenge is to **create a role yourself** named `nginx-server` on the same structural model, and to deploy it on `db1.lab`.
 
-L'objectif : pratiquer la **création d'un rôle from scratch** en dupliquant la structure mais en l'adaptant à un service différent.
+The goal: practice **creating a role from scratch**, from `ansible-galaxy role init` all the way to calling it from a playbook. The deployed software does not change: the role structure is the subject.
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `solution.yml` qui :
+Write `solution.yml` that:
 
-1. Cible **`db1.lab`** uniquement.
-2. Appelle un rôle `httpd-server` **que vous allez créer** avec :
-   - `roles/httpd-server/tasks/main.yml` qui installe **httpd**, le démarre, ouvre HTTP firewalld
-   - `roles/httpd-server/defaults/main.yml` avec au moins `httpd_state: present`
-   - `roles/httpd-server/handlers/main.yml` avec `Restart httpd`
-   - `roles/httpd-server/meta/main.yml` minimal (galaxy_info)
-   - `roles/httpd-server/README.md` minimal
+1. Targets **`db1.lab`** only.
+2. Calls an `nginx-server` role **that you will create** with:
+   - `roles/nginx-server/tasks/main.yml` that installs **nginx**, starts it, opens HTTP in firewalld
+   - `roles/nginx-server/defaults/main.yml` with at least `nginx_state: present`
+   - `roles/nginx-server/handlers/main.yml` with `Restart nginx`
+   - `roles/nginx-server/meta/main.yml` minimal (galaxy_info)
+   - `roles/nginx-server/README.md` minimal
 
-## 🧩 Consignes
+## 🧩 Instructions
 
-### 1. Créer la structure du rôle
+### 1. Create the role structure
 
 ```bash
 cd labs/roles/creer-premier-role/
-ansible-galaxy role init challenge/roles/httpd-server
-ls challenge/roles/httpd-server/      # 9 sous-dossiers générés (tasks, defaults, handlers, meta…)
+ansible-galaxy role init challenge/roles/nginx-server
+ls challenge/roles/nginx-server/      # 9 sub-directories generated (tasks, defaults, handlers, meta…)
 ```
 
-### 2. Compléter `tasks/main.yml`
+### 2. Complete `tasks/main.yml`
 
 ```yaml
 ---
-- name: Installer httpd
+- name: Installer nginx
   ansible.builtin.dnf:
     name: ???
     state: ???
 
-- name: Démarrer + activer httpd
+- name: Démarrer + activer nginx
   ansible.builtin.systemd_service:
     name: ???
     state: ???
@@ -43,41 +43,41 @@ ls challenge/roles/httpd-server/      # 9 sous-dossiers générés (tasks, defau
 
 - name: Ouvrir HTTP dans firewalld (persistant + immédiat)
   ansible.posix.firewalld:
-    service: ???                  # service standard (pas un port en dur)
+    service: ???                  # standard service (not a hard-coded port)
     permanent: ???
     immediate: ???
     state: ???
 ```
 
-### 3. Compléter `defaults/main.yml`
+### 3. Complete `defaults/main.yml`
 
 ```yaml
 ---
-httpd_state: ???                   # paquet 'present' par défaut
+nginx_state: ???                   # package 'present' by default
 ```
 
-### 4. Compléter `handlers/main.yml`
+### 4. Complete `handlers/main.yml`
 
 ```yaml
 ---
-- name: Restart httpd
+- name: Restart nginx
   ansible.builtin.systemd_service:
-    name: httpd
+    name: nginx
     state: ???                     # restarted
 ```
 
-### 5. Écrire `solution.yml` (squelette à compléter)
+### 5. Write `solution.yml` (skeleton to complete)
 
 ```yaml
 ---
-- name: Challenge — déployer httpd via rôle
+- name: "Challenge : déployer nginx via un rôle"
   hosts: ???
   become: ???
   roles:
-    - role: ???                    # nom du dossier sous challenge/roles/
+    - role: ???                    # name of the directory under challenge/roles/
 ```
 
-### 6. Lancer depuis la racine du repo
+### 6. Run from the repo root
 
 ```bash
 ANSIBLE_ROLES_PATH=labs/roles/creer-premier-role/challenge/roles \
@@ -86,60 +86,60 @@ ansible-playbook \
     labs/roles/creer-premier-role/challenge/solution.yml
 ```
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
-> - **`ANSIBLE_ROLES_PATH`** est une **variable d'environnement** Ansible,
->   pas un `-e` Ansible (qui set des extra-vars de play, pas des configs).
->   Ne pas confondre.
-> - **Idempotence** du rôle : `state: started` (et non `restarted`) dans
->   `tasks/`. Le `restarted` ne va que dans le `handlers/` (déclenché
->   conditionnellement par un `notify`).
-> - **`firewalld`** : `service: http` plutôt que `port: 80/tcp`. C'est
->   plus lisible et plus portable (le service est défini dans
+> - **`ANSIBLE_ROLES_PATH`** is an Ansible **environment variable**,
+>   not an Ansible `-e` (which sets play extra-vars, not configs).
+>   Do not confuse them.
+> - **Idempotence** of the role: `state: started` (and not `restarted`) in
+>   `tasks/`. The `restarted` only goes in `handlers/` (triggered
+>   conditionally by a `notify`).
+> - **`firewalld`**: `service: http` rather than `port: 80/tcp`. It is
+>   more readable and more portable (the service is defined in
 >   `/usr/lib/firewalld/services/`).
-> - **`ansible-galaxy role init`** crée 9 sous-dossiers — vous n'avez pas
->   besoin de tous les remplir. `defaults/`, `tasks/`, `handlers/`, `meta/`
->   suffisent ici.
+> - **`ansible-galaxy role init`** creates 9 sub-directories, you do not
+>   need to fill all of them. `defaults/`, `tasks/`, `handlers/`, `meta/`
+>   are enough here.
 
-### 7. Tester
+### 7. Test
 
    ```bash
    curl http://db1.lab/
    ```
 
-   Sortie attendue : la page d'accueil par défaut d'Apache.
+   Expected output: nginx's default welcome page.
 
 ## 🧪 Validation
 
-Le test pytest vérifie automatiquement :
+The pytest test automatically checks:
 
-- Le paquet `httpd` est installé sur `db1.lab`.
-- Le service `httpd` est `running` et `enabled`.
-- Le port 80 est ouvert dans firewalld.
-- Une requête HTTP `http://db1.lab/` retourne **200**.
+- The `nginx` package is installed on `db1.lab`.
+- The `nginx` service is `running` and `enabled`.
+- Port 80 is open in firewalld.
+- An HTTP request `http://db1.lab/` returns **200**.
 
 ```bash
 pytest -v challenge/tests/
 ```
 
-## 🚀 Pour aller plus loin
+## 🚀 Going further
 
-- Refactorer le rôle pour qu'il accepte un paramètre `webserver_engine` (`nginx` ou `httpd`) et installe le bon paquet selon la valeur. C'est le sujet du **lab 59** (variables).
-- Comparer les sorties `ansible-playbook` avec `--check --diff` avant le run réel.
-- Étendre le rôle pour installer aussi `php-fpm` en dépendance — sujet du **lab 71** (dependencies).
+- Refactor the role so that it accepts an `nginx_listen_port` parameter and templates `nginx.conf` accordingly. Caution: a non-standard port requires an SELinux label. This is the subject of **lab 59** (variables).
+- Compare the `ansible-playbook` outputs with `--check --diff` before the real run.
+- Extend the role to also install `php-fpm` as a dependency, the subject of **lab 71** (dependencies).
 
 ---
 
-Bonne chance ! 🧠
+Good luck! 🧠
 
 ## 🧹 Reset
 
-Pour rejouer le challenge dans un état neutre :
+To replay the challenge in a neutral state:
 
 ```bash
-make -C labs/roles/creer-premier-role/ clean
+dsoxlab clean roles-creer-premier-role
 ```
 
-Cette cible désinstalle/supprime ce que la solution a posé sur les managed
-nodes (paquets, fichiers, services, règles firewall) afin que vous puissiez
-relancer la solution from scratch.
+This target uninstalls/removes what the solution set up on the managed
+nodes (packages, files, services, firewall rules) so that you can
+re-run the solution from scratch.

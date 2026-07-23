@@ -1,0 +1,32 @@
+---
+id: modules-rhel-firewalld
+title: "firewalld module: manage the RHEL firewall"
+description: "Allow predefined services and custom ports per zone, with the permanent + immediate trap and the firewall reload."
+section: modules-rhel
+level: l1
+difficulty: beginner
+lab_type: lab
+estimated_time: "30m"
+skills:
+  - firewalld
+  - zones
+  - port-management
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-firewalld/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        web1: web1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

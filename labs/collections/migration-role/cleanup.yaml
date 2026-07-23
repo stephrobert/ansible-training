@@ -1,0 +1,12 @@
+---
+# Reset du lab migration-role : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup migration-role lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (migration-role)
+      ansible.builtin.file:
+        path: "/tmp/lab97-migration.txt"
+        state: "absent"

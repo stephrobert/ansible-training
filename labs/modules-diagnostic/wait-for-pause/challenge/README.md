@@ -1,19 +1,18 @@
-# 🎯 Challenge — `wait_for:` + `pause:` (synchronisation)
+# 🎯 Challenge — `wait_for:` + `pause:` (synchronization)
 
-## ✅ Objectif
+## ✅ Objective
 
-Sur **db1.lab**, écrire un play qui :
+On **db1.lab**, write a play that:
 
-1. Lance en arrière-plan une commande qui crée `/tmp/lab-waitfor-marker.txt`
-   après **3 secondes**.
-2. Utilise `wait_for: path:` pour **attendre** que le fichier apparaisse
-   (timeout 10s).
-3. **Pause** de 1 seconde pour stabilisation.
-4. Vérifie que **sshd** écoute sur le port **22** (TCP) via `wait_for: port:`
-   — `chronyd`/323 est UDP, non testable par `wait_for: port:` qui teste **TCP uniquement**.
-5. Écrit un fichier de **succès** `/tmp/lab-waitfor-success.txt`.
+1. Launches in the background a command that creates
+   `/tmp/lab-waitfor-marker.txt` after **3 seconds**.
+2. Uses `wait_for: path:` to **wait** for the file to appear (timeout 10s).
+3. **Pauses** for 1 second for stabilization.
+4. Checks that **sshd** listens on port **22** (TCP) via `wait_for: port:`,
+   `chronyd`/323 is UDP, not testable by `wait_for: port:` which tests **TCP only**.
+5. Writes a **success** file `/tmp/lab-waitfor-success.txt`.
 
-## 🧩 Étapes
+## 🧩 Steps
 
 ```yaml
 ---
@@ -22,11 +21,6 @@ Sur **db1.lab**, écrire un play qui :
   become: true
 
   tasks:
-    - name: S assurer que chronyd tourne
-      ansible.builtin.systemd_service:
-        name: chronyd
-        state: started
-
     - name: Lancer en arriere-plan une commande qui cree un marker dans 3s
       ansible.builtin.shell: |
         ( sleep 3 && touch /tmp/lab-waitfor-marker.txt ) &
@@ -42,41 +36,41 @@ Sur **db1.lab**, écrire un play qui :
       ansible.builtin.pause:
         seconds: ???
 
-    - name: Verifier que chronyd ecoute sur 323/udp (en realite TCP/UDP)
+    - name: Verifier que sshd ecoute sur 22/TCP
       ansible.builtin.wait_for:
-        port: ???
-        host: ???
+        port: ???                          # 22
+        host: ???                          # 127.0.0.1
         timeout: 5
 
     - name: Marker - succes
       ansible.builtin.copy:
-        content: "Synchronisation OK : marker + port chronyd actifs.\n"
+        content: "Synchronisation OK : marqueur pose et port 22/TCP en ecoute.\n"
         dest: ???
         mode: "0644"
 ```
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **`wait_for: port: 123`** : attend un port en LISTEN. **`state:
->   started`** = port ouvert ; **`state: stopped`** = port fermé.
-> - **`timeout:`** par défaut 300s. Pour des services lents (DB, LDAP),
->   augmenter à 600+. Pour un test rapide, baisser à 30 — sinon attente
->   inutile en cas d'échec.
-> - **`pause:`** est **bloquant** côté control node (pas le managed
->   node). Utiliser **`wait_for:`** chaque fois que possible (event-driven
->   au lieu de timer aveugle).
-> - **`wait_for: path: ...`** : attend qu'un fichier existe. Combiné
->   avec `delay:`, utile pour synchroniser avec un service qui pose
->   un marqueur.
+> - **`wait_for: port: 123`**: waits for a port in LISTEN. **`state:
+>   started`** = port open; **`state: stopped`** = port closed.
+> - **`timeout:`** default 300s. For slow services (DB, LDAP),
+>   increase to 600+. For a quick test, lower to 30, otherwise a
+>   useless wait in case of failure.
+> - **`pause:`** is **blocking** on the control node side (not the managed
+>   node). Use **`wait_for:`** whenever possible (event-driven
+>   instead of a blind timer).
+> - **`wait_for: path: ...`**: waits for a file to exist. Combined
+>   with `delay:`, useful to synchronize with a service that drops
+>   a marker.
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-diagnostic/wait-for-pause/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "ls /tmp/lab-waitfor-*"
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-diagnostic/wait-for-pause/challenge/tests/
@@ -88,16 +82,16 @@ pytest -v labs/modules-diagnostic/wait-for-pause/challenge/tests/
 ansible db1.lab -b -m shell -a "rm -f /tmp/lab-waitfor-*"
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`active_connection_states:`** sur `wait_for: port:` : matcher les états
-  TCP précis (`LISTEN` uniquement).
-- **`delay:` + `sleep:`** : pour des services **lents** à démarrer.
-- **Pattern `uri: + until:` (lab 50)** : test **applicatif** (HTTP 200 + body
-  OK), pas juste port TCP.
-- **`pause: prompt:`** : confirmation interactive — bloque le play en
-  attendant ENTRE de l'opérateur.
-- **Lint** :
+- **`active_connection_states:`** on `wait_for: port:`: match the precise TCP
+  states (`LISTEN` only).
+- **`delay:` + `sleep:`**: for services that are **slow** to start.
+- **`uri: + until:` pattern (lab 50)**: **application** test (HTTP 200 + body
+  OK), not just the TCP port.
+- **`pause: prompt:`**: interactive confirmation, blocks the play while waiting
+  for the operator's ENTER.
+- **Lint**:
 
    ```bash
    ansible-lint labs/modules-diagnostic/wait-for-pause/challenge/solution.yml

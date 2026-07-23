@@ -1,0 +1,59 @@
+---
+# Mise en place du lab plays-et-tasks : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup plays-et-tasks lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (plays-et-tasks)
+      ansible.builtin.file:
+        path: "/tmp/challenge-predeploy-db1.txt"
+        state: "absent"
+      failed_when: false
+    - name: Reset path, state (plays-et-tasks)
+      ansible.builtin.file:
+        path: "/tmp/challenge-postdeploy-db1.txt"
+        state: "absent"
+      failed_when: false
+
+    # Ce lab attend nginx sur le port 80 de db1.lab. Or db1 est partagée :
+    # premier-playbook y fait écouter nginx sur 8888, les labs de la section
+    # roles sur un port non standard. Sans ce reset, ce lab-ci échouerait
+    # selon l'ordre dans lequel on a joué les autres, ce qui n'a rien à voir
+    # avec ce qu'il enseigne.
+    - name: Reset path, regexp, line (plays-et-tasks)
+      ansible.builtin.lineinfile:
+        path: "/etc/nginx/nginx.conf"
+        regexp: '^(\s*)listen(\s+)[0-9]+;'
+        line: "        listen       80;"
+      failed_when: false
+
+    # Le service est arrêté pour que le `state: started` de l'apprenant le
+    # démarre VRAIMENT avec la configuration ci-dessus. Sur un nginx déjà
+    # lancé par un lab voisin, `state: started` est un no-op : le service
+    # resterait sur son ancien port, et le test échouerait sans que le
+    # playbook soit en cause.
+    - name: Reset name, state (plays-et-tasks)
+      ansible.builtin.systemd_service:
+        name: "nginx"
+        state: "stopped"
+      failed_when: false
+
+    # La page servie est le résultat attendu du challenge : la laisser en
+    # place ferait passer un playbook qui a oublié de la poser.
+    - name: Reset path, state (plays-et-tasks)
+      ansible.builtin.file:
+        path: "/usr/share/nginx/html/index.html"
+        state: "absent"
+      failed_when: false
+
+- name: Brief the learner (plays-et-tasks)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Structure a play with pre_tasks, tasks, post_tasks and handlers, then prove the real execution order with timestamped marker files
+      run_once: true

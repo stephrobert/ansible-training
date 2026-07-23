@@ -1,0 +1,4 @@
+---
+id: modules-diagnostic-stat
+title: "Module stat : inspecter fichiers et dossiers"
+description: "Vérifier existence, type, taille, mode et checksum d'un fichier sans le modifier, pour piloter une logique conditionnelle."

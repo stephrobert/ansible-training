@@ -1,0 +1,27 @@
+---
+# Mise en place du lab mount : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup mount lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (mount)
+      ansible.posix.mount:
+        path: "/mnt/lab-data"
+        state: "absent"
+    - name: Reset state (mount)
+      ansible.builtin.shell: |
+        rm -f /opt/lab-disk.img; rmdir /mnt/lab-data 2>/dev/null; true
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (mount)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Handle the 5 mount states, mount a loop device, set noatime/nodev/nosuid options, and make a mount survive a reboot
+      run_once: true

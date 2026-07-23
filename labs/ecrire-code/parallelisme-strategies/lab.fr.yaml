@@ -1,0 +1,4 @@
+---
+id: ecrire-code-parallelisme-strategies
+title: "Parallélisme : forks, serial, throttle, strategy"
+description: "Distinguer forks de serial, jouer un rolling update en serial: 1, comparer les stratégies linear et free et limiter une tâche avec throttle."

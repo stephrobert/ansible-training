@@ -1,0 +1,23 @@
+---
+# Mise en place du lab sudoers : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup sudoers lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (sudoers)
+      ansible.builtin.shell: |
+        rm -f /etc/sudoers.d/lab-rhce-*; groupdel ops-team 2>/dev/null; true
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (sudoers)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Create rules under /etc/sudoers.d/ with automatic visudo validation, limit allowed commands, and handle nopassword on a group
+      run_once: true

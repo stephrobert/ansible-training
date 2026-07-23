@@ -1,62 +1,62 @@
-# Lab 02 — Installation d'Ansible (vérifier votre poste de contrôle)
+# Lab 02 — Installing Ansible (checking your control node)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Installer Ansible : pipx, mise, dnf, Execution Environment**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/installation-ansible/)
+🔗 [**Installing Ansible: pipx, mise, dnf, Execution Environment**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/installation-ansible/)
 
-Avant d'écrire le moindre playbook, il faut **un poste de contrôle qui marche** : Ansible installé, les bons binaires dans le `PATH`, les collections principales présentes. Ce lab ne demande **rien à écrire** — vous allez **inspecter** votre installation et apprendre à diagnostiquer un poste mal configuré.
+Before writing a single playbook, you need **a control node that works**: Ansible installed, the right binaries in the `PATH`, the main collections present. This lab requires **nothing to write**: you are going to **inspect** your installation and learn to diagnose a misconfigured node.
 
-La page du blog présente les **5 méthodes d'installation** recommandées en 2026 :
+The blog page presents the **5 installation methods** recommended in 2026:
 
-| Méthode | Pour qui | Commande type |
+| Method | For whom | Typical command |
 | --- | --- | --- |
-| **`pipx`** | Poste perso (recommandé) | `pipx install --include-deps ansible` |
-| **`dnf` / `apt`** | Distro stable | `sudo dnf install ansible` |
-| **`mise`** | Plusieurs versions côte à côte | `mise use ansible@latest` |
-| **`uv tool install`** | Alternative moderne à pipx | `uv tool install ansible` |
-| **Execution Environment** | Reproductibilité totale (cible RHCE 2026) | `ansible-navigator run …` |
+| **`pipx`** | Personal machine (recommended) | `pipx install --include-deps ansible` |
+| **`dnf` / `apt`** | Stable distro | `sudo dnf install ansible` |
+| **`mise`** | Several versions side by side | `mise use ansible@latest` |
+| **`uv tool install`** | Modern alternative to pipx | `uv tool install ansible` |
+| **Execution Environment** | Total reproducibility (RHCE 2026 target) | `ansible-navigator run …` |
 
-Vous n'avez **pas** besoin des 5 sur votre poste — une seule suffit. Mais vous devez savoir laquelle vous utilisez : ça détermine **où** Ansible est installé et **comment** le mettre à jour.
+You do **not** need all 5 on your machine: a single one is enough. But you must know which one you use: it determines **where** Ansible is installed and **how** to update it.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Lire `ansible --version` et identifier votre **méthode d'installation**.
-2. Vérifier que les **8 binaires standard** Ansible sont dans votre `PATH`.
-3. Mesurer combien de **modules** sont accessibles via `ansible-doc`.
-4. Confirmer la présence des **collections clés** du repo (`ansible.posix`, `community.general`, `community.libvirt`).
-5. Lancer la **vérification automatisée** du lab via `make run`.
+1. Read `ansible --version` and identify your **installation method**.
+2. Check that the **8 standard** Ansible binaries are in your `PATH`.
+3. Measure how many **modules** are accessible via `ansible-doc`.
+4. Confirm the presence of the repo's **key collections** (`ansible.posix`, `community.general`, `community.libvirt`).
+5. Run the lab's **automated verification** via `dsoxlab run <id-du-lab>`.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
-Aucune VM nécessaire — toutes les commandes tournent **sur votre poste de travail** (le control node). Placez-vous à la racine du repo :
+No VM needed: all the commands run **on your workstation** (the control node). Move to the repo root:
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ```
 
-> 💡 **Si Ansible n'est pas du tout installé** : la page du blog cite `pipx install --include-deps ansible` comme installation rapide, ou `make bootstrap` à la racine du repo qui installe la totalité de la chaîne (Ansible + outils de lint + libvirt). Lancez-la **avant** de continuer.
+> 💡 **If Ansible is not installed at all**: the blog page cites `pipx install --include-deps ansible` as a quick install, or `mise install` at the repo root which installs the entire chain (Ansible + lint tools + libvirt). Run it **before** continuing.
 
-## 📚 Exercice 1 — Quelle version d'Ansible avez-vous ?
+## 📚 Exercise 1 — Which Ansible version do you have?
 
 ```bash
 ansible --version
 ```
 
-Sortie typique :
+Typical output:
 
 ```text
 ansible [core 2.20.1]
@@ -70,17 +70,17 @@ ansible [core 2.20.1]
   pyyaml version = 6.0.3 (with libyaml v0.2.5)
 ```
 
-🔍 **Observation** — trois lignes à analyser :
+🔍 **Observation** (three lines to analyze):
 
-| Ligne | Ce qu'elle vous dit |
+| Line | What it tells you |
 | --- | --- |
-| `ansible [core 2.x.y]` | La version d'`ansible-core`. La cible RHCE 2026 attend **`core 2.18+`** (RHEL 9/10). |
-| `config file =` | Le `ansible.cfg` chargé. Doit pointer sur **celui du repo** quand vous êtes dedans (`/.../ansible-training/ansible.cfg`). Sinon, vos paramètres locaux ne s'appliqueront pas. |
-| `executable location =` | Le **chemin** du binaire. Si c'est `~/.local/bin/ansible` (wrapper qui pointe vers `~/.local/share/pipx/venvs/ansible/...`) → installation pipx. Si `/usr/bin/...` → paquet distro. Si `~/.local/share/mise/shims/...` → mise. C'est ainsi qu'on identifie la méthode. |
+| `ansible [core 2.x.y]` | The `ansible-core` version. The RHCE 2026 target expects **`core 2.18+`** (RHEL 9/10). |
+| `config file =` | The loaded `ansible.cfg`. Must point to **the repo's one** when you are inside it (`/.../ansible-training/ansible.cfg`). Otherwise, your local settings will not apply. |
+| `executable location =` | The binary's **path**. If it is `~/.local/bin/ansible` (a wrapper pointing to `~/.local/share/pipx/venvs/ansible/...`) → pipx install. If `/usr/bin/...` → distro package. If `~/.local/share/mise/shims/...` → mise. This is how you identify the method. |
 
-## 📚 Exercice 2 — Les 8 binaires standard sont-ils tous présents ?
+## 📚 Exercise 2 — Are all 8 standard binaries present?
 
-Ansible n'est pas un seul binaire : c'est une **famille de 8 commandes** que vous utiliserez tour à tour (lab 03 fait le tour). Vérifiez qu'aucune ne manque :
+Ansible is not a single binary: it is a **family of 8 commands** that you will use in turn (lab 03 covers them all). Check that none is missing:
 
 ```bash
 for bin in ansible ansible-playbook ansible-galaxy ansible-doc \
@@ -89,31 +89,31 @@ for bin in ansible ansible-playbook ansible-galaxy ansible-doc \
 done
 ```
 
-🔍 **Observation** : tous les binaires doivent retourner un chemin. Cas typiques :
+🔍 **Observation**: every binary must return a path. Typical cases:
 
-- **`ansible-lint MANQUANT`** : pas livré par défaut avec `pipx install ansible`. Lancez `pipx install ansible-lint` ou `pipx inject ansible ansible-lint`.
-- **`ansible-vault MANQUANT`** : suspect — `vault` est livré avec `ansible-core`, donc c'est le signe d'une installation cassée. Réinstallez Ansible.
+- **`ansible-lint MANQUANT`**: not shipped by default with `pipx install ansible`. Run `pipx install ansible-lint` or `pipx inject ansible ansible-lint`.
+- **`ansible-vault MANQUANT`**: suspicious. `vault` ships with `ansible-core`, so this is the sign of a broken installation. Reinstall Ansible.
 
-## 📚 Exercice 3 — Combien de modules sont disponibles ?
+## 📚 Exercise 3 — How many modules are available?
 
 ```bash
 ansible-doc -l | wc -l
 ```
 
-🔍 **Observation** : vous devez obtenir **plusieurs milliers** (~10 000+). Ce nombre n'est **pas** ce que livre `ansible-core` seul (qui contient ~70 modules sous `ansible.builtin.*`) — c'est ce que livrent `ansible-core` **+ toutes les collections installées**.
+🔍 **Observation**: you should get **several thousand** (~10,000+). This number is **not** what `ansible-core` alone ships (which contains ~70 modules under `ansible.builtin.*`): it is what `ansible-core` **+ all installed collections** ship.
 
-- **<100 modules** : il manque des collections. Lancez `ansible-galaxy collection install -r requirements.yml` à la racine du repo.
-- **~70 modules exactement** : vous êtes sur `ansible-core` pur, sans collections. Idem.
+- **<100 modules**: collections are missing. Run `ansible-galaxy collection install -r requirements.yml` at the repo root.
+- **~70 modules exactly**: you are on pure `ansible-core`, without collections. Same fix.
 
-## 📚 Exercice 4 — Les collections clés sont-elles installées ?
+## 📚 Exercise 4 — Are the key collections installed?
 
-Le repo dépend de 3 collections (déclarées dans `requirements.yml`) :
+The repo depends on 3 collections (declared in `requirements.yml`):
 
 ```bash
 ansible-galaxy collection list | grep -E "ansible.posix|community.general|community.libvirt"
 ```
 
-Sortie attendue (extrait) :
+Expected output (excerpt):
 
 ```text
 ansible.posix              2.1.0
@@ -121,28 +121,28 @@ community.general          11.4.7
 community.libvirt          2.2.0
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **`ansible.posix`** : modules POSIX standard (`firewalld`, `mount`, `selinux`, `sysctl`). Indispensable pour les labs serveurs.
-- **`community.general`** : très large — utilitaires (`timezone`, `archive`, `pacman`, etc.).
-- **`community.libvirt`** : utilisé par l'infra de provisioning du repo (création des VMs).
+- **`ansible.posix`**: standard POSIX modules (`firewalld`, `mount`, `selinux`, `sysctl`). Essential for the server labs.
+- **`community.general`**: very broad, utilities (`timezone`, `archive`, `pacman`, etc.).
+- **`community.libvirt`**: used by the repo's provisioning infra (VM creation).
 
-Si l'une manque :
+If one is missing:
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible-galaxy collection install -r requirements.yml
 ```
 
-## 📚 Exercice 5 — Vérification automatisée via Make
+## 📚 Exercise 5 — Automated verification
 
-Le lab fournit un `Makefile` qui chaîne les 4 vérifications précédentes :
+The CLI replays the 4 previous checks and tells you which ones pass:
 
 ```bash
-make -C labs/decouvrir/installation-ansible run
+dsoxlab check decouvrir-installation-ansible
 ```
 
-🔍 **Observation** : sortie attendue (extrait) :
+🔍 **Observation**: expected output (excerpt):
 
 ```text
 ===> 1. ansible --version
@@ -165,56 +165,56 @@ community.general          11.4.7
 community.libvirt          2.2.0
 ```
 
-Si une vérification échoue (binaire manquant, collection absente), corrigez **avant** d'aller au lab 03.
+If a check fails (missing binary, absent collection), fix it **before** moving on to lab 03.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- `ansible-core` ≠ `ansible` : `core` est le moteur (modules `ansible.builtin.*`), `ansible` est le metapackage qui ajoute les collections de base.
-- Le `executable location =` de `ansible --version` est l'**indicateur n°1** de votre méthode d'installation. Mémorisez-le, c'est la première chose à regarder en cas de problème.
-- `ansible.cfg` est cherché dans cet ordre : **(1)** variable d'env `ANSIBLE_CONFIG`, **(2)** `./ansible.cfg`, **(3)** `~/.ansible.cfg`, **(4)** `/etc/ansible/ansible.cfg`. Le premier trouvé gagne — pas de fusion. C'est pour ça qu'il faut **lancer Ansible depuis la racine du repo**.
-- Une collection est **versionnée** (ex: `ansible.posix 2.1.0`). Mettre à jour Ansible n'upgrade **pas** automatiquement les collections — il faut `ansible-galaxy collection install --upgrade`.
+- `ansible-core` ≠ `ansible`: `core` is the engine (`ansible.builtin.*` modules), `ansible` is the metapackage that adds the base collections.
+- The `executable location =` from `ansible --version` is the **number one indicator** of your installation method. Memorize it, it is the first thing to look at when there is a problem.
+- `ansible.cfg` is searched in this order: **(1)** the `ANSIBLE_CONFIG` env variable, **(2)** `./ansible.cfg`, **(3)** `~/.ansible.cfg`, **(4)** `/etc/ansible/ansible.cfg`. The first found wins, no merge. That is why you must **run Ansible from the repo root**.
+- A collection is **versioned** (e.g. `ansible.posix 2.1.0`). Updating Ansible does **not** automatically upgrade the collections: you need `ansible-galaxy collection install --upgrade`.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous travaillez sur 3 projets : un projet RHCE 2026 qui exige `ansible-core 2.18+`, un projet legacy qui plante au-delà de `core 2.14`, et un projet expérimental sur `core 2.20`. Quelle méthode d'installation choisissez-vous, et pourquoi ?
+1. You work on 3 projects: an RHCE 2026 project that requires `ansible-core 2.18+`, a legacy project that breaks beyond `core 2.14`, and an experimental project on `core 2.20`. Which installation method do you choose, and why?
 
-2. Un collègue vous dit : « Mon `ansible --version` montre `core 2.16` mais j'ai bien `pipx install ansible` dans la commande la plus récente ». Quelle est la première hypothèse à vérifier ?
+2. A colleague tells you: "My `ansible --version` shows `core 2.16` but I did run `pipx install ansible` with the most recent command." What is the first hypothesis to check?
 
-3. Pourquoi est-il important que `config file =` pointe sur le `ansible.cfg` du repo, et pas sur `~/.ansible.cfg` ou `/etc/ansible/ansible.cfg` ? Quel paramètre du repo serait perdu sinon ?
+3. Why is it important that `config file =` points to the repo's `ansible.cfg`, and not to `~/.ansible.cfg` or `/etc/ansible/ansible.cfg`? Which repo setting would be lost otherwise?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Le challenge ([`challenge/README.md`](challenge/README.md)) demande d'écrire un script `solution.sh` qui automatise les 4 vérifications avec un **exit code clair** (0 si tout va bien, 1 sinon). C'est le genre de check qu'on poserait dans un job CI ou en pré-commit.
+The challenge ([`challenge/README.md`](challenge/README.md)) asks you to write a `solution.sh` script that automates the 4 checks with a **clear exit code** (0 if all is well, 1 otherwise). It is the kind of check you would put in a CI job or as a pre-commit hook.
 
 ```bash
 pytest -v labs/decouvrir/installation-ansible/challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Tester `mise`** : créez un `.tool-versions` dans un dossier de test contenant `ansible 2.18.0`, entrez dans le dossier, et vérifiez que `ansible --version` bascule automatiquement sur cette version.
-- **Tester un Execution Environment** : suivez la section EE de la page du blog pour construire un EE avec `ansible-builder` puis lancer un playbook via `ansible-navigator run playbook.yml --mode stdout`. Comparez le résultat avec votre install locale — c'est l'approche de référence pour la RHCE 2026 (reproductibilité totale via image OCI).
-- **Auditer la configuration active** : `ansible-config dump --only-changed` montre uniquement les paramètres qui diffèrent des défauts. Utile pour comprendre ce que le `ansible.cfg` du repo modifie réellement.
+- **Try `mise`**: create a `.tool-versions` in a test folder containing `ansible 2.18.0`, enter the folder, and check that `ansible --version` automatically switches to that version.
+- **Try an Execution Environment**: follow the EE section of the blog page to build an EE with `ansible-builder` then run a playbook via `ansible-navigator run playbook.yml --mode stdout`. Compare the result with your local install: it is the reference approach for RHCE 2026 (total reproducibility via an OCI image).
+- **Audit the active configuration**: `ansible-config dump --only-changed` shows only the settings that differ from the defaults. Useful to understand what the repo's `ansible.cfg` actually changes.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/decouvrir/installation-ansible/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/decouvrir/installation-ansible/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/decouvrir/installation-ansible/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

@@ -1,27 +1,10 @@
 ---
-# .yamllint — config minimale recommandée 2026
+# .yamllint : À COMPLÉTER PAR VOS SOINS.
+#
+# Attendu (contrôlé par pytest) :
+#   - étendre la config par défaut,
+#   - règle truthy stricte : seuls true/false sont admis (YAML 1.2),
+#   - line-length assoupli à votre convenance (warning).
 extends: default
 
-rules:
-  line-length:
-    max: 160
-    level: warning
-
-  truthy:
-    allowed-values:
-      - "true"
-      - "false"
-    check-keys: false
-
-  comments:
-    min-spaces-from-content: 1
-
-  comments-indentation: false
-  document-start: enable
-  empty-lines:
-    max: 2
-
-ignore: |
-  .cache/
-  molecule/
-  .tox/
+rules: {}

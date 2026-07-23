@@ -1,0 +1,113 @@
+---
+# create.yml : c'est CE fichier qui monte réellement les instances.
+#
+# Pourquoi doit-il exister ? Le driver « default » de Molecule v6+ est le
+# driver DÉLÉGUÉ : Molecule ne parle plus lui-même à Podman ni à Docker.
+# Il se contente de jouer create.yml puis destroy.yml, et de lire le
+# fichier d'inventaire que create.yml lui laisse. Sans ces deux playbooks,
+# Molecule saute silencieusement l'étape « create » et le converge tente
+# de joindre une machine qui n'a jamais existé.
+#
+# Ce playbook est fourni avec le lab : c'est le banc de test, pas
+# l'exercice. Il est identique dans les quatre labs de la section.
+#
+# Rien n'est codé en dur ici : tout vient de « platforms » dans
+# molecule.yml. Ajouter une distribution à la matrice ne demande donc pas
+# de toucher à ce fichier.
+
+- name: Create
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  # Créer un conteneur en rootless ne demande aucun privilège root sur le
+  # poste : podman tourne sous votre compte.
+  become: false
+
+  vars:
+    # Molecule expose ces chemins par variables d'environnement. On les lit
+    # plutôt que de les deviner : le répertoire éphémère change à chaque
+    # scénario.
+    molecule_file: "{{ lookup('env', 'MOLECULE_FILE') }}"
+    molecule_instance_config: "{{ lookup('env', 'MOLECULE_INSTANCE_CONFIG') }}"
+    # La liste des plateformes est lue depuis molecule.yml lui-même : c'est
+    # la seule source de vérité.
+    molecule_yml: "{{ lookup('file', molecule_file) | from_yaml }}"
+
+  tasks:
+    # --- 1. Récupérer les images ---------------------------------------
+    # « pre_build_image: true » dans molecule.yml veut dire : l'image est
+    # déjà construite en amont, on la tire telle quelle. Aucun Dockerfile
+    # n'est bâti ici.
+    - name: Tirer les images déclarées dans la matrice
+      containers.podman.podman_image:
+        name: "{{ item.image }}"
+        pull: true
+        # force: false évite de retélécharger une image déjà en cache à
+        # chaque « molecule test ».
+        force: false
+      loop: "{{ molecule_yml.platforms }}"
+      loop_control:
+        label: "{{ item.image }}"
+
+    # --- 2. Démarrer les instances -------------------------------------
+    - name: Démarrer les conteneurs de la matrice
+      containers.podman.podman_container:
+        name: "{{ item.name }}"
+        image: "{{ item.image }}"
+        # command: /sbin/init démarre systemd comme PID 1. C'est ce qui
+        # permet au rôle testé de piloter un vrai service. Une image sans
+        # systemd (rockylinux:9 par exemple, qui n'a pas /sbin/init) ne
+        # peut pas servir ici.
+        command: "{{ item.command | default(omit) }}"
+        # systemd réclame des cgroups et des montages que seul un conteneur
+        # privilégié obtient.
+        privileged: "{{ item.privileged | default(false) }}"
+        # Monter le cgroup en écriture est ce qui permet à systemd de
+        # démarrer. Podman sait normalement le faire seul, mais uniquement
+        # avec le runtime crun ; avec runc (le runtime installé ici, tiré
+        # par le paquet containerd.io), systemd meurt en silence sur un
+        # exit 255, sans une ligne de log. Le symptôme est le même pour
+        # toutes les images Debian et Ubuntu.
+        # Ce montage est inoffensif pour les images qui n'en ont pas
+        # besoin : on le pose donc partout, plutôt que d'avoir une matrice
+        # où chaque distribution se monte différemment.
+        volumes: >-
+          {{ ['/sys/fs/cgroup:/sys/fs/cgroup:rw']
+             + (item.volumes | default([])) }}
+        state: started
+        # rm: false, sinon podman effacerait le conteneur à son arrêt et
+        # « molecule destroy » n'aurait plus rien à détruire.
+        rm: false
+      loop: "{{ molecule_yml.platforms }}"
+      loop_control:
+        label: "{{ item.name }} ({{ item.image }})"
+
+    # --- 3. Dire à Molecule comment joindre les instances ---------------
+    # C'est le contrat du driver délégué : Molecule lit ce fichier pour
+    # construire son inventaire. Sans lui, les instances existent mais
+    # Molecule ne sait pas les joindre.
+    - name: Construire la description des instances
+      ansible.builtin.set_fact:
+        instance_conf: >-
+          {{ instance_conf | default([]) + [{
+            'instance': item.name,
+            'address': item.name,
+            'user': 'root',
+            'port': 0,
+            'identity_file': '',
+            'connection': 'containers.podman.podman'
+          }] }}
+      loop: "{{ molecule_yml.platforms }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    # user: root n'est pas un détail. Il dit à Ansible qu'il est DÉJÀ root
+    # dans le conteneur : « become: true » du converge devient alors un
+    # non-événement, au lieu d'appeler sudo. Ces images « init » ne
+    # contiennent pas sudo, et le converge mourrait sur
+    # « sudo: command not found ».
+    - name: Écrire le fichier d'instances lu par Molecule
+      ansible.builtin.copy:
+        dest: "{{ molecule_instance_config }}"
+        content: "{{ instance_conf | to_nice_yaml }}"
+        mode: "0644"

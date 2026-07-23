@@ -1,38 +1,38 @@
-# 🎯 Challenge — Mapper un code retour à la sémantique Ansible
+# 🎯 Challenge — Map a return code to Ansible semantics
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `challenge/solution.yml` qui sur **db1.lab** fait passer une commande
-retournant **rc=1** (donc *échec* par défaut Ansible) pour un succès — mais
-marquée comme `changed`.
+Write `challenge/solution.yml` that, on **db1.lab**, turns a command returning
+**rc=1** (so a *failure* by Ansible default) into a success, but marked as
+`changed`.
 
-Pourquoi ? Certaines commandes utilisent rc=1 comme **signal métier** (`grep`
-qui ne trouve rien, `diff` qui détecte des différences, etc.). Sans
-`failed_when`, le play s'arrêterait à tort.
+Why? Some commands use rc=1 as a **business signal** (`grep` finding nothing,
+`diff` detecting differences, etc.). Without `failed_when`, the play would stop
+wrongly.
 
-## 🧩 Sémantique attendue
+## 🧩 Expected semantics
 
-| Code retour | Sémantique Ansible souhaitée |
+| Return code | Desired Ansible semantics |
 | --- | --- |
-| `rc=0` | `ok` (rien à faire) |
-| `rc=1` | `changed` (modification métier détectée — pas un échec) |
-| `rc=2,3,…` | `failed` (vraie erreur) |
+| `rc=0` | `ok` (nothing to do) |
+| `rc=1` | `changed` (business change detected, not a failure) |
+| `rc=2,3,…` | `failed` (real error) |
 
-## 🧩 Mots-clés à combiner
+## 🧩 Keywords to combine
 
-- **`register: result`** : capture le résultat (notamment `result.rc`).
-- **`failed_when:`** : redéfinit ce qui est considéré comme un échec.
-- **`changed_when:`** : redéfinit ce qui est considéré comme un changement.
+- **`register: result`**: capture the result (in particular `result.rc`).
+- **`failed_when:`**: redefines what is considered a failure.
+- **`changed_when:`**: redefines what is considered a change.
 
 ```yaml
 - name: ...
   ansible.builtin.command: ???
   register: result
-  failed_when: result.rc not in [???]    # liste des rc considérés OK
-  changed_when: result.rc == ???          # quel rc déclenche "changed"
+  failed_when: result.rc not in [???]    # list of rc considered OK
+  changed_when: result.rc == ???          # which rc triggers "changed"
 ```
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -54,33 +54,33 @@ qui ne trouve rien, `diff` qui détecte des différences, etc.). Sans
         mode: "0644"
 ```
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/ecrire-code/failed-when-changed-when/challenge/solution.yml
 ```
 
-🔍 **Sortie attendue** :
+🔍 **Expected output**:
 
-- 1ère tâche : `changed` (non `failed`).
-- 2ème tâche : `changed` (le fichier est posé).
-- `PLAY RECAP` : `changed=2, failed=0`.
+- 1st task: `changed` (not `failed`).
+- 2nd task: `changed` (the file is written).
+- `PLAY RECAP`: `changed=2, failed=0`.
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
-> - **`failed_when:`** redéfinit la condition d'échec. Par défaut, une
->   tâche échoue si `rc != 0`. Avec `failed_when: result.rc not in [0, 2]`,
->   les codes 0 et 2 sont OK.
-> - **`changed_when:`** redéfinit la condition `changed`. Sans, une
->   `command:` ou `shell:` est **toujours** marquée `changed=1` (anti-
->   idempotence). Pour une lecture-seule : `changed_when: false`.
-> - **`changed_when:` + `failed_when:` ensemble** : `failed_when` est
->   évalué en premier ; si la tâche échoue, `changed_when` n'est pas
->   évalué.
-> - **Boolean expression** : `failed_when: result.stdout != ""` (string
->   non vide), `failed_when: "'ERROR' in result.stderr"` (substring).
+> - **`failed_when:`** redefines the failure condition. By default, a
+>   task fails if `rc != 0`. With `failed_when: result.rc not in [0, 2]`,
+>   codes 0 and 2 are OK.
+> - **`changed_when:`** redefines the `changed` condition. Without it, a
+>   `command:` or `shell:` is **always** marked `changed=1` (anti-
+>   idempotence). For a read-only one: `changed_when: false`.
+> - **`changed_when:` + `failed_when:` together**: `failed_when` is
+>   evaluated first; if the task fails, `changed_when` is not
+>   evaluated.
+> - **Boolean expression**: `failed_when: result.stdout != ""` (non-empty
+>   string), `failed_when: "'ERROR' in result.stderr"` (substring).
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/failed-when-changed-when/challenge/tests/
@@ -89,21 +89,21 @@ pytest -v labs/ecrire-code/failed-when-changed-when/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/ecrire-code/failed-when-changed-when clean
+dsoxlab clean ecrire-code-failed-when-changed-when
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`failed_when: result.stderr`** : on échoue si stderr est non vide
-  (utile pour des commandes qui retournent rc=0 mais écrivent un warning
-  bloquant en stderr).
-- **`changed_when: '"already exists" not in result.stdout'`** : on n'est
-  changed que si la sortie n'indique pas que la chose existe déjà
-  (équivalent d'un `creates:` mais via parsing de stdout).
-- **Différence avec `block/rescue`** : `failed_when`/`changed_when`
-  réinterprètent **une** tâche. `block/rescue` orchestre **plusieurs**
-  tâches autour d'un échec.
-- **Lint** :
+- **`failed_when: result.stderr`**: you fail if stderr is non-empty
+  (useful for commands that return rc=0 but write a blocking warning
+  to stderr).
+- **`changed_when: '"already exists" not in result.stdout'`**: you are
+  changed only if the output does not indicate the thing already exists
+  (equivalent to a `creates:` but via stdout parsing).
+- **Difference with `block/rescue`**: `failed_when`/`changed_when`
+  reinterpret **one** task. `block/rescue` orchestrates **several**
+  tasks around a failure.
+- **Lint**:
 
    ```bash
    ansible-lint labs/ecrire-code/failed-when-changed-when/challenge/solution.yml

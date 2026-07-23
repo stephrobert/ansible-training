@@ -1,0 +1,14 @@
+---
+# Dépendances Galaxy DU SCÉNARIO (et non du rôle).
+#
+# containers.podman est ce qui crée réellement les instances : le driver
+# « default » de Molecule se contente de déléguer à create.yml, qui appelle
+# les modules de cette collection.
+#
+# La contrainte de version n'est pas un ornement : sans elle, Galaxy
+# installe la dernière version publiée, et une matrice verte aujourd'hui
+# peut virer au rouge demain sans qu'une ligne du dépôt ait bougé.
+
+collections:
+  - name: containers.podman
+    version: ">=1.10.0,<2.0.0"

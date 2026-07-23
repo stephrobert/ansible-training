@@ -1,0 +1,4 @@
+---
+id: modules-fichiers-copy
+title: "Module copy : transférer fichiers et contenu inline"
+description: "Transférer un fichier avec src: ou écrire un contenu inline avec content:, en maîtrisant mode, owner, backup et validate."

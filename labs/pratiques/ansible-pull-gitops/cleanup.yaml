@@ -1,0 +1,14 @@
+---
+# Reset du lab ansible-pull-gitops : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup ansible-pull-gitops lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (ansible-pull-gitops)
+      ansible.builtin.shell: |
+        rm -rf /tmp/lab98-pull-marker.txt /var/lib/ansible-pull \
+          /tmp/lab98-repo-pull /tmp/lab98-repo-pull.tgz
+      changed_when: false
+      failed_when: false

@@ -1,0 +1,12 @@
+---
+# Reset du lab async-poll : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup async-poll lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (async-poll)
+      ansible.builtin.file:
+        path: "/tmp/async-done.txt"
+        state: "absent"

@@ -1,0 +1,13 @@
+---
+# Reset du lab yum-repository : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup yum-repository lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (yum-repository)
+      ansible.builtin.shell: |
+        rm -f /etc/yum.repos.d/local-test.repo /etc/yum.repos.d/epel-test.repo
+      changed_when: false
+      failed_when: false

@@ -1,0 +1,23 @@
+---
+# Mise en place du lab dynamique-kvm : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup dynamique-kvm lab (labenv)
+  hosts: labenv
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (dynamique-kvm)
+      ansible.builtin.shell: |
+        rm -f /tmp/lab57-mark-*.txt
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (dynamique-kvm)
+  hosts: labenv
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Discover libvirt VMs automatically through the inventory plugin, build Jinja groups and keyed_groups, with no manual inventory
+      run_once: true

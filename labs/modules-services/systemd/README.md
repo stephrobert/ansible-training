@@ -1,54 +1,54 @@
-# Lab 38 — Module `systemd_service:` (gérer les services systemd)
+# Lab 38 — `systemd_service:` module (manage systemd services)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Module systemd_service Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-systemd/)
+🔗 [**Ansible systemd_service module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-systemd/)
 
-Sur les distributions modernes (RHEL 7+, Ubuntu 16.04+), **tous les services**
-sont gérés par **systemd**. Le module `ansible.builtin.systemd_service:`
-(alias `systemd`) est plus puissant que le legacy `service:` :
+On modern distributions (RHEL 7+, Ubuntu 16.04+), **all services**
+are managed by **systemd**. The `ansible.builtin.systemd_service:` module
+(alias `systemd`) is more powerful than the legacy `service:`:
 
-- **Connaît `daemon_reload:`** (recharger systemd après modif d'un `.service`).
-- **Distingue `state:`** (état immédiat) et **`enabled:`** (au boot) — deux
-  options indépendantes.
-- **Gère les unit files masqués** (`masked: true`).
-- **Sait recharger sans redémarrer** (`state: reloaded`).
+- **Knows `daemon_reload:`** (reload systemd after modifying a `.service`).
+- **Distinguishes `state:`** (immediate state) and **`enabled:`** (at boot): two
+  independent options.
+- **Handles masked unit files** (`masked: true`).
+- **Can reload without restarting** (`state: reloaded`).
 
-C'est le module n°1 pour les opérations services en RHCE 2026.
+It is the number-one module for service operations in RHCE 2026.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Distinguer** `state:` vs `enabled:` (état actuel vs boot).
-2. **Recharger** un service sans coupure (`reloaded` vs `restarted`).
-3. **Déposer un unit file custom** + `daemon_reload: true`.
-4. **Masquer** un service dangereux (`masked: true`).
-5. **Notifier** un service depuis un handler (pattern reload-on-change).
+1. **Distinguish** `state:` vs `enabled:` (current state vs boot).
+2. **Reload** a service without downtime (`reloaded` vs `restarted`).
+3. **Drop a custom unit file** + `daemon_reload: true`.
+4. **Mask** a dangerous service (`masked: true`).
+5. **Notify** a service from a handler (reload-on-change pattern).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible web1.lab -m ping
 ansible web1.lab -b -m shell -a "rm -f /etc/systemd/system/lab-marker.service /var/run/lab-marker.flag; systemctl daemon-reload"
 ```
 
-## 📚 Exercice 1 — `state:` vs `enabled:` (deux options indépendantes)
+## 📚 Exercise 1 — `state:` vs `enabled:` (two independent options)
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -84,17 +84,17 @@ Créez `lab.yml` :
           enabled : {{ chronyd_enabled.stdout }}
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/modules-services/systemd/lab.yml
 ```
 
-🔍 **Observation** : le service est **active** (running maintenant) mais peut être
-**disabled** (pas au boot) selon l'état initial. **`state:`** et **`enabled:`**
-sont **indépendants**.
+🔍 **Observation**: the service is **active** (running now) but can be
+**disabled** (not at boot) depending on the initial state. **`state:`** and **`enabled:`**
+are **independent**.
 
-**Configuration normale** : les deux ensemble.
+**Normal configuration**: both together.
 
 ```yaml
 - ansible.builtin.systemd_service:
@@ -103,7 +103,7 @@ sont **indépendants**.
     enabled: true
 ```
 
-## 📚 Exercice 2 — `reloaded` vs `restarted`
+## 📚 Exercise 2 — `reloaded` vs `restarted`
 
 ```yaml
 - name: Modifier la conf chrony
@@ -117,27 +117,27 @@ sont **indépendants**.
     name: chronyd
     state: reloaded
 
-# Alternative : restarted (avec coupure)
+# Alternative: restarted (with downtime)
 - name: Redemarrer (coupure breve)
   ansible.builtin.systemd_service:
     name: chronyd
     state: restarted
 ```
 
-| `state:` | Effet | Coupure |
+| `state:` | Effect | Downtime |
 |---|---|---|
-| `restarted` | `systemctl restart` (stop + start) | Oui — brève (ms à secondes) |
-| `reloaded` | `systemctl reload` (SIGHUP, recharge config) | Non — pas d'arrêt |
+| `restarted` | `systemctl restart` (stop + start) | Yes, brief (ms to seconds) |
+| `reloaded` | `systemctl reload` (SIGHUP, reloads config) | No, no stop |
 
-🔍 **Observation** : préférer **`reloaded`** quand le service le supporte (`nginx`,
-`httpd`, `sshd`, `firewalld`, `chronyd`) — pas de coupure pour les clients connectés.
+🔍 **Observation**: prefer **`reloaded`** when the service supports it (`nginx`,
+`sshd`, `firewalld`, `chronyd`): no downtime for connected clients.
 
-**`restarted`** reste nécessaire pour :
+**`restarted`** stays necessary for:
 
-- Changement d'**unit file** (le binaire ou les arguments changent).
-- Changement majeur que SIGHUP ne couvre pas.
+- A change of **unit file** (the binary or the arguments change).
+- A major change that SIGHUP does not cover.
 
-## 📚 Exercice 3 — `daemon_reload:` après nouveau unit file
+## 📚 Exercise 3 — `daemon_reload:` after a new unit file
 
 ```yaml
 - name: Deposer un unit file custom
@@ -165,23 +165,23 @@ sont **indépendants**.
     daemon_reload: true
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **Sans `daemon_reload: true`**, systemd **ne voit pas** le nouveau unit file →
-  `start` échouerait avec "unit not found".
-- **Avec `daemon_reload: true`**, systemd recharge ses unit files **avant**
-  d'agir sur le service.
+- **Without `daemon_reload: true`**, systemd **does not see** the new unit file →
+  `start` would fail with "unit not found".
+- **With `daemon_reload: true`**, systemd reloads its unit files **before**
+  acting on the service.
 
-**Quand l'utiliser** : **uniquement** quand vous **déposez ou modifiez** un unit
-file. Pas besoin sur un `state: started` d'un service système standard.
+**When to use it**: **only** when you **drop or modify** a unit
+file. No need on a `state: started` of a standard system service.
 
-**Vérifier le fonctionnement** :
+**Check that it works**:
 
 ```bash
-ssh ansible@web1.lab 'systemctl status lab-marker && cat /var/run/lab-marker.flag'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab 'systemctl status lab-marker && cat /var/run/lab-marker.flag'
 ```
 
-## 📚 Exercice 4 — `masked: true` (interdire le start)
+## 📚 Exercise 4 — `masked: true` (forbid the start)
 
 ```yaml
 - name: Masquer rpcbind (durcissement)
@@ -192,16 +192,16 @@ ssh ansible@web1.lab 'systemctl status lab-marker && cat /var/run/lab-marker.fla
     masked: true
 ```
 
-🔍 **Observation** : **`masked: true`** lie l'unit file à `/dev/null` — toute
-commande `systemctl start rpcbind` échoue silencieusement, **même par un humain**.
-Pattern de **durcissement** absolu pour des services qu'on **interdit**.
+🔍 **Observation**: **`masked: true`** links the unit file to `/dev/null`: any
+`systemctl start rpcbind` command fails silently, **even by a human**.
+Absolute **hardening** pattern for services you **forbid**.
 
-**Différence avec `enabled: false`** :
+**Difference with `enabled: false`**:
 
-- **`disabled`** = pas au boot, mais `systemctl start` manuel marche.
-- **`masked`** = interdit toute forme de démarrage.
+- **`disabled`** = not at boot, but a manual `systemctl start` works.
+- **`masked`** = forbids any form of start.
 
-**Pour démasquer** :
+**To unmask**:
 
 ```yaml
 - ansible.builtin.systemd_service:
@@ -210,7 +210,7 @@ Pattern de **durcissement** absolu pour des services qu'on **interdit**.
     state: started
 ```
 
-## 📚 Exercice 5 — Pattern handler (notification)
+## 📚 Exercise 5 — Handler pattern (notification)
 
 ```yaml
 - name: Modifier sshd_config
@@ -220,7 +220,7 @@ Pattern de **durcissement** absolu pour des services qu'on **interdit**.
     line: 'PermitRootLogin no'
   notify: Reload sshd
 
-# Plus loin dans le play (handlers section)
+# Further down in the play (handlers section)
 handlers:
   - name: Reload sshd
     ansible.builtin.systemd_service:
@@ -228,18 +228,18 @@ handlers:
       state: reloaded
 ```
 
-🔍 **Observation** : le handler `Reload sshd` ne tourne que **si la tâche
-`lineinfile:` a notifié** (=changement effectif), et **à la fin du play**.
+🔍 **Observation**: the `Reload sshd` handler only runs **if the
+`lineinfile:` task notified** (= effective change), and **at the end of the play**.
 
-**Avantages** :
+**Advantages**:
 
-- Pas de reload inutile si rien n'a changé.
-- Reload en **fin de play** : si plusieurs tâches notifient le même handler,
-  il tourne **une seule fois**.
+- No useless reload if nothing changed.
+- Reload at **end of play**: if several tasks notify the same handler,
+  it runs **only once**.
 
-Voir [Lab 06 - Handlers](../06-ecrire-code-handlers/) pour les détails.
+See [Lab 06 - Handlers](../../ecrire-code/handlers/) for the details.
 
-## 📚 Exercice 6 — Boucle sur plusieurs services
+## 📚 Exercise 6 — Loop over several services
 
 ```yaml
 - name: Demarrer la stack monitoring
@@ -253,26 +253,26 @@ Voir [Lab 06 - Handlers](../06-ecrire-code-handlers/) pour les détails.
     - rsyslog
 ```
 
-🔍 **Observation** : chaque itération est **une opération systemd indépendante**.
-Pour 50 services, c'est lent — mais c'est rare d'avoir 50 services à démarrer
-en parallèle.
+🔍 **Observation**: each iteration is **an independent systemd operation**.
+For 50 services it is slow, but it is rare to have 50 services to start
+in parallel.
 
-**Pas de bénéfice à mettre `state: [...]`** : `name:` n'accepte qu'un service.
+**No benefit to writing `state: [...]`**: `name:` accepts only one service.
 
-## 📚 Exercice 7 — Le piège : `[Install]` manquant
+## 📚 Exercise 7 — The trap: missing `[Install]`
 
-Si votre unit file custom n'a **pas de section `[Install]`**, `enabled: true`
-**échoue silencieusement** — le service ne sera pas démarré au boot.
+If your custom unit file has **no `[Install]` section**, `enabled: true`
+**fails silently**: the service will not be started at boot.
 
 ```ini
-# ❌ Mauvais : pas de [Install]
+# ❌ Bad: no [Install]
 [Unit]
 Description=Mon service
 
 [Service]
 ExecStart=/usr/local/bin/myapp
 
-# ✅ Bon : [Install] avec WantedBy
+# ✅ Good: [Install] with WantedBy
 [Unit]
 Description=Mon service
 
@@ -283,70 +283,70 @@ ExecStart=/usr/local/bin/myapp
 WantedBy=multi-user.target
 ```
 
-🔍 **Observation** : sans `[Install]`, `systemctl enable` retourne `Created
-symlink ... → ...` mais **rien n'est créé dans `/etc/systemd/system/multi-user.target.wants/`**.
-Au reboot, le service ne démarre pas.
+🔍 **Observation**: without `[Install]`, `systemctl enable` returns `Created
+symlink ... → ...` but **nothing is created in `/etc/systemd/system/multi-user.target.wants/`**.
+At reboot, the service does not start.
 
-**Toujours** vérifier qu'un unit file custom a `[Install] WantedBy=...`.
+**Always** check that a custom unit file has `[Install] WantedBy=...`.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`state:`** = état **immédiat** (started/stopped/restarted/reloaded).
-- **`enabled:`** = démarrage **au boot** (indépendant de `state:`).
-- **`reloaded`** > **`restarted`** quand le service le supporte — pas de coupure.
-- **`daemon_reload: true`** est obligatoire **après** un nouveau unit file.
-- **`masked: true`** = durcissement (interdit tout start, même manuel).
-- **Section `[Install]`** dans l'unit file est obligatoire pour `enabled: true`.
+- **`state:`** = **immediate** state (started/stopped/restarted/reloaded).
+- **`enabled:`** = start **at boot** (independent of `state:`).
+- **`reloaded`** > **`restarted`** when the service supports it: no downtime.
+- **`daemon_reload: true`** is mandatory **after** a new unit file.
+- **`masked: true`** = hardening (forbids any start, even manual).
+- **The `[Install]` section** in the unit file is mandatory for `enabled: true`.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous modifiez `nginx.conf` via `template:`. Quelle option du module
-   `systemd_service:` (avec `notify:` du `template:`) garantit zéro coupure pour
-   les clients ?
+1. You modify `nginx.conf` via `template:`. Which option of the
+   `systemd_service:` module (with `notify:` from the `template:`) guarantees zero downtime for
+   the clients?
 
-2. Quelle est la différence entre `disabled` et `masked` au point de vue
-   **opérateur humain** sur un serveur ? (indice : un opérateur peut-il toujours
-   `systemctl start` ?)
+2. What is the difference between `disabled` and `masked` from the
+   **human operator** point of view on a server? (hint: can an operator still
+   `systemctl start`?)
 
-3. Vous voulez créer 5 services personnalisés à partir d'un même template d'unit
-   file. Quel pattern (combinaison `template`, `loop:`, `daemon_reload:`) ?
+3. You want to create 5 custom services from a single unit-file template.
+   Which pattern (combining `template`, `loop:`, `daemon_reload:`)?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`force: true`** : force l'action même si elle semble idempotente. Utile pour
-  un `restarted` après détection externe d'un état dégradé.
-- **Module `service:` (legacy)** : alternative pré-systemd, encore disponible.
-  Utile uniquement sur des distros sans systemd (très rare aujourd'hui).
-- **`scope: user`** : gérer les services **utilisateur** (`systemctl --user`).
-  Avancé, peu utilisé en RHCE.
-- **Pattern `socket activation`** : déposer un `.socket` + `.service` pour
-  démarrer le service à la demande (pas en permanence).
-- **Lab 39 (`cron:`)** : pour des **tâches planifiées** plutôt que des services
-  long-living.
+- **`force: true`**: forces the action even if it seems idempotent. Useful for
+  a `restarted` after external detection of a degraded state.
+- **`service:` module (legacy)**: pre-systemd alternative, still available.
+  Useful only on distros without systemd (very rare today).
+- **`scope: user`**: manage **user** services (`systemctl --user`).
+  Advanced, rarely used in RHCE.
+- **`socket activation` pattern**: drop a `.socket` + `.service` to
+  start the service on demand (not permanently).
+- **Lab 39 (`cron:`)**: for **scheduled tasks** rather than long-living
+  services.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/modules-services/systemd/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/modules-services/systemd/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/modules-services/systemd/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task,
+file modes as strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

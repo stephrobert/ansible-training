@@ -1,0 +1,12 @@
+---
+# Reset du lab package : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup package lab (lab_web1)
+  hosts: lab_web1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset name, state (package)
+      ansible.builtin.dnf:
+        name: "vim-enhanced,bash-completion,tree"
+        state: "absent"

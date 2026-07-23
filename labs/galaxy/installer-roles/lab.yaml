@@ -1,0 +1,25 @@
+---
+id: galaxy-installer-roles
+title: "Install roles and collections from Galaxy or Git"
+description: "Write a requirements.yml mixing Galaxy roles, Git sources and collections, pin every version and vendor a role into the project for reproducible installs."
+section: galaxy
+level: l2
+difficulty: intermediate
+lab_type: lab
+estimated_time: "30m"
+skills:
+  - requirements
+  - version-pinning
+  - role-install
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/installer-roles-galaxy/
+certification_tags:
+  - rhce
+runtime:
+  type: shell
+  workdir: challenge/work
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

@@ -1,0 +1,58 @@
+---
+# Reset du lab get-url : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup get-url lab (dépôt interne sur lab_api)
+  hosts: lab_api
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Retirer le vhost, les identifiants et le contenu du dépôt
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      failed_when: false
+      loop:
+        - /etc/nginx/conf.d/lab-get-url-depot.conf
+        - /etc/nginx/lab-get-url.htpasswd
+        - /var/log/nginx/lab-get-url-depot.log
+        - /var/www/lab-get-url
+
+    - name: Refermer le port du dépôt dans firewalld
+      ansible.posix.firewalld:
+        port: 8008/tcp
+        state: disabled
+        permanent: true
+        immediate: true
+      failed_when: false
+
+    # Recharger, jamais arrêter : le port 80 de cet hôte sert d'autres labs, et
+    # le paquet reste installé, chaque lab gérant son propre état de départ.
+    - name: Recharger nginx sans le couper
+      ansible.builtin.systemd_service:
+        name: nginx
+        state: reloaded
+      failed_when: false
+
+- name: Cleanup get-url lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Retirer le nom du dépôt interne de /etc/hosts
+      ansible.builtin.blockinfile:
+        path: /etc/hosts
+        marker: "# {mark} LAB modules-reseau/get-url"
+        state: absent
+      failed_when: false
+
+    - name: Reset path, state (get-url)
+      ansible.builtin.file:
+        path: "/opt/lab-gpl3.txt"
+        state: "absent"
+      failed_when: false
+    # Idem setup.yaml : le lab produit /opt/lab-lgpl3.txt, pas de lab-mit.txt.
+    - name: Reset path, state (get-url)
+      ansible.builtin.file:
+        path: "/opt/lab-lgpl3.txt"
+        state: "absent"
+      failed_when: false

@@ -1,0 +1,25 @@
+---
+id: pratiques-versionner-git
+title: "Version your playbooks with Git"
+description: "Initialize a Git repository for your playbooks, track and commit them, then push to a local bare remote: the exact EX294 gesture, with no forge to set up."
+section: pratiques
+level: l2
+difficulty: beginner
+lab_type: lab
+estimated_time: "25m"
+skills:
+  - git
+  - versioning
+  - scm
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/pratiques/versionner-git/
+certification_tags:
+  - rhce
+runtime:
+  type: shell
+  workdir: challenge/work
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

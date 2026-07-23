@@ -1,0 +1,12 @@
+---
+# Reset du lab blockinfile : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup blockinfile lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (blockinfile)
+      ansible.builtin.file:
+        path: "/etc/profile.d/aliases-rhce.sh"
+        state: "absent"

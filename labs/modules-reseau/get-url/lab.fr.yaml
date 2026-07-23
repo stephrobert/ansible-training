@@ -1,0 +1,4 @@
+---
+id: modules-reseau-get-url
+title: "Module get_url : télécharger un fichier HTTP/HTTPS"
+description: "Télécharger un fichier sur le managed node de façon idempotente, vérifier son intégrité par checksum sha256 et authentifier la requête."

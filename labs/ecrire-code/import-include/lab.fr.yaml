@@ -1,0 +1,4 @@
+---
+id: ecrire-code-import-include
+title: "Import vs include : statique ou dynamique"
+description: "Choisir entre import_* parsé au démarrage et include_* résolu au runtime, et observer comment tags et when changent de comportement selon le cas."

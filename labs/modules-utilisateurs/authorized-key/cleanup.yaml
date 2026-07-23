@@ -1,0 +1,13 @@
+---
+# Reset du lab authorized-key : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup authorized-key lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (authorized-key)
+      ansible.builtin.shell: |
+        rm -f /home/alice/.ssh/authorized_keys /home/bob/.ssh/authorized_keys
+      changed_when: false
+      failed_when: false

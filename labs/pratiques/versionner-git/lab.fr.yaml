@@ -1,0 +1,4 @@
+---
+id: pratiques-versionner-git
+title: "Versionner ses playbooks avec Git"
+description: "Initialiser un dépôt Git pour ses playbooks, les suivre et les committer, puis les pousser vers un dépôt bare local : le geste exact attendu à l'EX294, sans forge à monter."

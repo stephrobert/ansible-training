@@ -16,13 +16,32 @@ HOSTS_FILE=/etc/hosts
 MARKER_BEGIN="# BEGIN ansible-training lab-hosts"
 MARKER_END="# END ansible-training lab-hosts"
 
-# IPs alignées sur les baux DHCP fixes du réseau libvirt `lab-ansible`.
-read -r -d '' ENTRIES <<'EOF' || true
-10.10.20.10 control-node.lab
-10.10.20.21 web1.lab
-10.10.20.22 web2.lab
-10.10.20.31 db1.lab
-EOF
+# Les IP ne sont PAS codées ici : elles viennent du ssh_config que dsoxlab
+# génère depuis les outputs Terraform, seule source de vérité.
+#
+# Ce script figeait 10.10.20.10/.21/.22/.31, « alignées sur les baux DHCP fixes »
+# du temps de l ancien provision.sh. Terraform attribue désormais les adresses,
+# et les quatre étaient fausses : web1.lab pointait .21 pour une machine en .12.
+# Le poste est le noeud de contrôle : tout ce qui résout un nom de lab depuis
+# ici tombait à côté.
+SSH_CONFIG="${XDG_CACHE_HOME:-$HOME/.cache}/dsoxlab/ansible-training/ssh_config"
+
+if [ ! -f "$SSH_CONFIG" ]; then
+    echo "ssh_config dsoxlab introuvable : $SSH_CONFIG" >&2
+    echo "L infrastructure est-elle provisionnée ? Lance 'mise run provision'." >&2
+    exit 1
+fi
+
+# `Host <nom>` puis `HostName <ip>` : on apparie les deux.
+ENTRIES=$(awk '
+    /^Host / { nom = $2 }
+    /^[[:space:]]*HostName / && nom { print $2, nom; nom = "" }
+' "$SSH_CONFIG")
+
+if [ -z "$ENTRIES" ]; then
+    echo "Aucun hôte dans $SSH_CONFIG : rien à publier." >&2
+    exit 1
+fi
 
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -47,7 +66,7 @@ ${MARKER_BEGIN}
 ${ENTRIES}
 ${MARKER_END}
 EOF
-        echo -e "${GREEN}[OK]${NC} Bloc ajouté. Tu peux maintenant 'ssh ansible@web1.lab', etc."
+        echo -e "${GREEN}[OK]${NC} Bloc ajouté. Tu peux maintenant 'ssh student@web1.lab', etc."
         ;;
 
     remove)

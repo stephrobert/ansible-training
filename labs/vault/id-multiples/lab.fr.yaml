@@ -1,0 +1,4 @@
+---
+id: vault-id-multiples
+title: "Vault-ids multiples : isoler dev, staging et prod"
+description: "Chiffrer chaque environnement avec un vault-id étiqueté, déchiffrer plusieurs vault-ids dans un même run et organiser les group_vars par environnement."

@@ -1,0 +1,15 @@
+---
+# Reset du lab navigator : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup navigator lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (navigator)
+      ansible.builtin.shell: |
+        rm -f /tmp/lab-navigator-*.txt
+        rm -f /etc/sysctl.d/70-navigator-lab.conf
+        sysctl -w vm.swappiness=60
+      changed_when: false
+      failed_when: false

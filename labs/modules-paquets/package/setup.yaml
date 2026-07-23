@@ -1,0 +1,22 @@
+---
+# Mise en place du lab package : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup package lab (lab_web1)
+  hosts: lab_web1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset name, state (package)
+      ansible.builtin.dnf:
+        name: "vim-enhanced,bash-completion,tree"
+        state: "absent"
+
+- name: Brief the learner (package)
+  hosts: lab_web1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Install and remove packages without depending on the distro package manager, weighing state: present against state: latest
+      run_once: true

@@ -1,67 +1,67 @@
-# Lab 58 — Créer son premier rôle Ansible (rôle fil rouge `webserver`)
+# Lab 58 — Create your first Ansible role (the `webserver` running-theme role)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Créer son premier rôle Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/creer-premier-role/)
+🔗 [**Create your first Ansible role**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/creer-premier-role/)
 
-Un **rôle Ansible** est l'unité de réutilisation : un dossier structuré qui packagde tâches, variables, templates, handlers et tests autour d'un objectif unique. C'est **l'équivalent d'un module Terraform** côté Ansible.
+An **Ansible role** is the unit of reuse: a structured directory that packages tasks, variables, templates, handlers and tests around a single goal. It is **the equivalent of a Terraform module** on the Ansible side.
 
-Ce lab introduit le **rôle fil rouge** `webserver` qui sera enrichi au fil des labs 58 → 64. À la fin de cette série, vous aurez un rôle **production-ready** testé en TDD avec Molecule et tox.
+This lab introduces the **running-theme role** `webserver` that will be enriched across labs 58 → 64. By the end of this series, you will have a **production-ready** role tested in TDD with Molecule and tox.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Générer la structure d'un rôle avec **`ansible-galaxy role init`**.
-2. Identifier les **10 dossiers** standards d'un rôle.
-3. Écrire les **tâches principales** dans `tasks/main.yml`.
-4. Définir les **variables par défaut** dans `defaults/main.yml`.
-5. Documenter le rôle via **`meta/main.yml`** et **`README.md`**.
-6. Appeler le rôle depuis un playbook avec **`roles:`**.
+1. Generate a role's structure with **`ansible-galaxy role init`**.
+2. Identify a role's **10 standard** directories.
+3. Write the **main tasks** in `tasks/main.yml`.
+4. Define the **default variables** in `defaults/main.yml`.
+5. Document the role through **`meta/main.yml`** and **`README.md`**.
+6. Call the role from a playbook with **`roles:`**.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training/labs/roles/creer-premier-role
+cd $ANSIBLE_TRAINING/labs/roles/creer-premier-role
 ```
 
-## ⚙️ Arborescence cible
+## ⚙️ Target tree
 
 ```text
 labs/roles/creer-premier-role/
-├── README.md           ← ce fichier
-├── inventory/          ← inventaire local du lab
-├── playbook.yml        ← À CRÉER : appelle le rôle webserver
+├── README.md           ← this file
+├── inventory/          ← lab-local inventory
+├── playbook.yml        ← TO CREATE: calls the webserver role
 ├── roles/
-│   └── webserver/      ← rôle fil rouge (déjà créé)
+│   └── webserver/      ← running-theme role (already created)
 │       ├── tasks/main.yml
 │       ├── defaults/main.yml
 │       ├── handlers/main.yml
 │       ├── meta/main.yml
 │       └── README.md
 └── challenge/
-    ├── README.md       ← challenge final
-    ├── solution.yml    ← À CRÉER : reproduire le rôle sur db1.lab
+    ├── README.md       ← final challenge
+    ├── solution.yml    ← TO CREATE: reproduce the role on db1.lab
     └── tests/
         └── test_webserver.py
 ```
 
-## 📚 Exercice 1 — Inspecter la structure du rôle
+## 📚 Exercise 1 — Inspect the role structure
 
 ```bash
 tree roles/webserver/
 ```
 
-Sortie attendue :
+Expected output:
 
 ```text
 roles/webserver/
@@ -79,31 +79,31 @@ roles/webserver/
 └── vars/
 ```
 
-🔍 **Observation** : la structure est identique à ce que génère `ansible-galaxy role init webserver`. Les dossiers vides (`files/`, `templates/`, `vars/`) sont créés par `init` même s'ils ne contiennent rien — convention pour signaler qu'ils existent.
+🔍 **Observation**: the structure is identical to what `ansible-galaxy role init webserver` generates. The empty directories (`files/`, `templates/`, `vars/`) are created by `init` even if they contain nothing: a convention to signal that they exist.
 
-## 📚 Exercice 2 — Lire `tasks/main.yml`
+## 📚 Exercise 2 — Read `tasks/main.yml`
 
 ```bash
 cat roles/webserver/tasks/main.yml
 ```
 
-3 tâches : installation, démarrage, ouverture firewall. **FQCN partout**, idempotence garantie par les modules dédiés.
+3 tasks: installation, start, firewall opening. **FQCN everywhere**, idempotence guaranteed by the dedicated modules.
 
-🔍 **Observation à anticiper** : aucune **variable** dans ces tâches pour l'instant. Le rôle est **rigide** — il installe forcément nginx avec la config par défaut. Le lab 59 introduit les variables pour rendre le rôle paramétrable.
+🔍 **Observation to anticipate**: no **variable** in these tasks for now. The role is **rigid**: it necessarily installs nginx with the default config. Lab 59 introduces variables to make the role parameterizable.
 
-## 📚 Exercice 3 — Lire `defaults/main.yml`
+## 📚 Exercise 3 — Read `defaults/main.yml`
 
 ```bash
 cat roles/webserver/defaults/main.yml
 ```
 
-3 variables avec valeurs par défaut. Préfixées par **`webserver_`** (convention nom du rôle pour éviter les collisions).
+3 variables with default values. Prefixed by **`webserver_`** (role-name convention to avoid collisions).
 
-🔍 **Observation** : les variables ne sont **pas encore utilisées** dans `tasks/main.yml`. Le lab 59 les branchera correctement.
+🔍 **Observation**: the variables are **not used yet** in `tasks/main.yml`. Lab 59 will wire them in properly.
 
-## 📚 Exercice 4 — Écrire le playbook racine
+## 📚 Exercise 4 — Write the root playbook
 
-Créez `playbook.yml` à la racine du lab :
+Create `playbook.yml` at the root of the lab:
 
 ```yaml
 ---
@@ -115,15 +115,15 @@ Créez `playbook.yml` à la racine du lab :
     - role: webserver
 ```
 
-🔍 **Observation** : pas de `tasks:` dans le playbook — toutes les tâches viennent du rôle. C'est le pattern recommandé : **playbooks fins, rôles épais**.
+🔍 **Observation**: no `tasks:` in the playbook, all tasks come from the role. This is the recommended pattern: **thin playbooks, thick roles**.
 
-## 📚 Exercice 5 — Exécuter le playbook
+## 📚 Exercise 5 — Run the playbook
 
 ```bash
 ansible-playbook playbook.yml
 ```
 
-Sortie attendue :
+Expected output:
 
 ```text
 PLAY [Déployer le rôle webserver] *********************************
@@ -144,64 +144,64 @@ PLAY RECAP *****************************************************
 web1.lab : ok=4 changed=3 unreachable=0 failed=0
 ```
 
-🔍 **Observation** : les tâches sont **préfixées par `webserver :`** dans la sortie — Ansible identifie clairement le rôle exécutant. Très utile pour debugger un play multi-rôles.
+🔍 **Observation**: the tasks are **prefixed by `webserver :`** in the output, Ansible clearly identifies the executing role. Very useful for debugging a multi-role play.
 
-## 📚 Exercice 6 — Vérifier l'idempotence
+## 📚 Exercise 6 — Check idempotence
 
-Relancez :
+Re-run:
 
 ```bash
 ansible-playbook playbook.yml
 ```
 
-Sortie attendue : `changed=0`. Tous les modules sont idempotents — re-jouer ne change rien.
+Expected output: `changed=0`. All modules are idempotent: replaying changes nothing.
 
-## 📚 Exercice 7 — Tester nginx
+## 📚 Exercise 7 — Test nginx
 
 ```bash
 curl http://web1.lab/
 ```
 
-Sortie attendue : la page d'accueil par défaut de nginx (Welcome to nginx).
+Expected output: nginx's default welcome page (Welcome to nginx).
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Idempotence** : un second run de votre solution doit afficher `changed=0`
-  partout dans le `PLAY RECAP`. C'est le signal mécanique d'un playbook
-  conforme aux bonnes pratiques.
-- **FQCN explicite** : préférez toujours `ansible.builtin.<module>` (ou la
-  collection appropriée) plutôt que le nom court — `ansible-lint --profile
-  production` le vérifie.
-- **Convention de ciblage** : ce lab cible db1.lab ; pour adapter à un
-  autre groupe, ajustez `hosts:` dans `lab.yml`/`solution.yml` puis relancez.
-- **Reset isolé** : `make clean` à la racine du lab désinstalle proprement
-  ce que la solution a posé pour pouvoir rejouer le scénario.
+- **Idempotence**: a second run of your solution must show `changed=0`
+  everywhere in the `PLAY RECAP`. This is the mechanical signal of a playbook
+  that follows best practices.
+- **Explicit FQCN**: always prefer `ansible.builtin.<module>` (or the
+  appropriate collection) over the short name; `ansible-lint --profile
+  production` checks it.
+- **Targeting convention**: this lab targets db1.lab; to adapt to another
+  group, adjust `hosts:` in `lab.yml`/`solution.yml` then re-run.
+- **Isolated reset**: `dsoxlab clean <lab-id>` at the root of the lab cleanly
+  uninstalls what the solution set up so you can replay the scenario.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Pourquoi placer les variables dans `defaults/` plutôt que dans `vars/` ?
-2. Que se passe-t-il si vous changez `webserver_state` à `absent` dans le playbook (`vars: webserver_state: absent`) ?
-3. Pourquoi `firewalld:` est-il dans la collection `ansible.posix` et pas `ansible.builtin` ?
+1. Why place variables in `defaults/` rather than in `vars/`?
+2. What happens if you change `webserver_state` to `absent` in the playbook (`vars: webserver_state: absent`)?
+3. Why is `firewalld:` in the `ansible.posix` collection and not `ansible.builtin`?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Le challenge ([`challenge/README.md`](challenge/README.md)) demande de **reproduire le déploiement** sur `db1.lab` (mais avec `httpd` à la place de `nginx`) en réutilisant le rôle. Tests automatisés via `pytest+testinfra` :
+The challenge ([`challenge/README.md`](challenge/README.md)) asks you to **reproduce the deployment** on `db1.lab`, but by writing the role yourself instead of reusing the one provided here. Automated tests via `pytest+testinfra`:
 
 ```bash
 pytest -v challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Le rôle est ultra-simple** : pas de variables effectives dans les tâches, pas de templates, pas de validation. Le lab 59 introduit les variables.
-- **`ansible-galaxy role init webserver`** génère la même structure que ce qu'on a ici — utile à savoir au RHCE.
-- **Pattern de production** : un dossier `roles/` à la racine du repo, un sous-dossier par rôle. Les playbooks dans un dossier `playbooks/`.
-- **Limite actuelle** : ce rôle ne marche QUE sur RHEL/Alma (à cause de `dnf`). Le lab 59 explorera la portabilité Debian/Ubuntu.
+- **The role is ultra-simple**: no effective variables in the tasks, no templates, no validation. Lab 59 introduces variables.
+- **`ansible-galaxy role init webserver`** generates the same structure as what we have here: useful to know for the RHCE.
+- **Production pattern**: a `roles/` directory at the repo root, one subdirectory per role. The playbooks in a `playbooks/` directory.
+- **Current limitation**: this role works ONLY on RHEL/Alma (because of `dnf`). Lab 59 will explore Debian/Ubuntu portability.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 ansible-lint labs/roles/creer-premier-role/lab.yml
@@ -209,9 +209,9 @@ ansible-lint labs/roles/creer-premier-role/challenge/solution.yml
 ansible-lint --profile production labs/roles/creer-premier-role/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un
-> hook pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

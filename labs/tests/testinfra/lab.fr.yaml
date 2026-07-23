@@ -1,0 +1,4 @@
+---
+id: tests-testinfra
+title: "Molecule + testinfra : assertions Python sur un rôle"
+description: "Basculer le verifier sur testinfra, écrire des assertions avec la fixture host, paramétrer les cas avec parametrize, et arbitrer face à verify.yml."

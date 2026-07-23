@@ -1,0 +1,4 @@
+---
+id: ecrire-code-filtres-jinja-essentiels
+title: "Filtres Jinja2 essentiels : default, combine, selectattr"
+description: "Gérer les variables absentes avec default, manipuler des listes, filtrer une liste de dicts avec selectattr et map, fusionner des dicts avec combine."

@@ -1,51 +1,50 @@
-# Lab 70 — CI/CD : GitLab CI
+# Lab 70 — CI/CD: GitLab CI
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Pré-requis local : aucun. Pour exécuter : un projet GitLab (instance
-> SaaS gitlab.com ou self-hosted).
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Local prerequisite: none. To run it: a GitLab project (SaaS
+> instance gitlab.com or self-hosted).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**CI Ansible avec GitLab CI**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-roles/ci-gitlab/)
+🔗 [**Ansible CI with GitLab CI**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ci-gitlab/)
 
-GitLab CI est l'**équivalent GitLab** de GitHub Actions :
+GitLab CI is the **GitLab equivalent** of GitHub Actions:
 
 | GitHub Actions | GitLab CI |
 | --- | --- |
-| `.github/workflows/test.yml` | `.gitlab-ci.yml` (à la racine) |
+| `.github/workflows/test.yml` | `.gitlab-ci.yml` (at the root) |
 | `jobs:` | `stages:` + jobs |
 | `strategy.matrix:` | `parallel:matrix:` |
-| `actions/checkout@v4` | (auto, déjà cloné) |
-| `runs-on: ubuntu-latest` | `image:` (n'importe quelle image Docker) |
+| `actions/checkout@v4` | (auto, already cloned) |
+| `runs-on: ubuntu-latest` | `image:` (any Docker image) |
 
-GitLab CI a un **avantage clé** sur GitHub Actions : **Docker-in-Docker
-natif** — utile pour Molecule + Podman/Docker. Plus simple à configurer.
+GitLab CI has a **key advantage** over GitHub Actions: **native
+Docker-in-Docker**, useful for Molecule + Podman/Docker. Simpler to configure.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Écrire `.gitlab-ci.yml` avec **stages** : lint, test, release.
-2. Utiliser **`parallel:matrix:`** pour multi-distros / multi-versions.
-3. Déclarer des **`rules:`** : tests sur PR, release uniquement sur tag.
-4. Cache pip via **`cache:`** stage-level.
-5. Stocker un job **release** sur Galaxy (uniquement sur tag git).
+1. Write `.gitlab-ci.yml` with **stages**: lint, test, release.
+2. Use **`parallel:matrix:`** for multi-distro / multi-version.
+3. Declare **`rules:`**: tests on PR, release only on tag.
+4. pip cache via stage-level **`cache:`**.
+5. Store a **release** job to Galaxy (only on git tag).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
-Aucune installation locale.
+No local installation.
 
-## ⚙️ Arborescence
+## ⚙️ Layout
 
 ```text
 labs/ci/gitlab/
 ├── README.md
-├── Makefile
-├── .gitlab-ci.yml        ← pipeline complet
+├── .gitlab-ci.yml        ← full pipeline
 └── roles/webserver/
 ```
 
-## 📚 Exercice 1 — Squelette `.gitlab-ci.yml`
+## 📚 Exercise 1 — `.gitlab-ci.yml` skeleton
 
 ```yaml
 ---
@@ -106,52 +105,52 @@ galaxy-release:
         $CI_PROJECT_NAMESPACE $CI_PROJECT_NAME
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **3 stages** : lint → test → release.
-- **`needs:`** : `molecule-test` ne tourne que si `ansible-lint` passe.
-- **`parallel:matrix:`** : 9 jobs (3 distros × 3 versions).
-- **`rules:`** : `galaxy-release` ne tourne **que sur un tag** Git.
+- **3 stages**: lint → test → release.
+- **`needs:`**: `molecule-test` runs only if `ansible-lint` passes.
+- **`parallel:matrix:`**: 9 jobs (3 distros × 3 versions).
+- **`rules:`**: `galaxy-release` runs **only on a Git tag**.
 
-## 📚 Exercice 2 — `rules:` (quand exécuter)
+## 📚 Exercise 2 — `rules:` (when to run)
 
 ```yaml
 rules:
-  - if: $CI_PIPELINE_SOURCE == "merge_request_event"     # MR ouverte
-  - if: $CI_COMMIT_BRANCH == "main"                       # push sur main
-  - if: $CI_COMMIT_TAG                                    # tag git (release)
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"     # MR opened
+  - if: $CI_COMMIT_BRANCH == "main"                       # push on main
+  - if: $CI_COMMIT_TAG                                    # git tag (release)
 ```
 
-🔍 **Observation** : `rules:` remplacent l'ancien `only:` / `except:`. Plus
-expressif.
+🔍 **Observation**: `rules:` replace the old `only:` / `except:`. More
+expressive.
 
-## 📚 Exercice 3 — Cache pip
+## 📚 Exercise 3 — pip cache
 
 ```yaml
 default:
   cache:
-    key: ${CI_COMMIT_REF_SLUG}     # cache par branche
+    key: ${CI_COMMIT_REF_SLUG}     # cache per branch
     paths:
       - .cache/pip
 ```
 
-🔍 **Observation** : cache **par branche**. Une PR a son cache propre,
-ne pollue pas main.
+🔍 **Observation**: cache **per branch**. A PR has its own cache,
+does not pollute main.
 
-## 📚 Exercice 4 — Variables protégées (Galaxy token)
+## 📚 Exercise 4 — Protected variables (Galaxy token)
 
-Dans GitLab UI : Settings → CI/CD → Variables :
+In the GitLab UI: Settings → CI/CD → Variables:
 
 ```text
-GALAXY_TOKEN = <token Ansible Galaxy>
-Protected: ✓     (uniquement sur branches/tags protégés)
-Masked: ✓        (caché dans les logs)
+GALAXY_TOKEN = <Ansible Galaxy token>
+Protected: ✓     (only on protected branches/tags)
+Masked: ✓        (hidden in the logs)
 ```
 
-🔍 **Observation** : **jamais** mettre un token en clair dans
-`.gitlab-ci.yml`. Toujours via variables CI/CD.
+🔍 **Observation**: **never** put a token in plaintext in
+`.gitlab-ci.yml`. Always via CI/CD variables.
 
-## 📚 Exercice 5 — `ansible-galaxy role import`
+## 📚 Exercise 5 — `ansible-galaxy role import`
 
 ```yaml
 script:
@@ -160,48 +159,48 @@ script:
       $CI_PROJECT_NAMESPACE $CI_PROJECT_NAME
 ```
 
-🔍 **Observation** : l'import Galaxy à partir de GitHub/GitLab est **automatique** —
-pas besoin d'uploader un .tar.gz. Galaxy clone le repo au tag spécifié.
+🔍 **Observation**: the Galaxy import from GitHub/GitLab is **automatic**:
+no need to upload a .tar.gz. Galaxy clones the repo at the specified tag.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **GitLab CI = GitHub Actions** sur le fond, syntaxe différente.
-- **`parallel:matrix:`** simplifie les multi-jobs.
-- **`rules:`** = expressivité maximale (regex sur branch, tag, MR…).
-- **Variables CI/CD masquées + protégées** = standard sécurité.
-- **GitLab self-hosted** : si vous avez votre propre instance, runners
-  gratuits illimités.
+- **GitLab CI = GitHub Actions** at heart, different syntax.
+- **`parallel:matrix:`** simplifies multi-jobs.
+- **`rules:`** = maximum expressiveness (regex on branch, tag, MR…).
+- **Masked + protected CI/CD variables** = security standard.
+- **Self-hosted GitLab**: if you have your own instance, unlimited free
+  runners.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Comment adapter votre solution si la cible passait de **1 host** à un
-   parc de **50 serveurs** ? Quels paramètres (`forks`, `serial`, `strategy`)
-   faudrait-il ajuster pour conserver des temps d'exécution acceptables ?
+1. How would you adapt your solution if the target went from **1 host** to a
+   fleet of **50 servers**? Which parameters (`forks`, `serial`, `strategy`)
+   would you need to tune to keep acceptable execution times?
 
-2. Quels modules Ansible alternatifs auriez-vous pu utiliser pour atteindre
-   le même résultat ? Quels sont leurs trade-offs (idempotence garantie,
-   performance, dépendances de collection externe) ?
+2. Which alternative Ansible modules could you have used to reach the same
+   result? What are their trade-offs (guaranteed idempotence, performance,
+   external collection dependency)?
 
-3. Si une étape du playbook échoue en cours d'exécution, quel est l'impact
-   sur les hôtes déjà traités ? Comment rendre le scénario reprenable
-   (`block/rescue/always`, `--start-at-task`, `serial`) ?
+3. If a playbook step fails mid-run, what is the impact on the hosts already
+   processed? How do you make the scenario resumable (`block/rescue/always`,
+   `--start-at-task`, `serial`)?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md).
+See [`challenge/README.md`](challenge/README.md).
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`include:`** : factorer le pipeline dans un `.gitlab-ci-template.yml`
-  partagé entre plusieurs rôles.
-- **GitLab Pages** : auto-publier la doc générée par `ansible-doc -t role`
-  sur GitLab Pages.
-- **GitLab CI Runner Kubernetes** : runners qui scalent automatiquement
-  sur K8s.
-- **Comparaison** : si votre rôle vit sur GitHub mais que vous voulez
-  utiliser GitLab CI, configurez un mirror.
+- **`include:`**: factor the pipeline into a `.gitlab-ci-template.yml`
+  shared across several roles.
+- **GitLab Pages**: auto-publish the doc generated by `ansible-doc -t role`
+  on GitLab Pages.
+- **GitLab CI Runner Kubernetes**: runners that scale automatically
+  on K8s.
+- **Comparison**: if your role lives on GitHub but you want to
+  use GitLab CI, set up a mirror.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint labs/ci/gitlab/

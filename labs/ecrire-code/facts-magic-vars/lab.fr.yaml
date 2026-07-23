@@ -1,0 +1,4 @@
+---
+id: ecrire-code-facts-magic-vars
+title: "Facts et magic vars : ansible_facts, hostvars"
+description: "Lire les facts système, exploiter inventory_hostname, groups et hostvars, puis réduire le coût de collecte avec gather_subset."

@@ -1,12 +1,12 @@
-# 🎯 Challenge — Tests Jinja2 dans un fichier conditionnel
+# 🎯 Challenge — Jinja2 tests in a conditional file
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `challenge/solution.yml` qui sur **db1.lab** pose `/tmp/tests-jinja.txt`
-contenant 4 lignes, chacune produite par un **test Jinja2** différent (`is
+Write `challenge/solution.yml` that, on **db1.lab**, drops `/tmp/tests-jinja.txt`
+containing 4 lines, each produced by a different **Jinja2 test** (`is
 defined`, `is mapping`, `is sequence`, `is undefined`).
 
-## 🧩 Données d'entrée
+## 🧩 Input data
 
 ```yaml
 user: { name: alice, age: 30 }
@@ -14,10 +14,10 @@ config:
   app: nginx
   port: 80
 ports: [80, 443, 8080]
-# optional_var n'est volontairement pas définie
+# optional_var is intentionally not defined
 ```
 
-## 🧩 Sortie attendue
+## 🧩 Expected output
 
 ```text
 user_defined=yes
@@ -26,21 +26,21 @@ ports_sequence=yes
 optional_undefined=yes
 ```
 
-Chaque ligne n'apparaît **que si** son test correspondant retourne vrai.
+Each line appears **only if** its corresponding test returns true.
 
-## 🧩 4 tests Jinja2 à utiliser
+## 🧩 The 4 Jinja2 tests to use
 
-| Test | Vrai si… |
+| Test | True if… |
 | --- | --- |
-| `is defined` | la variable existe (par opposition à `is undefined`) |
-| `is mapping` | la valeur est un dict (`{}`) |
-| `is sequence` | la valeur est une liste (`[]`) ou un tuple |
-| `is undefined` | la variable n'a jamais été définie |
+| `is defined` | the variable exists (as opposed to `is undefined`) |
+| `is mapping` | the value is a dict (`{}`) |
+| `is sequence` | the value is a list (`[]`) or a tuple |
+| `is undefined` | the variable was never defined |
 
-> ⚠️ Différence **filtre** vs **test** : les **filtres** se mettent après `|`
-> (`var | upper`), les **tests** après `is` (`var is defined`). N'inversez pas.
+> ⚠️ **Filter** vs **test** difference: **filters** go after `|`
+> (`var | upper`), **tests** go after `is` (`var is defined`). Do not swap them.
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -71,30 +71,30 @@ Chaque ligne n'apparaît **que si** son test correspondant retourne vrai.
           {% endif %}
 ```
 
-> 💡 **Whitespace control** : les `{%- ... %}` (avec tiret en début) suppriment
-> le whitespace avant la balise. C'est ce qui permet d'éviter une ligne vide
-> entre chaque `{% if %}` … `{% endif %}`.
+> 💡 **Whitespace control**: the `{%- ... %}` (with a leading dash) strip the
+> whitespace before the tag. This is what avoids an empty line between each
+> `{% if %}` … `{% endif %}`.
 
-**Pièges** :
+**Pitfalls**:
 
-> - **Tests Jinja** : `is defined`, `is mapping`, `is sequence`, `is
+> - **Jinja tests**: `is defined`, `is mapping`, `is sequence`, `is
 >   string`, `is number`, `is divisibleby(N)`, `is even/odd`.
-> - **`is mapping`** matche un **dict** (pas une liste). `is sequence`
->   matche une liste OU un tuple OU un range — mais aussi une **string**
->   (chaque caractère). Vérifier `is iterable` est plus large.
-> - **`is defined`** vs **`is none`** : `defined` = la variable existe.
->   `is not none` = elle existe ET sa valeur n'est pas `null`.
-> - **`is divisibleby`** : `42 is divisibleby 7` → `true`. Utile pour
->   itérations sélectives (chaque 5ᵉ élément, etc.).
+> - **`is mapping`** matches a **dict** (not a list). `is sequence`
+>   matches a list OR a tuple OR a range, but also a **string**
+>   (each character). Checking `is iterable` is broader.
+> - **`is defined`** vs **`is none`**: `defined` = the variable exists.
+>   `is not none` = it exists AND its value is not `null`.
+> - **`is divisibleby`**: `42 is divisibleby 7` → `true`. Useful for
+>   selective iterations (every 5th element, etc.).
 
-## 🚀 Lancement
+## 🚀 Launch
 
 ```bash
 ansible-playbook labs/ecrire-code/tests-jinja/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "cat /tmp/tests-jinja.txt"
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/tests-jinja/challenge/tests/
@@ -103,17 +103,17 @@ pytest -v labs/ecrire-code/tests-jinja/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/ecrire-code/tests-jinja clean
+dsoxlab clean ecrire-code-tests-jinja
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Tests numériques** : `is even`, `is odd`, `is divisibleby(N)`.
-- **Tests string** : `is iterable`, `is string`, `is integer`, `is float`,
+- **Numeric tests**: `is even`, `is odd`, `is divisibleby(N)`.
+- **String tests**: `is iterable`, `is string`, `is integer`, `is float`,
   `is boolean`.
-- **`is failed` / `is changed` / `is succeeded`** sur un résultat `register:`
-  — extrêmement utile dans les `when:`.
-- **Lint** :
+- **`is failed` / `is changed` / `is succeeded`** on a `register:` result,
+  extremely useful in `when:`.
+- **Lint**:
 
    ```bash
    ansible-lint labs/ecrire-code/tests-jinja/challenge/solution.yml

@@ -1,0 +1,12 @@
+---
+# Reset du lab lookups : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup lookups lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (lookups)
+      ansible.builtin.file:
+        path: "/tmp/lookups-challenge.txt"
+        state: "absent"

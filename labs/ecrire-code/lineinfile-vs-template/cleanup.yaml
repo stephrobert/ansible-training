@@ -1,0 +1,17 @@
+---
+# Reset du lab lineinfile-vs-template : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup lineinfile-vs-template lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, regexp, state (lineinfile-vs-template)
+      ansible.builtin.lineinfile:
+        path: "/etc/hosts"
+        regexp: "^192\\.168\\.99\\.99\\s"
+        state: "absent"
+    - name: Reset path, state (lineinfile-vs-template)
+      ansible.builtin.file:
+        path: "/etc/myapp.conf"
+        state: "absent"

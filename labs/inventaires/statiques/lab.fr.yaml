@@ -1,0 +1,4 @@
+---
+id: inventaires-statiques
+title: "Écrire un inventaire statique de zéro : groupes, enfants et variables de groupe"
+description: "Rédiger un inventaire statique Ansible à la main : déclarer des groupes d'hôtes, un groupe parent avec enfants, et des variables de groupe, puis prouver l'inventaire résolu avec ansible-inventory et ansible -m ping."

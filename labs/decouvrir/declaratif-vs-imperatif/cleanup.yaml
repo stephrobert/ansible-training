@@ -1,0 +1,16 @@
+---
+# Reset du lab declaratif-vs-imperatif : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup declaratif-vs-imperatif lab (lab_web1)
+  hosts: lab_web1
+  become: true
+  gather_facts: false
+  tasks:
+    # Idem setup.yaml : la ligne « Servi par ... » posée dans index.html est le
+    # seul état que ce lab laisse derrière lui sur web1.lab.
+    - name: Reset path, regexp, state (declaratif-vs-imperatif)
+      ansible.builtin.lineinfile:
+        path: "/usr/share/nginx/html/index.html"
+        regexp: "^<p>Servi par "
+        state: "absent"
+      failed_when: false

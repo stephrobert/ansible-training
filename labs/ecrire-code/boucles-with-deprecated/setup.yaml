@@ -1,0 +1,23 @@
+---
+# Mise en place du lab boucles-with-deprecated : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup boucles-with-deprecated lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (boucles-with-deprecated)
+      ansible.builtin.shell: |
+        rm -f /tmp/withitems-*.txt /tmp/withdict-*.txt
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (boucles-with-deprecated)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Recognise with_items, with_dict and with_subelements, migrate them to loop plus Jinja2 filters and automate it with ansible-lint --fix
+      run_once: true

@@ -5,7 +5,7 @@ galaxy_info:
   role_name: webserver
   description: Installer nginx avec configuration paramétrable
   license: MIT
-  min_ansible_version: "2.16"
+  min_ansible_version: "2.19"
   platforms:
     - name: EL
       versions:

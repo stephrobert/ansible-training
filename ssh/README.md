@@ -1,7 +1,7 @@
 # Clé SSH du lab
 
 La clé privée du lab (`id_ed25519`) est **gitignored**. Elle est regénérée
-automatiquement par `make bootstrap` au premier lancement, dans ce dossier.
+automatiquement par `mise install` au premier lancement, dans ce dossier.
 
 ```bash
 ssh-keygen -t ed25519 -N "" -f ssh/id_ed25519 -C "ansible-lab@$(hostname)"

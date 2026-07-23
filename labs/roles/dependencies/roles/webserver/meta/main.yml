@@ -1,5 +1,11 @@
 ---
-# meta/main.yml — démontre dependencies (rôles requis avant celui-ci).
+# meta/main.yml — c'est ICI que le challenge se joue.
+#
+# Le rôle webserver a deux prérequis structurels : SELinux dans le bon
+# mode (rôle selinux_setup) et le pare-feu prêt avec les bons ports
+# (rôle firewall_setup). À vous de les déclarer dans `dependencies:`
+# pour qu'ils s'exécutent AVANT ce rôle, dans cet ordre, avec les
+# variables attendues par le challenge (cf. challenge/README.md).
 
 galaxy_info:
   author: Stéphane Robert
@@ -15,14 +21,6 @@ galaxy_info:
     - nginx
     - webserver
 
-# Dépendances — exécutées AVANT les tasks/main.yml du rôle webserver.
-# Ordre : selinux_setup → firewall_setup → webserver tasks.
-dependencies:
-  - role: selinux_setup
-    vars:
-      selinux_state: enforcing
-
-  - role: firewall_setup
-    vars:
-      firewall_zones:
-        - public
+# À compléter : selinux_setup (selinux_setup_state) puis firewall_setup
+# (firewall_setup_open_ports), chacun avec ses vars.
+dependencies: []

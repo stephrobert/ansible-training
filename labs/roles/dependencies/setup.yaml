@@ -1,0 +1,44 @@
+---
+# Mise en place du lab dependencies : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup dependencies lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset name, state, enabled (dependencies)
+      ansible.builtin.systemd_service:
+        name: "nginx"
+        state: "stopped"
+        enabled: "no"
+      failed_when: false
+    - name: Reset name, state (dependencies)
+      ansible.builtin.dnf:
+        name: "nginx"
+        state: "absent"
+      failed_when: false
+    - name: Reset firewalld ports (dependencies)
+      ansible.posix.firewalld:
+        port: "{{ item }}"
+        state: "disabled"
+        permanent: "yes"
+        immediate: "yes"
+      loop:
+        - "443/tcp"
+        - "8081/tcp"
+      failed_when: false
+    - name: Reset order trace (dependencies)
+      ansible.builtin.shell: |
+        rm -f /tmp/deps-order.txt
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (dependencies)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Chain roles with dependencies:, pass them variables, control execution order and dodge the diamond trap with allow_duplicates
+      run_once: true

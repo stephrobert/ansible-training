@@ -1,0 +1,31 @@
+---
+# Mise en place du lab « écrire un inventaire statique de zéro ».
+#
+# Particularité assumée : le LIVRABLE de ce lab est un fichier LOCAL
+# (inventory/hosts.yml, gitignoré), pas un état posé sur les managed nodes. Il
+# n'y a donc rien à « défaire » sur les VMs : l'état initial imparfait, c'est
+# précisément l'ABSENCE de cet inventaire (l'apprenant part d'une page blanche).
+#
+# Le setup se borne donc à vérifier que les nœuds répondent, sans quoi
+# l'apprenant ne pourrait pas prouver son inventaire par un ping, puis à
+# briefer. Rejouable : l'apprenant peut recommencer autant qu'il veut.
+- name: Vérifier que les managed nodes répondent (statiques)
+  hosts: lab_web1:lab_web2:lab_db1
+  become: false
+  gather_facts: false
+  tasks:
+    - name: Ping de contrôle des nœuds gérés
+      ansible.builtin.ping:
+
+- name: Brief the learner (statiques)
+  hosts: labenv
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Write a static inventory from scratch: declare the webservers and
+          dbservers groups, a parent group (datacenter) that aggregates them
+          with children, and group variables, then prove it with
+          ansible-inventory --list and ansible <group> -m ping
+      run_once: true

@@ -1,25 +1,31 @@
-# 🎯 Challenge — Précédence : `--extra-vars` gagne sur tout
+# 🎯 Challenge — Precedence: two duels to settle
 
-## ✅ Objectif
+## ✅ Objective
 
-Démontrer que **`--extra-vars` (niveau 22)** est plus fort que **`vars:` du
-play (niveau 14)** et que **`vars_files:` (niveau 13)**.
+Demonstrate **two** things in a single run, with **two** variables:
 
-Vous allez créer la **même variable `winner`** à 3 endroits différents, puis
-lancer le play avec `--extra-vars` et observer quelle valeur **gagne**.
+1. **`winner`**: `--extra-vars` (level 22) is stronger than the play `vars:`
+   (level 12) **and** than `vars_files:` (level 14).
+2. **`duel`**: between the play `vars:` (level 12) and `vars_files:` (level 14),
+   **`vars_files:` wins**. This is the counter-intuitive result of the lab, and
+   nobody passes `--extra-vars` on `duel`: it plays out on its own.
 
-## 🧩 Fichiers à créer
+You will therefore stack these variables at several levels, run the play
+with `--extra-vars` on **`winner` only**, and read the two results.
+
+## 🧩 Files to create
 
 ### 1) `challenge/vars/loader.yml`
 
 ```yaml
 ---
 winner: "vars_files"
+duel: "vars_files"
 ```
 
 ### 2) `challenge/solution.yml`
 
-Squelette à compléter :
+Skeleton to complete:
 
 ```yaml
 ---
@@ -28,75 +34,96 @@ Squelette à compléter :
   become: ???
 
   vars:
-    winner: "play_vars"               # niveau 14
+    winner: "play_vars"               # level 12
+    duel: "play_vars"                 # level 12
 
   vars_files:
-    - ???                             # vars/loader.yml — niveau 13
+    - ???                             # vars/loader.yml: level 14
 
   tasks:
-    - name: Poser /tmp/precedence-result.txt avec la valeur résolue
+    - name: Poser /tmp/precedence-result.txt avec les valeurs résolues
       ansible.builtin.copy:
         dest: ???
-        content: "winner={{ ??? }}\n"
+        content: |
+          winner={{ ??? }}
+          duel={{ ??? }}
         mode: "0644"
 ```
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **Niveau 22 = top du top** : `--extra-vars` gagne sur **toutes** les
->   autres sources (vars:, vars_files:, group_vars, host_vars,
->   set_fact…). C'est ce qui rend les paramètres CLI parfaits pour un
->   override ponctuel sans toucher au code.
-> - **Le test attend `extra_vars_wins`** comme valeur. Le conftest passe
->   `--extra-vars "winner=extra_vars_wins"` automatiquement. Si vous
->   lancez sans, vous obtenez `play_vars` (la valeur du `vars:`).
-> - **`vars_files:` est plus faible que `vars:` du play** dans Ansible
->   moderne — exactement l'inverse de l'intuition naïve. À mémoriser pour
->   l'EX294.
+> - **Level 22 = top of the top**: `--extra-vars` wins over **all** the
+>   other sources (vars:, vars_files:, group_vars, host_vars,
+>   set_fact...). This is what makes CLI parameters perfect for a
+>   one-off override without touching the code.
+> - **The test expects `winner=extra_vars_wins`**. The conftest passes
+>   `--extra-vars "winner=extra_vars_wins"` automatically. If you
+>   run without it, `winner` will be `vars_files` (and not `play_vars`:
+>   see the next trap).
+> - **`vars_files:` (14) is STRONGER than the play `vars:` (12)**:
+>   exactly the opposite of naive intuition, which would want what is
+>   written in the play to win over an auxiliary file. This is **what** you
+>   must memorize for the EX294, and it is what `duel` proves: the test
+>   expects `duel=vars_files`.
+> - **Do not cheat on `duel`**: the only way to get
+>   `duel=vars_files` is to declare it **in both places** and to
+>   let precedence settle it. Declaring it only in
+>   `vars/loader.yml` would make the test pass without demonstrating anything.
 
-## 🚀 Lancement (avec --extra-vars)
+## 🚀 Run (with --extra-vars)
 
 ```bash
 ansible-playbook labs/ecrire-code/precedence-variables/challenge/solution.yml \
     --extra-vars "winner=extra_vars_wins"
 ```
 
-🔍 Vérifiez :
+🔍 Check:
 
 ```bash
 ansible db1.lab -m ansible.builtin.command -a "cat /tmp/precedence-result.txt"
-# Doit afficher : winner=extra_vars_wins
+# Must display:
+#   winner=extra_vars_wins
+#   duel=vars_files
 ```
 
-`--extra-vars` (niveau 22) **écrase** à la fois `vars:` du play (14) et
-`vars_files:` (13).
+Two readings in this file:
 
-## 🧪 Validation automatisée
+- `winner=extra_vars_wins`: `--extra-vars` (level 22) **overrides** both
+  the play `vars:` (12) and `vars_files:` (14). Nothing resists it.
+- `duel=vars_files`: without `--extra-vars` to arbitrate, **`vars_files:` (14)
+  beats the play `vars:` (12)**. There is the real lesson of the lab.
+
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/precedence-variables/challenge/tests/
 ```
 
-> ⚠️ Le `conftest.py` racine joue automatiquement votre `solution.yml` avec
-> `--extra-vars "winner=extra_vars_wins"` (cf. `_EXTRA_ARGS`).
+> ⚠️ The root `conftest.py` automatically plays your `solution.yml` with
+> `--extra-vars "winner=extra_vars_wins"` (see `_EXTRA_ARGS`).
 
 ## 🧹 Reset
 
 ```bash
-make -C labs/ecrire-code/precedence-variables clean
+dsoxlab clean ecrire-code-precedence-variables
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Sans `--extra-vars`** : relancez sans le flag. Quelle valeur gagne entre
-  `play_vars` et `vars_files` ? Ansible récents : **`vars:` du play gagne**
-  sur `vars_files:`. Cf. la table de précédence officielle de la doc.
-- **`set_fact`** : niveau 18 (au-dessus de `vars:` mais sous `--extra-vars`).
-  Posez un `set_fact: winner: "set_fact_wins"` dans une tâche **avant** la
-  tâche qui pose le fichier, et observez.
-- **`include_vars`** vs `vars_files:` : `include_vars` est niveau 19 (plus haut
-  que `set_fact`). C'est **plus fort** que `vars_files:` qui est niveau 13.
-- **Lint** :
+- **Without `--extra-vars`**: rerun without the flag. `winner` then switches to
+  `vars_files`, for the same reason as `duel`: **`vars_files:` (14) wins**
+  over the play `vars:` (12). See the official precedence table in the doc.
+- **How to make the play win, then?** Not with `vars:`. You have to go
+  above 14: `set_fact` (19), or `task vars` (17) on the task.
+- **`set_fact`**: level 19 (above `vars:`, `vars_files:` and
+  `include_vars`, but under `--extra-vars`). Place a
+  `set_fact: duel: "set_fact_wins"` in a task **before** the one that lays down the
+  file, and observe.
+- **`include_vars`** vs `vars_files:`: `include_vars` is level 18, so
+  **stronger** than `vars_files:` (14). But it stays **under** `set_fact` (19),
+  and this even if the `include_vars` executes after: the level takes precedence over the
+  chronological order.
+- **Lint**:
 
    ```bash
    ansible-lint labs/ecrire-code/precedence-variables/challenge/solution.yml

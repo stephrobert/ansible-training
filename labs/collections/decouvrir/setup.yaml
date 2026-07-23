@@ -1,0 +1,23 @@
+---
+# Mise en place du lab decouvrir : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup decouvrir lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (decouvrir)
+      ansible.builtin.shell: |
+        rm -f /tmp/lab93-*
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (decouvrir)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          List and inspect installed collections, read a galaxy.yml, walk the plugins/roles/playbooks layout and track down a module by its FQCN
+      run_once: true

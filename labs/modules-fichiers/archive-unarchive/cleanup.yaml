@@ -1,0 +1,13 @@
+---
+# Reset du lab archive-unarchive : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup archive-unarchive lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (archive-unarchive)
+      ansible.builtin.shell: |
+        rm -rf /opt/data-source /opt/backup /opt/restored
+      changed_when: false
+      failed_when: false

@@ -1,53 +1,52 @@
-# Lab 32 — Module `file:` (états, permissions, symlinks)
+# Lab 32 — `file:` module (states, permissions, symlinks)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Module file Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-file/)
+🔗 [**Ansible file module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-file/)
 
-`ansible.builtin.file:` est le **couteau suisse des métadonnées de fichiers**.
-Contrairement à `copy:`, il ne transfère **aucun contenu** — il agit uniquement
-sur **l'existence**, le **mode**, le **propriétaire**, le **type** (fichier,
-directory, symlink, hardlink). C'est le module idéal pour préparer une
-**arborescence**, créer un **lien symbolique** vers la release courante, ou
-**supprimer** un fichier obsolète.
+`ansible.builtin.file:` is the **Swiss army knife of file metadata**. Unlike
+`copy:`, it transfers **no content**: it acts only on the **existence**, the
+**mode**, the **owner**, the **type** (file, directory, symlink, hardlink). It is
+the ideal module to prepare a **tree**, create a **symbolic link** to the current
+release, or **remove** an obsolete file.
 
-`file:` se distingue par son option **`state:`** qui prend **6 valeurs** : `file`,
-`directory`, `absent`, `link`, `hard`, `touch`. Maîtriser ces 6 états couvre 95%
-des cas d'usage.
+`file:` stands out with its **`state:`** option, which takes **6 values**: `file`,
+`directory`, `absent`, `link`, `hard`, `touch`. Mastering these 6 states covers
+95% of the use cases.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Distinguer** les 6 états : `file`, `directory`, `absent`, `link`, `hard`, `touch`.
-2. **Créer** une arborescence multi-niveaux avec `state: directory`.
-3. **Gérer** des liens symboliques (release courante, switching version).
-4. **Propager** des permissions récursivement (`recurse: true`).
-5. **Diagnostiquer** un symlink cassé (cible inexistante).
+1. **Distinguish** the 6 states: `file`, `directory`, `absent`, `link`, `hard`, `touch`.
+2. **Create** a multi-level tree with `state: directory`.
+3. **Manage** symbolic links (current release, version switching).
+4. **Propagate** permissions recursively (`recurse: true`).
+5. **Diagnose** a broken symlink (nonexistent target).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible web1.lab -m ping
 ansible web1.lab -b -m shell -a "rm -rf /opt/myapp /etc/myapp-old.conf /var/log/myapp-init.timestamp /tmp/lab-file-*"
 ```
 
-## 📚 Exercice 1 — Créer un répertoire (`state: directory`)
+## 📚 Exercise 1 — Create a directory (`state: directory`)
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -64,26 +63,26 @@ Créez `lab.yml` :
         mode: "0750"
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/modules-fichiers/file/lab.yml
-ssh ansible@web1.lab 'ls -la /var/log/myapp/'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab 'ls -la /var/log/myapp/'
 ```
 
-🔍 **Observation** : `/var/log/myapp/` ET `/var/log/myapp/archive/` sont créés
-**en une seule tâche**. Ansible crée automatiquement les parents (équivalent
+🔍 **Observation**: `/var/log/myapp/` AND `/var/log/myapp/archive/` are created
+**in a single task**. Ansible automatically creates the parents (equivalent to
 `mkdir -p`).
 
-**Idempotence** : 2e run → `changed=0` (déjà à l'état attendu).
+**Idempotence**: 2nd run → `changed=0` (already in the expected state).
 
-**Modification** : changez `mode: "0750"` → `mode: "0700"`. Ansible **ajuste** le
-mode sur les deux dossiers.
+**Modification**: change `mode: "0750"` → `mode: "0700"`. Ansible **adjusts** the
+mode on both directories.
 
-## 📚 Exercice 2 — Liens symboliques (pattern release)
+## 📚 Exercise 2 — Symbolic links (release pattern)
 
-Pattern classique de déploiement : `/opt/myapp/current` est un **symlink** vers
-la release active.
+Classic deployment pattern: `/opt/myapp/current` is a **symlink** to the active
+release.
 
 ```yaml
 - name: Creer 2 dossiers de release
@@ -108,15 +107,15 @@ la release active.
     force: true
 ```
 
-🔍 **Observation** : à la 1ère exécution, `current` pointe vers `v1.0.0`. La 2e
-tâche **bascule** le symlink vers `v1.1.0` (atomic via `rename`). Pattern classique
-des **deployments blue/green** : préparer la nouvelle release dans `releases/`,
-basculer `current` à la fin.
+🔍 **Observation**: on the 1st run, `current` points to `v1.0.0`. The 2nd task
+**switches** the symlink to `v1.1.0` (atomic via `rename`). Classic pattern of
+**blue/green deployments**: prepare the new release in `releases/`, switch
+`current` at the end.
 
-**`force: true`** est obligatoire si `current` existe déjà (en tant que fichier
-ou symlink différent).
+**`force: true`** is mandatory if `current` already exists (as a file or a
+different symlink).
 
-## 📚 Exercice 3 — Le piège du lien cassé
+## 📚 Exercise 3 — The broken link pitfall
 
 ```yaml
 - name: Creer un symlink vers une cible INEXISTANTE
@@ -127,23 +126,23 @@ ou symlink différent).
     force: true
 ```
 
-**Lancez et inspectez** :
+**Run and inspect**:
 
 ```bash
 ansible-playbook labs/modules-fichiers/file/lab.yml
-ssh ansible@web1.lab 'ls -la /tmp/lab-file-broken-link'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab 'ls -la /tmp/lab-file-broken-link'
 ```
 
-🔍 **Observation** : le symlink est **créé** sans erreur Ansible, mais **pointe
-vers le vide**. `ls -la` montre :
+🔍 **Observation**: the symlink is **created** without an Ansible error, but
+**points to nothing**. `ls -la` shows:
 
 ```text
 lrwxrwxrwx 1 root root 27 ... lab-file-broken-link -> /opt/non-existent-target
 ```
 
-Et `cat lab-file-broken-link` retourne `No such file or directory`.
+And `cat lab-file-broken-link` returns `No such file or directory`.
 
-**Solution** : vérifier la cible **avant** de créer le symlink :
+**Solution**: check the target **before** creating the symlink:
 
 ```yaml
 - name: Verifier que la cible existe
@@ -160,7 +159,7 @@ Et `cat lab-file-broken-link` retourne `No such file or directory`.
   when: target_check.stat.exists and target_check.stat.isdir
 ```
 
-## 📚 Exercice 4 — Suppression (`state: absent`)
+## 📚 Exercise 4 — Removal (`state: absent`)
 
 ```yaml
 - name: Nettoyer un fichier obsolete
@@ -174,14 +173,14 @@ Et `cat lab-file-broken-link` retourne `No such file or directory`.
     state: absent
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- `state: absent` est **idempotent** : si déjà absent → `ok` (pas d'erreur).
-- Sur un **dossier**, c'est **récursif** (équivalent `rm -rf`). **Attention !**
-- Toujours **tester en `--check --diff`** avant `state: absent` sur un dossier
-  en production.
+- `state: absent` is **idempotent**: if already absent → `ok` (no error).
+- On a **directory**, it is **recursive** (equivalent to `rm -rf`). **Caution!**
+- Always **test with `--check --diff`** before `state: absent` on a directory in
+  production.
 
-**Pattern défensif** :
+**Defensive pattern**:
 
 ```yaml
 - name: Stat avant suppression
@@ -196,7 +195,7 @@ Et `cat lab-file-broken-link` retourne `No such file or directory`.
   when: dir_stat.stat.exists and dir_stat.stat.isdir
 ```
 
-## 📚 Exercice 5 — `recurse: true` (propager mode/owner)
+## 📚 Exercise 5 — `recurse: true` (propagate mode/owner)
 
 ```yaml
 - name: Reparer les permissions sur tout /var/log/myapp
@@ -209,20 +208,19 @@ Et `cat lab-file-broken-link` retourne `No such file or directory`.
     recurse: true
 ```
 
-🔍 **Observation** : `recurse: true` propage `mode/owner/group` à **tous les
-fichiers et sous-dossiers**. Pratique pour **réparer** des permissions cassées
-ou homogénéiser une arborescence après un `cp -r` qui a tout mis en `root:root`.
+🔍 **Observation**: `recurse: true` propagates `mode/owner/group` to **all files
+and subdirectories**. Handy to **repair** broken permissions or homogenize a tree
+after a `cp -r` that set everything to `root:root`.
 
-**Performance** : `recurse: true` parcourt chaque inode → **lent sur de gros
-volumes** (50K fichiers = 30+ secondes). Pour ces cas, préférer une commande
-shell unique :
+**Performance**: `recurse: true` walks each inode → **slow on large volumes**
+(50K files = 30+ seconds). For these cases, prefer a single shell command:
 
 ```yaml
 - ansible.builtin.command: "chown -R nobody:nobody /var/log/myapp && chmod -R 0750 /var/log/myapp"
   changed_when: false  # ou un test plus fin
 ```
 
-## 📚 Exercice 6 — `state: touch` (le seul non-idempotent)
+## 📚 Exercise 6 — `state: touch` (the only non-idempotent one)
 
 ```yaml
 - name: Creer un timestamp d init
@@ -232,22 +230,22 @@ shell unique :
     mode: "0644"
 ```
 
-🔍 **Observation** : **`touch` est le seul état non-idempotent** — il modifie
-**toujours le mtime**, donc `changed=1` à chaque run.
+🔍 **Observation**: **`touch` is the only non-idempotent state**, it **always**
+changes the mtime, so `changed=1` on every run.
 
-**Cas d'usage légitimes** :
+**Legitimate use cases**:
 
-- Timestamp d'init (créé une fois, mis à jour à chaque deploy).
-- Healthcheck file (un cron qui vérifie le mtime < 5min).
+- Init timestamp (created once, updated on every deploy).
+- Healthcheck file (a cron that checks the mtime < 5min).
 
-**Cas où `touch` est un mauvais choix** : créer un fichier vide qu'on remplira
-plus tard — préférer `copy: content: ""` qui est **idempotent**.
+**Cases where `touch` is a bad choice**: creating an empty file you will fill
+later, prefer `copy: content: ""` which is **idempotent**.
 
-## 📚 Exercice 7 — Le piège : `state: file` ne crée pas le fichier
+## 📚 Exercise 7 — The pitfall: `state: file` does not create the file
 
-Contrairement à `state: directory` qui crée le dossier, **`state: file` ne crée
-pas le fichier** s'il n'existe pas. C'est un état d'**affirmation** : "vérifier
-que `path:` est bien un fichier (et ajuster les perms si oui)".
+Unlike `state: directory` which creates the directory, **`state: file` does not
+create the file** if it does not exist. It is an **assertion** state: "check that
+`path:` is indeed a file (and adjust the perms if so)".
 
 ```yaml
 # ❌ Ne marche PAS si /tmp/lab-file-test n existe pas
@@ -270,68 +268,66 @@ que `path:` est bien un fichier (et ajuster les perms si oui)".
     force: false
 ```
 
-🔍 **Observation** : `state: file` plante si le fichier n'existe pas. Pour créer
-un fichier vide **idempotent**, utiliser `copy: content: "" force: false`.
+🔍 **Observation**: `state: file` fails if the file does not exist. To create an
+**idempotent** empty file, use `copy: content: "" force: false`.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **6 états** : `file` / `directory` / `absent` / `link` / `hard` / `touch`.
-- **`directory` crée les parents** automatiquement (`mkdir -p`).
-- **`absent` sur un dossier** est **récursif** — équivalent `rm -rf`, à utiliser avec précaution.
-- **`link` ne vérifie pas** que la cible existe — symlink cassé silencieux.
-- **`recurse: true`** propage mode/owner mais **lent** sur gros volumes.
-- **`touch` est le seul non-idempotent** — toujours `changed=1`.
-- **`state: file` ne crée pas** le fichier — utiliser `touch` ou `copy:`.
+- **6 states**: `file` / `directory` / `absent` / `link` / `hard` / `touch`.
+- **`directory` creates the parents** automatically (`mkdir -p`).
+- **`absent` on a directory** is **recursive**, equivalent to `rm -rf`, use with caution.
+- **`link` does not check** that the target exists, silent broken symlink.
+- **`recurse: true`** propagates mode/owner but **slow** on large volumes.
+- **`touch` is the only non-idempotent one**, always `changed=1`.
+- **`state: file` does not create** the file, use `touch` or `copy:`.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous avez 50 000 fichiers dans `/var/log/myapp/` et vous voulez tous les
-   passer en `mode 0640`. `file: recurse: true` ou `command: chmod -R` avec
-   `changed_when:` ? Quels critères ?
+1. You have 50,000 files in `/var/log/myapp/` and you want to set them all to
+   `mode 0640`. `file: recurse: true` or `command: chmod -R` with
+   `changed_when:`? What criteria?
 
-2. Vous gérez un déploiement par releases (`/opt/myapp/releases/v1.0.0`,
-   `v1.1.0`, etc.) avec un symlink `current`. Comment garantir une **bascule
-   atomique** sans état intermédiaire visible aux utilisateurs ?
+2. You manage a release-based deployment (`/opt/myapp/releases/v1.0.0`,
+   `v1.1.0`, etc.) with a `current` symlink. How do you guarantee an **atomic
+   switch** with no intermediate state visible to users?
 
-3. Pourquoi `state: touch` est-il **non-idempotent** par design, alors que tous
-   les autres états le sont ?
+3. Why is `state: touch` **non-idempotent** by design, when all the other
+   states are idempotent?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`modification_time:`** + **`access_time:`** : forcer un mtime/atime précis
-  (au lieu du now de `touch`). Utile pour des cas de test ou de cache invalidation.
-- **Hardlinks vs symlinks** : `state: hard` partage l'inode (le fichier sera
-  effacé seulement quand TOUTES les références sont supprimées). Symlink = juste
-  un pointeur.
-- **Lab 31 (`copy:`)** : module compagnon — métadonnées **+** contenu en une
-  tâche.
-- **Lab 33 (`blockinfile:`)** : modifier un fichier existant sans le réécrire.
-- **Module `ansible.posix.acl`** : pour gérer les ACL POSIX au-delà des
-  permissions Unix de base.
+- **`modification_time:`** + **`access_time:`**: force a precise mtime/atime
+  (instead of the now of `touch`). Useful for test cases or cache invalidation.
+- **Hardlinks vs symlinks**: `state: hard` shares the inode (the file is deleted
+  only when ALL references are removed). Symlink = just a pointer.
+- **Lab 31 (`copy:`)**: companion module, metadata **plus** content in one task.
+- **Lab 33 (`blockinfile:`)**: modify an existing file without rewriting it.
+- **`ansible.posix.acl` module**: to manage POSIX ACLs beyond the basic Unix
+  permissions.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/modules-fichiers/file/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/modules-fichiers/file/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, target RHCE 2026)
 ansible-lint --profile production labs/modules-fichiers/file/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a pre-commit
+> hook to block any commit that would introduce anti-patterns.

@@ -1,0 +1,4 @@
+---
+id: vault-chiffrer-fichier-variable
+title: "encrypt_string ou chiffrement du fichier entier"
+description: "Chiffrer une valeur isolée avec encrypt_string, la mêler à des variables en clair via le tag !vault, et arbitrer entre inline et fichier complet."

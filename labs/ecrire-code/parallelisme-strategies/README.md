@@ -1,55 +1,55 @@
-# Lab 09 — Parallélisme et stratégies (`serial:`, `forks:`, `strategy:`)
+# Lab 09 — Parallelism and strategies (`serial:`, `forks:`, `strategy:`)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Parallélisme et stratégies Ansible : forks, serial, throttle, strategy**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/parallelisme-strategies/)
+🔗 [**Ansible parallelism and strategies: forks, serial, throttle, strategy**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/parallelisme-strategies/)
 
-Par défaut, Ansible exécute une **tâche à la fois** sur **`forks` hôtes en parallèle**
-(défaut 5). `serial:` change ce comportement par **batches successifs** — pratique pour
-les **rolling updates** (mettre à jour 1 hôte, valider, passer au suivant). `strategy:`
-change la philosophie : `linear` (défaut) attend que tous les hôtes finissent une tâche
-avant de passer à la suivante ; `free` laisse chaque hôte avancer indépendamment.
+By default, Ansible runs **one task at a time** on **`forks` hosts in parallel**
+(default 5). `serial:` changes this behavior to **successive batches**, handy for
+**rolling updates** (update 1 host, validate, move to the next). `strategy:`
+changes the philosophy: `linear` (default) waits for all hosts to finish a task
+before moving to the next; `free` lets each host progress independently.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Distinguer** `forks:` (parallélisme global) de `serial:` (taille de batch).
-2. **Lancer** un rolling update sur les `webservers` avec `serial: 1`.
-3. **Comparer** les stratégies `linear` (défaut) et `free` sur un play réaliste.
-4. **Limiter** une seule tâche avec `throttle:` (rate-limit ciblé sans toucher au play).
-5. **Choisir** la bonne combinaison `forks` / `serial` / `strategy` selon le scénario.
+1. **Distinguish** `forks:` (global parallelism) from `serial:` (batch size).
+2. **Run** a rolling update on the `webservers` with `serial: 1`.
+3. **Compare** the `linear` (default) and `free` strategies on a realistic play.
+4. **Limit** a single task with `throttle:` (targeted rate-limit without touching the play).
+5. **Choose** the right `forks` / `serial` / `strategy` combination for the scenario.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible webservers -m ping
-# Doit lister web1.lab et web2.lab en SUCCESS
+# Must list web1.lab and web2.lab as SUCCESS
 ```
 
-Nettoyer les marqueurs des runs précédents :
+Clean the markers from previous runs:
 
 ```bash
 ansible webservers -b -m file -a "path=/tmp/serial-timestamp.txt state=absent"
 ansible webservers -b -m file -a "path=/tmp/free-timestamp.txt state=absent"
 ```
 
-## 📚 Exercice 1 — `serial: 1` (rolling update strict)
+## 📚 Exercise 1 — `serial: 1` (strict rolling update)
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -68,43 +68,43 @@ Créez `lab.yml` :
         seconds: 2
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/ecrire-code/parallelisme-strategies/lab.yml
 ```
 
-🔍 **Observation** : web1 traite ses 2 tâches **complètement** avant que web2 commence.
-Vérifiez les timestamps :
+🔍 **Observation**: web1 processes its 2 tasks **completely** before web2 starts.
+Check the timestamps:
 
 ```bash
 ansible webservers -b -m command -a "cat /tmp/serial-timestamp.txt"
 ```
 
-Le timestamp de web2 doit être **postérieur d'au moins 2 secondes** à celui de web1.
-C'est l'intérêt du `serial: 1` : si web1 plante, web2 n'est jamais touché.
+The timestamp of web2 must be **at least 2 seconds later** than the one of web1.
+That is the point of `serial: 1`: if web1 crashes, web2 is never touched.
 
-## 📚 Exercice 2 — `serial: ["20%", "50%"]` (rolling progressif)
+## 📚 Exercise 2 — `serial: ["20%", "50%"]` (progressive rolling)
 
-Sur 2 hôtes, `serial: ["20%", "50%"]` revient à 1 puis 1 (`max(1, 20% × 2)` = 1).
-Pour démontrer le pattern, on simule 4 hôtes virtuels via `--limit` et le pattern de batches.
+On 2 hosts, `serial: ["20%", "50%"]` comes down to 1 then 1 (`max(1, 20% × 2)` = 1).
+To demonstrate the pattern, we simulate 4 virtual hosts via `--limit` and the batch pattern.
 
-Modifiez le play pour ajouter un **second batch** explicite :
+Modify the play to add an explicit **second batch**:
 
 ```yaml
 serial:
   - 1
-  - "100%"  # Tous les restants
+  - "100%"  # All the remaining ones
 ```
 
-🔍 **Observation** : Ansible affiche `PLAY [Demo serial 1 sur webservers]` deux fois — une
-fois pour le **batch 1** (web1 seul), une fois pour le **batch 2** (web2 seul, ou tous
-les autres si vous aviez 10 hôtes). Le `serial: ["10%", "50%", "100%"]` est le pattern
-classique du **canary deploy** : 10% en premier (canari), 50% si OK, le reste à la fin.
+🔍 **Observation**: Ansible displays `PLAY [Demo serial 1 sur webservers]` twice, once
+for **batch 1** (web1 alone), once for **batch 2** (web2 alone, or all the others
+if you had 10 hosts). The `serial: ["10%", "50%", "100%"]` is the classic pattern
+of the **canary deploy**: 10% first (canary), 50% if OK, the rest at the end.
 
-## 📚 Exercice 3 — `strategy: free` vs `linear`
+## 📚 Exercise 3 — `strategy: free` vs `linear`
 
-Créez `lab-strategy.yml` :
+Create `lab-strategy.yml`:
 
 ```yaml
 ---
@@ -124,34 +124,33 @@ Créez `lab-strategy.yml` :
       changed_when: true
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/ecrire-code/parallelisme-strategies/lab-strategy.yml
 ```
 
-🔍 **Observation** : avec `strategy: free`, **chaque hôte avance à son propre rythme**.
-Les timestamps `/tmp/free-timestamp.txt` sur web1 et web2 sont **proches** (les hôtes
-ont commencé la tâche lente en parallèle, pas en attendant que tous aient fini la
-rapide).
+🔍 **Observation**: with `strategy: free`, **each host progresses at its own pace**.
+The `/tmp/free-timestamp.txt` timestamps on web1 and web2 are **close** (the hosts
+started the slow task in parallel, not waiting for all to finish the fast one).
 
-**Comparez** avec `strategy: linear` (défaut) — modifiez à `strategy: linear` :
+**Compare** with `strategy: linear` (default), change it to `strategy: linear`:
 
 ```bash
 ansible-playbook labs/ecrire-code/parallelisme-strategies/lab-strategy.yml
 ```
 
-🔍 **Observation** : en `linear`, Ansible **attend** que tous les hôtes aient fini la
-tâche rapide avant de lancer la lente. Si un hôte est plus lent que les autres (réseau,
-charge), tout le play est ralenti.
+🔍 **Observation**: in `linear`, Ansible **waits** for all hosts to finish the fast
+task before launching the slow one. If a host is slower than the others (network,
+load), the whole play is slowed down.
 
-**À retenir** : `linear` simplifie le debug et garantit l'ordre. `free` maximise le
-débit mais brouille les logs.
+**Takeaway**: `linear` simplifies debugging and guarantees order. `free` maximizes
+throughput but scrambles the logs.
 
-## 📚 Exercice 4 — `throttle:` (rate-limit ciblé)
+## 📚 Exercise 4 — `throttle:` (targeted rate-limit)
 
-Vous avez un play sur 50 hôtes, `forks: 50`, mais **une seule tâche** appelle un
-endpoint externe qui plafonne à 5 req/s. Inutile de mettre tout le play à `forks: 5`.
+You have a play over 50 hosts, `forks: 50`, but **a single task** calls an
+external endpoint capped at 5 req/s. No need to put the whole play at `forks: 5`.
 
 ```yaml
 - name: Tache qui appelle une API rate-limitee
@@ -161,18 +160,18 @@ endpoint externe qui plafonne à 5 req/s. Inutile de mettre tout le play à `for
   throttle: 5
 ```
 
-`throttle: 5` limite **uniquement cette tâche** à 5 hôtes en parallèle, le reste du
-play continue à `forks: 50`.
+`throttle: 5` limits **only this task** to 5 hosts in parallel, the rest of the
+play continues at `forks: 50`.
 
-🔍 **Observation** : `throttle:` est local à la tâche. Pas besoin de modifier la config
-globale d'Ansible.
+🔍 **Observation**: `throttle:` is local to the task. No need to change the global
+Ansible config.
 
-## 📚 Exercice 5 — Le piège : `serial:` + handlers
+## 📚 Exercise 5 — The trap: `serial:` + handlers
 
-Quand `serial: 1` est en place, les **handlers** se déclenchent **par batch**, pas à
-la fin du play global. Cela peut surprendre.
+When `serial: 1` is in place, the **handlers** fire **per batch**, not at the
+end of the global play. This can be surprising.
 
-Créez `lab-handlers.yml` :
+Create `lab-handlers.yml`:
 
 ```yaml
 ---
@@ -193,72 +192,72 @@ Créez `lab-handlers.yml` :
         msg: "Handler tourne sur {{ inventory_hostname }} a {{ ansible_date_time.iso8601 }}"
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/ecrire-code/parallelisme-strategies/lab-handlers.yml
 ```
 
-🔍 **Observation** : le handler `Recharger un service` tourne **2 fois** : une fois
-après web1 (fin du batch 1), une fois après web2 (fin du batch 2). En **rolling update**,
-c'est exactement ce que vous voulez (recharger nginx sur web1 avant de toucher à web2).
-En **non-serial**, le handler aurait tourné **une seule fois** à la fin sur les deux hôtes
-en parallèle.
+🔍 **Observation**: the handler `Recharger un service` runs **2 times**: once
+after web1 (end of batch 1), once after web2 (end of batch 2). In a **rolling update**,
+this is exactly what you want (reload nginx on web1 before touching web2).
+In **non-serial** mode, the handler would have run **only once** at the end on both hosts
+in parallel.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`forks:`** = parallélisme global (défaut 5, configurable dans `ansible.cfg`).
-- **`serial:`** = taille de batch — divise le play en "vagues" séquentielles.
-- **`serial:` accepte une liste** (`[1, 5, "100%"]`) pour des batches progressifs (canary deploy).
-- **`strategy: linear`** synchronise les hôtes tâche par tâche. **`strategy: free`** laisse chacun avancer.
-- **`throttle:`** rate-limit une tâche précise sans toucher au reste du play.
-- **Handlers + `serial:`** = handlers déclenchés à chaque fin de batch (utile en rolling).
+- **`forks:`** = global parallelism (default 5, configurable in `ansible.cfg`).
+- **`serial:`** = batch size, divides the play into sequential "waves".
+- **`serial:` accepts a list** (`[1, 5, "100%"]`) for progressive batches (canary deploy).
+- **`strategy: linear`** synchronizes the hosts task by task. **`strategy: free`** lets each one progress.
+- **`throttle:`** rate-limits a precise task without touching the rest of the play.
+- **Handlers + `serial:`** = handlers fired at the end of each batch (useful in rolling).
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous gérez 100 webservers et vous voulez déployer une nouvelle config nginx avec
-   **rolling update**, en s'arrêtant si plus de 5% échouent. Quelles options du play
-   utilisez-vous ? (combinaison de `serial:`, `max_fail_percentage:`, et stratégie).
+1. You manage 100 webservers and you want to deploy a new nginx config with a
+   **rolling update**, stopping if more than 5% fail. Which play options do you
+   use? (combination of `serial:`, `max_fail_percentage:`, and strategy).
 
-2. Pourquoi `strategy: free` peut-il **accélérer un play** sur des hôtes hétérogènes
-   (mix VMs lentes / rapides), mais **ralentir** sur des hôtes homogènes ?
+2. Why can `strategy: free` **speed up a play** on heterogeneous hosts
+   (mix of slow / fast VMs), but **slow it down** on homogeneous hosts?
 
-3. Un collègue propose de mettre `forks: 200` dans `ansible.cfg` "pour aller plus vite".
-   Quels sont les **3 risques** que vous identifiez avant d'accepter ?
+3. A colleague suggests putting `forks: 200` in `ansible.cfg` "to go faster".
+   What are the **3 risks** you identify before accepting?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`max_fail_percentage:`** : tolère un % d'échecs par batch avant d'aborter. Combiné
-  à `serial:`, c'est le pattern **rolling avec circuit-breaker**.
-- **`any_errors_fatal:`** : à l'inverse, abort dès le premier échec — voir lab 25.
-- **`run_once: true`** : exécuter une tâche **une seule fois** dans un play multi-hôtes
-  (utile pour notifier un load-balancer externe). Voir lab 11 (delegation).
-- **Mythe à casser** : augmenter `forks:` ne **multiplie pas** la vitesse. Bottleneck
-  fréquent = la **fact gathering** sur trop d'hôtes en parallèle saturent le control node.
+- **`max_fail_percentage:`**: tolerates a % of failures per batch before aborting. Combined
+  with `serial:`, it is the **rolling with circuit-breaker** pattern.
+- **`any_errors_fatal:`**: conversely, aborts on the first failure, see lab 25.
+- **`run_once: true`**: run a task **only once** in a multi-host play
+  (useful to notify an external load-balancer). See lab 11 (delegation).
+- **Myth to bust**: raising `forks:` does **not multiply** the speed. Frequent
+  bottleneck = the **fact gathering** on too many hosts in parallel saturates the control node.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/ecrire-code/parallelisme-strategies/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/ecrire-code/parallelisme-strategies/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/ecrire-code/parallelisme-strategies/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

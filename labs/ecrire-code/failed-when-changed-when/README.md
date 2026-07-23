@@ -1,52 +1,52 @@
-# Lab 24 — `failed_when:` et `changed_when:` (redéfinir succès et changement)
+# Lab 24 — `failed_when:` and `changed_when:` (redefine success and change)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**failed_when et changed_when Ansible : redéfinir succès et changement**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/failed-when-changed-when/)
+🔗 [**failed_when and changed_when in Ansible: redefine success and change**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/failed-when-changed-when/)
 
-Par défaut, Ansible considère qu'une tâche `command:` ou `shell:` est **`failed`**
-si le code retour (`rc`) est différent de 0, et **`changed`** dans tous les cas.
-Ces deux comportements peuvent être **redéfinis** :
+By default, Ansible considers a `command:` or `shell:` task **`failed`**
+if the return code (`rc`) is different from 0, and **`changed`** in every case.
+Both behaviors can be **redefined**:
 
-- **`failed_when:`** = expression qui, si vraie, marque la tâche comme `failed`.
-- **`changed_when:`** = expression qui, si vraie, marque la tâche comme `changed`.
+- **`failed_when:`** = an expression that, if true, marks the task as `failed`.
+- **`changed_when:`** = an expression that, if true, marks the task as `changed`.
 
-Ces deux directives sont **essentielles pour rendre `command:`/`shell:` idempotents**
-— sans elles, une commande shell est **toujours `changed`**, ce qui pollue les logs
-et fait sauter les handlers à tort.
+These two directives are **essential for making `command:`/`shell:` idempotent**:
+without them, a shell command is **always `changed`**, which pollutes the logs
+and triggers handlers wrongly.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Désactiver** le `changed` par défaut sur les commandes lecture-seule (`changed_when: false`).
-2. **Définir** un `changed_when:` basé sur la sortie (string match, regex).
-3. **Redéfinir** le `failed_when:` pour accepter certains codes retour comme succès.
-4. **Combiner** `failed_when: + changed_when:` pour un module idempotent.
-5. **Diagnostiquer** un module qui rapporte `changed` à tort.
+1. **Disable** the default `changed` on read-only commands (`changed_when: false`).
+2. **Define** a `changed_when:` based on the output (string match, regex).
+3. **Redefine** the `failed_when:` to accept certain return codes as success.
+4. **Combine** `failed_when: + changed_when:` for an idempotent module.
+5. **Diagnose** a module that reports `changed` wrongly.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 ```
 
-## 📚 Exercice 1 — Le problème : `command:` toujours `changed`
+## 📚 Exercise 1 — The problem: `command:` always `changed`
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -59,22 +59,22 @@ Créez `lab.yml` :
       register: ssl_version
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/ecrire-code/failed-when-changed-when/lab.yml
 ```
 
-🔍 **Observation** : `PLAY RECAP` affiche `changed=1`. Pourtant, **lire** une version
-ne **change rien** — la tâche **devrait être `ok=1, changed=0`**. C'est une pollution
-classique des logs.
+🔍 **Observation**: `PLAY RECAP` shows `changed=1`. Yet **reading** a version
+**changes nothing**: the task **should be `ok=1, changed=0`**. This is a classic
+log pollution.
 
-**Pire** : si cette tâche `notify:` un handler, le handler tournerait à chaque run
-**à tort** (rechargement de service inutile).
+**Worse**: if this task `notify:` a handler, the handler would run on every run
+**wrongly** (a useless service reload).
 
-## 📚 Exercice 2 — `changed_when: false` sur les lectures
+## 📚 Exercise 2 — `changed_when: false` on reads
 
-Modifiez la tâche :
+Modify the task:
 
 ```yaml
 - name: Lire la version d openssl (lecture seule)
@@ -83,25 +83,25 @@ Modifiez la tâche :
   changed_when: false
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/ecrire-code/failed-when-changed-when/lab.yml
 ```
 
-🔍 **Observation** : `PLAY RECAP` affiche maintenant `ok=1, changed=0`. La tâche est
-marquée comme **lecture seule** explicitement.
+🔍 **Observation**: `PLAY RECAP` now shows `ok=1, changed=0`. The task is
+explicitly marked as **read-only**.
 
-**Règle** : `changed_when: false` sur **toute** commande qui ne fait que lire
+**Rule**: `changed_when: false` on **any** command that only reads
 (`cat`, `grep`, `openssl version`, `which`, `stat`, etc.).
 
-## 📚 Exercice 3 — `changed_when:` avec expression sur la sortie
+## 📚 Exercise 3 — `changed_when:` with an expression on the output
 
-Pour des commandes qui peuvent **modifier** ou **non**, utiliser une expression sur
-la sortie pour détecter le changement.
+For commands that may or may not **modify** something, use an expression on
+the output to detect the change.
 
-Cas réel : `git pull` change quelque chose **uniquement** s'il y a de nouveaux commits.
-On peut détecter via la sortie qui contient "Already up to date" ou pas.
+Real case: `git pull` changes something **only** if there are new commits.
+You can detect it via the output that contains "Already up to date" or not.
 
 ```yaml
 - name: Simulation git pull (changed seulement si nouveau)
@@ -111,24 +111,24 @@ On peut détecter via la sortie qui contient "Already up to date" ou pas.
   changed_when: "'Already up to date' not in pull_result.stdout"
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
-# 1er run : simulate_no_change=true (defaut) → ok=1
+# 1st run: simulate_no_change=true (default) → ok=1
 ansible-playbook labs/ecrire-code/failed-when-changed-when/lab.yml
 
-# 2eme run : simulate_no_change=false → changed=1
+# 2nd run: simulate_no_change=false → changed=1
 ansible-playbook labs/ecrire-code/failed-when-changed-when/lab.yml \
   --extra-vars "simulate_no_change=false"
 ```
 
-🔍 **Observation** : la même commande shell rapporte `ok=1` ou `changed=1` selon
-sa sortie — c'est l'**idempotence faite à la main** sur un `command:`.
+🔍 **Observation**: the same shell command reports `ok=1` or `changed=1`
+depending on its output. This is **idempotence done by hand** on a `command:`.
 
-## 📚 Exercice 4 — `failed_when:` pour accepter des codes retour spécifiques
+## 📚 Exercise 4 — `failed_when:` to accept specific return codes
 
-Cas classique : `grep` retourne **`rc=1` quand il ne trouve pas** la chaîne — Ansible
-le traite comme un échec. Or, pour un audit, c'est souvent **un succès**.
+Classic case: `grep` returns **`rc=1` when it does not find** the string, and
+Ansible treats that as a failure. But for an audit, it is often **a success**.
 
 ```yaml
 - name: Verifier si root login est desactive (rc 1 = absent = OK)
@@ -138,19 +138,19 @@ le traite comme un échec. Or, pour un audit, c'est souvent **un succès**.
   changed_when: false
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **rc=0** : trouvé → tâche `ok`.
-- **rc=1** : non trouvé → tâche `ok` aussi (parce que `1 in [0, 1]` est vrai, donc `failed_when` est faux).
-- **rc=2+** : autre erreur (fichier absent, etc.) → tâche **failed**.
+- **rc=0**: found → task `ok`.
+- **rc=1**: not found → task `ok` too (because `1 in [0, 1]` is true, so `failed_when` is false).
+- **rc=2+**: another error (missing file, etc.) → task **failed**.
 
-**Sans `failed_when:`**, le `rc=1` aurait fait failer la tâche — vous auriez besoin
-d'un `block/rescue` lourd ou `ignore_errors: true` dangereux.
+**Without `failed_when:`**, the `rc=1` would have failed the task, and you would
+need a heavy `block/rescue` or a dangerous `ignore_errors: true`.
 
-## 📚 Exercice 5 — Combinaison `failed_when: + changed_when:` (idempotence complète)
+## 📚 Exercise 5 — Combining `failed_when: + changed_when:` (full idempotence)
 
-Pattern complet pour rendre une commande shell **idempotente** (équivalent d'un module
-natif) :
+Full pattern to make a shell command **idempotent** (equivalent to a native
+module):
 
 ```yaml
 - name: Activer SELinux en enforcing (idempotent)
@@ -164,100 +164,100 @@ natif) :
     fi
   register: selinux_result
   changed_when: "'CHANGED' in selinux_result.stdout"
-  failed_when: false  # Le shell gere lui-meme les cas
+  failed_when: false  # The shell handles the cases itself
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- 1er run : SELinux pas en enforcing → output `CHANGED` → tâche `changed`.
-- 2ème run : déjà en enforcing → output `OK` → tâche `ok`.
+- 1st run: SELinux not enforcing → output `CHANGED` → task `changed`.
+- 2nd run: already enforcing → output `OK` → task `ok`.
 
-C'est exactement comme l'idempotence des **modules builtin** — mais codée à la main
-parce que `setenforce` n'a pas de module natif.
+This is exactly like the idempotence of **builtin modules**, but coded by hand
+because `setenforce` has no native module.
 
-**Mieux** : utiliser **`ansible.posix.selinux`** (module dédié) — toujours préférer un
-module natif quand il existe.
+**Better**: use **`ansible.posix.selinux`** (dedicated module). Always prefer a
+native module when one exists.
 
-## 📚 Exercice 6 — Le piège : `failed_when:` mal écrit
+## 📚 Exercise 6 — The pitfall: a badly written `failed_when:`
 
 ```yaml
-# ❌ Mauvais : interpretation Jinja2
+# ❌ Wrong: Jinja2 interpretation
 - name: Mauvaise expression
   ansible.builtin.command: echo hello
   register: r
-  failed_when: "{{ r.rc != 0 }}"  # ❌ Pas besoin de {{ }}
+  failed_when: "{{ r.rc != 0 }}"  # ❌ No need for {{ }}
 
-# ✅ Bon
+# ✅ Good
 - name: Bonne expression
   ansible.builtin.command: echo hello
   register: r
   failed_when: r.rc != 0
 ```
 
-🔍 **Observation** : `failed_when:` et `changed_when:` sont **déjà des expressions
-Jinja2** — ne **pas** ajouter `{{ }}` (Ansible warning depuis 2.16).
+🔍 **Observation**: `failed_when:` and `changed_when:` are **already Jinja2
+expressions**, so do **not** add `{{ }}` (Ansible warning since 2.16).
 
-**Autre piège** : confusion `or` / `and`. `failed_when: r.rc != 0 or 'Error' in r.stdout`
-est plus restrictif que `r.rc != 0` seul. Bien réfléchir à la sémantique.
+**Another pitfall**: confusing `or` / `and`. `failed_when: r.rc != 0 or 'Error' in r.stdout`
+is more restrictive than `r.rc != 0` alone. Think carefully about the semantics.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`changed_when: false`** sur **toute** commande lecture-seule (audit, query).
-- **`changed_when:` avec expression** rend `command:` / `shell:` idempotent.
-- **`failed_when:` avec liste de codes** = accepter certains rc comme succès.
-- **`failed_when:` + `changed_when:`** combinés permettent d'écrire un "module à la main".
-- **Pas de `{{ }}` dans `when:`, `failed_when:`, `changed_when:`** — déjà des expressions.
-- **Préférer un module natif** quand il existe (selinux, sysctl, lineinfile) plutôt
-  que `shell:` + `failed_when` / `changed_when`.
+- **`changed_when: false`** on **any** read-only command (audit, query).
+- **`changed_when:` with an expression** makes `command:` / `shell:` idempotent.
+- **`failed_when:` with a list of codes** = accept certain rc as success.
+- **`failed_when:` + `changed_when:`** combined let you write a "module by hand".
+- **No `{{ }}` in `when:`, `failed_when:`, `changed_when:`**: they are already expressions.
+- **Prefer a native module** when one exists (selinux, sysctl, lineinfile) rather
+  than `shell:` + `failed_when` / `changed_when`.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous lancez `dnf check-update` qui retourne **`rc=100` quand il y a des updates
-   disponibles**. Comment écrivez-vous le `failed_when:` pour que `rc=0` (à jour) et
-   `rc=100` (updates dispo) soient tous deux des **succès**, mais autres codes failent ?
+1. You run `dnf check-update`, which returns **`rc=100` when updates are
+   available**. How do you write the `failed_when:` so that `rc=0` (up to date) and
+   `rc=100` (updates available) are both **successes**, but other codes fail?
 
-2. Pourquoi un `changed_when: false` sur une tâche `command:` dans un play **rolling
-   update** est-il **important** ? (indice : penser aux handlers).
+2. Why is a `changed_when: false` on a `command:` task in a **rolling update**
+   play **important**? (hint: think about handlers).
 
-3. Quelle est la différence entre `failed_when: false` (force le `failed=False`)
-   et `ignore_errors: true` (lab 24) ?
+3. What is the difference between `failed_when: false` (forces `failed=False`)
+   and `ignore_errors: true` (lab 24)?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`failed_when:` avec liste** : `failed_when: ['fatal' in r.stderr, r.rc not in [0,1]]`
-  est un **OR implicite** entre les conditions de la liste (comme `when:`).
-- **`unreachable_when:` n'existe pas** : pour gérer un host injoignable, utiliser
-  `block/rescue` au niveau du play ou `serial: + max_fail_percentage:`.
-- **`check_mode:` + `changed_when:`** : un `command:` en `--check` ne tourne pas par
-  défaut. Forcer avec `check_mode: false` + `changed_when: false` pour un audit
-  pendant le check mode (lab 08).
-- **Pattern `dry-run` + `apply`** : une seule tâche shell qui prend `--dry-run` selon
-  une variable, et utilise `changed_when:` sur la sortie. Permet d'avoir un mode
-  test/apply unique.
+- **`failed_when:` with a list**: `failed_when: ['fatal' in r.stderr, r.rc not in [0,1]]`
+  is an **implicit OR** between the list conditions (like `when:`).
+- **`unreachable_when:` does not exist**: to handle an unreachable host, use
+  `block/rescue` at the play level or `serial: + max_fail_percentage:`.
+- **`check_mode:` + `changed_when:`**: a `command:` in `--check` does not run by
+  default. Force it with `check_mode: false` + `changed_when: false` for an audit
+  during check mode (lab 08).
+- **`dry-run` + `apply` pattern**: a single shell task that takes `--dry-run`
+  depending on a variable and uses `changed_when:` on the output. It gives a single
+  test/apply mode.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/ecrire-code/failed-when-changed-when/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/ecrire-code/failed-when-changed-when/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/ecrire-code/failed-when-changed-when/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

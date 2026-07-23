@@ -1,0 +1,32 @@
+---
+# Mise en place du lab checkmode-diff : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup checkmode-diff lab (lab_web1)
+  hosts: lab_web1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (checkmode-diff)
+      ansible.builtin.shell: |
+        rm -f /tmp/lab-shell-output.txt
+      changed_when: false
+      failed_when: false
+- name: Setup checkmode-diff lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (checkmode-diff)
+      ansible.builtin.file:
+        path: "/etc/lab-checkmode.txt"
+        state: "absent"
+
+- name: Brief the learner (checkmode-diff)
+  hosts: lab_web1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Run a playbook with --check --diff, spot the modules that do not support check, force check_mode: false and diagnose a false changed positive
+      run_once: true

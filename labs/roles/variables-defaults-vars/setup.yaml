@@ -1,0 +1,34 @@
+---
+# Mise en place du lab variables-defaults-vars : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup variables-defaults-vars lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset name, state, enabled (variables-defaults-vars)
+      ansible.builtin.systemd_service:
+        name: "nginx"
+        state: "stopped"
+        enabled: "no"
+      failed_when: false
+    - name: Reset name, state (variables-defaults-vars)
+      ansible.builtin.dnf:
+        name: "nginx"
+        state: "absent"
+      failed_when: false
+    - name: Reset path, state (variables-defaults-vars)
+      ansible.builtin.file:
+        path: "/usr/share/nginx/html/index.html"
+        state: "absent"
+      failed_when: false
+
+- name: Brief the learner (variables-defaults-vars)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Split variables between defaults/ (overridable) and vars/ (internal), wire them into tasks and a Jinja2 template, then verify precedence
+      run_once: true

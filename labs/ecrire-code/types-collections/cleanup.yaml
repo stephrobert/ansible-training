@@ -1,0 +1,12 @@
+---
+# Reset du lab types-collections : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup types-collections lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (types-collections)
+      ansible.builtin.file:
+        path: "/tmp/services-production.txt"
+        state: "absent"

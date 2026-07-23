@@ -1,111 +1,121 @@
-# 🎯 Challenge — Deux handlers, une tâche, et flush_handlers
+# 🎯 Challenge — Two handlers, one task, and flush_handlers
 
-Vous avez écrit une tâche qui notifie un handler. Le challenge consiste à
-déclencher **deux handlers depuis une seule tâche** et à forcer leur exécution
-**immédiate** via `meta: flush_handlers` pour tester la nouvelle config dans
-le même play.
+You have written a task that notifies a handler. The challenge is to
+trigger **two handlers from a single task** and force their **immediate**
+execution via `meta: flush_handlers` to test the new config within
+the same play.
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `solution.yml` qui :
+Write `solution.yml` that:
 
-1. Cible `db1.lab`
-2. Installe `httpd`, le démarre, l'active
-3. Modifie `/etc/httpd/conf/httpd.conf` pour poser **`ServerTokens Prod`** ET
-   **`ServerSignature Off`** via **deux tâches `lineinfile`**
+1. Targets `db1.lab`
+2. Installs `nginx`, starts it, enables it
+3. Modifies `/etc/nginx/nginx.conf` to set **`server_tokens off;`** AND
+   **`add_header X-Content-Type-Options "nosniff";`** in the `http` block, via
+   **two `lineinfile` tasks**
 
-   > **Note pédagogique** : la directive `validate: 'apachectl -t -f %s'` est
-   > tentante pour rejeter une config invalide, mais elle échoue ici parce que
-   > `httpd.conf` référence `/etc/httpd/conf.d/*.conf` non disponibles dans le
-   > contexte de validation (le `%s` est un fichier temporaire isolé). Pour ce
-   > challenge, omettez `validate:` — vous le retrouverez correctement appliqué
-   > sur des configs autonomes (sshd_config, par exemple).
-4. La **première tâche** (ServerTokens) notifie **deux handlers** :
-   `Reload httpd` ET `Notifier journal local` (un fichier journal)
-5. La **deuxième tâche** (ServerSignature) notifie uniquement `Reload httpd`
-6. Après les deux modifications, force le déclenchement des handlers via
+   > **Pedagogical note**: `server_tokens off;` alone does what Apache
+   > required in two directives (`ServerTokens Prod` + `ServerSignature
+   > Off`): it removes the version from the `Server` header **and** from the
+   > error-page signature. The second hardening is therefore another point of the
+   > pentest report, the `nosniff` header.
+   >
+   > Here, unlike `httpd.conf`, the `validate: nginx -t -c %s` directive
+   > **works**: `nginx.conf` is self-contained (its `include` are absolute
+   > paths), so nginx can validate the temporary file that `%s` passes to it.
+   > Use it on both tasks.
+4. The **first task** (`server_tokens`) notifies **two handlers**:
+   `Reload nginx` AND `Notifier journal local` (a log file)
+5. The **second task** (`add_header`) notifies only `Reload nginx`
+6. After the two modifications, force the handlers to trigger via
    **`meta: flush_handlers`**
-7. **Teste** l'effet via `uri:` qui appelle `http://localhost` et capture
-   le header `Server`
+7. **Tests** the effect via `uri:` that calls `http://localhost` and captures
+   the `Server` header
 
-Squelette des handlers :
+Skeleton of the handlers:
 
 ```yaml
 handlers:
-  - name: Reload httpd
+  - name: Reload nginx
     ansible.builtin.systemd:
       name: ???
-      state: ???              # reloaded ≠ restarted — choisir le moins disruptif
+      state: ???              # reloaded ≠ restarted, choose the least disruptive
 
   - name: Notifier journal local
     ansible.builtin.lineinfile:
       path: /var/log/ansible-handlers.log
-      line: "Config httpd modifiée le {{ ??? }}"   # fact magique : timestamp ISO 8601
+      line: "Config nginx modifiée le {{ ??? }}"   # magic fact: ISO 8601 timestamp
       create: ???
       mode: "0644"
 ```
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
-> - `state: reloaded` recharge la config sans tuer les connexions actives
->   (préférable à `restarted` pour httpd).
-> - Le fact magique du timestamp est dans `ansible_date_time` — chercher la
->   sous-clé qui donne le format ISO 8601.
-> - `create: true` est nécessaire pour le **premier** run (le fichier journal
->   n'existe pas encore).
+> - `state: reloaded` reloads the config without killing the active connections
+>   (preferable to `restarted` for nginx).
+> - Both directives go in the `http { ... }` block: remember
+>   `insertafter:` so you do not write them outside, where nginx would reject them.
+> - The magic timestamp fact is in `ansible_date_time`, look for the
+>   sub-key that gives the ISO 8601 format.
+> - `create: true` is necessary for the **first** run (the log file
+>   does not exist yet).
 
-## 🧩 Consignes
+## 🧩 Instructions
 
-1. Créez `challenge/solution.yml`.
-2. Lancez :
+1. Create `challenge/solution.yml`.
+2. Run:
 
    ```bash
    ansible-playbook labs/ecrire-code/handlers/challenge/solution.yml
    ```
 
-3. Au **premier run**, vous voyez les **deux handlers** tourner (notifiés par
-   les deux tâches).
-4. Au **second run**, **aucun handler** ne tourne (`changed=0`).
+3. On the **first run**, you see the **two handlers** run (notified by
+   the two tasks).
+4. On the **second run**, **no handler** runs (`changed=0`).
 
 ## 🧪 Validation
 
-Le script `tests/test_handlers.py` vérifie automatiquement sur **db1.lab** :
+The `tests/test_functional.py` script automatically checks on **db1.lab**:
 
-- `httpd` est installé, running, enabled
-- `/etc/httpd/conf/httpd.conf` contient `ServerTokens Prod`
-- `/etc/httpd/conf/httpd.conf` contient `ServerSignature Off`
-- Le fichier journal `/var/log/ansible-handlers.log` existe et contient une
-  entrée — preuve que le **second handler** s'est bien déclenché
-- La requête HTTP `http://db1.lab` retourne **200**
-- Le **header Server** dans la réponse HTTP est exactement **`Apache`**
-  (sans version), preuve que `ServerTokens Prod` est appliqué (le handler
-  reload a bien tourné)
+- `nginx` is installed, running, enabled
+- `/etc/nginx/nginx.conf` contains `server_tokens off;`
+- `/etc/nginx/nginx.conf` contains an `add_header X-Content-Type-Options`
+- The log file `/var/log/ansible-handlers.log` exists and contains an
+  entry, proof that the **second handler** did trigger
+- The HTTP request to `db1.lab` returns **200**
+- The **Server header** in the HTTP response is exactly **`nginx`**
+  (without version), proof that `server_tokens off;` is applied (the reload
+  handler did run)
+- The response carries **`X-Content-Type-Options: nosniff`**, same proof for the
+  second task: the directive in the file is not enough, the reload must have happened
 
 ```bash
 pytest -v labs/ecrire-code/handlers/challenge/tests/
 ```
 
-## 🚀 Pour aller plus loin
+## 🚀 Going further
 
-- Refaites le challenge en utilisant **`listen:`** sur un topic
-  `httpd-config-changed`. Les deux tâches notifient ce topic, et les deux
-  handlers l'écoutent. Sortie identique, code plus découplé.
-- Provoquez volontairement une **erreur de syntaxe** dans `httpd.conf`
-  (par exemple `ServerTokens Garbage`). Le `validate:` doit empêcher
-  l'écriture du fichier ET le handler ne doit **pas** être notifié.
+- Redo the challenge using **`listen:`** on a
+  `nginx-config-changed` topic. Both tasks notify this topic, and both
+  handlers listen to it. Identical output, more decoupled code.
+- Deliberately cause a **syntax error** in `nginx.conf`
+  (for example `server_tokens Garbage;`). The `validate:` must prevent
+  writing the file AND the handler must **not** be notified. On nginx
+  this exercise really works, whereas it was impossible on `httpd.conf`.
 
 ---
 
-Bonne chance ! 🧠
+Good luck! 🧠
 
 ## 🧹 Reset
 
-Pour rejouer le challenge dans un état neutre :
+To replay the challenge in a neutral state:
 
 ```bash
-make -C labs/ecrire-code/handlers/ clean
+dsoxlab clean ecrire-code-handlers
 ```
 
-Cette cible désinstalle/supprime ce que la solution a posé sur les managed
-nodes (paquets, fichiers, services, règles firewall) afin que vous puissiez
-relancer la solution from scratch.
+This target uninstalls/removes what the solution placed on the managed
+nodes (packages, files, services, firewall rules) so that you can
+re-run the solution from scratch.

@@ -1,42 +1,36 @@
-# 🎯 Challenge — Règles sudo granulaires
+# 🎯 Challenge — Granular sudo rules
 
-## ✅ Objectif
+## ✅ Objective
 
-Sur **db1.lab**, créer **3 règles sudo** dans `/etc/sudoers.d/` via le module
-`community.general.sudoers`.
+On **db1.lab**, create **3 sudo rules** in `/etc/sudoers.d/` via the
+`community.general.sudoers` module.
 
-## 🧩 Règles à provisionner
+## 🧩 Rules to provision
 
-| Fichier | User/Groupe | Commandes | Mot de passe ? | RunAs |
+| File | User/Group | Commands | Password? | RunAs |
 | --- | --- | --- | --- | --- |
-| `lab-rhce-alice` | user `alice` | `ALL` | **oui** (avec password) | (défaut) |
-| `lab-rhce-ops-team` | groupe `ops-team` | `ALL` | non (`NOPASSWD`) | (défaut) |
-| `lab-rhce-alice-as-deploy` | user `alice` | `/opt/myapp/bin/deploy.sh` | non | `deploy` |
+| `lab-rhce-alice` | user `alice` | `ALL` | **yes** (with password) | (default) |
+| `lab-rhce-ops-team` | group `ops-team` | `ALL` | no (`NOPASSWD`) | (default) |
+| `lab-rhce-alice-as-deploy` | user `alice` | `/opt/myapp/bin/deploy.sh` | no | `deploy` |
 
-## 🧩 Pré-requis (étape `users`)
+## 🧩 Prerequisites (`users` step)
 
-Avant les règles sudo, créez :
+Before the sudo rules, create:
 
-- Users : `alice`, `bob`, `deploy`.
-- Groupe : `ops-team`.
-- `bob` membre du groupe `ops-team` (`groups: ops-team, append: true`).
+- Users: `alice`, `bob`, `deploy`.
+- Group: `ops-team`.
+- `bob` member of the `ops-team` group (`groups: ops-team, append: true`).
 
-## 🧩 Indices `community.general.sudoers`
+## 🧩 Stuck?
 
-| Option | Effet |
-| --- | --- |
-| `name:` | Identifiant + **nom du fichier** dans `/etc/sudoers.d/` |
-| `user:` | User cible (XOR avec `group:`) |
-| `group:` | Groupe cible (XOR avec `user:`) |
-| `commands:` | Commandes autorisées (string ou liste) |
-| `runas:` | "exécuter en tant que" |
-| `nopassword: true` | NOPASSWD (sans mot de passe) |
-| `nopassword: false` | Force la saisie du mot de passe (par défaut, c'est `true` — attention) |
+```bash
+dsoxlab hint modules-utilisateurs-sudoers
+```
 
-> ⚠️ **Piège** : par défaut, `nopassword:` vaut `true`. Pour la règle alice
-> qui **doit** demander le mot de passe, vous devez l'expliciter à `false`.
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -89,19 +83,19 @@ Avant les règles sudo, créez :
         state: present
 ```
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **`nopassword:`** est `true` par défaut sur `community.general.sudoers`.
->   Pour exiger un mot de passe : **`nopassword: false`** explicitement.
->   Erreur classique d'oubli.
-> - **`commands:`** accepte une **liste**. Format : chemin absolu de la
->   commande (`/usr/bin/systemctl`), pas juste le nom.
-> - **`runas:`** = utilisateur de destination de `sudo`. Par défaut
->   `root`. Pour `sudo -u app` : `runas: app`.
-> - **Fichier généré** : `/etc/sudoers.d/<name>` (pas `/etc/sudoers`).
->   `validate: 'visudo -cf %s'` est appliqué automatiquement par le module.
+> - **`nopassword:`** is `true` by default on `community.general.sudoers`.
+>   To require a password: **`nopassword: false`** explicitly.
+>   Classic forgetful mistake.
+> - **`commands:`** accepts a **list**. Format: absolute path of the
+>   command (`/usr/bin/systemctl`), not just the name.
+> - **`runas:`** = destination user of `sudo`. By default
+>   `root`. For `sudo -u app`: `runas: app`.
+> - **Generated file**: `/etc/sudoers.d/<name>` (not `/etc/sudoers`).
+>   `validate: 'visudo -cf %s'` is applied automatically by the module.
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-utilisateurs/sudoers/challenge/solution.yml
@@ -109,30 +103,30 @@ ansible db1.lab -b -m ansible.builtin.shell -a "ls -la /etc/sudoers.d/lab-rhce-*
 ansible db1.lab -b -m ansible.builtin.shell -a "visudo -cf /etc/sudoers"
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-utilisateurs/sudoers/challenge/tests/
 ```
 
-Le test vérifie en particulier les **permissions strictes 0440** sur les
-fichiers (sinon `sudo` les ignore par sécurité).
+The test checks in particular the **strict 0440 permissions** on the files
+(otherwise `sudo` ignores them for safety).
 
 ## 🧹 Reset
 
 ```bash
-make -C labs/modules-utilisateurs/sudoers clean
+dsoxlab clean modules-utilisateurs-sudoers
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`validation: required`** : Ansible valide la syntaxe via `visudo` avant
-  d'écrire le fichier. Si le fichier généré est invalide, l'écriture
-  échoue (filet de sécurité — le fichier d'origine reste intact).
-- **`Defaults`** : pour poser des `Defaults env_keep+="HTTP_PROXY"` ou
-  `Defaults requiretty`, utilisez `setenv:` ou éditez directement
-  `/etc/sudoers.d/` via `template:`.
-- **Lint** :
+- **`validation: required`**: Ansible validates the syntax via `visudo` before
+  writing the file. If the generated file is invalid, the write fails (safety
+  net, the original file stays intact).
+- **`Defaults`**: to set `Defaults env_keep+="HTTP_PROXY"` or
+  `Defaults requiretty`, use `setenv:` or edit `/etc/sudoers.d/` directly via
+  `template:`.
+- **Lint**:
 
    ```bash
    ansible-lint labs/modules-utilisateurs/sudoers/challenge/solution.yml

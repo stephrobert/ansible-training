@@ -1,0 +1,22 @@
+---
+# Mise en place du lab migration-role : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup migration-role lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (migration-role)
+      ansible.builtin.file:
+        path: "/tmp/lab97-migration.txt"
+        state: "absent"
+
+- name: Brief the learner (migration-role)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Move a role and its custom module into a collection, set up plugin_routing.redirect, and check the old name still works with a warning
+      run_once: true

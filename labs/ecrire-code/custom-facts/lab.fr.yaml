@@ -1,0 +1,4 @@
+---
+id: ecrire-code-custom-facts
+title: "Custom facts : facts.d et ansible_local"
+description: "Déposer un custom fact INI puis un script exécutable retournant du JSON dans /etc/ansible/facts.d, et les lire via ansible_local."

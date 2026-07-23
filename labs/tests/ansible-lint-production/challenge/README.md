@@ -1,26 +1,42 @@
-# 🎯 Challenge — Lint production + pre-commit hooks
+# 🎯 Challenge: bring a role up to the production profile
 
-## ✅ Objectif
+## ✅ Mission
 
-Le test pytest valide la **structure** des fichiers livrés dans ce lab :
+The `roles/webserver` role is delivered **deliberately faulty**: it
+works, but `ansible-lint --profile production` flags a good dozen
+violations there (missing FQCN, unnamed task, risky octal mode,
+`ignore_errors`, `shell` instead of a module...). The lint configuration
+files are delivered as skeletons.
 
-- Lab 68 : Lint production + pre-commit hooks.
+Your work, in two steps:
 
-## 🧩 Indices
+1. **Write the configuration**: `.ansible-lint` (production profile,
+   exclusions), `.yamllint` (strict truthy), `.pre-commit-config.yaml`
+   (base hooks + yamllint + ansible-lint).
+2. **Fix the role** until `ansible-lint --profile production roles/`
+   returns 0, **without changing its behavior** (same packages, same
+   service, same deployed page).
 
-C'est un challenge structurel. Posez `solution.sh` minimal :
+Pytest actually runs `ansible-lint --profile production`: the lab
+is validated only when the linter is green.
+
+## 🧩 Stuck?
 
 ```bash
-echo "Lab 68 : Lint production + pre-commit hooks validé par pytest." > challenge/solution.sh
-chmod +x challenge/solution.sh
+dsoxlab hint tests-ansible-lint-production
 ```
 
-## 🚀 Lancement (optionnel)
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
+
+## 📓 Command log
+
+When everything is green, record the commands you ran (`ansible-lint ...`,
+`yamllint roles/`, `pre-commit run --all-files`) in `challenge/solution.sh`.
+This log must exist for pytest to run:
 
 ```bash
-cd labs/tests/ansible-lint-production/
-pre-commit install
-pre-commit run --all-files
+chmod +x challenge/solution.sh
 ```
 
 ## 🧪 Validation
@@ -32,5 +48,11 @@ pytest -v labs/tests/ansible-lint-production/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/tests/ansible-lint-production/ clean
+dsoxlab clean tests-ansible-lint-production
 ```
+
+## 💡 Going further
+
+- `pre-commit install`: make committing impossible while the lint fails.
+- `ansible-lint --fix`: automatic fixes (review before commit).
+- Wire this same profile into the CI from lab 69.

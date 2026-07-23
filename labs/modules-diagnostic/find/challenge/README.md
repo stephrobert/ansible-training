@@ -1,25 +1,25 @@
-# 🎯 Challenge — `find:` + cleanup automatique
+# 🎯 Challenge — `find:` + automatic cleanup
 
-## ✅ Objectif
+## ✅ Objective
 
-Sur **db1.lab**, créer 5 fichiers `.log` de tailles diverses, puis utiliser
-`find:` pour identifier ceux **> 5Mo** et les supprimer en boucle.
+On **db1.lab**, create 5 `.log` files of various sizes, then use `find:` to
+identify those **> 5MB** and delete them in a loop.
 
-## 🧩 Étapes
+## 🧩 Steps
 
-1. Créer un dossier `/tmp/lab-find-cleanup/` (mode 0755).
-2. Y créer **5 fichiers** `.log` :
-   - `small1.log` (1Mo)
-   - `small2.log` (3Mo)
-   - `big1.log` (10Mo)
-   - `big2.log` (15Mo)
-   - `big3.log` (20Mo)
-3. **`find:`** les `.log` de **plus de 5Mo** dans ce dossier.
-4. **`file: state: absent`** en `loop:` sur le résultat.
+1. Create a folder `/tmp/lab-find-cleanup/` (mode 0755).
+2. Create **5 files** `.log` in it:
+   - `small1.log` (1MB)
+   - `small2.log` (3MB)
+   - `big1.log` (10MB)
+   - `big2.log` (15MB)
+   - `big3.log` (20MB)
+3. **`find:`** the `.log` larger than **5MB** in this folder.
+4. **`file: state: absent`** in a `loop:` on the result.
 
-À la fin, **seuls** `small1.log` et `small2.log` doivent rester.
+At the end, **only** `small1.log` and `small2.log` must remain.
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -61,27 +61,27 @@ Sur **db1.lab**, créer 5 fichiers `.log` de tailles diverses, puis utiliser
         label: ???
 ```
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **`age: -7d`** (négatif) : fichiers **plus récents** que 7 jours.
->   `age: 7d` (positif) : fichiers **plus anciens**. Inversion classique.
-> - **`recurse: true`** : descend dans les sous-dossiers. Sans, seul le
->   `paths:` direct est scanné.
-> - **`size:` accepte unités** : `1m` (mega), `1g` (giga). Sans unité =
->   octets.
-> - **`<var>.files`** = liste de dicts. Itérer avec `loop:` + `path:
->   "{{ item.path }}"` pour les supprimer.
-> - **`patterns:`** : liste de globs (`*.log`, `*.tmp`). Pour regex :
->   `use_regex: true` + patterns regex.
+> - **`age: -7d`** (negative): files **more recent** than 7 days.
+>   `age: 7d` (positive): files **older**. Classic inversion.
+> - **`recurse: true`**: descends into the subfolders. Without it, only the
+>   direct `paths:` is scanned.
+> - **`size:` accepts units**: `1m` (mega), `1g` (giga). Without a unit =
+>   bytes.
+> - **`<var>.files`** = list of dicts. Iterate with `loop:` + `path:
+>   "{{ item.path }}"` to delete them.
+> - **`patterns:`**: list of globs (`*.log`, `*.tmp`). For regex:
+>   `use_regex: true` + regex patterns.
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-diagnostic/find/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "ls -la /tmp/lab-find-cleanup/"
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-diagnostic/find/challenge/tests/
@@ -93,15 +93,15 @@ pytest -v labs/modules-diagnostic/find/challenge/tests/
 ansible db1.lab -b -m file -a "path=/tmp/lab-find-cleanup state=absent"
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`age: 7d`** : ajouter un filtre temporel (logs > 5Mo **ET** > 7 jours).
-- **`recurse: true`** : descendre dans les sous-dossiers.
-- **`hidden: true`** : inclure les `.dotfiles`.
-- **Pattern shell** : `find /tmp -name '*.log' -size +5M -delete` est plus
-  rapide que `find:` + `loop:` sur des **dizaines de milliers** de fichiers
-  — mais perd l'idempotence Ansible.
-- **Lint** :
+- **`age: 7d`**: add a time filter (logs > 5MB **AND** > 7 days).
+- **`recurse: true`**: descend into the subfolders.
+- **`hidden: true`**: include the `.dotfiles`.
+- **Shell pattern**: `find /tmp -name '*.log' -size +5M -delete` is faster than
+  `find:` + `loop:` on **tens of thousands** of files, but loses Ansible
+  idempotence.
+- **Lint**:
 
    ```bash
    ansible-lint labs/modules-diagnostic/find/challenge/solution.yml

@@ -1,0 +1,13 @@
+---
+# Reset du lab patterns-hotes : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup patterns-hotes lab (labenv)
+  hosts: labenv
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (patterns-hotes)
+      ansible.builtin.shell: |
+        rm -f /tmp/lab56-mark-*.txt
+      changed_when: false
+      failed_when: false

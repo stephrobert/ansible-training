@@ -1,0 +1,26 @@
+---
+# Reset du lab argument-specs : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup argument-specs lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset name, state, enabled (argument-specs)
+      ansible.builtin.systemd_service:
+        name: "nginx"
+        state: "stopped"
+        enabled: "no"
+      failed_when: false
+    - name: Reset name, state (argument-specs)
+      ansible.builtin.dnf:
+        name: "nginx"
+        state: "absent"
+      failed_when: false
+    - name: Reset port, state, permanent, immediate (argument-specs)
+      ansible.posix.firewalld:
+        port: "8090/tcp"
+        state: "disabled"
+        permanent: "yes"
+        immediate: "yes"
+      failed_when: false

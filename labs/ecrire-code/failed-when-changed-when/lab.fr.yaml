@@ -1,0 +1,4 @@
+---
+id: ecrire-code-failed-when-changed-when
+title: "failed_when et changed_when : redéfinir succès et changement"
+description: "Neutraliser le changed des commandes lecture-seule, définir changed_when sur la sortie et accepter certains codes retour comme succès."

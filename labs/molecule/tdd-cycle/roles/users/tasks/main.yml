@@ -1,15 +1,9 @@
 ---
-# tasks/main.yml — création d'utilisateurs Linux (TDD-driven)
-# Cycle TDD : test rouge → code minimal → test vert → refactor.
-
-- name: Créer les utilisateurs
-  ansible.builtin.user:
-    name: "{{ item.name }}"
-    shell: "{{ item.shell | default(users_default_shell) }}"
-    groups: "{{ item.groups | default([]) }}"
-    append: true
-    create_home: "{{ users_create_home }}"
-    state: present
-  loop: "{{ users_to_create }}"
-  loop_control:
-    label: "{{ item.name }}"
+# tasks/main.yml : À ÉCRIRE EN SECOND (étape GREEN du cycle TDD).
+#
+# N'écrivez PAS ce fichier avant verify.yml : le cycle TDD commence par
+# des tests rouges. Écrivez ensuite ici le minimum qui les fait passer :
+# une boucle sur users_to_create qui crée chaque utilisateur avec son
+# shell (fallback users_default_shell) et ses groupes (append).
+# Le contrat d'entrée est défini dans meta/argument_specs.yml.
+[]

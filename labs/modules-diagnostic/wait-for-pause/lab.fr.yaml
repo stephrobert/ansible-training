@@ -1,0 +1,4 @@
+---
+id: modules-diagnostic-wait-for-pause
+title: "Modules wait_for et pause : synchronisation"
+description: "Attendre l'ouverture ou la fermeture d'un port TCP, l'apparition d'un fichier ou d'une regex, et marquer une pause simple ou interactive."

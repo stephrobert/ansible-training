@@ -1,125 +1,126 @@
-# Lab 06 — Handlers (le pattern restart-on-config-change)
+# Lab 06 — Handlers (the restart-on-config-change pattern)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Handlers Ansible : notify, listen, flush_handlers et restart-on-config-change**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/handlers/)
+🔗 [**Ansible handlers: notify, listen, flush_handlers and restart-on-config-change**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/handlers/)
 
-Un **handler** est une **tâche réactive** : elle ne s'exécute **que si** une autre tâche l'a notifiée **et** que cette tâche est en `changed` (pas en `ok`). C'est le pattern que vous appliquerez 100 fois en production : « relance le service **uniquement si** sa config a changé ».
+A **handler** is a **reactive task**: it runs **only if** another task has notified it **and** that task is `changed` (not `ok`). This is the pattern you will apply 100 times in production: "restart the service **only if** its config changed".
 
-Les 4 mots-clés à connaître :
+The 4 keywords to know:
 
-| Mot-clé | Où | Rôle |
+| Keyword | Where | Role |
 | --- | --- | --- |
-| **`notify:`** | sur une tâche | déclenche un handler nommé (un seul ou une liste) |
-| **`handlers:`** | section dédiée du play | déclare les handlers (mêmes options qu'une tâche) |
-| **`listen:`** | sur un handler | regroupe plusieurs handlers sous un **topic** abstrait |
-| **`meta: flush_handlers`** | tâche spéciale | force l'exécution **immédiate** des handlers en attente |
+| **`notify:`** | on a task | triggers a named handler (one or a list) |
+| **`handlers:`** | dedicated section of the play | declares the handlers (same options as a task) |
+| **`listen:`** | on a handler | groups several handlers under an abstract **topic** |
+| **`meta: flush_handlers`** | special task | forces the **immediate** execution of pending handlers |
 
-Sans handler, vous écrivez `state: restarted` — qui redémarre **à chaque run**, donc casse l'idempotence. Avec handler, vous redémarrez **uniquement quand nécessaire**.
+Without a handler, you write `state: restarted`, which restarts **on every run**, so it breaks idempotence. With a handler, you restart **only when necessary**.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Écrire un handler simple notifié par une tâche.
-2. Vérifier qu'un handler **ne se déclenche pas** quand sa tâche est `ok` (idempotence).
-3. Notifier **plusieurs handlers** depuis une seule tâche.
-4. Utiliser **`listen:`** pour découpler tâches et handlers via un topic.
-5. Forcer l'exécution immédiate avec **`meta: flush_handlers`**.
-6. Combiner **`validate:`** + handler pour ne **jamais** appliquer une config invalide.
+1. Write a simple handler notified by a task.
+2. Check that a handler **does not trigger** when its task is `ok` (idempotence).
+3. Notify **several handlers** from a single task.
+4. Use **`listen:`** to decouple tasks and handlers via a topic.
+5. Force the immediate execution with **`meta: flush_handlers`**.
+6. Combine **`validate:`** + a handler to **never** apply an invalid config.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible webservers -m ansible.builtin.ping
 ansible webservers -b -m ansible.builtin.shell -a "rm -f /tmp/handler-*.txt"
 ```
 
-Réponse attendue : 2 `pong`. Le second `ansible` nettoie d'éventuels marqueurs d'un run précédent.
+Expected response: 2 `pong`. The second `ansible` cleans up any markers from a previous run.
 
-## ⚙️ Arborescence cible
+## ⚙️ Target tree
 
 ```text
 labs/ecrire-code/handlers/
-├── README.md           ← ce fichier
-├── playbook.yml        ← À CRÉER — votre play avec handlers
+├── README.md           ← this file
+├── playbook.yml        ← TO CREATE, your play with handlers
 └── challenge/
-    ├── README.md       ← challenge final (déjà présent)
+    ├── README.md       ← final challenge (already present)
     └── tests/
-        └── test_*.py   ← (déjà présent — pytest+testinfra)
+        └── test_*.py   ← (already present, pytest+testinfra)
 ```
 
-## 📚 Exercice 1 — Squelette du play
+## 📚 Exercise 1 — Play skeleton
 
-Créez `labs/ecrire-code/handlers/playbook.yml` :
+Create `labs/ecrire-code/handlers/playbook.yml`:
 
 ```yaml
 ---
-- name: Configurer httpd avec restart-on-config-change
+- name: Configurer nginx avec restart-on-config-change
   hosts: webservers
   become: true
 
   tasks:
-    # Tâches qui notifient le handler
+    # Tasks that notify the handler
 
   handlers:
-    # Handler qui reload httpd
+    # Handler that reloads nginx
 ```
 
-🔍 **Observation** : `handlers:` est une **section sœur** de `tasks:` (au même niveau, pas dedans). Les handlers ne s'exécutent jamais d'eux-mêmes — il faut une tâche qui les `notify:`.
+🔍 **Observation**: `handlers:` is a **sibling section** of `tasks:` (at the same level, not inside it). Handlers never run on their own: a task must `notify:` them.
 
-## 📚 Exercice 2 — Premier handler simple (notify)
+## 📚 Exercise 2 — First simple handler (notify)
 
-Dans `tasks:`, ajoutez 3 tâches :
+In `tasks:`, add 3 tasks:
 
-1. **Installer httpd** : `ansible.builtin.dnf` avec `name: httpd`, `state: present`.
-2. **Démarrer + activer httpd** : `ansible.builtin.systemd` avec `name: httpd`, `state: started`, `enabled: true`.
-3. **Modifier `httpd.conf`** : `ansible.builtin.lineinfile` avec :
-   - `path: /etc/httpd/conf/httpd.conf`
-   - `regexp: '^#?\\s*ServerTokens\\s+'`
-   - `line: 'ServerTokens Prod'`
-   - **`notify: Reload httpd`** ← la magie
+1. **Install nginx**: `ansible.builtin.dnf` with `name: nginx`, `state: present`.
+2. **Start + enable nginx**: `ansible.builtin.systemd` with `name: nginx`, `state: started`, `enabled: true`.
+3. **Modify `nginx.conf`**: `ansible.builtin.lineinfile` with:
+   - `path: /etc/nginx/nginx.conf`
+   - `regexp: '^\\s*server_tokens\\s+'`
+   - `line: '    server_tokens off;'`
+   - `insertafter: '^http\\s*\\{'` (the directive lives in the `http` block)
+   - **`notify: Reload nginx`** ← the magic
 
-Dans `handlers:`, ajoutez :
+In `handlers:`, add:
 
 ```yaml
-- name: Reload httpd
+- name: Reload nginx
   ansible.builtin.systemd:
-    name: httpd
+    name: nginx
     state: reloaded
 ```
 
-🔍 **Observation à anticiper** : la tâche **(3)** notifie le handler `Reload httpd`. Le nom du `notify:` doit correspondre **exactement** au `name:` du handler — sensible à la casse, espaces compris.
+🔍 **Observation to anticipate**: task **(3)** notifies the `Reload nginx` handler. The `notify:` name must match the handler's `name:` **exactly**: case-sensitive, spaces included.
 
-## 📚 Exercice 3 — Lancer et observer
+## 📚 Exercise 3 — Run and observe
 
-Depuis la racine :
+From the root:
 
 ```bash
 ansible-playbook labs/ecrire-code/handlers/playbook.yml
 ```
 
-🔍 **Observation** — sortie console attendue (extrait) :
+🔍 **Observation**, expected console output (excerpt):
 
 ```text
-TASK [Modifier httpd.conf] *************************
-changed: [web1.lab]                ← la tâche est "changed"
+TASK [Modifier nginx.conf] *************************
+changed: [web1.lab]                ← the task is "changed"
 changed: [web2.lab]
 
-RUNNING HANDLER [Reload httpd] *********************   ← le handler tourne !
+RUNNING HANDLER [Reload nginx] *********************   ← the handler runs!
 changed: [web1.lab]
 changed: [web2.lab]
 
@@ -127,108 +128,113 @@ PLAY RECAP *****************************************
 web1.lab    : ok=4    changed=2  ...
 ```
 
-Le handler `Reload httpd` s'est exécuté **après** toutes les tâches du play. C'est le **comportement par défaut** : les handlers sont mis en file d'attente et **vidés à la fin de leur section**.
+The `Reload nginx` handler ran **after** all the play's tasks. This is the **default behavior**: handlers are queued and **flushed at the end of their section**.
 
-## 📚 Exercice 4 — Vérifier que le handler **ne se redéclenche pas**
+## 📚 Exercise 4 — Check that the handler **does not re-trigger**
 
-Relancez **immédiatement** la même commande :
+Re-run the same command **immediately**:
 
 ```bash
 ansible-playbook labs/ecrire-code/handlers/playbook.yml
 ```
 
-🔍 **Observation** : cette fois, **pas de bandeau `RUNNING HANDLER`**. Le `PLAY RECAP` affiche `changed=0`. Pourquoi ?
+🔍 **Observation**: this time, **no `RUNNING HANDLER` banner**. The `PLAY RECAP` shows `changed=0`. Why?
 
-- La tâche **(3)** est `ok` (la ligne est déjà conforme).
-- **Pas de `changed` → pas de notification → pas de handler.**
+- Task **(3)** is `ok` (the line already complies).
+- **No `changed` → no notification → no handler.**
 
-C'est exactement ce qu'on veut : on **ne reload httpd que si la config a vraiment changé**. Vous venez de voir le pattern restart-on-config-change appliqué.
+This is exactly what we want: we **only reload nginx if the config really changed**. You have just seen the restart-on-config-change pattern applied.
 
-## 📚 Exercice 5 — Vérifier l'effet du reload
+## 📚 Exercise 5 — Check the effect of the reload
 
 ```bash
 curl -s -I http://web1.lab | grep -i ^Server:
 ```
 
-🔍 **Observation** : le header `Server:` doit afficher `Apache` (sans version) — preuve que `ServerTokens Prod` est appliqué **et** que httpd a bien été rechargé. Avant le handler, vous auriez vu `Apache/2.4.x (AlmaLinux)` (la version par défaut).
+🔍 **Observation**: the `Server:` header must show `nginx` (without version): proof that `server_tokens off;` is applied **and** that nginx was indeed reloaded. Before the handler, you would have seen `nginx/1.26.x` (the default version).
 
-## 📚 Exercice 6 — Notifier **plusieurs handlers** depuis une tâche
+> 💡 **Apache equivalence**: where Apache requires two directives (`ServerTokens Prod` for the header, `ServerSignature Off` for the error pages), nginx has only one. `server_tokens off;` hides the version **on both sides** at once.
 
-`notify:` accepte une **liste**. Modifiez la tâche **(3)** pour notifier deux handlers, et ajoutez le second :
+## 📚 Exercise 6 — Notify **several handlers** from a task
+
+`notify:` accepts a **list**. Modify task **(3)** to notify two handlers, and add the second one:
 
 ```yaml
-- name: Modifier httpd.conf (ServerTokens)
+- name: Modifier nginx.conf (server_tokens)
   ansible.builtin.lineinfile:
-    path: /etc/httpd/conf/httpd.conf
-    regexp: '^#?\s*ServerTokens\s+'
-    line: 'ServerTokens Prod'
+    path: /etc/nginx/nginx.conf
+    regexp: '^\s*server_tokens\s+'
+    line: '    server_tokens off;'
+    insertafter: '^http\s*\{'
   notify:
-    - Reload httpd
+    - Reload nginx
     - Notifier journal local
 ```
 
-Dans `handlers:`, ajoutez le second :
+In `handlers:`, add the second one:
 
 ```yaml
 - name: Notifier journal local
   ansible.builtin.lineinfile:
     path: /tmp/handler-journal.txt
-    line: "Config httpd modifiée le {{ ansible_date_time.iso8601 }}"
+    line: "Config nginx modifiée le {{ ansible_date_time.iso8601 }}"
     create: true
     mode: "0644"
 ```
 
-> ⚠️ **Avant de relancer**, modifiez la valeur du `line:` (par ex. `ServerTokens Major`) pour forcer un `changed` — sinon les handlers ne se déclencheront pas. Puis relancez avec la valeur d'origine pour rétablir l'état.
+> ⚠️ **Before re-running**, change the value of `line:` (e.g. `server_tokens on;`) to force a `changed`, otherwise the handlers will not trigger. Then re-run with the original value to restore the state.
 
-🔍 **Observation** : quand la tâche change, **les deux handlers tournent**, dans l'ordre où ils sont déclarés dans `handlers:` (pas dans l'ordre du `notify:`).
+🔍 **Observation**: when the task changes, **both handlers run**, in the order they are declared in `handlers:` (not in the order of the `notify:`).
 
-## 📚 Exercice 7 — Découpler avec `listen:` (topic)
+## 📚 Exercise 7 — Decouple with `listen:` (topic)
 
-`listen:` permet d'écouter un **topic abstrait** au lieu d'un nom de handler précis. Pratique pour ajouter un handler sans toucher aux tâches existantes.
+`listen:` lets you listen to an **abstract topic** instead of a specific handler name. Handy to add a handler without touching the existing tasks.
 
-Refactorisez l'exercice 6 :
+Refactor exercise 6:
 
 ```yaml
 tasks:
-  - name: Modifier httpd.conf (ServerTokens)
+  - name: Modifier nginx.conf (server_tokens)
     ansible.builtin.lineinfile:
-      path: /etc/httpd/conf/httpd.conf
-      regexp: '^#?\s*ServerTokens\s+'
-      line: 'ServerTokens Prod'
-    notify: httpd-config-changed       # un topic, pas un nom
+      path: /etc/nginx/nginx.conf
+      regexp: '^\s*server_tokens\s+'
+      line: '    server_tokens off;'
+      insertafter: '^http\s*\{'
+    notify: nginx-config-changed       # a topic, not a name
 
 handlers:
-  - name: Reload httpd
-    listen: httpd-config-changed       # ce handler écoute le topic
+  - name: Reload nginx
+    listen: nginx-config-changed       # this handler listens to the topic
     ansible.builtin.systemd:
-      name: httpd
+      name: nginx
       state: reloaded
 
   - name: Notifier journal local
-    listen: httpd-config-changed       # celui-ci aussi
+    listen: nginx-config-changed       # this one too
     ansible.builtin.lineinfile:
       path: /tmp/handler-journal.txt
-      line: "Config httpd modifiée le {{ ansible_date_time.iso8601 }}"
+      line: "Config nginx modifiée le {{ ansible_date_time.iso8601 }}"
       create: true
       mode: "0644"
 ```
 
-🔍 **Observation** : la tâche notifie **un seul nom** (`httpd-config-changed`), mais **deux handlers** se déclenchent parce qu'ils écoutent ce topic. Si demain vous ajoutez un troisième handler sur le même topic, **aucune tâche à modifier**. C'est le découplage.
+🔍 **Observation**: the task notifies **a single name** (`nginx-config-changed`), but **two handlers** trigger because they listen to this topic. If tomorrow you add a third handler on the same topic, **no task to modify**. That is the decoupling.
 
-## 📚 Exercice 8 — Forcer l'exécution immédiate avec `meta: flush_handlers`
+## 📚 Exercise 8 — Force immediate execution with `meta: flush_handlers`
 
-Par défaut, les handlers tournent **à la fin de la section** (`tasks` ici). Mais parfois, vous voulez les forcer **avant** une tâche suivante — typiquement, valider la nouvelle config dans le même play.
+By default, handlers run **at the end of the section** (`tasks` here). But sometimes you want to force them **before** a following task, typically to validate the new config within the same play.
 
-Ajoutez `meta: flush_handlers` **juste après** la tâche `(3)`, puis un smoke test :
+Add `meta: flush_handlers` **right after** task `(3)`, then a smoke test:
 
 ```yaml
 tasks:
-  - name: Modifier httpd.conf (ServerTokens)
+  - name: Modifier nginx.conf (server_tokens)
     ansible.builtin.lineinfile:
-      path: /etc/httpd/conf/httpd.conf
-      regexp: '^#?\s*ServerTokens\s+'
-      line: 'ServerTokens Prod'
-    notify: Reload httpd
+      path: /etc/nginx/nginx.conf
+      regexp: '^\s*server_tokens\s+'
+      line: '    server_tokens off;'
+      insertafter: '^http\s*\{'
+    notify: Reload nginx
 
   - name: Forcer le reload immédiat
     ansible.builtin.meta: flush_handlers
@@ -239,77 +245,82 @@ tasks:
       status_code: 200
 ```
 
-🔍 **Observation** : sans `flush_handlers`, le `uri:` testerait nginx **avant** le reload — donc avec l'ancienne config. Avec `flush_handlers`, l'ordre devient : modif → reload → test. C'est le pattern qu'on retrouve sur les déploiements de configs critiques (sshd, postgresql).
+🔍 **Observation**: without `flush_handlers`, the `uri:` would test nginx **before** the reload, so with the old config. With `flush_handlers`, the order becomes: change → reload → test. This is the pattern found on deployments of critical configs (sshd, postgresql).
 
-## 📚 Exercice 9 — Combiner `validate:` + handler (filet de sécurité)
+## 📚 Exercise 9 — Combine `validate:` + a handler (safety net)
 
-Le module `lineinfile` (et `template`) accepte un argument `validate:` qui exécute une commande sur le fichier **avant** de l'écrire en place. Si la commande échoue, le fichier original n'est **pas** remplacé — et le handler n'est **pas** notifié (puisque `changed=false`).
+The `lineinfile` module (and `template`) accepts a `validate:` argument that runs a command on the file **before** writing it in place. If the command fails, the original file is **not** replaced, and the handler is **not** notified (since `changed=false`).
 
 ```yaml
-- name: Modifier httpd.conf avec validation syntaxique
+- name: Modifier nginx.conf avec validation syntaxique
   ansible.builtin.lineinfile:
-    path: /etc/httpd/conf/httpd.conf
-    regexp: '^#?\s*ServerTokens\s+'
-    line: 'ServerTokens Prod'
-    validate: 'apachectl -t -f %s'        # %s = chemin du fichier temporaire
-  notify: Reload httpd
+    path: /etc/nginx/nginx.conf
+    regexp: '^\s*server_tokens\s+'
+    line: '    server_tokens off;'
+    insertafter: '^http\s*\{'
+    validate: nginx -t -c %s              # %s = path of the temp file
+  notify: Reload nginx
 ```
 
-🔍 **Observation** : si vous mettez volontairement `line: 'ServerTokens Garbage'` (invalide), `apachectl -t` échoue, le fichier d'origine reste intact, **et** le handler n'est pas déclenché. C'est le **filet de sécurité** qui empêche d'appliquer une config invalide en production.
+🔍 **Observation**: if you deliberately set `line: '    server_tokens Garbage;'` (invalid), `nginx -t` fails, the original file stays intact, **and** the handler is not triggered. This is the **safety net** that prevents applying an invalid config in production.
 
-> 💡 **Note pratique** : sur `httpd.conf`, `validate:` peut échouer parce que le fichier inclut `/etc/httpd/conf.d/*.conf` non disponibles dans le contexte de validation. Le mécanisme reste valide pour des configs autonomes (`sshd_config`, `nginx.conf` standalone, etc.).
+> 💡 **Practical note**: `nginx.conf` truly validates because it is self-contained: its `include` (`mime.types`, `conf.d/*.conf`) are **absolute** paths, which nginx resolves from the temporary file `%s`. On `httpd.conf`, `validate:` failed precisely because the file references inclusions that cannot be found in this context. Try the command by hand, it is the contract that Ansible tests:
+>
+> ```bash
+> sudo nginx -t -c /etc/nginx/nginx.conf   # returns 0 if OK, 1 if the config is broken
+> ```
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- Un handler s'exécute **uniquement si** une tâche le notifie **et** est en `changed`. Pas de `changed` → pas de handler.
-- Les handlers sont **dédupliqués** : si 5 tâches notifient le même handler, il ne tourne qu'**une fois**.
-- **`listen:`** = topic abstrait. Permet de découpler tâches et handlers.
-- **`meta: flush_handlers`** = vide la file d'attente immédiatement. À utiliser quand l'ordre `tâche → reload → test` doit être strict dans le même play.
-- **`validate:`** est le filet de sécurité avant écriture. Combiné avec un handler, vous ne reload **jamais** un service sur une config cassée.
-- Un handler **rappelé en échec** stoppe le play comme une tâche normale. Gardez les handlers simples (un reload, un log) — pas de logique complexe dedans.
+- A handler runs **only if** a task notifies it **and** is `changed`. No `changed` → no handler.
+- Handlers are **deduplicated**: if 5 tasks notify the same handler, it runs only **once**.
+- **`listen:`** = abstract topic. Lets you decouple tasks and handlers.
+- **`meta: flush_handlers`** = flushes the queue immediately. Use it when the order `task → reload → test` must be strict within the same play.
+- **`validate:`** is the safety net before writing. Combined with a handler, you **never** reload a service on a broken config.
+- A handler **that fails when called** stops the play like a normal task. Keep handlers simple (a reload, a log), no complex logic inside.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous avez un play qui modifie 5 fichiers de config nginx (vhosts, main, modules, etc.). Vous voulez **un seul reload** à la fin. Combien de handlers déclarez-vous ? Combien de notifications ?
+1. You have a play that modifies 5 nginx config files (vhosts, main, modules, etc.). You want **a single reload** at the end. How many handlers do you declare? How many notifications?
 
-2. Vous voulez relancer **immédiatement** un service après modification d'une config, mais avant la tâche suivante. Quel mot-clé utiliser, et pourquoi pas un `state: restarted` direct ?
+2. You want to restart a service **immediately** after a config change, but before the next task. Which keyword should you use, and why not a direct `state: restarted`?
 
-3. Comment garantir qu'un handler **n'applique jamais** une config invalide ? Cite les **deux** mécanismes complémentaires.
+3. How do you guarantee that a handler **never applies** an invalid config? Name the **two** complementary mechanisms.
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Le challenge ([`challenge/README.md`](challenge/README.md)) consolide les exercices 6-8 sur `db1.lab` : deux handlers, une tâche, et `meta: flush_handlers` pour valider la config dans le même play. Tests automatisés via `pytest+testinfra` :
+The challenge ([`challenge/README.md`](challenge/README.md)) consolidates exercises 6-8 on `db1.lab`: two handlers, one task, and `meta: flush_handlers` to validate the config within the same play. Automated tests via `pytest+testinfra`:
 
 ```bash
 pytest -v labs/ecrire-code/handlers/challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`force_handlers: true`** au niveau play : exécute les handlers en attente **même si une tâche échoue** ensuite. Pratique pour ne pas laisser un service avec une config moitié-modifiée.
-- **Handlers dans un rôle** : les handlers d'un rôle vivent dans `roles/<role>/handlers/main.yml` — accessibles par `notify:` depuis n'importe quelle tâche du rôle, et même depuis l'extérieur.
-- **Variables dans `notify:`** : `notify: "{{ service_handler_name }}"` — permet de paramétrer le handler à appeler. Utile pour des rôles génériques (notifier `Reload nginx` ou `Reload apache` selon une variable).
-- **Pattern saga** : `pre_tasks` (snapshot DB) → `tasks` (modif config) → `meta: flush_handlers` (reload) → `post_tasks` (smoke test) → handler `Restaurer snapshot` notifié uniquement en cas d'erreur. Voir lab 23 (block/rescue/always).
+- **`force_handlers: true`** at the play level: runs the pending handlers **even if a task fails** afterward. Handy to avoid leaving a service with a half-modified config.
+- **Handlers in a role**: a role's handlers live in `roles/<role>/handlers/main.yml`, accessible via `notify:` from any task of the role, and even from outside.
+- **Variables in `notify:`**: `notify: "{{ service_handler_name }}"` lets you parameterize the handler to call. Useful for generic roles (notify `Reload nginx` or `Reload apache` depending on a variable).
+- **Saga pattern**: `pre_tasks` (DB snapshot) → `tasks` (config change) → `meta: flush_handlers` (reload) → `post_tasks` (smoke test) → handler `Restaurer snapshot` notified only on error. See lab 23 (block/rescue/always).
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/ecrire-code/handlers/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/ecrire-code/handlers/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/ecrire-code/handlers/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

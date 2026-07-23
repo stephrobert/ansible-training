@@ -1,0 +1,32 @@
+---
+id: modules-utilisateurs-user
+title: "user module: create, modify and remove accounts"
+description: "Create accounts with home, shell and secondary groups, hash a password, force a specific UID, and remove an account with its home."
+section: modules-utilisateurs
+level: l1
+difficulty: beginner
+lab_type: lab
+estimated_time: "35m"
+skills:
+  - user-management
+  - password-hash
+  - group-membership
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-user/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

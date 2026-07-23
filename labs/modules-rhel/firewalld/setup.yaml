@@ -1,0 +1,23 @@
+---
+# Mise en place du lab firewalld : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup firewalld lab (lab_web1)
+  hosts: lab_web1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (firewalld)
+      ansible.builtin.shell: |
+        firewall-cmd --permanent --remove-service=http; firewall-cmd --permanent --remove-service=https; firewall-cmd --permanent --remove-port=8080/tcp; firewall-cmd --permanent --remove-port=8443/tcp; firewall-cmd --reload; true
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (firewalld)
+  hosts: lab_web1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Allow predefined services and custom ports per zone, with the permanent + immediate trap and the firewall reload
+      run_once: true

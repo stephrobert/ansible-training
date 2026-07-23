@@ -1,0 +1,4 @@
+---
+id: modules-utilisateurs-sudoers
+title: "Module sudoers : gérer les droits sudo sans risque"
+description: "Créer des règles dans /etc/sudoers.d/ avec validation visudo, limiter les commandes autorisées et gérer nopassword sur un groupe."

@@ -1,0 +1,25 @@
+---
+id: molecule-scenarios-multi-distro
+title: "Molecule: test a role across distributions"
+description: "Extend the Molecule matrix to three distributions, load vars/<os_family>.yml and absorb package and path gaps with the package module."
+section: molecule
+level: l3
+difficulty: advanced
+lab_type: lab
+estimated_time: "45m"
+skills:
+  - molecule-platforms
+  - os-family-vars
+  - role-portability
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/molecule-scenarios-multi-distro/
+track:
+  - au-dela-ex294
+runtime:
+  type: shell
+  workdir: challenge/work
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

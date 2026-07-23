@@ -1,49 +1,49 @@
-# Lab 13 — Types collections (listes, dicts, nested)
+# Lab 13 — Collection types (lists, dicts, nested)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Types collections Ansible : list, dict, nested**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/types-collections/)
+🔗 [**Ansible collection types: list, dict, nested**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/types-collections/)
 
-Au-delà des types simples (string, int, bool), Ansible utilise massivement des
-**structures complexes** : listes (`[1, 2, 3]`), dictionnaires (`{key: value}`), et
-combinaisons imbriquées (liste de dicts, dict contenant des listes). Ces structures
-sont la base des **inventaires de services**, **configs multi-environnements**, et
-**boucles structurées**. La maîtrise du couple **`loop:` + `loop_control:`** sur ces
-collections est un des marqueurs RHCE EX294.
+Beyond the simple types (string, int, bool), Ansible makes heavy use of
+**complex structures**: lists (`[1, 2, 3]`), dictionaries (`{key: value}`), and
+nested combinations (list of dicts, dict containing lists). These structures
+are the foundation of **service inventories**, **multi-environment configs**, and
+**structured loops**. Mastering the **`loop:` + `loop_control:`** pairing on these
+collections is one of the RHCE EX294 markers.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Définir** une liste, un dict, et une **liste de dicts** en YAML.
-2. **Boucler** sur une liste de dicts avec `loop: + loop_control: label:`.
-3. **Filtrer** une boucle avec `when:` sur un champ du dict.
-4. **Accéder** aux champs nested via notation pointée (`item.tags[0]`).
-5. **Diagnostiquer** un cas où la structure attendue ne matche pas (typo, mauvais niveau).
+1. **Define** a list, a dict, and a **list of dicts** in YAML.
+2. **Loop** over a list of dicts with `loop: + loop_control: label:`.
+3. **Filter** a loop with `when:` on a dict field.
+4. **Access** nested fields via dotted notation (`item.tags[0]`).
+5. **Diagnose** a case where the expected structure does not match (typo, wrong level).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible web1.lab -m ping
 ansible web1.lab -b -m shell -a "rm -f /tmp/service-*.txt /tmp/tag-*.txt"
 ```
 
-## 📚 Exercice 1 — Liste simple vs dict simple
+## 📚 Exercise 1 — Simple list vs simple dict
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -51,13 +51,13 @@ Créez `lab.yml` :
   hosts: web1.lab
   become: true
   vars:
-    # Liste simple
+    # Simple list
     fruits:
       - pomme
       - banane
       - cerise
 
-    # Dictionnaire simple
+    # Simple dictionary
     db_config:
       host: db1.lab
       port: 5432
@@ -73,20 +73,20 @@ Créez `lab.yml` :
         msg: "Connect to {{ db_config.host }}:{{ db_config.port }}/{{ db_config.name }}"
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/ecrire-code/types-collections/lab.yml
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- `loop: "{{ fruits }}"` → **3 itérations**, `item` est une string.
-- `db_config.host` → notation pointée sur un dict simple.
+- `loop: "{{ fruits }}"` → **3 iterations**, `item` is a string.
+- `db_config.host` → dotted notation on a simple dict.
 
-## 📚 Exercice 2 — Liste de dicts (le pattern le plus courant)
+## 📚 Exercise 2 — List of dicts (the most common pattern)
 
-Modifiez `lab.yml` pour ajouter une variable `services` :
+Modify `lab.yml` to add a `services` variable:
 
 ```yaml
 vars:
@@ -105,7 +105,7 @@ vars:
       tags: [database, backend]
 ```
 
-Et la tâche associée :
+And the associated task:
 
 ```yaml
 - name: Poser un marqueur par service active
@@ -119,25 +119,25 @@ Et la tâche associée :
   when: item.enabled
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/ecrire-code/types-collections/lab.yml
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **3 itérations** mais **2 changed** (nginx, postgresql) et **1 skipped** (redis, `enabled: false`).
-- **`loop_control: label:`** affiche `[item=nginx]` au lieu du dict complet — sortie console lisible.
-- **`item.tags | join(',')`** : transforme la liste de tags en string `web,frontend`.
+- **3 iterations** but **2 changed** (nginx, postgresql) and **1 skipped** (redis, `enabled: false`).
+- **`loop_control: label:`** displays `[item=nginx]` instead of the full dict: readable console output.
+- **`item.tags | join(',')`**: turns the list of tags into the string `web,frontend`.
 
 ```bash
 ansible web1.lab -b -m shell -a "ls /tmp/service-*.txt && cat /tmp/service-nginx.txt"
 ```
 
-## 📚 Exercice 3 — Accéder aux champs nested
+## 📚 Exercise 3 — Access nested fields
 
-Testez les **deux notations équivalentes** pour accéder à un champ de dict :
+Test the **two equivalent notations** to access a dict field:
 
 ```yaml
 - name: Comparer les deux notations d acces
@@ -148,21 +148,20 @@ Testez les **deux notations équivalentes** pour accéder à un champ de dict :
       Nested  : {{ services[0].tags[1] }}
 ```
 
-🔍 **Observation** : les deux notations donnent le même résultat. **Quand préférer
-laquelle ?**
+🔍 **Observation**: both notations give the same result. **When to prefer which?**
 
-- **Pointée** (`var.key`) : plus lisible, mais ne marche pas si la clé contient un
-  tiret, un espace, ou commence par un chiffre (`var.my-key` ❌).
-- **Bracket** (`var['key']`) : marche toujours, et accepte des **expressions**
+- **Dotted** (`var.key`): more readable, but does not work if the key contains a
+  dash, a space, or starts with a digit (`var.my-key` ❌).
+- **Bracket** (`var['key']`): always works, and accepts **expressions**
   (`var[dynamic_key_name]`).
 
-**En pratique** : pointée par défaut, bracket si la clé contient des caractères spéciaux
-ou si la clé est dynamique.
+**In practice**: dotted by default, bracket if the key contains special characters
+or if the key is dynamic.
 
-## 📚 Exercice 4 — Filtres Jinja2 sur les collections
+## 📚 Exercise 4 — Jinja2 filters on collections
 
-Sur la liste de dicts `services`, on veut **extraire** uniquement les services activés
-**dans un format simplifié**. Le filtre `selectattr` est l'outil idéal.
+On the list of dicts `services`, we want to **extract** only the enabled services
+**in a simplified format**. The `selectattr` filter is the ideal tool.
 
 ```yaml
 - name: Extraire les services actives en liste de noms
@@ -174,19 +173,19 @@ Sur la liste de dicts `services`, on veut **extraire** uniquement les services a
     msg: "Services backend : {{ services | selectattr('tags', 'contains', 'backend') | map(attribute='name') | list }}"
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- `selectattr('enabled')` garde les dicts où `enabled` est truthy → `[nginx, postgresql]`.
-- `map(attribute='name')` projette sur le champ `name` → `['nginx', 'postgresql']`.
-- `selectattr('tags', 'contains', 'backend')` garde ceux dont `tags` contient `backend`
+- `selectattr('enabled')` keeps the dicts where `enabled` is truthy → `[nginx, postgresql]`.
+- `map(attribute='name')` projects onto the `name` field → `['nginx', 'postgresql']`.
+- `selectattr('tags', 'contains', 'backend')` keeps those whose `tags` contains `backend`
   → `[redis, postgresql]`.
 
-Les filtres Jinja2 sur les collections sont couverts en détail dans **lab 19 (filtres
-essentiels)** et **lab 27 (filtres avancés)**.
+Jinja2 filters on collections are covered in detail in **lab 19 (essential
+filters)** and **lab 27 (advanced filters)**.
 
-## 📚 Exercice 5 — Le piège : faux niveau d'imbrication
+## 📚 Exercise 5 — The trap: wrong nesting level
 
-Reproduire un cas d'erreur classique. Modifiez la variable `services` :
+Reproduce a classic error case. Modify the `services` variable:
 
 ```yaml
 services:
@@ -197,25 +196,25 @@ services:
       certificate: /etc/ssl/cert.pem
 ```
 
-Et tentez :
+And try:
 
 ```yaml
 - name: Faux acces (typo niveau)
   ansible.builtin.debug:
-    msg: "Cert: {{ services[0].certificate }}"  # ❌ certificate est sous config
+    msg: "Cert: {{ services[0].certificate }}"  # ❌ certificate is under config
 ```
 
-**Lancez** :
+**Run**:
 
 ```bash
 ansible-playbook labs/ecrire-code/types-collections/lab.yml
 ```
 
-🔍 **Observation** : erreur `'dict object' has no attribute 'certificate'`. Le champ
-est sous **`services[0].config.certificate`**, pas directement sous `services[0]`.
+🔍 **Observation**: error `'dict object' has no attribute 'certificate'`. The field
+is under **`services[0].config.certificate`**, not directly under `services[0]`.
 
-**Outil de diagnostic** : utiliser `ansible.builtin.debug: var: services[0]` pour
-**afficher la structure complète** d'un élément avant d'écrire les accès.
+**Diagnostic tool**: use `ansible.builtin.debug: var: services[0]` to
+**display the full structure** of an element before writing the accesses.
 
 ```yaml
 - name: Diagnostiquer la structure
@@ -223,62 +222,62 @@ est sous **`services[0].config.certificate`**, pas directement sous `services[0]
     var: services[0]
 ```
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Liste de dicts** = pattern le plus courant pour décrire un parc (services, users, packages).
-- **`loop_control: label:`** est obligatoire en pratique — sortie illisible sans elle.
-- **`when: item.<key>`** filtre les itérations sans deuxième boucle.
-- **Notation pointée vs bracket** : pointée par défaut, bracket pour clés spéciales / dynamiques.
-- **`selectattr` + `map(attribute=...)`** = l'outil de filtrage / projection sur listes de dicts.
+- **List of dicts** = the most common pattern to describe a fleet (services, users, packages).
+- **`loop_control: label:`** is mandatory in practice: unreadable output without it.
+- **`when: item.<key>`** filters the iterations without a second loop.
+- **Dotted vs bracket notation**: dotted by default, bracket for special / dynamic keys.
+- **`selectattr` + `map(attribute=...)`** = the filtering / projection tool on lists of dicts.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous avez une liste de 200 services. Vous voulez n'agir que sur ceux dont `tags`
-   contient à la fois `backend` ET `production`. Comment exprimez-vous ce filtre ?
-   (indice : `selectattr` peut être chaîné).
+1. You have a list of 200 services. You want to act only on those whose `tags`
+   contains both `backend` AND `production`. How do you express this filter?
+   (hint: `selectattr` can be chained).
 
-2. Pourquoi `vars: my_dict: {}` (dict vide) génère-t-il une erreur si vous tentez
-   `my_dict.somekey`, alors que sur un dict non-vide la même expression renvoie
-   "undefined" sans planter ?
+2. Why does `vars: my_dict: {}` (empty dict) generate an error if you try
+   `my_dict.somekey`, whereas on a non-empty dict the same expression returns
+   "undefined" without crashing?
 
-3. Quelle structure choisiriez-vous pour décrire 50 utilisateurs avec leurs droits :
-   un **dict de dicts** (`users: {alice: {...}, bob: {...}}`) ou une **liste de dicts**
-   (`users: [{name: alice, ...}, {name: bob, ...}]`) ? Quels critères ?
+3. Which structure would you choose to describe 50 users with their permissions:
+   a **dict of dicts** (`users: {alice: {...}, bob: {...}}`) or a **list of dicts**
+   (`users: [{name: alice, ...}, {name: bob, ...}]`)? What criteria?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`combine`** : fusionner deux dicts. Utile pour **superposer** une config de base
-  avec un override.
-- **`dict2items`** + **`items2dict`** : convertir un dict en liste de dicts (pour boucler
-  dessus) et inversement (pour le re-construire après filtrage).
-- **`json_query`** : équivalent de `jq` côté Ansible — pour des extractions complexes
-  sur des JSON volumineux (sortie d'un `uri:`).
-- **Pattern `defaults + overrides`** : `vars: { app: '{{ app_defaults | combine(app_overrides, recursive=True) }}' }`
-  — superposer une config par défaut avec un override par environnement.
+- **`combine`**: merge two dicts. Useful to **layer** a base config
+  with an override.
+- **`dict2items`** + **`items2dict`**: convert a dict into a list of dicts (to loop
+  over it) and back (to rebuild it after filtering).
+- **`json_query`**: the Ansible-side equivalent of `jq`: for complex extractions
+  on large JSON (output of a `uri:`).
+- **`defaults + overrides` pattern**: `vars: { app: '{{ app_defaults | combine(app_overrides, recursive=True) }}' }`:
+  layer a default config with a per-environment override.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/ecrire-code/types-collections/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/ecrire-code/types-collections/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/ecrire-code/types-collections/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

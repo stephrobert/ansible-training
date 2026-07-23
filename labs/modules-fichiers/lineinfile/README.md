@@ -1,47 +1,46 @@
-# Lab — Module `lineinfile:` (modifier une ligne dans un fichier)
+# Lab — `lineinfile:` module (modify a line in a file)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Module lineinfile Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-lineinfile/)
+🔗 [**Ansible lineinfile module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-lineinfile/)
 
-`ansible.builtin.lineinfile:` modifie **une seule ligne** dans un fichier
-existant : ajouter si absente, remplacer une ligne identifiée par regexp,
-ou supprimer. C'est l'outil de base pour **éditer un fichier de
-configuration** dont on contrôle juste quelques paramètres — `sshd_config`,
-`sudoers`, `/etc/hosts`, `/etc/sysctl.conf`.
+`ansible.builtin.lineinfile:` modifies **a single line** in an existing file:
+add if absent, replace a line identified by a regexp, or remove. It is the basic
+tool to **edit a configuration file** where you control just a few parameters:
+`sshd_config`, `sudoers`, `/etc/hosts`, `/etc/sysctl.conf`.
 
-**Différence clé avec `blockinfile:`** : `lineinfile:` = 1 ligne, `blockinfile:` = bloc multi-lignes avec markers automatiques.
+**Key difference with `blockinfile:`**: `lineinfile:` = 1 line, `blockinfile:` = multi-line block with automatic markers.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Ajouter** une ligne si absente, ne rien faire si présente (idempotent).
-2. **Remplacer** une ligne identifiée par regexp.
-3. **Supprimer** une ligne par `state: absent`.
-4. **Valider** la syntaxe avant écriture (`validate: "sshd -t -f %s"`).
-5. **Préserver** une partie de la ligne via `backrefs: true`.
+1. **Add** a line if absent, do nothing if present (idempotent).
+2. **Replace** a line identified by a regexp.
+3. **Remove** a line with `state: absent`.
+4. **Validate** the syntax before writing (`validate: "sshd -t -f %s"`).
+5. **Preserve** part of the line via `backrefs: true`.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 ansible db1.lab -b -m shell -a "cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak"
 ```
 
-## 📚 Exercice 1 — Ajouter une ligne idempotente
+## 📚 Exercise 1 — Add an idempotent line
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -56,14 +55,14 @@ Créez `lab.yml` :
         state: present
 ```
 
-Lancez 2 fois et observez :
+Run it twice and observe:
 
 ```bash
 ansible-playbook labs/modules-fichiers/lineinfile/lab.yml
 ansible-playbook labs/modules-fichiers/lineinfile/lab.yml   # → 2e run = ok (idempotent)
 ```
 
-## 📚 Exercice 2 — Remplacer via regexp + validate
+## 📚 Exercise 2 — Replace via regexp + validate
 
 ```yaml
 - name: Désactiver le login root SSH
@@ -76,10 +75,10 @@ ansible-playbook labs/modules-fichiers/lineinfile/lab.yml   # → 2e run = ok (i
   notify: Restart sshd
 ```
 
-**À tester** : modifier la regexp pour qu'elle ne matche plus, vérifier que la
-ligne s'ajoute à la fin du fichier au lieu de remplacer.
+**To test**: modify the regexp so that it no longer matches, verify that the
+line is added at the end of the file instead of being replaced.
 
-## 📚 Exercice 3 — Backrefs
+## 📚 Exercise 3 — Backrefs
 
 ```yaml
 - name: Réduire MaxAuthTries SSH en gardant le format
@@ -91,39 +90,40 @@ ligne s'ajoute à la fin du fichier au lieu de remplacer.
     validate: "sshd -t -f %s"
 ```
 
-**Observer** : avec `backrefs: true`, si la regexp ne matche pas, la ligne
-n'est **PAS ajoutée** (différence cruciale).
+**Observe**: with `backrefs: true`, if the regexp does not match, the line is
+**NOT added** (crucial difference).
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Idempotence** : un second run du playbook doit afficher `changed=0` sur
-  toutes les tâches du module `ansible.builtin.lineinfile`. Si une tâche reste `changed=1`, c'est
-  que la regex/condition n'est pas ancrée correctement (cf. exercices).
-- **FQCN explicite** : `ansible.builtin.lineinfile` (et non son nom court) — `ansible-lint
-  --profile production` le vérifie.
-- **`validate:`** quand c'est disponible (lineinfile, copy, template) : un
-  binaire externe contrôle la syntaxe du fichier avant écriture, ce qui évite
-  de casser un service avec une config invalide.
-- **Convention de ciblage** : ce lab cible **db1.lab** (un seul host pour
-  isoler l'impact destructif).
+- **Idempotence**: a second run of the playbook must show `changed=0` on all
+  the tasks of the `ansible.builtin.lineinfile` module. If a task stays
+  `changed=1`, the regex/condition is not anchored correctly (see exercises).
+- **Explicit FQCN**: `ansible.builtin.lineinfile` (and not its short name),
+  `ansible-lint --profile production` checks it.
+- **`validate:`** when it is available (lineinfile, copy, template): an external
+  binary checks the syntax of the file before writing, which avoids breaking a
+  service with an invalid config.
+- **Targeting convention**: this lab targets **db1.lab** (a single host to
+  isolate the destructive impact).
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Quand utiliser `ansible.builtin.lineinfile` plutôt que `replace:` (regex multi-occurrences) ou `template:` (fichier complet généré) ? Listez 2 cas où chaque
-   alternative serait préférable (lisibilité, idempotence, performance).
+1. When should you use `ansible.builtin.lineinfile` rather than `replace:`
+   (multi-occurrence regex) or `template:` (whole file generated)? List 2 cases
+   where each alternative would be preferable (readability, idempotence,
+   performance).
 
-2. Si vous deviez modifier ligne à ligne dans des fichiers de config sur **50 serveurs en parallèle**, quels
-   paramètres Ansible (`forks`, `serial`, `strategy`) ajusteriez-vous pour
-   tenir un SLA de 5 minutes ?
+2. If you had to modify config files line by line on **50 servers in parallel**,
+   which Ansible parameters (`forks`, `serial`, `strategy`) would you adjust to
+   hold a 5-minute SLA?
 
-3. Comment gérer le cas où le module échoue **partiellement** (succès sur
-   certaines tâches, échec sur d'autres) ? Quelles stratégies permettent de
-   reprendre sans tout rejouer (`block/rescue`, `--start-at-task`, marqueur
-   d'état) ?
+3. How do you handle the case where the module fails **partially** (success on
+   some tasks, failure on others)? Which strategies allow resuming without
+   replaying everything (`block/rescue`, `--start-at-task`, state marker)?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Une fois les exercices ci-dessus digérés, lancez le **challenge autonome** :
+Once the exercises above are digested, run the **standalone challenge**:
 
 ```bash
 $ANSIBLE_TRAINING/bin/dsoxlab lab modules-fichiers/lineinfile --challenge
@@ -131,30 +131,31 @@ $ANSIBLE_TRAINING/bin/dsoxlab lab modules-fichiers/lineinfile --challenge
 cat labs/modules-fichiers/lineinfile/challenge/README.md
 ```
 
-Le challenge demande d'écrire votre `challenge/solution.yml` sans regarder
-les exercices. Validation par `pytest` :
+The challenge asks you to write your `challenge/solution.yml` without looking at
+the exercises. Validation via `pytest`:
 
 ```bash
 pytest -v labs/modules-fichiers/lineinfile/challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- Combinez `ansible.builtin.lineinfile` avec **`backup: true`** pour conserver une copie
-  horodatée du fichier original avant modification — utile pour rollback.
-- Étudiez **`check_mode: true`** + `--diff` : Ansible vous montre ce qu'il
-  ferait sans rien appliquer. Indispensable en production.
-- Comparez la **performance** entre 1 tâche `ansible.builtin.lineinfile` × 10 et 1 tâche
-  `template:` qui génère le fichier complet en une fois — souvent le
-  template est plus rapide ET plus lisible quand le nombre de modifs grossit.
+- Combine `ansible.builtin.lineinfile` with **`backup: true`** to keep a
+  timestamped copy of the original file before modification, useful for
+  rollback.
+- Study **`check_mode: true`** + `--diff`: Ansible shows you what it would do
+  without applying anything. Indispensable in production.
+- Compare the **performance** between 1 `ansible.builtin.lineinfile` task × 10
+  and 1 `template:` task that generates the whole file at once, the template is
+  often faster AND more readable when the number of changes grows.
 
 ## 🧹 Cleanup
 
 ```bash
-make clean
+`dsoxlab clean <id-du-lab>`
 ```
 
-Ou manuellement :
+Or manually:
 
 ```bash
 ansible db1.lab -b -m shell -a "cp /etc/ssh/sshd_config.bak /etc/ssh/sshd_config && systemctl restart sshd"
@@ -162,12 +163,12 @@ ansible db1.lab -b -m shell -a "cp /etc/ssh/sshd_config.bak /etc/ssh/sshd_config
 
 ## 📂 Solution
 
-Voir `solution/modules-fichiers/lineinfile/solution.yml`.
+See `solution/modules-fichiers/lineinfile/solution.yml`.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 ansible-lint labs/modules-fichiers/lineinfile/lab.yml
@@ -175,6 +176,5 @@ ansible-lint labs/modules-fichiers/lineinfile/challenge/solution.yml
 ansible-lint --profile production labs/modules-fichiers/lineinfile/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques RHCE 2026.
-
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows RHCE 2026 best practices.

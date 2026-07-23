@@ -1,51 +1,51 @@
-# Lab 10 — Async et poll (tâches longues sans bloquer SSH)
+# Lab 10 — Async and poll (long tasks without blocking SSH)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Async et poll Ansible : tâches longues, fire-and-forget, async_status**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/async-poll/)
+🔗 [**Async and poll Ansible: long tasks, fire-and-forget, async_status**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/async-poll/)
 
-Par défaut, Ansible **maintient une connexion SSH ouverte** pendant toute la durée
-d'une tâche. Si la tâche dure 30 minutes, vous risquez un **timeout SSH** (réseau qui
-coupe, firewall qui kill les connexions inactives) — Ansible perd alors la sortie et
-considère la tâche comme **failed** alors qu'elle continue côté managed node.
+By default, Ansible **keeps an SSH connection open** for the entire duration
+of a task. If the task lasts 30 minutes, you risk an **SSH timeout** (network that
+drops, firewall that kills idle connections): Ansible then loses the output and
+considers the task **failed** while it keeps running on the managed node.
 
-`async:` détache la tâche du process Ansible et **libère la connexion SSH**.
-`poll:` contrôle si Ansible attend (`> 0`) ou non (`0` = fire-and-forget). Pour
-récupérer le résultat plus tard, `async_status:` interroge le **job ID**.
+`async:` detaches the task from the Ansible process and **frees the SSH connection**.
+`poll:` controls whether Ansible waits (`> 0`) or not (`0` = fire-and-forget). To
+retrieve the result later, `async_status:` queries the **job ID**.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Détacher** une tâche longue avec `async + poll: 0` (fire-and-forget).
-2. **Récupérer** le résultat plus tard via `async_status: jid:`.
-3. **Combiner** `async:` avec `until:` pour faire du polling actif.
-4. **Diagnostiquer** un job orphelin (le process est parti, mais on a perdu le `jid`).
-5. **Choisir** entre `async + poll > 0` (sync avec heartbeat) et `async + poll: 0` (vraiment async).
+1. **Detach** a long task with `async + poll: 0` (fire-and-forget).
+2. **Retrieve** the result later via `async_status: jid:`.
+3. **Combine** `async:` with `until:` to do active polling.
+4. **Diagnose** an orphan job (the process is gone, but we lost the `jid`).
+5. **Choose** between `async + poll > 0` (sync with heartbeat) and `async + poll: 0` (truly async).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible web1.lab -m ping
 ```
 
-## 📚 Exercice 1 — Le problème : tâche longue qui timeout
+## 📚 Exercise 1 — The problem: a long task that times out
 
-Pour comprendre l'utilité d'`async`, observez d'abord ce qui se passe **sans** lui.
-Créez `lab-blocking.yml` :
+To understand the point of `async`, first observe what happens **without** it.
+Create `lab-blocking.yml`:
 
 ```yaml
 ---
@@ -57,19 +57,19 @@ Créez `lab-blocking.yml` :
       ansible.builtin.command: sleep 5
 ```
 
-**Lancez et chronométrez** :
+**Run it and time it**:
 
 ```bash
 time ansible-playbook labs/ecrire-code/async-poll/lab-blocking.yml
 ```
 
-🔍 **Observation** : le play prend **5+ secondes** à finir, et la connexion SSH reste
-**ouverte** tout du long. Sur un sleep de 5s pas de problème — sur une tâche de 30
-minutes via VPN qui coupe les sessions inactives à 5 min, c'est un drame.
+🔍 **Observation**: the play takes **5+ seconds** to finish, and the SSH connection stays
+**open** the whole time. On a 5s sleep no problem: on a 30-minute task over a VPN
+that cuts idle sessions at 5 min, it is a disaster.
 
-## 📚 Exercice 2 — Async avec `poll: 0` (fire-and-forget)
+## 📚 Exercise 2 — Async with `poll: 0` (fire-and-forget)
 
-Créez `lab-async.yml` :
+Create `lab-async.yml`:
 
 ```yaml
 ---
@@ -100,30 +100,30 @@ Créez `lab-async.yml` :
         msg: "Job {{ sleep_job.ansible_job_id }} fini en {{ job_result.delta }}"
 ```
 
-**Lancez** :
+**Run it**:
 
 ```bash
 ansible-playbook labs/ecrire-code/async-poll/lab-async.yml
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- La tâche `Lancer sleep 8` retourne **immédiatement** (la connexion SSH se referme).
-- `async_status` polle toutes les 2 secondes (`delay: 2`) jusqu'à 15 fois (`retries: 15` = max 30s).
-- Quand le sleep finit côté managed node, `async_status` retourne `finished: 1`.
+- The `Lancer sleep 8` task returns **immediately** (the SSH connection closes).
+- `async_status` polls every 2 seconds (`delay: 2`) up to 15 times (`retries: 15` = max 30s).
+- When the sleep finishes on the managed node, `async_status` returns `finished: 1`.
 
-**Pourquoi pas juste `poll > 0` ?** Avec `async: 30` et `poll: 5`, Ansible polle
-**tous les 5 secondes** mais **garde la connexion ouverte** entre deux polls. Idéal
-pour des tâches **moyennes** (10-60s). Avec `poll: 0`, la connexion est **fermée
-immédiatement** — idéal pour les tâches **vraiment longues** (>5min).
+**Why not just `poll > 0`?** With `async: 30` and `poll: 5`, Ansible polls
+**every 5 seconds** but **keeps the connection open** between two polls. Ideal
+for **medium** tasks (10-60s). With `poll: 0`, the connection is **closed
+immediately**: ideal for **really long** tasks (>5min).
 
-## 📚 Exercice 3 — Plusieurs jobs en parallèle sur le même hôte
+## 📚 Exercise 3 — Several jobs in parallel on the same host
 
-`async + poll: 0` permet de **lancer N jobs concurrents** sur un même hôte. Très utile
-pour, par exemple, paralléliser plusieurs commandes `dnf install` ou des
-téléchargements multi-fichiers.
+`async + poll: 0` lets you **launch N concurrent jobs** on a single host. Very useful
+to, for example, parallelize several `dnf install` commands or
+multi-file downloads.
 
-Créez `lab-parallel.yml` :
+Create `lab-parallel.yml`:
 
 ```yaml
 ---
@@ -162,18 +162,18 @@ Créez `lab-parallel.yml` :
         - "{{ job3.ansible_job_id }}"
 ```
 
-**Lancez et chronométrez** :
+**Run it and time it**:
 
 ```bash
 time ansible-playbook labs/ecrire-code/async-poll/lab-parallel.yml
 ```
 
-🔍 **Observation** : le play total prend ~**8 secondes** (la durée du job le plus long),
-pas 4+6+8 = 18s. Les 3 jobs ont tourné **en parallèle** côté managed node.
+🔍 **Observation**: the whole play takes ~**8 seconds** (the duration of the longest job),
+not 4+6+8 = 18s. The 3 jobs ran **in parallel** on the managed node.
 
-## 📚 Exercice 4 — Le piège : `async: <T>` plus court que la tâche
+## 📚 Exercise 4 — The trap: `async: <T>` shorter than the task
 
-Modifiez l'exercice 2 pour que `async: 5` mais que le sleep soit `sleep 8` :
+Modify exercise 2 so that `async: 5` but the sleep is `sleep 8`:
 
 ```yaml
 - name: Lancer sleep 8 avec async timeout 5
@@ -182,26 +182,26 @@ Modifiez l'exercice 2 pour que `async: 5` mais que le sleep soit `sleep 8` :
   poll: 0
 ```
 
-**Lancez** :
+**Run it**:
 
 ```bash
 ansible-playbook labs/ecrire-code/async-poll/lab-async.yml
 ```
 
-🔍 **Observation** : `async_status` finit par retourner `finished: 1` MAIS avec un
-**`failed: 1`** et un message `async task did not complete within the requested time`.
+🔍 **Observation**: `async_status` ends up returning `finished: 1` BUT with a
+**`failed: 1`** and a message `async task did not complete within the requested time`.
 
-C'est le **timeout côté managed node** : Ansible (en réalité, le helper `async_wrapper`)
-**kill** le process si la tâche dépasse `async:` secondes.
+This is the **managed-node-side timeout**: Ansible (actually the `async_wrapper` helper)
+**kills** the process if the task exceeds `async:` seconds.
 
-**Règle** : `async:` doit être **toujours plus grand** que la durée maximale attendue
-de la tâche, avec une marge généreuse (×2 ou ×3).
+**Rule**: `async:` must be **always greater** than the maximum expected duration
+of the task, with a generous margin (×2 or ×3).
 
-## 📚 Exercice 5 — Job orphelin (vraie fire-and-forget)
+## 📚 Exercise 5 — Orphan job (true fire-and-forget)
 
-`async + poll: 0` **sans** `async_status:` lance un job que vous **n'attendez jamais**.
-Pratique pour déclencher quelque chose dont le résultat ne vous intéresse pas dans
-ce play (notification, push de métriques, etc.).
+`async + poll: 0` **without** `async_status:` launches a job that you **never wait for**.
+Handy to trigger something whose result you do not care about in
+this play (notification, metrics push, etc.).
 
 ```yaml
 - name: Notifier Slack en arriere-plan (on s en fout du resultat)
@@ -214,57 +214,57 @@ ce play (notification, push de métriques, etc.).
   changed_when: false
 ```
 
-🔍 **Observation** : Ansible **ne sait pas** si le curl a réussi. Si l'API Slack est
-down, vous perdez la notification mais le deploy continue. C'est **acceptable** pour
-des notifications best-effort.
+🔍 **Observation**: Ansible **does not know** whether the curl succeeded. If the Slack API is
+down, you lose the notification but the deploy continues. This is **acceptable** for
+best-effort notifications.
 
-**Attention** : pour une **opération critique** (insertion en base, génération de
-backup), ne **jamais** faire fire-and-forget sans `async_status:` — vous perdez la
-visibilité d'erreurs.
+**Warning**: for a **critical operation** (database insert, backup
+generation), **never** do fire-and-forget without `async_status:`: you lose the
+visibility of errors.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`async: <secondes>`** = timeout côté managed node (kill si dépassé).
-- **`poll: 0`** = fire-and-forget, connexion SSH refermée immédiatement.
-- **`poll: > 0`** = sync avec heartbeat tous les N secondes (connexion ouverte mais légère).
-- **`async_status:` + `jid:`** = récupération du résultat (à utiliser avec `until: finished`).
-- **Plusieurs jobs en parallèle sur un même hôte** = pattern de **parallélisation locale**.
-- **`async:` doit être > durée max** sinon le job est tué prématurément.
+- **`async: <seconds>`** = managed-node-side timeout (kill if exceeded).
+- **`poll: 0`** = fire-and-forget, SSH connection closed immediately.
+- **`poll: > 0`** = sync with heartbeat every N seconds (connection open but lightweight).
+- **`async_status:` + `jid:`** = retrieval of the result (to be used with `until: finished`).
+- **Several jobs in parallel on the same host** = **local parallelization** pattern.
+- **`async:` must be > max duration** otherwise the job is killed prematurely.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voulez lancer un `dnf upgrade` qui peut prendre 30 min. Vous êtes derrière
-   un VPN qui coupe les sessions inactives à 10 min. Quelle config `async + poll`
-   utilisez-vous, et pourquoi ne pas simplement augmenter le timeout SSH ?
+1. You want to launch a `dnf upgrade` that can take 30 min. You are behind
+   a VPN that cuts idle sessions at 10 min. Which `async + poll` config
+   do you use, and why not simply increase the SSH timeout?
 
-2. Un collègue met `poll: 0` partout "pour aller plus vite". Il ne capture pas le
-   `jid` et ne fait pas d'`async_status`. Quel est le risque concret ?
+2. A colleague puts `poll: 0` everywhere "to go faster". He does not capture the
+   `jid` and does not do `async_status`. What is the concrete risk?
 
-3. Sur 100 hôtes, vous voulez lancer un download long (5 min) en parallèle. Pourquoi
-   `async + poll: 0` est plus efficace que `forks: 100` avec un `command:` synchrone ?
+3. On 100 hosts, you want to launch a long download (5 min) in parallel. Why
+   is `async + poll: 0` more efficient than `forks: 100` with a synchronous `command:`?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`async: 0` + `poll: 0`** : combinaison **interdite** (Ansible refuse). `async`
-  doit toujours avoir une valeur > 0.
-- **Le helper `async_wrapper`** : Ansible copie un script Python sur le managed
-  node qui supervise la tâche. Si vous tuez le wrapper (`pkill async_wrapper`),
-  vous perdez le `jid` (job orphelin réel).
-- **`mode: cleanup`** sur `async_status:` : nettoie les fichiers temporaires côté
-  managed node. À utiliser dans un play de **maintenance** si vous accumulez des
-  status files dans `~/.ansible_async/`.
-- **Combinaison `async + retries + delay`** : pattern de **wait-for-condition**
-  beaucoup plus efficace que `wait_for:` quand la condition se résume à
-  "ce job s'est terminé proprement".
+- **`async: 0` + `poll: 0`**: **forbidden** combination (Ansible refuses). `async`
+  must always have a value > 0.
+- **The `async_wrapper` helper**: Ansible copies a Python script onto the managed
+  node that supervises the task. If you kill the wrapper (`pkill async_wrapper`),
+  you lose the `jid` (a real orphan job).
+- **`mode: cleanup`** on `async_status:`: cleans up the temporary files on the
+  managed node. To be used in a **maintenance** play if you accumulate
+  status files in `~/.ansible_async/`.
+- **`async + retries + delay` combination**: a **wait-for-condition** pattern
+  much more efficient than `wait_for:` when the condition boils down to
+  "this job finished cleanly".
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 # Lint de votre fichier de lab (tutoriel guidé)
@@ -277,9 +277,9 @@ ansible-lint labs/ecrire-code/async-poll/challenge/solution.yml
 ansible-lint --profile production labs/ecrire-code/async-poll/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

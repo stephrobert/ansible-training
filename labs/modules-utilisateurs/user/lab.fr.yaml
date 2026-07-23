@@ -1,0 +1,4 @@
+---
+id: modules-utilisateurs-user
+title: "Module user : créer, modifier et supprimer des comptes"
+description: "Créer des comptes avec home, shell et groupes secondaires, hasher un mot de passe, forcer un UID et supprimer un compte avec son home."

@@ -1,20 +1,22 @@
-# 🎯 Challenge — Module `copy:` (déployer un banner SSH)
+# 🎯 Challenge — `copy:` module (deploy an SSH banner)
 
-## ✅ Objectif
+## ✅ Objective
 
-Sur **web1.lab**, déposer **deux fichiers** dans `/etc/` :
+On **web1.lab**, drop **two files** into `/etc/`:
 
-1. `/etc/ssh/banner-rhce` — depuis un fichier source local
-   (`challenge/files/banner-ssh.txt`), avec **backup activé**.
-2. `/etc/motd-rhce` — depuis un **contenu inline** (`content:`).
+1. `/etc/ssh/banner-rhce` from a local source file
+   (`challenge/files/banner-ssh.txt`). Adding `backup: true` is a
+   **production best practice**, recommended but **not verified by the tests**
+   (a first run has nothing to back up).
+2. `/etc/motd-rhce` from **inline content** (`content:`).
 
-Démontre la différence `src:` (fichier source) vs `content:` (string).
+Demonstrates the difference between `src:` (source file) and `content:` (string).
 
-## 🧩 Fichiers à créer
+## 🧩 Files to create
 
 ### 1) `challenge/files/banner-ssh.txt`
 
-À créer côté control node. Contenu :
+To create on the control node side. Content:
 
 ```text
 =====================================
@@ -25,7 +27,7 @@ Démontre la différence `src:` (fichier source) vs `content:` (string).
 
 ### 2) `challenge/solution.yml`
 
-Squelette :
+Skeleton:
 
 ```yaml
 ---
@@ -41,7 +43,7 @@ Squelette :
         owner: root
         group: root
         mode: "0644"
-        backup: ???
+        backup: true              # best practice (prod), not verified by the tests
 
     - name: Marquer le serveur via content inline
       ansible.builtin.copy:
@@ -52,27 +54,28 @@ Squelette :
         mode: "0644"
 ```
 
-## 🧩 Sortie attendue
+## 🧩 Expected output
 
-| Fichier | Source | Contenu |
+| File | Source | Content |
 | --- | --- | --- |
-| `/etc/ssh/banner-rhce` | `files/banner-ssh.txt` | les 4 lignes du banner |
+| `/etc/ssh/banner-rhce` | `files/banner-ssh.txt` | the 4 banner lines |
 | `/etc/motd-rhce` | inline | `Serveur RHCE — gere par Ansible` |
 
-> 💡 **Pièges** :
+> 💡 **Pitfalls**:
 >
-> - **`src:` vs `content:`** : `src:` push un fichier local du control
->   node ; `content:` pose une chaîne directement. Mutuellement exclusifs.
-> - **Chemin `src:`** relatif au `<role>/files/` ou au `files/` à côté du
->   playbook. Pas besoin du préfixe `files/` si le fichier est dans
+> - **`src:` vs `content:`**: `src:` pushes a local file from the control
+>   node; `content:` writes a string directly. Mutually exclusive.
+> - **`src:` path** relative to `<role>/files/` or to the `files/` next to
+>   the playbook. No need for the `files/` prefix if the file is in
 >   `<role>/files/`.
-> - **`backup: true`** crée une copie horodatée avant écraser. Précieux
->   pour les fichiers partagés (`/etc/ssh/*`).
-> - **Mode toujours quoté** : `"0644"`, pas `0644` (octal mal interprété).
-> - **`copy:` est idempotent par checksum** — au 2ᵉ run identique,
+> - **`backup: true`** creates a timestamped copy before overwriting. A
+>   production best practice for shared files (`/etc/ssh/*`), **not verified by
+>   the tests** (nothing to back up on a first run).
+> - **Mode always quoted**: `"0644"`, not `0644` (octal misinterpreted).
+> - **`copy:` is idempotent by checksum**: on an identical 2nd run,
 >   `changed=0`.
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-fichiers/copy/challenge/solution.yml
@@ -80,10 +83,10 @@ ansible web1.lab -m ansible.builtin.command -a "cat /etc/ssh/banner-rhce"
 ansible web1.lab -m ansible.builtin.command -a "cat /etc/motd-rhce"
 ```
 
-🔍 Au 2e run après modif du fichier source, vous verrez
-`/etc/ssh/banner-rhce.<timestamp>~` apparaître (preuve de `backup: true`).
+🔍 On the 2nd run after modifying the source file, you will see
+`/etc/ssh/banner-rhce.<timestamp>~` appear (proof of `backup: true`).
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-fichiers/copy/challenge/tests/
@@ -92,20 +95,20 @@ pytest -v labs/modules-fichiers/copy/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/modules-fichiers/copy clean
+dsoxlab clean modules-fichiers-copy
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`force: false`** : n'écrase pas le fichier s'il existe déjà (utile pour
-  une config initiale qu'on ne veut pas remettre à zéro).
-- **`remote_src: true`** : le `src:` est sur le **managed node** (pas sur le
-  control node). Permet de copier un fichier d'un endroit à un autre côté
-  serveur.
-- **`validate:`** : valide le fichier avant écrasement (ex: `validate: 'sshd
-  -t -f %s'` pour `sshd_config`). Si la validation échoue, le fichier
-  d'origine reste intact.
-- **Lint** :
+- **`force: false`**: does not overwrite the file if it already exists (useful
+  for an initial config you do not want to reset).
+- **`remote_src: true`**: the `src:` is on the **managed node** (not on the
+  control node). Lets you copy a file from one place to another on the server
+  side.
+- **`validate:`**: validates the file before overwriting (e.g. `validate: 'sshd
+  -t -f %s'` for `sshd_config`). If the validation fails, the original file
+  stays intact.
+- **Lint**:
 
    ```bash
    ansible-lint labs/modules-fichiers/copy/challenge/solution.yml

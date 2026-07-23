@@ -1,68 +1,67 @@
-# Lab 63 — Molecule : configuration enrichie
+# Lab 63 — Molecule: enriched configuration
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Pré-requis : Molecule installé (cf. [lab 62](../62-roles-molecule-introduction/))
-> + Podman/Docker disponible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Prerequisite: Molecule installed (see [lab 62](../introduction/))
+> + Podman/Docker available.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Molecule : configuration avancée**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-roles/molecule-config/)
+🔗 [**Molecule: advanced configuration**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/molecule-installation-config/)
 
-Le lab 62 a posé le strict minimum : `molecule.yml`, `converge.yml`, `verify.yml`.
-En production, on enrichit avec :
+Lab 62 laid down the bare minimum: `molecule.yml`, `converge.yml`, `verify.yml`.
+In production, you enrich it with:
 
-| Fichier | Rôle |
+| File | Role |
 | --- | --- |
-| `prepare.yml` | Préparer l'instance (paquets pré-requis, services système) avant `converge` |
-| `requirements.yml` | Collections + rôles Galaxy à installer dans l'environnement de test |
-| `cleanup.yml` | Nettoyage spécifique avant `destroy` |
-| `side_effect.yml` | Tâches "perturbatrices" (down a service, edit config) entre `converge` et `verify` |
+| `prepare.yml` | Prepare the instance (prerequisite packages, system services) before `converge` |
+| `requirements.yml` | Galaxy collections + roles to install in the test environment |
+| `cleanup.yml` | Specific cleanup before `destroy` |
+| `side_effect.yml` | "Disruptive" tasks (down a service, edit config) between `converge` and `verify` |
 
-Et dans `molecule.yml`, on configure :
+And in `molecule.yml`, you configure:
 
-- **`provisioner.inventory.host_vars`** : variables par instance.
-- **`scenario.test_sequence`** : ordre des étapes du cycle (rajouter `idempotence`).
-- **`provisioner.config_options.defaults.callback_enabled`** : callbacks
-  Ansible (`profile_tasks`, `timer`).
+- **`provisioner.inventory.host_vars`**: per-instance variables.
+- **`scenario.test_sequence`**: order of the cycle steps (add `idempotence`).
+- **`provisioner.config_options.defaults.callbacks_enabled`**: Ansible
+  callbacks (`profile_tasks`, `timer`).
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Ajouter `prepare.yml` qui pré-conditionne l'instance.
-2. Ajouter `requirements.yml` qui déclare les dépendances.
-3. Configurer `host_vars` dans `molecule.yml` pour personnaliser chaque instance.
-4. Définir une `test_sequence` custom incluant `idempotence`.
-5. Activer des callbacks `profile_tasks` (perfs).
+1. Add a `prepare.yml` that pre-conditions the instance.
+2. Add a `requirements.yml` that declares the dependencies.
+3. Configure `host_vars` in `molecule.yml` to customize each instance.
+4. Define a custom `test_sequence` including `idempotence`.
+5. Enable `profile_tasks` callbacks (perf).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
-Mêmes pré-requis que le lab 62.
+Same prerequisites as lab 62.
 
-## ⚙️ Arborescence
+## ⚙️ Tree
 
 ```text
 labs/molecule/installation-config/
 ├── README.md
-├── Makefile
 ├── roles/
 │   └── webserver/
 └── molecule/
     └── default/
-        ├── molecule.yml          ← config enrichie
+        ├── molecule.yml          ← enriched config
         ├── converge.yml
         ├── verify.yml
-        ├── prepare.yml           ← NOUVEAU
-        └── requirements.yml      ← NOUVEAU
+        ├── prepare.yml           ← NEW
+        └── requirements.yml      ← NEW
 ```
 
-## 📚 Exercice 1 — `prepare.yml`
+## 📚 Exercise 1 — `prepare.yml`
 
-Le `prepare.yml` tourne **avant** `converge.yml`. Idéal pour :
+The `prepare.yml` runs **before** `converge.yml`. Ideal for:
 
-- Installer des paquets manquants dans l'image (curl, ca-certificates).
-- Activer des dépôts (epel-release).
-- Pré-configurer SELinux ou firewalld.
+- Installing packages missing from the image (curl, ca-certificates).
+- Enabling repositories (epel-release).
+- Pre-configuring SELinux or firewalld.
 
 ```yaml
 ---
@@ -78,14 +77,14 @@ Le `prepare.yml` tourne **avant** `converge.yml`. Idéal pour :
         state: present
 ```
 
-🔍 **Observation** : `prepare.yml` tourne **une seule fois** au début du
-cycle. Si vous le modifiez, relancez `molecule destroy` pour repartir
-propre.
+🔍 **Observation**: `prepare.yml` runs **only once** at the start of the
+cycle. If you modify it, re-run `molecule destroy` to start
+clean.
 
-## 📚 Exercice 2 — `requirements.yml`
+## 📚 Exercise 2 — `requirements.yml`
 
-Liste les **collections** et **rôles externes** dont votre rôle dépend
-pour les tests :
+Lists the **collections** and **external roles** your role depends on
+for the tests:
 
 ```yaml
 ---
@@ -100,13 +99,13 @@ roles:
     version: 3.5.0
 ```
 
-Molecule installe automatiquement ces dépendances avant `converge`.
+Molecule automatically installs these dependencies before `converge`.
 
-🔍 **Observation** : `requirements.yml` est l'**équivalent de `requirements.txt`
-en Python**. Bonne pratique pour figer les versions et garantir la
-reproductibilité.
+🔍 **Observation**: `requirements.yml` is the **equivalent of `requirements.txt`
+in Python**. Good practice to pin the versions and guarantee
+reproducibility.
 
-## 📚 Exercice 3 — `host_vars` dans `molecule.yml`
+## 📚 Exercise 3 — `host_vars` in `molecule.yml`
 
 ```yaml
 provisioner:
@@ -118,10 +117,10 @@ provisioner:
         webserver_index_content: "Test Molecule custom"
 ```
 
-🔍 **Observation** : permet de tester **différentes configurations** sans
-toucher au rôle. Très utile pour matrix testing.
+🔍 **Observation**: lets you test **different configurations** without
+touching the role. Very useful for matrix testing.
 
-## 📚 Exercice 4 — `test_sequence` custom
+## 📚 Exercise 4 — Custom `test_sequence`
 
 ```yaml
 scenario:
@@ -132,66 +131,66 @@ scenario:
     - create
     - prepare
     - converge
-    - idempotence       # ← ESSENTIEL : 2ème run = changed=0
+    - idempotence       # ← ESSENTIAL: 2nd run = changed=0
     - verify
     - destroy
 ```
 
-🔍 **Observation** : `idempotence` est **optionnel par défaut**. **Toujours**
-l'ajouter — c'est ce qui force la qualité du rôle.
+🔍 **Observation**: `idempotence` is **optional by default**. **Always**
+add it: it is what forces the quality of the role.
 
-## 📚 Exercice 5 — Callbacks `profile_tasks`
+## 📚 Exercise 5 — `profile_tasks` callbacks
 
-Ajoutez dans `molecule.yml` :
+Add in `molecule.yml`:
 
 ```yaml
 provisioner:
   config_options:
     defaults:
-      callback_enabled: profile_tasks, timer
+      callbacks_enabled: ansible.posix.profile_tasks, ansible.posix.timer
 ```
 
-🔍 **Observation** : à la fin de `converge`, vous voyez **le temps de
-chaque tâche** classé par durée. Précieux pour optimiser un rôle lent.
+🔍 **Observation**: at the end of `converge`, you see **the time of
+each task** ranked by duration. Precious to optimize a slow role.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`prepare.yml`** est le bon endroit pour les pré-requis "infrastructure"
-  qui ne font pas partie du rôle testé.
-- **`requirements.yml`** = reproductibilité. Toujours figer les versions.
-- **`host_vars` Molecule** = matrix testing facile sans modifier le rôle.
-- **`idempotence` dans `test_sequence`** = qualité non-négociable.
-- **`profile_tasks`** = profilage gratuit, à activer en debug.
+- **`prepare.yml`** is the right place for "infrastructure" prerequisites
+  that are not part of the tested role.
+- **`requirements.yml`** = reproducibility. Always pin the versions.
+- **Molecule `host_vars`** = easy matrix testing without modifying the role.
+- **`idempotence` in `test_sequence`** = non-negotiable quality.
+- **`profile_tasks`** = free profiling, to enable when debugging.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Comment adapter votre solution si la cible passait de **1 host** à un
-   parc de **50 serveurs** ? Quels paramètres (`forks`, `serial`, `strategy`)
-   faudrait-il ajuster pour conserver des temps d'exécution acceptables ?
+1. How would you adapt your solution if the target went from **1 host** to a
+   fleet of **50 servers**? Which parameters (`forks`, `serial`, `strategy`)
+   would you need to tune to keep acceptable execution times?
 
-2. Quels modules Ansible alternatifs auriez-vous pu utiliser pour atteindre
-   le même résultat ? Quels sont leurs trade-offs (idempotence garantie,
-   performance, dépendances de collection externe) ?
+2. Which alternative Ansible modules could you have used to achieve
+   the same result? What are their trade-offs (guaranteed idempotence,
+   performance, external collection dependency)?
 
-3. Si une étape du playbook échoue en cours d'exécution, quel est l'impact
-   sur les hôtes déjà traités ? Comment rendre le scénario reprenable
-   (`block/rescue/always`, `--start-at-task`, `serial`) ?
+3. If a step of the playbook fails mid-execution, what is the impact
+   on the hosts already processed? How do you make the scenario resumable
+   (`block/rescue/always`, `--start-at-task`, `serial`)?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md).
+See [`challenge/README.md`](challenge/README.md).
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Multi-scénarios** : `molecule/default/`, `molecule/cluster/`,
-  `molecule/upgrade/` pour tester différents cas. Lancer un scénario
-  spécifique : `molecule test -s cluster`.
-- **`side_effect.yml`** : entre `converge` et `verify`, simule une panne
-  (stop service, suppression fichier) pour tester le rôle de récupération.
-- **`MOLECULE_DISTRO`** env var : réutiliser un même `molecule.yml` pour
-  tester plusieurs OS via CI matrix (lab 65 + 69).
+- **Multi-scenarios**: `molecule/default/`, `molecule/cluster/`,
+  `molecule/upgrade/` to test different cases. Run a specific
+  scenario: `molecule test -s cluster`.
+- **`side_effect.yml`**: between `converge` and `verify`, simulate a failure
+  (stop service, delete file) to test the recovery role.
+- **`MOLECULE_DISTRO`** env var: reuse a single `molecule.yml` to
+  test several OSes via CI matrix (lab 65 + 69).
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint labs/molecule/installation-config/

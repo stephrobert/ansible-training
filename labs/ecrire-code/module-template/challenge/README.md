@@ -1,15 +1,16 @@
-# 🎯 Challenge — Module `template:` avec `backup`
+# 🎯 Challenge — Module `template:` with `backup`
 
-## ✅ Objectif
+## ✅ Objective
 
-Générer **`/etc/banner.txt`** sur **db1.lab** depuis un template, avec
-**backup** activé et **mode 0644**.
+Generate **`/etc/banner.txt`** on **db1.lab** from a template, with
+**mode 0644**. Adding `backup: true` is a **production best practice**,
+recommended but **not verified by the tests**.
 
-## 🧩 Fichiers à créer
+## 🧩 Files to create
 
 ### 1) `challenge/templates/banner.txt.j2`
 
-Doit produire :
+Must produce:
 
 ```text
 ====================
@@ -19,14 +20,14 @@ Generated: 2026-04-25
 Owner: ops-team
 ```
 
-Indices Jinja2 :
+Jinja2 hints:
 
-- `{{ motd_text }}` interpole une variable.
-- `{% for k, v in metadata.items() %}` itère sur un dict (couples clé-valeur).
-- `{{ k | capitalize }}` met la première lettre en majuscule (`generated` →
+- `{{ motd_text }}` interpolates a variable.
+- `{% for k, v in metadata.items() %}` iterates over a dict (key-value pairs).
+- `{{ k | capitalize }}` puts the first letter in uppercase (`generated` to
   `Generated`).
 
-Squelette :
+Skeleton:
 
 ```jinja
 ====================
@@ -39,7 +40,7 @@ Squelette :
 
 ### 2) `challenge/solution.yml`
 
-Squelette :
+Skeleton:
 
 ```yaml
 ---
@@ -59,37 +60,37 @@ Squelette :
         src: ???
         dest: ???
         mode: "0644"
-        backup: ???
+        backup: true              # best practice (prod), not verified by the tests
 ```
 
-## 🧩 Options à connaître sur `template:`
+## 🧩 Options to know on `template:`
 
-| Option | Effet |
+| Option | Effect |
 | --- | --- |
-| `src:` | Chemin **relatif au playbook** ou absolu. Convention : `templates/<nom>.j2`. |
-| `dest:` | Chemin **sur le managed node**. |
-| `mode: "0644"` | Permissions Unix (en chaîne, pas en octal nu). |
-| `backup: true` | Sauvegarde la version précédente en `<dest>.<timestamp>~` avant écrasement. |
-| `validate: 'cmd %s'` | Valide la syntaxe avant écriture (ex: `nginx -t -c %s`). |
-| `trim_blocks: true` | Supprime le `\n` après `{% %}`. |
-| `lstrip_blocks: true` | Supprime les espaces de début de ligne avant `{% %}`. |
+| `src:` | Path **relative to the playbook** or absolute. Convention: `templates/<name>.j2`. |
+| `dest:` | Path **on the managed node**. |
+| `mode: "0644"` | Unix permissions (as a string, not bare octal). |
+| `backup: true` | Backs up the previous version as `<dest>.<timestamp>~` before overwriting. |
+| `validate: 'cmd %s'` | Validates the syntax before writing (e.g. `nginx -t -c %s`). |
+| `trim_blocks: true` | Removes the `\n` after `{% %}`. |
+| `lstrip_blocks: true` | Removes the start-of-line spaces before `{% %}`. |
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **`backup: true`** crée un backup `<dest>.<timestamp>~` avant
->   écraser. Indispensable pour les configs critiques. Au 1er run, pas de
->   backup (rien à sauvegarder).
-> - **`validate:`** : commande pour valider le fichier **avant** de
->   l'écrire. Si elle échoue, le fichier d'origine reste intact. Format :
->   `validate: 'sshd -t -f %s'` (le `%s` est remplacé par un fichier
->   temporaire).
-> - **`trim_blocks` + `lstrip_blocks`** : indispensables pour des
->   templates lisibles. Sans, vos `{% if %}` laissent des lignes vides
->   et des espaces parasites.
-> - **`mode:` toujours quoté** : `mode: "0644"` (pas `mode: 0644` qui est
->   octal puis décimal = mode 420).
+> - **`backup: true`** creates a backup `<dest>.<timestamp>~` before
+>   overwriting. A production best practice for critical configs, **not
+>   verified by the tests** (on the first run, nothing to save).
+> - **`validate:`**: command to validate the file **before** writing it.
+>   If it fails, the original file stays intact. Format:
+>   `validate: 'sshd -t -f %s'` (the `%s` is replaced by a temporary
+>   file).
+> - **`trim_blocks` + `lstrip_blocks`**: essential for readable
+>   templates. Without them, your `{% if %}` leave empty lines
+>   and stray spaces.
+> - **`mode:` always quoted**: `mode: "0644"` (not `mode: 0644` which is
+>   octal then decimal = mode 420).
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/ecrire-code/module-template/challenge/solution.yml
@@ -97,10 +98,10 @@ ansible db1.lab -m ansible.builtin.command -a "cat /etc/banner.txt"
 ansible db1.lab -m ansible.builtin.command -a "ls -la /etc/banner.txt*"
 ```
 
-🔍 Au **2e run après modif** du template, vous verrez `/etc/banner.txt.<ts>~`
-apparaître (preuve de `backup: true`).
+🔍 On the **2nd run after modifying** the template, you will see `/etc/banner.txt.<ts>~`
+appear (proof of `backup: true`).
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/module-template/challenge/tests/
@@ -109,18 +110,18 @@ pytest -v labs/ecrire-code/module-template/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/ecrire-code/module-template clean
+dsoxlab clean ecrire-code-module-template
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`validate:`** : ajoutez `validate: 'echo %s'` pour voir Ansible passer le
-  fichier temporaire à la commande de validation. Sur un nginx.conf, ce serait
-  `nginx -t -c %s`. Si la validation échoue, le fichier d'origine reste
+- **`validate:`**: add `validate: 'echo %s'` to see Ansible pass the
+  temporary file to the validation command. On an nginx.conf, it would be
+  `nginx -t -c %s`. If the validation fails, the original file stays
   intact.
-- **`force: false`** : empêche l'écrasement si le fichier existe déjà
-  (l'opposé du défaut).
-- **Lint** :
+- **`force: false`**: prevents the overwrite if the file already exists
+  (the opposite of the default).
+- **Lint**:
 
    ```bash
    ansible-lint labs/ecrire-code/module-template/challenge/solution.yml

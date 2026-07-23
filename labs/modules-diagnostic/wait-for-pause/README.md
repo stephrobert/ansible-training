@@ -1,46 +1,46 @@
-# Lab 54 — Modules `wait_for:` et `pause:` (synchronisation)
+# Lab 54 — `wait_for:` and `pause:` modules (synchronization)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Modules wait_for et pause Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/wait-for-pause/)
+🔗 [**Ansible wait_for and pause modules**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/module-wait-for-pause/)
 
-Deux modules pour la **synchronisation temporelle** dans un play :
+Two modules for **time synchronization** within a play:
 
-- **`ansible.builtin.wait_for:`** = attendre **une condition** (port ouvert,
-  fichier créé, regex dans un fichier, machine SSH-prête). Sondage actif.
-- **`ansible.builtin.pause:`** = attendre **un délai fixe** (secondes/minutes)
-  ou demander une **confirmation interactive** à l'opérateur.
+- **`ansible.builtin.wait_for:`** = wait for **a condition** (open port, file
+  created, regex in a file, SSH-ready machine). Active polling.
+- **`ansible.builtin.pause:`** = wait for **a fixed delay** (seconds/minutes) or
+  ask the operator for an **interactive confirmation**.
 
-`wait_for:` est le **bon choix** dans 90% des cas — sondage actif jusqu'à
-condition vraie. `pause:` est utile pour des **délais incompressibles** ou
-des **confirmations humaines**.
+`wait_for:` is the **right choice** in 90% of cases: active polling until the
+condition is true. `pause:` is useful for **incompressible delays** or **human
+confirmations**.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Attendre l'ouverture d'un port** TCP (cas le plus courant).
-2. **Attendre la fermeture** d'un port (`state: stopped`).
-3. **Attendre l'apparition d'un fichier** ou une **regex** dans un fichier.
-4. **Pause** simple (`seconds:`) ou interactive (`prompt:`).
-5. **Diagnostiquer** un timeout `wait_for:` (mauvais host, port firewallé).
+1. **Wait for a TCP port to open** (the most common case).
+2. **Wait for a port to close** (`state: stopped`).
+3. **Wait for a file to appear** or for a **regex** in a file.
+4. **Pause** simply (`seconds:`) or interactively (`prompt:`).
+5. **Diagnose** a `wait_for:` timeout (wrong host, firewalled port).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 ansible db1.lab -b -m shell -a "rm -f /tmp/lab-waitfor-*"
 ```
 
-## 📚 Exercice 1 — `wait_for: port:` (le plus courant)
+## 📚 Exercise 1 — `wait_for: port:` (the most common)
 
-Pattern n°1 : après démarrage d'un service, attendre que le port soit prêt
-avant les tâches qui en dépendent.
+Pattern number 1: after starting a service, wait for the port to be ready
+before the tasks that depend on it.
 
 ```yaml
 ---
@@ -60,13 +60,13 @@ avant les tâches qui en dépendent.
         timeout: 10
 ```
 
-🔍 **Observation** : `wait_for:` polle (par défaut toutes les secondes) jusqu'à
-ce que le port soit ouvert, ou échoue après `timeout:` secondes.
+🔍 **Observation**: `wait_for:` polls (by default every second) until the port
+is open, or fails after `timeout:` seconds.
 
-**`host:`** par défaut = `127.0.0.1`. Pour tester un port d'un autre host
-depuis le managed node, spécifier `host: 10.10.20.21`.
+**`host:`** default = `127.0.0.1`. To test a port on another host from the
+managed node, specify `host: 10.10.20.21`.
 
-## 📚 Exercice 2 — `state: stopped` (attendre la fermeture)
+## 📚 Exercise 2 — `state: stopped` (wait for the close)
 
 ```yaml
 - name: Verifier que le port 9999 est BIEN libre
@@ -77,14 +77,13 @@ depuis le managed node, spécifier `host: 10.10.20.21`.
     timeout: 5
 ```
 
-🔍 **Observation** : `state: stopped` = **succès si le port est libre**.
-Pratique avant de démarrer un service — vérifier que rien d'autre n'utilise
-le port.
+🔍 **Observation**: `state: stopped` = **success if the port is free**. Handy
+before starting a service, to check that nothing else is using the port.
 
-**Cas d'échec** : si le port est occupé après `timeout`, la tâche **failed**.
-Permet d'arrêter le play avant un conflit.
+**Failure case**: if the port is busy after `timeout`, the task is **failed**.
+Lets you stop the play before a conflict.
 
-## 📚 Exercice 3 — `wait_for: path:` (apparition d'un fichier)
+## 📚 Exercise 3 — `wait_for: path:` (a file appears)
 
 ```yaml
 - name: Lancer une commande qui crée un fichier (en arriere-plan)
@@ -99,11 +98,11 @@ Permet d'arrêter le play avant un conflit.
     timeout: 10
 ```
 
-🔍 **Observation** : `wait_for: path:` polle jusqu'à ce que le fichier
-**existe**. Utile pour synchroniser avec un process asynchrone qui crée un
-flag-file en fin de traitement.
+🔍 **Observation**: `wait_for: path:` polls until the file **exists**. Useful to
+synchronize with an asynchronous process that creates a flag-file at the end of
+processing.
 
-## 📚 Exercice 4 — `wait_for: search_regex:` (chercher une regex)
+## 📚 Exercise 4 — `wait_for: search_regex:` (search for a regex)
 
 ```yaml
 - name: Verifier qu un service a logge "Ready" dans son journal
@@ -113,17 +112,17 @@ flag-file en fin de traitement.
     timeout: 30
 ```
 
-🔍 **Observation** : `wait_for:` lit le fichier et teste la regex à chaque
-poll. Apparaît dans le contenu → succès. Timeout → failed.
+🔍 **Observation**: `wait_for:` reads the file and tests the regex at each poll.
+Appears in the content → success. Timeout → failed.
 
-**Cas d'usage** : attendre le log "Server ready" d'une app, "Database
-initialized", etc.
+**Use case**: wait for the "Server ready" log of an app, "Database initialized",
+etc.
 
-**Limitation** : `wait_for: search_regex:` lit le fichier **à chaque poll** —
-sur un log de plusieurs Go, c'est lent. Pour des logs très volumineux,
-préférer `tail -F` + grep ou un module dédié.
+**Limitation**: `wait_for: search_regex:` reads the file **at each poll**: on a
+log of several GB, it is slow. For very large logs, prefer `tail -F` + grep or a
+dedicated module.
 
-## 📚 Exercice 5 — `pause:` simple (délai fixe)
+## 📚 Exercise 5 — Simple `pause:` (fixed delay)
 
 ```yaml
 - name: Demarrer le service
@@ -141,17 +140,17 @@ préférer `tail -F` + grep ou un module dédié.
   changed_when: false
 ```
 
-🔍 **Observation** : **`pause: seconds:`** = sleep en début de play. Simple
-mais **pas adaptatif** (5s même si le service est prêt en 1s). Préférer
-`wait_for:` quand une condition précise existe.
+🔍 **Observation**: **`pause: seconds:`** = sleep at the start of the play.
+Simple but **not adaptive** (5s even if the service is ready in 1s). Prefer
+`wait_for:` when a precise condition exists.
 
-**Quand préférer `pause:` à `wait_for:`** :
+**When to prefer `pause:` over `wait_for:`**:
 
-- Pas de condition précise mesurable.
-- Délai imposé par un système externe (cool-down API).
-- Test de configurations qui doivent prendre effet dans un temps fixé.
+- No precise measurable condition.
+- Delay imposed by an external system (API cool-down).
+- Testing configurations that must take effect within a fixed time.
 
-## 📚 Exercice 6 — `pause: prompt:` (confirmation interactive)
+## 📚 Exercise 6 — `pause: prompt:` (interactive confirmation)
 
 ```yaml
 - name: Confirmation manuelle avant migration BDD
@@ -161,11 +160,11 @@ mais **pas adaptatif** (5s même si le service est prêt en 1s). Préférer
       Tapez ENTER pour continuer, Ctrl+C pour annuler.
 ```
 
-🔍 **Observation** : Ansible **bloque** le play en attendant une touche. Cas
-d'usage : opérations critiques où un humain doit valider.
+🔍 **Observation**: Ansible **blocks** the play while waiting for a key. Use
+case: critical operations where a human must validate.
 
-**Pattern CI/CD** : ajouter `pause: + when: confirm_required | bool` pour
-n'avoir la confirmation **qu'en mode interactif**.
+**CI/CD pattern**: add `pause: + when: confirm_required | bool` to have the
+confirmation **only in interactive mode**.
 
 ```yaml
 - ansible.builtin.pause:
@@ -173,14 +172,14 @@ n'avoir la confirmation **qu'en mode interactif**.
   when: confirm_required | default(false) | bool
 ```
 
-En CI : `--extra-vars "confirm_required=false"` saute la pause.
-En manuel : on demande confirmation.
+In CI: `--extra-vars "confirm_required=false"` skips the pause.
+In manual mode: it asks for confirmation.
 
-## 📚 Exercice 7 — Le piège : `wait_for:` qui plante au démarrage
+## 📚 Exercise 7 — The trap: `wait_for:` that crashes at startup
 
-Ansible peut **lancer** un service via `systemd_service:` et **passer
-immédiatement** à `wait_for: port:` — sans attendre que systemd ait
-réellement démarré le binaire.
+Ansible can **start** a service via `systemd_service:` and **immediately move**
+to `wait_for: port:`, without waiting for systemd to have actually started the
+binary.
 
 ```yaml
 # ❌ Race condition possible
@@ -194,78 +193,76 @@ réellement démarré le binaire.
   # Si myapp met 35s a demarrer → wait_for failed
 ```
 
-🔍 **Observation** : la **race** se produit si la VM est lente ou si l'app
-prend du temps à initialiser ses sockets. Ansible ne sait **pas** distinguer
-"systemd a accepté de start" de "le service écoute".
+🔍 **Observation**: the **race** happens if the VM is slow or if the app takes
+time to initialize its sockets. Ansible **cannot** distinguish "systemd agreed
+to start" from "the service is listening".
 
-**Mitigation** :
+**Mitigation**:
 
-- **Augmenter `timeout:`** : si l'app peut prendre 60s, mettre `timeout: 90`.
-- **`pause:` minimum** avant le `wait_for:` : laisser au moins quelques
-  secondes au service pour démarrer son réseau.
-- **Combiner avec `until:` sur `uri:`** : tester un endpoint HTTP plutôt qu'un
-  port TCP brut (lab 50).
+- **Increase `timeout:`**: if the app can take 60s, set `timeout: 90`.
+- **A minimum `pause:`** before the `wait_for:`: give the service at least a few
+  seconds to start its network.
+- **Combine with `until:` on `uri:`**: test an HTTP endpoint rather than a raw
+  TCP port (lab 50).
 
-## 📚 Exercice 8 — `delay:` pour des sondages plus espacés
+## 📚 Exercise 8 — `delay:` for more spaced-out polling
 
 ```yaml
 - name: Attendre un service lent (poll moins frequent)
   ansible.builtin.wait_for:
     port: 8080
     timeout: 300
-    delay: 10        # Attendre 10s avant le 1er sondage
-    sleep: 5         # 5s entre chaque sondage
+    delay: 10        # Wait 10s before the 1st poll
+    sleep: 5         # 5s between each poll
 ```
 
-🔍 **Observation** : par défaut, `wait_for:` sonde **toutes les secondes** dès
-le départ. Sur un service très lent (Docker registry, base de données), c'est
-trop. **`delay:`** retarde le 1er sondage. **`sleep:`** espace les sondages
-suivants.
+🔍 **Observation**: by default, `wait_for:` polls **every second** from the
+start. On a very slow service (Docker registry, database), that is too much.
+**`delay:`** delays the 1st poll. **`sleep:`** spaces out the subsequent polls.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`wait_for:`** = sondage actif jusqu'à condition vraie.
-- **`port:`** + `state: started/stopped` = test de port le plus courant.
-- **`path:`** = attendre l'apparition d'un fichier.
-- **`search_regex:`** = chercher une chaîne dans un fichier (lent sur gros logs).
-- **`pause: seconds:`** = sleep simple, **non adaptatif**.
-- **`pause: prompt:`** = confirmation interactive humaine.
-- **`timeout:`** sur `wait_for:` = à dimensionner avec marge (× 2 ou × 3 du
-  temps attendu).
+- **`wait_for:`** = active polling until the condition is true.
+- **`port:`** + `state: started/stopped` = the most common port test.
+- **`path:`** = wait for a file to appear.
+- **`search_regex:`** = search for a string in a file (slow on large logs).
+- **`pause: seconds:`** = simple sleep, **not adaptive**.
+- **`pause: prompt:`** = interactive human confirmation.
+- **`timeout:`** on `wait_for:` = to be sized with margin (× 2 or × 3 of the
+  expected time).
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous démarrez `nginx` qui peut prendre 2s à 30s selon la charge. Quelle
-   combinaison `systemd + wait_for` (avec quels paramètres) garantit le moins
-   de risque sans trop d'attente ?
+1. You start `nginx`, which can take 2s to 30s depending on load. Which
+   `systemd + wait_for` combination (with which parameters) guarantees the least
+   risk without too much waiting?
 
-2. Différence entre `wait_for: port:` (test TCP brut) et `uri: until:` (test
-   HTTP avec status code) ? Quand préférer chaque ?
+2. Difference between `wait_for: port:` (raw TCP test) and `uri: until:` (HTTP
+   test with status code)? When to prefer each?
 
-3. Vous voulez **bloquer le play** entre 2 batchs `serial: 1` pour vérifier
-   manuellement le 1er hôte avant de toucher au 2e. Quel pattern ?
+3. You want to **block the play** between 2 `serial: 1` batches to manually
+   check the 1st host before touching the 2nd. Which pattern?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`active_connection_states:`** : lister les états TCP acceptés (`ESTABLISHED`,
-  `LISTEN`, `SYN_SENT`, etc.). Avancé.
-- **`exclude_hosts:`** : `wait_for:` distribué sur plusieurs hôtes — exclure
-  certains.
-- **Module `community.general.timeout`** : décorateur pour limiter une tâche
-  arbitraire dans le temps.
-- **`uri: + until:`** (lab 50) : alternative à `wait_for: port:` qui teste
-  aussi l'**applicatif** (HTTP 200 + body OK), pas juste le port TCP.
-- **Lab 50 (`uri:`)** + **Lab 53 (`assert:`)** : combinaison `wait_for + uri +
-  assert` pour des healthchecks robustes.
+- **`active_connection_states:`**: list the accepted TCP states (`ESTABLISHED`,
+  `LISTEN`, `SYN_SENT`, etc.). Advanced.
+- **`exclude_hosts:`**: `wait_for:` distributed over several hosts, exclude some.
+- **`community.general.timeout` module**: decorator to limit an arbitrary task
+  in time.
+- **`uri: + until:`** (lab 50): alternative to `wait_for: port:` that also tests
+  the **application** (HTTP 200 + body OK), not just the TCP port.
+- **Lab 50 (`uri:`)** + **Lab 53 (`assert:`)**: the `wait_for + uri + assert`
+  combination for robust healthchecks.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 ansible-lint labs/modules-diagnostic/wait-for-pause/lab.yml
@@ -273,9 +270,9 @@ ansible-lint labs/modules-diagnostic/wait-for-pause/challenge/solution.yml
 ansible-lint --profile production labs/modules-diagnostic/wait-for-pause/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un
-> hook pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

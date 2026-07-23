@@ -1,164 +1,151 @@
-# Lab 48 — LVM storage : `lvg:` + `lvol:` + `filesystem:` + `mount:`
+# Lab 48 — LVM storage: `lvg:` + `lvol:` + `filesystem:` + `mount:`
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**LVM avec Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/rhel-systeme/lvm-storage/)
+🔗 [**LVM with Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/lvm-storage/)
 
-LVM (Logical Volume Manager) abstrait les disques physiques en **volumes
-logiques redimensionnables**. Pipeline classique :
+LVM (Logical Volume Manager) abstracts physical disks into **resizable logical
+volumes**. Classic pipeline:
 
-1. **PV** (Physical Volume) — disque ou partition initialisée pour LVM.
-2. **VG** (Volume Group) — pool de PVs combinés.
-3. **LV** (Logical Volume) — volume découpé dans le VG (le "disque virtuel"
-   utilisable).
+1. **PV** (Physical Volume): disk or partition initialized for LVM.
+2. **VG** (Volume Group): pool of combined PVs.
+3. **LV** (Logical Volume): volume carved out of the VG (the usable "virtual
+   disk").
 
-Modules Ansible :
+Ansible modules:
 
-- **`community.general.lvg:`** — gérer les Volume Groups (créer/supprimer,
-  ajouter des PVs).
-- **`community.general.lvol:`** — gérer les Logical Volumes (créer, étendre,
-  supprimer).
-- **`community.general.filesystem:`** — formater un LV ou un disque.
-- **`ansible.posix.mount:`** — monter et persister dans fstab (lab 47).
+- **`community.general.lvg:`**: manage Volume Groups (create/delete,
+  add PVs).
+- **`community.general.lvol:`**: manage Logical Volumes (create, extend,
+  delete).
+- **`community.general.filesystem:`**: format an LV or a disk.
+- **`ansible.posix.mount:`**: mount and persist in fstab (lab 47).
 
-Sur RHCE 2026, ces 4 modules forment le **pipeline storage complet**.
+On RHCE 2026, these 4 modules form the **complete storage pipeline**.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Créer un loop device** pour simuler un disque sur n'importe quelle VM.
-2. **Construire un PV → VG → LV** en chaîne avec les 3 modules dédiés.
-3. **Formater** un LV en `xfs` ou `ext4` avec idempotence.
-4. **Monter** le LV via `/dev/<vg>/<lv>` dans fstab.
-5. **Étendre** un LV à chaud avec `lvol: resizefs: true`.
+1. **Recognize** the secondary disk dedicated to the storage labs.
+2. **Build a PV → VG → LV** chain with the 3 dedicated modules.
+3. **Format** an LV as `xfs` or `ext4` with idempotence.
+4. **Mount** the LV via `/dev/<vg>/<lv>` in fstab.
+5. **Extend** an LV live with `lvol: resizefs: true`.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible-galaxy collection install community.general ansible.posix
 ansible db1.lab -m ping
 
-# Nettoyer un lab precedent
-ansible db1.lab -b -m shell -a "umount /mnt/lvm-data 2>/dev/null; lvremove -f /dev/lab_vg/lab_lv 2>/dev/null; vgremove -f lab_vg 2>/dev/null; pvremove -f /dev/loop10 2>/dev/null; losetup -d /dev/loop10 2>/dev/null; rm -rf /opt/lab-lvm.img /mnt/lvm-data; sed -i '/lvm-data\\|lab_vg/d' /etc/fstab; true"
+# Check the secondary disk dedicated to the storage labs
+ansible db1.lab -b -m shell -a "lsblk /dev/vdb"
 ```
 
-## 📚 Exercice 1 — Créer un loop device persistant
+`dsoxlab run` runs the lab's `setup.yaml`, which makes `/dev/vdb` blank (no
+partition, no LVM signature, no leftover fstab entry). If you chain
+from the `parted` or `filesystem` labs, it is the one that resets the disk.
 
-Pour simuler un disque dédié, on utilise un fichier image associé à un loop
-device (`/dev/loop10`). Pour qu'il **persiste au reboot**, on configure
-**`losetup`** au démarrage via `systemd`.
+## 📚 Exercise 1 — Spot the working disk
+
+**db1.lab** has a **real secondary disk** of 5 GiB, `/dev/vdb`,
+provisioned by the lab infra (`extra_disk_gb` in the repo's `meta.yml`).
+That is the one you hand to LVM, not the system disk.
 
 ```yaml
 ---
-- name: Setup loop device pour LVM
+- name: Inspecter le disque secondaire
   hosts: db1.lab
   become: true
   tasks:
-    - name: Creer fichier image 200M
-      ansible.builtin.command:
-        cmd: dd if=/dev/zero of=/opt/lab-lvm.img bs=1M count=200
-        creates: /opt/lab-lvm.img
-
-    - name: Associer au loop device 10 (idempotent)
-      ansible.builtin.shell: |
-        if ! losetup /dev/loop10 2>/dev/null; then
-          losetup /dev/loop10 /opt/lab-lvm.img
-          echo CHANGED
-        fi
-      register: loop_setup
-      changed_when: "'CHANGED' in loop_setup.stdout"
-
-    - name: Verifier
-      ansible.builtin.command: losetup -l /dev/loop10
-      register: loop_status
+    - name: Lire la géométrie du disque
+      ansible.builtin.command: lsblk /dev/vdb
+      register: disk_info
       changed_when: false
 
     - name: Afficher
       ansible.builtin.debug:
-        var: loop_status.stdout_lines
+        var: disk_info.stdout_lines
 ```
 
-🔍 **Observation** : `/dev/loop10` est maintenant un device bloc qui pointe sur
-`/opt/lab-lvm.img` (200Mo). Visible dans `lsblk`.
+🔍 **Observation**: `/dev/vdb` is a 5 GiB block device with no partition. LVM
+can work **directly on the whole disk**: unlike a classic
+partition, there is no need to go through `parted` first.
 
-**Limitation** : `losetup` n'est **pas persistant au reboot**. Pour un vrai lab
-production, vous utiliseriez un **disque physique**. Pour ce lab, à chaque
-reboot, il faut relancer le playbook (ou créer une unit systemd).
-
-## 📚 Exercice 2 — Créer le PV + VG (`lvg:`)
+## 📚 Exercise 2 — Create the PV + VG (`lvg:`)
 
 ```yaml
-- name: Creer le Volume Group lab_vg sur loop10
+- name: Creer le Volume Group lab_vg sur le disque secondaire
   community.general.lvg:
     vg: lab_vg
-    pvs: /dev/loop10
+    pvs: /dev/vdb
     state: present
 ```
 
-🔍 **Observation** : le module fait **2 choses** :
+🔍 **Observation**: the module does **2 things**:
 
-1. **`pvcreate /dev/loop10`** — initialise le PV.
-2. **`vgcreate lab_vg /dev/loop10`** — crée le VG sur ce PV.
+1. **`pvcreate /dev/vdb`**: initializes the PV.
+2. **`vgcreate lab_vg /dev/vdb`**: creates the VG on this PV.
 
-**Idempotent** : 2e run → `changed=0`.
+**Idempotent**: 2nd run → `changed=0`.
 
-**Vérifier** :
+**Check**:
 
 ```bash
-ssh ansible@db1.lab 'sudo vgdisplay lab_vg | head -10'
-ssh ansible@db1.lab 'sudo pvs'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'sudo vgdisplay lab_vg | head -10'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'sudo pvs'
 ```
 
-**Étendre le VG** ultérieurement avec un nouveau disque :
+**Extend the VG** later with a new disk:
 
 ```yaml
 - community.general.lvg:
     vg: lab_vg
-    pvs: /dev/loop10,/dev/loop11   # Ajout du 2e disque
+    pvs: /dev/vdb,/dev/vdc   # Adding the 2nd disk
     state: present
 ```
 
-## 📚 Exercice 3 — Créer le LV (`lvol:`)
+## 📚 Exercise 3 — Create the LV (`lvol:`)
 
 ```yaml
-- name: Creer le Logical Volume lab_lv (100M)
+- name: Creer le Logical Volume lab_lv (1G)
   community.general.lvol:
     vg: lab_vg
     lv: lab_lv
-    size: 100M
+    size: 1G
     state: present
 ```
 
-**Format de `size:`** :
+**Format of `size:`**:
 
-- **`100M`** — taille fixe.
-- **`50%FREE`** — 50% de l'espace libre du VG.
-- **`+10G`** — extension de 10Go (relatif).
+- **`100M`**: fixed size.
+- **`50%FREE`**: 50% of the VG's free space.
+- **`+10G`**: extension by 10 GB (relative).
 
-🔍 **Observation** : le LV est créé à `/dev/lab_vg/lab_lv` (ou
-`/dev/mapper/lab_vg-lab_lv`). Visible dans `lsblk` :
+🔍 **Observation**: the LV is created at `/dev/lab_vg/lab_lv` (or
+`/dev/mapper/lab_vg-lab_lv`). Visible in `lsblk`:
 
 ```bash
-ssh ansible@db1.lab 'sudo lsblk /dev/loop10'
-# loop10              7:0    0   200M  0 loop
-# └─lab_vg-lab_lv   253:1    0   100M  0 lvm
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'sudo lsblk /dev/vdb'
+# vdb               252:16   0     5G  0 disk
+# └─lab_vg-lab_lv   253:1    0     1G  0 lvm
 ```
 
-## 📚 Exercice 4 — Formater le LV (`filesystem:`)
+## 📚 Exercise 4 — Format the LV (`filesystem:`)
 
 ```yaml
 - name: Formater le LV en xfs
@@ -167,18 +154,18 @@ ssh ansible@db1.lab 'sudo lsblk /dev/loop10'
     dev: /dev/lab_vg/lab_lv
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **Idempotent** : si le filesystem est déjà du bon type, `changed=0`.
-- **`force: true`** force le reformatage si un autre filesystem existe (DANGER —
-  perte de données).
+- **Idempotent**: if the filesystem is already of the right type, `changed=0`.
+- **`force: true`** forces reformatting if another filesystem exists (DANGER:
+  data loss).
 
-**Filesystems supportés** : `ext2`, `ext3`, `ext4`, `xfs`, `btrfs`, `f2fs`, etc.
+**Supported filesystems**: `ext2`, `ext3`, `ext4`, `xfs`, `btrfs`, `f2fs`, etc.
 
-**Convention RHCE** : **xfs** est le défaut RHEL 7+ (performant pour gros
-fichiers, snapshots, quotas). **ext4** reste utilisé pour `/boot`.
+**RHCE convention**: **xfs** is the RHEL 7+ default (performant for large
+files, snapshots, quotas). **ext4** is still used for `/boot`.
 
-## 📚 Exercice 5 — Monter le LV (`mount:`)
+## 📚 Exercise 5 — Mount the LV (`mount:`)
 
 ```yaml
 - name: Creer le point de montage
@@ -196,14 +183,14 @@ fichiers, snapshots, quotas). **ext4** reste utilisé pour `/boot`.
     state: mounted
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- `/etc/fstab` contient désormais une ligne pointant vers `/dev/lab_vg/lab_lv`.
-- **Mieux que d'utiliser `/dev/loopX`** : LVM gère l'**alias logique**, donc
-  même si le disque change de position physique, le `/dev/<vg>/<lv>` reste
-  stable.
+- `/etc/fstab` now contains a line pointing to `/dev/lab_vg/lab_lv`.
+- **Better than using `/dev/vdb`**: LVM manages the **logical alias**, so even
+  if the disk changes physical position (`vdb` becomes `vdc` after adding
+  hardware), the `/dev/<vg>/<lv>` stays stable.
 
-**Pattern préféré pour fstab** : utiliser **`UUID=...`** plutôt que `/dev/...` :
+**Preferred pattern for fstab**: use **`UUID=...`** rather than `/dev/...`:
 
 ```yaml
 - ansible.posix.mount:
@@ -213,48 +200,48 @@ fichiers, snapshots, quotas). **ext4** reste utilisé pour `/boot`.
     state: mounted
 ```
 
-L'UUID survit aux renommages — encore plus stable que LVM.
+The UUID survives renames, even more stable than LVM.
 
-## 📚 Exercice 6 — Étendre un LV à chaud (`resizefs: true`)
+## 📚 Exercise 6 — Extend an LV live (`resizefs: true`)
 
-Cas réel : votre `/var/log/` est plein. Vous étendez le LV **sans démonter**.
+Real case: your `/var/log/` is full. You extend the LV **without unmounting**.
 
 ```yaml
-- name: Etendre lab_lv a 150M (avec resizefs)
+- name: Etendre lab_lv a 2G (avec resizefs)
   community.general.lvol:
     vg: lab_vg
     lv: lab_lv
-    size: 150M
-    resizefs: true   # Etend le filesystem aussi
+    size: 2G
+    resizefs: true   # Also extends the filesystem
     state: present
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **`lvextend`** étend le LV à 150Mo.
-- **`resizefs: true`** lance `xfs_growfs` (ou `resize2fs` pour ext4) pour étendre
-  le filesystem **sans démonter**.
+- **`lvextend`** extends the LV to 2 GiB (the VG has 5, the space is there).
+- **`resizefs: true`** runs `xfs_growfs` (or `resize2fs` for ext4) to extend
+  the filesystem **without unmounting**.
 
-**Vérifier** :
+**Check**:
 
 ```bash
-ssh ansible@db1.lab 'df -h /mnt/lvm-data'
-# /dev/mapper/lab_vg-lab_lv  150M ...
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'df -h /mnt/lvm-data'
+# /dev/mapper/lab_vg-lab_lv  2.0G ...
 ```
 
-**Limitation XFS** : `xfs_growfs` peut **étendre** mais pas **réduire**. Pour
-réduire, il faut `ext4` ou démonter + reformater.
+**XFS limitation**: `xfs_growfs` can **extend** but not **shrink**. To
+shrink, you need `ext4` or unmount + reformat.
 
-## 📚 Exercice 7 — Le piège : `vgremove` sans cleanup des LVs
+## 📚 Exercise 7 — The trap: `vgremove` without cleaning up the LVs
 
 ```yaml
-# ❌ DANGER : vgremove echoue si des LVs existent encore
+# ❌ DANGER: vgremove fails if LVs still exist
 - community.general.lvg:
     vg: lab_vg
     state: absent
 ```
 
-Ordre correct pour le **teardown** :
+Correct order for the **teardown**:
 
 ```yaml
 - name: 1. Demonter et retirer fstab
@@ -274,75 +261,77 @@ Ordre correct pour le **teardown** :
     state: absent
 
 - name: 4. Liberer le PV
-  ansible.builtin.command: pvremove -f /dev/loop10
+  ansible.builtin.command: pvremove -ff -y /dev/vdb
   changed_when: true
 
-- name: 5. Detacher le loop device
-  ansible.builtin.command: losetup -d /dev/loop10
+- name: 5. Effacer les signatures LVM du disque
+  ansible.builtin.command: wipefs -af /dev/vdb
   changed_when: true
 ```
 
-🔍 **Observation** : ordre **exactement inverse** de la création. Sauter une
-étape = échec ou orphelins LVM.
+🔍 **Observation**: order **exactly the reverse** of the creation. Skipping a
+step = failure or LVM orphans. This is exactly what the lab's `cleanup.yaml`
+does (`dsoxlab clean modules-rhel-lvm-storage`).
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Pipeline LVM** : PV (`pvcreate`) → VG (`lvg:`) → LV (`lvol:`) → FS
+- **LVM pipeline**: PV (`pvcreate`) → VG (`lvg:`) → LV (`lvol:`) → FS
   (`filesystem:`) → mount (`mount:`).
-- **`size:` accepte** : valeurs absolues (`100M`), pourcentages (`50%FREE`),
-  relatives (`+10G`).
-- **`xfs` est le défaut RHEL 7+** ; `ext4` pour `/boot` ou besoin de réduction.
-- **`resizefs: true`** étend filesystem à chaud (sans démonter).
-- **`UUID=`** dans fstab > `/dev/...` — plus stable.
-- **Ordre teardown** = inverse de la création.
+- **`size:` accepts**: absolute values (`100M`), percentages (`50%FREE`),
+  relative (`+10G`).
+- **`xfs` is the RHEL 7+ default**; `ext4` for `/boot` or when you need to shrink.
+- **`resizefs: true`** extends the filesystem live (without unmounting).
+- **`UUID=`** in fstab > `/dev/...`, more stable.
+- **Teardown order** = reverse of the creation.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous avez `lab_vg` avec 1 PV de 200M. Vous voulez ajouter 1Go via un 2e
-   disque. Quel est le pipeline complet (modules + ordre) ?
+1. You have `lab_vg` with 1 PV of 5 GiB. You want to add 10 GiB via a 2nd
+   disk. What is the complete pipeline (modules + order)?
 
-2. Pourquoi LVM préfère-t-on à des partitions classiques pour `/var/log/` ou
-   `/var/lib/postgresql/` ? (indice : extensibilité, snapshots).
+2. Why is LVM preferred over classic partitions for `/var/log/` or
+   `/var/lib/postgresql/`? (hint: extensibility, snapshots).
 
-3. `xfs` ne sait pas réduire. Vous avez un LV 100Go en xfs avec 30Go utilisés.
-   Comment passer à 50Go ? (indice : backup, recreate, restore).
+3. `xfs` cannot shrink. You have a 100 GB LV in xfs with 30 GB used.
+   How do you go down to 50 GB? (hint: backup, recreate, restore).
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Snapshots LVM** : `lvol: snapshot:` pour créer un snapshot point-in-time.
-  Idéal avant un upgrade risqué (rollback en restaurant le snapshot).
-- **Stripping** : `lvol: stripes: 2` pour répartir un LV sur plusieurs PVs
-  (perf RAID 0 logique).
-- **Thin provisioning** : `lvol: thinpool:` pour over-provisionner un VG —
-  les LVs s'étendent à la demande.
-- **`community.general.lvol_size:` avec `100%VG`** : créer un LV qui occupe
-  tout le VG (cas single-LV par VG).
-- **Lab 47 (mount)** : si LVM est trop complexe pour le cas, un simple loop
-  device + mount peut suffire.
+- **LVM snapshots**: `lvol: snapshot:` to create a point-in-time snapshot.
+  Ideal before a risky upgrade (rollback by restoring the snapshot).
+- **Stripping**: `lvol: stripes: 2` to spread an LV over several PVs
+  (logical RAID 0 performance).
+- **Thin provisioning**: `lvol: thinpool:` to over-provision a VG:
+  the LVs grow on demand.
+- **`community.general.lvol_size:` with `100%VG`**: create an LV that takes
+  the whole VG (single-LV-per-VG case).
+- **`parted` and `filesystem` labs**: if LVM is overkill for the case, a
+  classic partition formatted then mounted is enough. They work on the same
+  `/dev/vdb`, and their `setup.yaml` resets the disk.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/modules-rhel/lvm-storage/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/modules-rhel/lvm-storage/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/modules-rhel/lvm-storage/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task,
+file modes as strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

@@ -1,0 +1,4 @@
+---
+id: roles-creer-premier-role
+title: "Créer son premier rôle avec ansible-galaxy role init"
+description: "Générer la structure d'un rôle webserver, remplir tasks, defaults, handlers et meta, puis l'appeler depuis un playbook avec roles:."

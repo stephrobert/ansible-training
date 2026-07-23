@@ -1,0 +1,20 @@
+---
+# Rôle webserver minimal : le décor que la CI de ce lab lint et teste.
+# Volontairement simple : le sujet du lab est le WORKFLOW, pas le rôle.
+- name: Installer nginx
+  ansible.builtin.package:
+    name: nginx
+    state: present
+
+- name: Déployer la page d'accueil
+  ansible.builtin.copy:
+    dest: /usr/share/nginx/html/index.html
+    content: "{{ webserver_message }}\n"
+    mode: "0644"
+  notify: Redémarrer nginx
+
+- name: Démarrer et activer nginx
+  ansible.builtin.systemd_service:
+    name: nginx
+    state: started
+    enabled: true

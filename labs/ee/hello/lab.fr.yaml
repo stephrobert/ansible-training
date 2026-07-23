@@ -1,0 +1,4 @@
+---
+id: ee-hello
+title: "Premier playbook dans un Execution Environment"
+description: "Tirer une image EE avec Podman, la déclarer par défaut dans ansible-navigator.yml, y lancer un playbook et comparer avec un ansible-playbook classique."

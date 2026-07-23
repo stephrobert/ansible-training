@@ -1,25 +1,25 @@
-# Lab 04b — Premiers pas avec `ansible-vault`
+# Lab 04b — First steps with `ansible-vault`
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Premiers pas avec Ansible Vault**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas-ansible-vault/)
+🔗 [**First steps with Ansible Vault**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas/premiers-pas-ansible-vault/)
 
-Dès qu'un playbook manipule un **mot de passe**, un **token API** ou une
-**clé privée**, il faut chiffrer ces valeurs avant de les commiter dans
-Git. **`ansible-vault`** est le mécanisme natif Ansible : il chiffre des
-fichiers YAML en **AES-256** avec un mot de passe vault.
+As soon as a playbook handles a **password**, an **API token** or a
+**private key**, you must encrypt these values before committing them into
+Git. **`ansible-vault`** is the native Ansible mechanism: it encrypts YAML
+files with **AES-256** using a vault password.
 
 ```text
 $ANSIBLE_VAULT;1.1;AES256
@@ -27,54 +27,53 @@ $ANSIBLE_VAULT;1.1;AES256
 6136353338613232633836333261396531376630...
 ```
 
-→ Ce blob est **commitable sans risque** sur GitHub public — sans le mot
-de passe vault, le contenu est inaccessible.
+→ This blob is **safe to commit** to public GitHub: without the vault
+password, the content is inaccessible.
 
-| Workflow | Commande |
+| Workflow | Command |
 | --- | --- |
-| Chiffrer un fichier existant | `ansible-vault encrypt secret.yml` |
-| Visualiser sans modifier | `ansible-vault view secret.yml` |
-| Éditer (déchiffre/re-chiffre auto) | `ansible-vault edit secret.yml` |
-| Déchiffrer (rare, debug) | `ansible-vault decrypt secret.yml` |
-| Lancer un play qui consomme | `ansible-playbook play.yml --vault-password-file=.vault_password` |
+| Encrypt an existing file | `ansible-vault encrypt secret.yml` |
+| View without modifying | `ansible-vault view secret.yml` |
+| Edit (auto decrypt/re-encrypt) | `ansible-vault edit secret.yml` |
+| Decrypt (rare, debug) | `ansible-vault decrypt secret.yml` |
+| Run a play that consumes it | `ansible-playbook play.yml --vault-password-file=.vault_password` |
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Créer** un mot de passe vault dans un fichier `.vault_password`.
-2. **Chiffrer** un fichier YAML avec `ansible-vault encrypt`.
-3. **Visualiser / éditer** un fichier chiffré sans le déchiffrer sur disque.
-4. **Lancer un playbook** qui consomme un fichier chiffré via `vars_files:`.
-5. Comprendre pourquoi `.vault_password` doit être en **mode `0600`** et
+1. **Create** a vault password in a `.vault_password` file.
+2. **Encrypt** a YAML file with `ansible-vault encrypt`.
+3. **View / edit** an encrypted file without decrypting it on disk.
+4. **Run a playbook** that consumes an encrypted file via `vars_files:`.
+5. Understand why `.vault_password` must be **mode `0600`** and
    **gitignored**.
-6. Différencier `--vault-password-file` (recommandé) de `--ask-vault-pass`
-   (interactif).
+6. Tell `--vault-password-file` (recommended) apart from `--ask-vault-pass`
+   (interactive).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ansible.builtin.ping
 ansible-vault --version
 ```
 
-## ⚙️ Arborescence cible
+## ⚙️ Target tree layout
 
 ```text
 labs/premiers-pas/ansible-vault/
-├── README.md                        ← ce fichier
-├── Makefile                         ← cible clean
-├── .vault_password                  ← (à créer, gitignored, mode 0600)
-├── secret.yml                       ← (à créer, puis chiffrer)
-├── lab.yml                          ← (à écrire en suivant les exos)
+├── README.md                        ← this file
+├── .vault_password                  ← (to create, gitignored, mode 0600)
+├── secret.yml                       ← (to create, then encrypt)
+├── lab.yml                          ← (to write by following the exercises)
 └── challenge/
-    ├── README.md                    ← consigne du challenge
+    ├── README.md                    ← challenge brief
     └── tests/
         └── test_vault_basics.py
 ```
 
-## 📚 Exercice 1 — Créer le mot de passe vault
+## 📚 Exercise 1 — Create the vault password
 
 ```bash
 cd labs/premiers-pas/ansible-vault/
@@ -84,18 +83,18 @@ chmod 0600 .vault_password
 ls -la .vault_password
 ```
 
-🔍 **Observation** : `mode 0600` (`-rw-------`) signifie **lisible/inscriptible
-uniquement par le propriétaire**. Sans ça, `ansible-vault` peut accepter
-le fichier mais c'est un anti-pattern majeur (autres users du système
-peuvent voler le mot de passe).
+🔍 **Observation**: `mode 0600` (`-rw-------`) means **readable/writable
+only by the owner**. Without it, `ansible-vault` may accept
+the file but it is a major anti-pattern (other system users can steal the
+password).
 
-> ⚠️ **Le fichier `.vault_password` ne doit JAMAIS être commité dans Git.**
-> Il est déjà couvert par le `.gitignore` racine du repo. À sauvegarder
-> dans un gestionnaire de mots de passe externe (Bitwarden, 1Password).
+> ⚠️ **The `.vault_password` file must NEVER be committed into Git.**
+> It is already covered by the repo's root `.gitignore`. Back it up
+> in an external password manager (Bitwarden, 1Password).
 
-## 📚 Exercice 2 — Créer un fichier de secrets en clair
+## 📚 Exercise 2 — Create a plaintext secrets file
 
-Créez `secret.yml` :
+Create `secret.yml`:
 
 ```yaml
 ---
@@ -104,17 +103,17 @@ api_token: "tok_demo_abc123xyz789"
 ```
 
 ```bash
-cat secret.yml         # contenu en clair, lisible
+cat secret.yml         # plaintext content, readable
 ```
 
-## 📚 Exercice 3 — Chiffrer le fichier
+## 📚 Exercise 3 — Encrypt the file
 
 ```bash
 ansible-vault encrypt secret.yml --vault-password-file=.vault_password
 cat secret.yml | head -3
 ```
 
-Sortie :
+Output:
 
 ```text
 $ANSIBLE_VAULT;1.1;AES256
@@ -122,17 +121,17 @@ $ANSIBLE_VAULT;1.1;AES256
 6136353338613232633836333261396531376630...
 ```
 
-🔍 **Observation** : le fichier est **transformé sur place**. Le contenu
-en clair n'existe plus sur disque. Seul `ansible-vault` (avec le bon mot
-de passe) peut le relire.
+🔍 **Observation**: the file is **transformed in place**. The plaintext
+content no longer exists on disk. Only `ansible-vault` (with the right
+password) can read it back.
 
-## 📚 Exercice 4 — Visualiser sans modifier
+## 📚 Exercise 4 — View without modifying
 
 ```bash
 ansible-vault view secret.yml --vault-password-file=.vault_password
 ```
 
-Sortie :
+Output:
 
 ```yaml
 ---
@@ -140,30 +139,30 @@ db_password: "Sup3rSecretP@ss2026!"
 api_token: "tok_demo_abc123xyz789"
 ```
 
-🔍 **Observation** : `view` déchiffre **en mémoire** pour affichage,
-**sans modifier** le fichier sur disque. Le fichier reste chiffré.
+🔍 **Observation**: `view` decrypts **in memory** for display,
+**without modifying** the file on disk. The file stays encrypted.
 
-## 📚 Exercice 5 — Éditer un fichier chiffré
+## 📚 Exercise 5 — Edit an encrypted file
 
 ```bash
 ansible-vault edit secret.yml --vault-password-file=.vault_password
 ```
 
-Cette commande :
+This command:
 
-1. Déchiffre le fichier **en mémoire**.
-2. Ouvre votre `$EDITOR` (vim/nano).
-3. Vous éditez normalement (ajoutez par exemple `app_secret: "xyz"`).
-4. À la sauvegarde, **re-chiffre automatiquement**.
+1. Decrypts the file **in memory**.
+2. Opens your `$EDITOR` (vim/nano).
+3. You edit normally (add for example `app_secret: "xyz"`).
+4. On save, **re-encrypts automatically**.
 
-Le fichier sur disque reste chiffré tout du long.
+The file on disk stays encrypted throughout.
 
-🔍 **Observation** : workflow ergonomique pour les modifications
-quotidiennes — pas besoin de `decrypt` puis `encrypt` manuels.
+🔍 **Observation**: an ergonomic workflow for daily edits: no need for
+manual `decrypt` then `encrypt`.
 
-## 📚 Exercice 6 — Écrire un playbook qui consomme le secret
+## 📚 Exercise 6 — Write a playbook that consumes the secret
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -172,7 +171,7 @@ Créez `lab.yml` :
   become: true
   gather_facts: false
   vars_files:
-    - secret.yml         # ← Ansible déchiffre automatiquement au runtime
+    - secret.yml         # ← Ansible decrypts automatically at runtime
 
   tasks:
     - name: Déposer la config DB avec le mot de passe déchiffré
@@ -185,24 +184,24 @@ Créez `lab.yml` :
         owner: root
         group: root
         mode: "0600"
-      no_log: true           # ← keyword au niveau task (pas dans le module)
+      no_log: true           # ← keyword at task level (not in the module)
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- `vars_files: [secret.yml]` charge le fichier — **chiffré ou non** —
-  Ansible détecte le header `$ANSIBLE_VAULT` automatiquement.
-- `no_log: true` empêche que les variables sensibles soient affichées
-  dans la sortie Ansible (bonne pratique avec vault).
-- `mode: "0600"` sur le fichier déposé évite que d'autres users le lisent.
+- `vars_files: [secret.yml]` loads the file, **encrypted or not**,
+  Ansible detects the `$ANSIBLE_VAULT` header automatically.
+- `no_log: true` prevents sensitive variables from being shown
+  in the Ansible output (good practice with vault).
+- `mode: "0600"` on the dropped file prevents other users from reading it.
 
-## 📚 Exercice 7 — Lancer le playbook avec déchiffrement
+## 📚 Exercise 7 — Run the playbook with decryption
 
 ```bash
 ansible-playbook lab.yml --vault-password-file=.vault_password
 ```
 
-Sortie :
+Output:
 
 ```text
 PLAY [Premiers pas vault — déposer un secret sur db1] ********
@@ -214,15 +213,15 @@ PLAY RECAP ***************************************************
 db1.lab : ok=1 changed=1 unreachable=0 failed=0
 ```
 
-🔍 **Observation** : Ansible déchiffre `secret.yml` **en mémoire au
-runtime**, sans jamais écrire le contenu en clair sur disque. Le
-résultat sur `db1.lab` :
+🔍 **Observation**: Ansible decrypts `secret.yml` **in memory at
+runtime**, never writing the plaintext content to disk. The
+result on `db1.lab`:
 
 ```bash
-ssh ansible@db1.lab "sudo cat /tmp/db-config.txt"
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab "sudo cat /tmp/db-config.txt"
 ```
 
-Sortie attendue :
+Expected output:
 
 ```text
 # Lab 04b — vault déchiffrement OK
@@ -230,76 +229,76 @@ db_password=Sup3rSecretP@ss2026!
 api_token=tok_demo_abc123xyz789
 ```
 
-## 📚 Exercice 8 — Que se passe-t-il sans le mot de passe ?
+## 📚 Exercise 8 — What happens without the password?
 
 ```bash
-ansible-playbook lab.yml         # → SANS --vault-password-file
+ansible-playbook lab.yml         # → WITHOUT --vault-password-file
 ```
 
-Sortie :
+Output:
 
 ```text
 ERROR! Attempting to decrypt but no vault secrets found
 ```
 
-🔍 **Observation** : Ansible **refuse de tourner** sans le mot de passe.
-**Sécurité par défaut**. Pour un workflow interactif :
+🔍 **Observation**: Ansible **refuses to run** without the password.
+**Secure by default**. For an interactive workflow:
 
 ```bash
 ansible-playbook lab.yml --ask-vault-pass
 ```
 
-Vous serez invité à taper le mot de passe au clavier (utile en démo,
-**pas en CI/CD** où le fichier est plus pratique).
+You will be prompted to type the password on the keyboard (useful in a
+demo, **not in CI/CD** where the file is more convenient).
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Toujours** chiffrer les fichiers de secrets **avant** le premier
-  commit Git.
-- **`.vault_password`** : mode `0600`, **gitignored**, sauvegardé
-  ailleurs.
-- **`vars_files: [secret.yml]`** suffit — Ansible détecte le format
-  vault automatiquement.
-- **`no_log: true`** sur les tâches qui manipulent des secrets, sinon
-  ils apparaissent dans `ansible-playbook -v`.
-- **`--vault-password-file`** > `--ask-vault-pass` pour la CI/CD ;
-  l'inverse en démo.
+- **Always** encrypt secrets files **before** the first
+  Git commit.
+- **`.vault_password`**: mode `0600`, **gitignored**, backed up
+  elsewhere.
+- **`vars_files: [secret.yml]`** is enough: Ansible detects the vault
+  format automatically.
+- **`no_log: true`** on tasks that handle secrets, otherwise
+  they appear in `ansible-playbook -v`.
+- **`--vault-password-file`** > `--ask-vault-pass` for CI/CD;
+  the reverse in a demo.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Pourquoi `.vault_password` doit-il avoir `mode 0600` ? Que se passe-t-il
-   si je laisse `0644` ?
+1. Why must `.vault_password` have `mode 0600`? What happens
+   if I leave `0644`?
 
-2. Comment **détecter** qu'un secret a été commité en clair par accident ?
-   (Indice : `gitleaks`, `git-secrets`, `pre-commit detect-private-key`.)
+2. How do you **detect** that a secret was committed in plaintext by accident?
+   (Hint: `gitleaks`, `git-secrets`, `pre-commit detect-private-key`.)
 
-3. Imaginez : votre `.vault_password` a fuité. Que faut-il faire **dans
-   l'ordre** ?
+3. Imagine your `.vault_password` has leaked. What must you do, **in
+   order**?
 
-4. Pourquoi `no_log: true` est-il combiné avec vault dans les tâches qui
-   manipulent des variables sensibles ?
+4. Why is `no_log: true` combined with vault in tasks that
+   handle sensitive variables?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md).
+See [`challenge/README.md`](challenge/README.md).
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`ANSIBLE_VAULT_PASSWORD_FILE=.vault_password`** : variable d'env qui
-  évite de répéter `--vault-password-file` à chaque commande.
-- **Variable inline `!vault`** (lab 78) : alternative pour chiffrer
-  **une seule variable** au lieu d'un fichier complet.
-- **Multi vault-id** (lab 79) : un mot de passe différent par
-  environnement (dev/staging/prod).
-- **Vault dans un rôle** (lab 81) : `defaults/main.yml` (clair) +
-  `vars/main.yml` (chiffré).
-- **Intégration HashiCorp Vault / OpenBao** (labs 82-83) : externaliser
-  les secrets dans un vault enterprise.
+- **`ANSIBLE_VAULT_PASSWORD_FILE=.vault_password`**: an env variable that
+  avoids repeating `--vault-password-file` on every command.
+- **Inline `!vault` variable** (lab 78): an alternative to encrypt
+  **a single variable** instead of a whole file.
+- **Multi vault-id** (lab 79): a different password per
+  environment (dev/staging/prod).
+- **Vault in a role** (lab 81): `defaults/main.yml` (plaintext) +
+  `vars/main.yml` (encrypted).
+- **HashiCorp Vault / OpenBao integration** (labs 82-83): externalize
+  secrets into an enterprise vault.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 ansible-lint labs/premiers-pas/ansible-vault/lab.yml
@@ -307,11 +306,11 @@ ansible-lint labs/premiers-pas/ansible-vault/challenge/solution.yml
 ansible-lint --profile production labs/premiers-pas/ansible-vault/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre
-code est conforme aux bonnes pratiques : FQCN explicite, `name:` sur
-chaque tâche, modes de fichier en chaîne, idempotence respectée, modules
-dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your
+code follows best practices: explicit FQCN, `name:` on
+every task, file modes as strings, idempotence respected, deprecated modules
+avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un
-> hook pre-commit pour bloquer tout commit qui introduirait des
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce
 > anti-patterns.

@@ -1,104 +1,71 @@
 # 🎯 Challenge — `serial: 1` + `max_fail_percentage`
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `challenge/solution.yml` qui pose un fichier marqueur sur **web1.lab et
-web2.lab**, dans cet ordre garanti par `serial: 1`.
+Write `challenge/solution.yml` that lays down a marker file on **web1.lab and
+web2.lab**, in that order guaranteed by `serial: 1`.
 
-Vous devez prouver via les **mtimes** que `serial: 1` a bien séquentialisé
-l'exécution (web1 traité **complètement** avant que web2 ne commence).
+You must prove via the **mtimes** that `serial: 1` did sequentialize the
+execution (web1 processed **completely** before web2 starts).
 
-## 🧩 Indices
+## 🧩 Stuck?
 
-- Cible : groupe `webservers` (donc 2 hôtes web1 + web2).
-- Au niveau du **play**, activez deux mots-clés :
-  - `serial: 1` → un hôte à la fois
-  - `max_fail_percentage: 0` → arrêt immédiat à la première erreur
-- Une tâche `ansible.builtin.copy` qui pose `/tmp/serial-{{ inventory_hostname }}.txt`.
-  Le contenu inclut un timestamp ISO 8601 (`{{ ansible_date_time.iso8601 }}`).
-- Une seconde tâche `ansible.builtin.pause` de 2 secondes pour que le **mtime**
-  de web1 soit strictement antérieur à celui de web2.
-
-Squelette à compléter :
-
-```yaml
----
-- name: Challenge - serial 1 sur 2 webservers
-  hosts: ???
-  become: true
-  serial: ???
-  max_fail_percentage: ???
-
-  tasks:
-    - name: Marqueur avec timestamp
-      ansible.builtin.copy:
-        dest: ???
-        content: ???
-        mode: "0644"
-
-    - name: Pause pour que les mtimes soient distincts
-      ansible.builtin.pause:
-        seconds: ???
+```bash
+dsoxlab hint ecrire-code-parallelisme-strategies
 ```
 
-> 💡 **Pièges** :
->
-> - **`serial: 1`** = rolling 1-par-1 (lent, mais sûr). Sur 2 webservers,
->   le test `mtime web1 < web2` ne passe que si web1 est traité **avant**
->   web2 — pas garanti par défaut. La pause aide à séparer les mtimes.
-> - **`strategy: linear`** (défaut) = play-bloquant : tous les hôtes
->   doivent finir une tâche avant de passer à la suivante. **`free`** =
->   chaque hôte avance à son rythme — rare en prod, utile en démo.
-> - **`max_fail_percentage`** : tolérance au-delà de laquelle le play
->   s'arrête. Different de `any_errors_fatal` qui est tolérance zéro.
-> - **`forks`** dans `ansible.cfg` (défaut 5) limite le parallélisme global.
->   Avec `serial: 10` mais `forks: 5`, vous traitez 5-par-5.
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/ecrire-code/parallelisme-strategies/challenge/solution.yml
 ```
 
-🔍 **Ce que vous devez voir** dans la sortie :
+🔍 **What you must see** in the output:
 
-- Le bandeau `PLAY [...]` apparaît **deux fois** : une fois pour web1, une fois
-  pour web2 (parce que `serial: 1` redémarre le play à chaque batch).
-- Sur chaque play, vous voyez `Gathering Facts`, `Marqueur ...`, `Pause ...`.
-- Le `PLAY RECAP` final montre `changed=2` sur les **deux** hôtes.
+- The `PLAY [...]` banner appears **twice**: once for web1, once
+  for web2 (because `serial: 1` restarts the play at each batch).
+- On each play, you see `Marqueur ...` then `Pause ...`.
+- The final `PLAY RECAP` shows `changed=1` on **both** hosts (the marker;
+  `pause` changes nothing).
+- **Rerun the command**: the second `PLAY RECAP` must show `changed=0`
+  everywhere. This is what `test_solution_idempotente` checks.
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/parallelisme-strategies/challenge/tests/
 ```
 
-Le test vérifie :
+The test checks:
 
-- Les 2 fichiers `/tmp/serial-web1.lab.txt` et `/tmp/serial-web2.lab.txt` existent.
-- Le **mtime** du fichier sur web1 est **strictement antérieur** à celui de web2
-  (preuve mécanique de la séquentialisation).
+- The 2 files `/tmp/serial-web1.lab.txt` and `/tmp/serial-web2.lab.txt` exist.
+- The **mtime** of the file on web1 is **strictly earlier** than the one on web2
+  (mechanical proof of the sequentialization).
+- The **second pass** of the playbook changes nothing (`changed=0`).
 
 ## 🧹 Reset
 
 ```bash
-make -C labs/ecrire-code/parallelisme-strategies clean
+dsoxlab clean ecrire-code-parallelisme-strategies
 ```
 
-Supprime les marqueurs sur les 2 webservers pour rejouer le scénario à blanc.
+Removes the markers on the 2 webservers to replay the scenario from scratch.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`strategy: free`** : ajoutez ce mot-clé au play et observez la différence —
-  chaque hôte avance à son propre rythme. À combiner avec `serial:` pour des
-  scénarios mixtes.
-- **`max_fail_percentage: 30`** : tolère jusqu'à 30 % d'hôtes en échec avant
-  d'arrêter. Utile sur des groupes de 20+ hôtes.
-- **Lint avec `ansible-lint`** :
+- **`strategy: free`**: add this keyword to the play and observe the difference,
+  each host progresses at its own pace. To combine with `serial:` for mixed
+  scenarios.
+- **`max_fail_percentage: 30`**: tolerates up to 30% of hosts failing before
+  stopping. Useful on groups of 20+ hosts.
+- **Lint with `ansible-lint`**:
 
    ```bash
    ansible-lint labs/ecrire-code/parallelisme-strategies/challenge/solution.yml
-   # Mode strict (production) :
+   # Strict mode (production):
    ansible-lint --profile production \
        labs/ecrire-code/parallelisme-strategies/challenge/solution.yml
    ```

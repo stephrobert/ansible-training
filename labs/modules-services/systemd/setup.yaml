@@ -1,0 +1,23 @@
+---
+# Mise en place du lab systemd : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup systemd lab (lab_web1)
+  hosts: lab_web1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (systemd)
+      ansible.builtin.shell: |
+        systemctl disable --now lab-marker 2>/dev/null; rm -f /etc/systemd/system/lab-marker.service /var/run/lab-marker.flag; systemctl daemon-reload; true
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (systemd)
+  hosts: lab_web1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Start, enable, reload and mask services, drop a custom unit file with daemon_reload, and notify a service from a handler
+      run_once: true

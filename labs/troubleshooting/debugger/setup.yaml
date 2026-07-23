@@ -1,0 +1,22 @@
+---
+# Mise en place du lab debugger : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup debugger lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (debugger)
+      ansible.builtin.file:
+        path: "/tmp/lab90-debug.txt"
+        state: "absent"
+
+- name: Brief the learner (debugger)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Enable the debugger on failure, inspect task, task_vars and result in the REPL, patch arguments on the fly then replay the task with redo
+      run_once: true

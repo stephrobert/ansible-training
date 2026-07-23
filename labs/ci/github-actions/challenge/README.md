@@ -1,26 +1,42 @@
-# 🎯 Challenge — Workflow GitHub Actions complet (lint + matrix molecule)
+# 🎯 Challenge — Write the GitHub Actions workflow (lint + Molecule matrix)
 
-## ✅ Objectif
+## ✅ Mission
 
-Le test pytest valide la structure du fichier CI livré dans le lab :
-**Workflow GitHub Actions complet (lint + matrix molecule)**.
+The `.github/workflows/test.yml` file is delivered **incomplete** (some `???`
+and empty jobs). Complete it to get an Ansible role CI compliant with the
+expected state below. You are the one writing the workflow: no ready-to-copy
+template is provided.
 
-## 🧩 Indices
+Expected state (this is what pytest checks):
 
-C'est un challenge structurel. Posez `solution.sh` minimal :
+| Requirement | Detail |
+| --- | --- |
+| 2 jobs | `lint` then `molecule`, chained by `needs:` |
+| Lint | `yamllint` and `ansible-lint --profile=production` run in the `lint` job |
+| Matrix | `strategy.matrix` with `distro` (at least 2 images) and `ansible` (at least 2 ansible-core versions) |
+| Full report | matrix `fail-fast: false` so one failing combination does not cancel the others |
+| Supply chain security | all `uses:` actions pinned by 40-character SHA |
+| Least privilege | global `permissions:` empty (`{}`), rights granted job by job |
+| Credentials | `persist-credentials: false` on each `actions/checkout` |
+
+## 🧩 Stuck?
 
 ```bash
-echo "Lab 69 : Workflow GitHub Actions complet (lint + matrix molecule) validé par pytest." > challenge/solution.sh
-chmod +x challenge/solution.sh
+dsoxlab hint ci-github-actions
 ```
 
-## 🚀 Lancement (optionnel)
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
+
+## 📓 Command log
+
+When your workflow is ready, record in `challenge/solution.sh` the
+commands you used to build and validate it (for
+example the `gh api` and `actionlint` calls). This log, required by the
+test harness, must exist for pytest to run:
 
 ```bash
-# Local : exécuter avec act
-act -W labs/ci/github-actions/.github/workflows/test.yml
-
-# Cloud : push sur GitHub → workflow automatique
+chmod +x challenge/solution.sh
 ```
 
 ## 🧪 Validation
@@ -32,23 +48,11 @@ pytest -v labs/ci/github-actions/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/ci/github-actions/ clean
+dsoxlab clean ci-github-actions
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`ansible-lint --profile production`** : validez la qualité de votre solution.
-
-  ```bash
-  ansible-lint --profile production labs/ci/github-actions/challenge/solution.yml
-  ```
-
-  Sortie attendue : `Passed: 0 failure(s), 0 warning(s)`.
-
-- **Idempotence** : relancez la solution une seconde fois — un `PLAY RECAP`
-  avec `changed=0` partout confirme un playbook propre.
-
-- **Cas limites** : pensez aux scénarios d'erreur (host indisponible,
-  dépendance manquante, valeur invalide) que votre solution pourrait
-  rencontrer en production. Comment les gérer (`block/rescue`,
-  `failed_when`, `assert`) ?
+- `zizmor .github/workflows/test.yml`: static security audit of workflows.
+- Reusable workflows: share this CI across several roles.
+- Dependabot: automatic PRs to keep the pinned SHAs up to date.

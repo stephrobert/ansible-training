@@ -1,0 +1,32 @@
+---
+id: roles-variables-defaults-vars
+title: "Role variables: defaults/ vs vars/ and precedence"
+description: "Split variables between defaults/ (overridable) and vars/ (internal), wire them into tasks and a Jinja2 template, then verify precedence."
+section: roles
+level: l2
+difficulty: intermediate
+lab_type: lab
+estimated_time: "35m"
+skills:
+  - role-defaults
+  - variable-precedence
+  - jinja-template
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/variables-defaults-vars/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

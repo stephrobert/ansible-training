@@ -1,57 +1,57 @@
-# Lab 11 — Délégation (`delegate_to`, `run_once`, `local_action`)
+# Lab 11 — Delegation (`delegate_to`, `run_once`, `local_action`)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Délégation Ansible : delegate_to, run_once, local_action**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/delegation/)
+🔗 [**Ansible delegation: delegate_to, run_once, local_action**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/delegation/)
 
-`delegate_to:` redirige l'exécution d'une tâche vers **un autre hôte** que celui ciblé
-par le play. `run_once: true` exécute la tâche **une seule fois** (sur le premier hôte
-du batch, ou sur l'hôte délégué). `local_action:` est un raccourci pour
-`delegate_to: localhost`. Ces 3 outils sont la **base des patterns multi-hôtes** :
-notifier un load-balancer externe, créer un DNS record, mettre une machine en
-maintenance, déclencher un backup centralisé.
+`delegate_to:` redirects the execution of a task to **another host** than the one targeted
+by the play. `run_once: true` runs the task **only once** (on the first host
+of the batch, or on the delegated host). `local_action:` is a shortcut for
+`delegate_to: localhost`. These 3 tools are the **basis of multi-host patterns**:
+notifying an external load balancer, creating a DNS record, putting a machine into
+maintenance, triggering a centralized backup.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Rediriger** une tâche vers un autre managed node via `delegate_to:`.
-2. **Exécuter** une tâche **une seule fois** dans un play multi-hôtes (`run_once`).
-3. **Combiner** `delegate_to + run_once` pour les patterns notification.
-4. **Utiliser** `local_action:` pour les opérations côté control node.
-5. **Distinguer** `delegate_facts: true` de `delegate_to:` simple.
+1. **Redirect** a task to another managed node via `delegate_to:`.
+2. **Run** a task **only once** in a multi-host play (`run_once`).
+3. **Combine** `delegate_to + run_once` for notification patterns.
+4. **Use** `local_action:` for control-node-side operations.
+5. **Distinguish** `delegate_facts: true` from a plain `delegate_to:`.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible webservers -m ping
 ansible db1.lab -m ping
-# Tous doivent etre en SUCCESS
+# All must be SUCCESS
 ```
 
-Nettoyer les marqueurs des runs précédents :
+Clean up the markers from previous runs:
 
 ```bash
 ansible all -b -m file -a "path=/tmp/delegated-from-webservers.txt state=absent"
 ansible all -b -m file -a "path=/tmp/local-action-marker.txt state=absent"
 ```
 
-## 📚 Exercice 1 — `delegate_to:` simple (sans `run_once`)
+## 📚 Exercise 1 — Plain `delegate_to:` (without `run_once`)
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -67,27 +67,27 @@ Créez `lab.yml` :
       delegate_to: db1.lab
 ```
 
-**Lancez** :
+**Run it**:
 
 ```bash
 ansible-playbook labs/ecrire-code/delegation/lab.yml
 ```
 
-🔍 **Observation** : la tâche tourne **sur db1.lab** (pas sur web1/web2), mais **2 fois**
-(une par webserver), créant 2 fichiers `/tmp/announce-web1.lab.txt` et
-`/tmp/announce-web2.lab.txt` sur db1.
+🔍 **Observation**: the task runs **on db1.lab** (not on web1/web2), but **twice**
+(once per webserver), creating 2 files `/tmp/announce-web1.lab.txt` and
+`/tmp/announce-web2.lab.txt` on db1.
 
 ```bash
-ssh ansible@db1.lab 'ls /tmp/announce-*.txt'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'ls /tmp/announce-*.txt'
 ```
 
-**Variables** : `inventory_hostname` reste celui du **boucle** (web1, puis web2), pas
-de db1. C'est la subtilité — la tâche **s'exécute** sur db1 mais voit les vars de
-l'hôte courant du play.
+**Variables**: `inventory_hostname` stays that of the **loop** (web1, then web2), not
+db1. This is the subtlety: the task **runs** on db1 but sees the vars of the
+current play host.
 
-## 📚 Exercice 2 — `delegate_to + run_once`
+## 📚 Exercise 2 — `delegate_to + run_once`
 
-Modifiez `lab.yml` :
+Modify `lab.yml`:
 
 ```yaml
 ---
@@ -104,25 +104,25 @@ Modifiez `lab.yml` :
       run_once: true
 ```
 
-**Lancez** :
+**Run it**:
 
 ```bash
 ansible-playbook labs/ecrire-code/delegation/lab.yml
 ```
 
-🔍 **Observation** : un **seul** fichier `/tmp/delegated-from-webservers.txt` sur db1,
-contenant le **premier webserver** du play (web1.lab par ordre alphabétique). C'est
-le pattern **notification "fin de déploiement"** : on prévient db1 quand TOUTE la
-flotte web a été déployée, pas une fois par webserver.
+🔍 **Observation**: a **single** file `/tmp/delegated-from-webservers.txt` on db1,
+containing the **first webserver** of the play (web1.lab in alphabetical order). This is
+the **"end of deployment" notification** pattern: you notify db1 once the ENTIRE web
+fleet has been deployed, not once per webserver.
 
 ```bash
-ssh ansible@db1.lab 'cat /tmp/delegated-from-webservers.txt'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'cat /tmp/delegated-from-webservers.txt'
 ```
 
-## 📚 Exercice 3 — `local_action:` (raccourci pour control node)
+## 📚 Exercise 3 — `local_action:` (shortcut for the control node)
 
-Pour exécuter une tâche **côté control node** (votre machine), `local_action:` est
-plus court que `delegate_to: localhost`.
+To run a task **on the control node** (your machine), `local_action:` is
+shorter than `delegate_to: localhost`.
 
 ```yaml
 ---
@@ -136,24 +136,24 @@ plus court que `delegate_to: localhost`.
         dest: "/tmp/local-action-marker-{{ inventory_hostname }}.txt"
 ```
 
-**Lancez** :
+**Run it**:
 
 ```bash
 ansible-playbook labs/ecrire-code/delegation/lab-localaction.yml
 ls /tmp/local-action-marker-*.txt
 ```
 
-🔍 **Observation** : 2 fichiers sont créés **sur votre machine locale** (pas sur web1/web2).
-`local_action:` est strictement équivalent à `delegate_to: localhost` mais s'écrit en
-moins de lignes.
+🔍 **Observation**: 2 files are created **on your local machine** (not on web1/web2).
+`local_action:` is strictly equivalent to `delegate_to: localhost` but is written in
+fewer lines.
 
-**Note** : pas de `become:` automatique avec `local_action:` — pour écrire dans `/etc/`
-côté local, il faut quand même `become: true`.
+**Note**: no automatic `become:` with `local_action:`. To write into `/etc/`
+on the local side, you still need `become: true`.
 
-## 📚 Exercice 4 — `delegate_facts: true` (capture des facts d'un autre hôte)
+## 📚 Exercise 4 — `delegate_facts: true` (capturing another host's facts)
 
-Cas d'usage : votre play tourne sur les `webservers`, mais vous avez besoin de **lire
-les facts de db1** (pour récupérer son IP, sa version OS, etc.).
+Use case: your play runs on the `webservers`, but you need to **read
+db1's facts** (to get its IP, its OS version, etc.).
 
 ```yaml
 ---
@@ -174,28 +174,28 @@ les facts de db1** (pour récupérer son IP, sa version OS, etc.).
           OS db1 : {{ hostvars['db1.lab'].ansible_distribution }}
 ```
 
-**Lancez** :
+**Run it**:
 
 ```bash
 ansible-playbook labs/ecrire-code/delegation/lab-delegate-facts.yml
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **Sans `delegate_facts: true`**, les facts collectés iraient dans
-  `hostvars['web1.lab'].ansible_*` (faux !) parce que le play tourne sur web1.
-- **Avec `delegate_facts: true`**, les facts vont dans `hostvars['db1.lab'].ansible_*`
+- **Without `delegate_facts: true`**, the collected facts would go into
+  `hostvars['web1.lab'].ansible_*` (wrong!) because the play runs on web1.
+- **With `delegate_facts: true`**, the facts go into `hostvars['db1.lab'].ansible_*`
   (correct).
 
-**Sans cette option**, vous avez le piège classique : les facts sont rangés sous le
-mauvais hostname et vous référencez la mauvaise machine partout.
+**Without this option**, you have the classic trap: the facts are stored under the
+wrong hostname and you reference the wrong machine everywhere.
 
-## 📚 Exercice 5 — Le piège classique : `run_once` + `serial:`
+## 📚 Exercise 5 — The classic trap: `run_once` + `serial:`
 
-`run_once: true` s'exécute **une seule fois par batch** quand `serial:` est défini.
-Si `serial: 1`, vous avez `N` batches → `run_once` tourne **N fois** au total !
+`run_once: true` runs **only once per batch** when `serial:` is set.
+If `serial: 1`, you have `N` batches → `run_once` runs **N times** in total!
 
-Créez `lab-piege.yml` :
+Create `lab-piege.yml`:
 
 ```yaml
 ---
@@ -211,61 +211,61 @@ Créez `lab-piege.yml` :
       run_once: true
 ```
 
-**Lancez et inspectez** :
+**Run and inspect**:
 
 ```bash
 ansible-playbook labs/ecrire-code/delegation/lab-piege.yml
-ssh ansible@db1.lab 'cat /tmp/run-once-trap.txt'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'cat /tmp/run-once-trap.txt'
 ```
 
-🔍 **Observation** : le fichier contient **2 lignes** (une par batch web1, puis web2),
-**pas 1** comme attendu. `run_once` est local au batch, pas global au play.
+🔍 **Observation**: the file contains **2 lines** (one per batch web1, then web2),
+**not 1** as expected. `run_once` is local to the batch, not global to the play.
 
-**Solution** : si vous voulez vraiment **une seule fois pour tout le play**, faire
-le `delegate_to + run_once` dans un **play séparé** sans `serial:`, ou conditionner
-avec `when: inventory_hostname == ansible_play_hosts_all[0]`.
+**Solution**: if you really want **only once for the whole play**, do
+the `delegate_to + run_once` in a **separate play** without `serial:`, or condition it
+with `when: inventory_hostname == ansible_play_hosts_all[0]`.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`delegate_to: <host>`** = la tâche **s'exécute** sur cet hôte, mais **voit** les vars de l'hôte du play.
-- **`run_once: true`** = la tâche tourne **une seule fois par batch** (pas par play).
-- **`local_action:`** = raccourci pour `delegate_to: localhost`.
-- **`delegate_facts: true`** = les facts collectés sont rangés sous l'hôte délégué (pas l'hôte du play).
-- **Combinaison `delegate_to + run_once`** = pattern notification (load-balancer, DNS, monitoring).
+- **`delegate_to: <host>`** = the task **runs** on this host, but **sees** the vars of the play host.
+- **`run_once: true`** = the task runs **only once per batch** (not per play).
+- **`local_action:`** = shortcut for `delegate_to: localhost`.
+- **`delegate_facts: true`** = the collected facts are stored under the delegated host (not the play host).
+- **Combination `delegate_to + run_once`** = notification pattern (load balancer, DNS, monitoring).
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous déployez sur 50 webservers. Avant de redémarrer chaque webserver, vous voulez
-   le **retirer du load-balancer** (HAProxy sur lb1.lab). Comment articulez-vous
-   `delegate_to`, `serial: 1`, et le pattern pre/post tasks ?
+1. You deploy to 50 webservers. Before restarting each webserver, you want
+   to **remove it from the load balancer** (HAProxy on lb1.lab). How do you articulate
+   `delegate_to`, `serial: 1`, and the pre/post tasks pattern?
 
-2. `delegate_to: db1.lab` sur une tâche `command:` qui crée `/etc/myapp.conf` — quel
-   est le **piège de variables** classique ? (indice : `inventory_hostname` est-il celui
-   de db1 ou du host courant du play ?)
+2. `delegate_to: db1.lab` on a `command:` task that creates `/etc/myapp.conf`: what
+   is the classic **variable trap**? (hint: is `inventory_hostname` db1's or the
+   current play host's?)
 
-3. Pourquoi `run_once: true` sans `delegate_to:` peut surprendre dans un play
-   multi-hôtes ? (Sur quel hôte la tâche tourne-t-elle ?)
+3. Why can `run_once: true` without `delegate_to:` be surprising in a multi-host
+   play? (On which host does the task run?)
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Pattern blue/green** : `delegate_to: load-balancer.lab` + `run_once: true` pour
-  basculer le trafic sur la nouvelle release.
-- **Pattern DNS dynamique** : créer un record DNS via `delegate_to: dns.lab` et
-  l'API Bind/PowerDNS.
-- **`delegate_to: 127.0.0.1`** vs **`delegate_to: localhost`** : différence subtile
-  — `127.0.0.1` force une connexion SSH locale, `localhost` utilise le **connection
-  plugin local** (sans SSH). Préférer `localhost` (plus rapide).
-- **`add_host:` + `delegate_to:`** : pattern d'inventaire dynamique. Créer un host
-  à la volée puis lui déléguer une tâche.
+- **Blue/green pattern**: `delegate_to: load-balancer.lab` + `run_once: true` to
+  switch traffic to the new release.
+- **Dynamic DNS pattern**: create a DNS record via `delegate_to: dns.lab` and
+  the Bind/PowerDNS API.
+- **`delegate_to: 127.0.0.1`** vs **`delegate_to: localhost`**: subtle difference:
+  `127.0.0.1` forces a local SSH connection, `localhost` uses the **local connection
+  plugin** (no SSH). Prefer `localhost` (faster).
+- **`add_host:` + `delegate_to:`**: dynamic inventory pattern. Create a host
+  on the fly then delegate a task to it.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 # Lint de votre fichier de lab (tutoriel guidé)
@@ -278,9 +278,9 @@ ansible-lint labs/ecrire-code/delegation/challenge/solution.yml
 ansible-lint --profile production labs/ecrire-code/delegation/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

@@ -1,0 +1,41 @@
+---
+# Mise en place du lab consommer-role : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup consommer-role lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset name, state, enabled (consommer-role)
+      ansible.builtin.systemd_service:
+        name: "nginx"
+        state: "stopped"
+        enabled: "no"
+      failed_when: false
+    - name: Reset name, state (consommer-role)
+      ansible.builtin.dnf:
+        name: "nginx"
+        state: "absent"
+      failed_when: false
+    - name: Reset firewalld port 8080 (consommer-role)
+      ansible.posix.firewalld:
+        port: "8080/tcp"
+        state: "disabled"
+        permanent: "yes"
+        immediate: "yes"
+      failed_when: false
+    - name: Reset trace files (consommer-role)
+      ansible.builtin.shell: |
+        rm -f /tmp/consommer-*.txt
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (consommer-role)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Call the same role three different ways and choose between static and dynamic, especially once a when: is involved
+      run_once: true

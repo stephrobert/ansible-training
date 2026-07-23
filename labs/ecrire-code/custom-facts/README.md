@@ -1,63 +1,62 @@
 # Lab 14a — Custom facts (`facts.d/*.fact`, ansible_local)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo.
+> If it fails, run `mise install && dsoxlab provision` at the repo root.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Custom facts Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/custom-facts/)
+🔗 [**Ansible custom facts**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/custom-facts/)
 
-Les **facts standards** (`ansible_distribution`, `ansible_default_ipv4`, etc.) sont collectés par le module **`setup`** au début de chaque play. Les **custom facts** étendent ce mécanisme : on dépose un script (Bash, Python ou JSON/INI statique) dans **`/etc/ansible/facts.d/<nom>.fact`** sur la cible, et Ansible le lit à chaque `gather_facts` et expose le résultat sous **`ansible_local.<nom>`**.
+The **standard facts** (`ansible_distribution`, `ansible_default_ipv4`, etc.) are collected by the **`setup`** module at the start of each play. **Custom facts** extend this mechanism: you drop a script (Bash, Python, or static JSON/INI) into **`/etc/ansible/facts.d/<name>.fact`** on the target, and Ansible reads it at each `gather_facts` and exposes the result under **`ansible_local.<name>`**.
 
-**Cas d'usage** : tagger un hôte avec son **rôle métier** (`web`, `db`, `cache`), exposer des données spécifiques à l'application (version déployée, hash du dernier déploiement), centraliser des informations propriétaires.
+**Use case**: tag a host with its **business role** (`web`, `db`, `cache`), expose application-specific data (deployed version, hash of the last deployment), centralize proprietary information.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Déposer** un custom fact statique au format **INI** dans `/etc/ansible/facts.d/`.
-2. **Déposer** un custom fact dynamique (script Bash exécutable retournant du **JSON**).
-3. **Lire** un custom fact via `ansible_local.<nom>` dans un playbook.
-4. **Filtrer** la sortie de `setup` pour ne garder que les `ansible_local`.
-5. **Comprendre** quand utiliser custom facts vs `set_fact` vs `host_vars`.
+1. **Drop** a static custom fact in **INI** format into `/etc/ansible/facts.d/`.
+2. **Drop** a dynamic custom fact (executable Bash script returning **JSON**).
+3. **Read** a custom fact via `ansible_local.<name>` in a playbook.
+4. **Filter** the `setup` output to keep only the `ansible_local`.
+5. **Understand** when to use custom facts vs `set_fact` vs `host_vars`.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible all -m ansible.builtin.ping
 ansible db1.lab -b -m ansible.builtin.file -a "path=/etc/ansible/facts.d state=absent" 2>&1 | tail -2
 ansible db1.lab -b -m ansible.builtin.file -a "path=/tmp/lab14a-custom-facts.txt state=absent" 2>&1 | tail -2
 ```
 
-## ⚙️ Arborescence cible
+## ⚙️ Target tree
 
 ```text
 labs/ecrire-code/custom-facts/
-├── README.md                       ← ce fichier (tuto guidé)
-├── Makefile                        ← cible clean
+├── README.md                       ← this file (guided tutorial)
 └── challenge/
-    ├── README.md                   ← consigne du challenge
+    ├── README.md                   ← challenge instructions
     └── tests/
-        └── test_custom_facts.py    ← tests pytest+testinfra
+        └── test_custom_facts.py    ← pytest+testinfra tests
 ```
 
-L'apprenant écrit lui-même `lab.yml` et `challenge/solution.yml`.
+The learner writes `lab.yml` and `challenge/solution.yml` themselves.
 
-## 📚 Exercice 1 — Custom fact INI statique
+## 📚 Exercise 1 — Static INI custom fact
 
-Créer un fichier INI sur la cible. Format reconnu par Ansible :
+Create an INI file on the target. Format recognized by Ansible:
 
 ```ini
-; /etc/ansible/facts.d/server.fact (sur db1.lab)
+; /etc/ansible/facts.d/server.fact (on db1.lab)
 [meta]
 role = database
 environment = production
@@ -68,7 +67,7 @@ version = 1.4.2
 deployed_on = 2026-04-27
 ```
 
-Via Ansible (depuis le control node) :
+Via Ansible (from the control node):
 
 ```yaml
 ---
@@ -97,21 +96,21 @@ Via Ansible (depuis le control node) :
           deployed_on = 2026-04-27
 ```
 
-Lancer :
+Run:
 
 ```bash
 ansible-playbook labs/ecrire-code/custom-facts/lab.yml
 ```
 
-🔍 **Observation** : **`/etc/ansible/facts.d/`** est le chemin par défaut. Format `.fact`. Ansible lit le fichier au prochain `gather_facts: true` (ou `setup` ad-hoc).
+🔍 **Observation**: **`/etc/ansible/facts.d/`** is the default path. Format `.fact`. Ansible reads the file at the next `gather_facts: true` (or ad-hoc `setup`).
 
-## 📚 Exercice 2 — Lire le custom fact
+## 📚 Exercise 2 — Read the custom fact
 
 ```bash
 ansible db1.lab -m ansible.builtin.setup -a "filter=ansible_local"
 ```
 
-Sortie :
+Output:
 
 ```yaml
 db1.lab | SUCCESS => {
@@ -135,13 +134,13 @@ db1.lab | SUCCESS => {
 }
 ```
 
-🔍 **Observation cruciale** : la structure est **`ansible_local.<nom_fichier_sans_.fact>.<section>.<clé>`**. Le nom de fichier `server.fact` produit `ansible_local.server`, les sections INI deviennent des sous-clés. **Filter `ansible_local`** isole les custom facts.
+🔍 **Crucial observation**: the structure is **`ansible_local.<filename_without_.fact>.<section>.<key>`**. The filename `server.fact` produces `ansible_local.server`, the INI sections become sub-keys. **Filter `ansible_local`** isolates the custom facts.
 
-## 📚 Exercice 3 — Utiliser le fact dans un playbook
+## 📚 Exercise 3 — Use the fact in a playbook
 
 ```yaml
 - hosts: db1.lab
-  gather_facts: true               # ← obligatoire pour collecter ansible_local
+  gather_facts: true               # ← required to collect ansible_local
   tasks:
     - name: Déposer un fichier paramétré par le custom fact
       ansible.builtin.copy:
@@ -154,7 +153,7 @@ db1.lab | SUCCESS => {
         mode: "0644"
 ```
 
-Sortie sur db1.lab :
+Output on db1.lab:
 
 ```text
 Hostname: db1.lab
@@ -163,14 +162,14 @@ Env: production
 Deployment version: 1.4.2
 ```
 
-🔍 **Observation** : **`gather_facts: true`** (default `true` sauf si désactivé) est **obligatoire**. Sinon `ansible_local` est vide. Pour économiser le temps de gather sur les autres facts : **`gather_subset: '!all,local'`** ne collecte que les `ansible_local`.
+🔍 **Observation**: **`gather_facts: true`** (default `true` unless disabled) is **mandatory**. Otherwise `ansible_local` is empty. To save gather time on the other facts: **`gather_subset: '!all,local'`** collects only the `ansible_local`.
 
-## 📚 Exercice 4 — Custom fact dynamique (script Bash → JSON)
+## 📚 Exercise 4 — Dynamic custom fact (Bash script → JSON)
 
-Créer un script exécutable qui retourne du JSON :
+Create an executable script that returns JSON:
 
 ```bash
-# /etc/ansible/facts.d/uptime.fact (mode 0755, exécutable)
+# /etc/ansible/facts.d/uptime.fact (mode 0755, executable)
 #!/bin/bash
 cat <<EOF
 {
@@ -181,13 +180,13 @@ cat <<EOF
 EOF
 ```
 
-Via Ansible :
+Via Ansible:
 
 ```yaml
 - name: Déposer le custom fact dynamique
   ansible.builtin.copy:
     dest: /etc/ansible/facts.d/uptime.fact
-    mode: "0755"                     # ← exécutable
+    mode: "0755"                     # ← executable
     content: |
       #!/bin/bash
       cat <<EOF
@@ -199,7 +198,7 @@ Via Ansible :
       EOF
 ```
 
-Vérifier :
+Verify:
 
 ```bash
 ansible db1.lab -m ansible.builtin.setup -a "filter=ansible_local"
@@ -216,47 +215,47 @@ ansible db1.lab -m ansible.builtin.setup -a "filter=ansible_local"
 }
 ```
 
-🔍 **Observation** : Ansible **détecte automatiquement** si le fichier est exécutable (bit `+x`). Si oui, il l'exécute et parse la sortie comme JSON. Permet des facts **dynamiques** (uptime, load, statut d'un service local). Format alternatif accepté : YAML, INI. Le script peut être en Python, Perl, n'importe quel langage.
+🔍 **Observation**: Ansible **automatically detects** whether the file is executable (`+x` bit). If so, it executes it and parses the output as JSON. Enables **dynamic** facts (uptime, load, status of a local service). Alternative accepted format: YAML, INI. The script can be in Python, Perl, any language.
 
-## 📚 Exercice 5 — Custom facts vs `set_fact` vs `host_vars`
+## 📚 Exercise 5 — Custom facts vs `set_fact` vs `host_vars`
 
-| Mécanisme | Stockage | Persistance | Cas d'usage |
-|-----------|----------|-------------|-------------|
-| **Custom fact** (`facts.d/*.fact`) | Sur la cible | **Persistant** entre runs | Tag métier, rôle, version déployée |
-| **`set_fact`** | En mémoire pendant le play | Détruit en fin de play | Calcul intermédiaire dans un playbook |
-| **`host_vars/<host>.yml`** | Sur le control node (Git) | Versionné dans le repo | Config statique connue à l'avance |
-| **Inventaire dynamique** | Source externe (Cloud, DB) | Re-collecté à chaque run | Cloud, K8s, NetBox, infra dynamique |
+| Mechanism | Storage | Persistence | Use case |
+|-----------|---------|-------------|----------|
+| **Custom fact** (`facts.d/*.fact`) | On the target | **Persistent** across runs | Business tag, role, deployed version |
+| **`set_fact`** | In memory during the play | Destroyed at end of play | Intermediate computation in a playbook |
+| **`host_vars/<host>.yml`** | On the control node (Git) | Versioned in the repo | Static config known in advance |
+| **Dynamic inventory** | External source (Cloud, DB) | Re-collected on each run | Cloud, K8s, NetBox, dynamic infra |
 
-🔍 **Observation** : custom facts = **vérité côté cible** (la machine sait elle-même son rôle). `host_vars` = **vérité côté gestion** (le repo Git sait). Les deux peuvent coexister.
+🔍 **Observation**: custom facts = **truth on the target side** (the machine knows its own role). `host_vars` = **truth on the management side** (the Git repo knows). Both can coexist.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`/etc/ansible/facts.d/<nom>.fact`** = chemin par défaut.
-- **Format** : INI, JSON, YAML statique **OU** script exécutable retournant du JSON/YAML.
-- **Lecture** : `ansible_local.<nom>.<section>.<clé>` après `gather_facts: true`.
-- **`ansible -m setup -a "filter=ansible_local"`** isole les custom facts.
-- **Bit exécutable** (`mode: 0755`) → Ansible exécute le script. Sinon le lit comme statique.
-- **Pas testé directement** à l'EX294 mais utile en prod.
+- **`/etc/ansible/facts.d/<name>.fact`** = default path.
+- **Format**: INI, JSON, static YAML **OR** an executable script returning JSON/YAML.
+- **Reading**: `ansible_local.<name>.<section>.<key>` after `gather_facts: true`.
+- **`ansible -m setup -a "filter=ansible_local"`** isolates the custom facts.
+- **Executable bit** (`mode: 0755`) → Ansible executes the script. Otherwise it reads it as static.
+- **Not tested directly** on the EX294 but useful in prod.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Que se passe-t-il si **deux fichiers** dans `/etc/ansible/facts.d/` ont le même nom de section ?
-2. Pourquoi placer un script de fact **exécutable en mode 0755** plutôt que 0644 ?
-3. Comment **désactiver temporairement** la collecte des custom facts ? (Indice : `gather_subset: '!local'`).
-4. Quel **risque sécurité** d'avoir un script exécutable dans `facts.d/` writable par un user non-root ?
+1. What happens if **two files** in `/etc/ansible/facts.d/` have the same section name?
+2. Why place a fact script **executable in mode 0755** rather than 0644?
+3. How do you **temporarily disable** the collection of custom facts? (Hint: `gather_subset: '!local'`).
+4. What **security risk** comes from having an executable script in `facts.d/` writable by a non-root user?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) — déposer un custom fact INI **et** un custom fact script Bash, lire les deux dans un playbook qui dépose un fichier preuve.
+See [`challenge/README.md`](challenge/README.md): drop an INI custom fact **and** a Bash script custom fact, read both in a playbook that drops a proof file.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Custom path** : `/etc/ansible/facts.d/` est le défaut. Modifier avec `ansible.builtin.setup -a "fact_path=/custom/path"`.
-- **Caching** : combiner custom facts + `fact_caching = jsonfile` dans `ansible.cfg` pour éviter de re-collecter à chaque run.
-- **Module `set_fact: cacheable: true`** : alternative pour persister un fact côté cache (pas côté cible).
-- **Lab 14** : facts standards et magic vars (prérequis).
+- **Custom path**: `/etc/ansible/facts.d/` is the default. Change it with `ansible.builtin.setup -a "fact_path=/custom/path"`.
+- **Caching**: combine custom facts + `fact_caching = jsonfile` in `ansible.cfg` to avoid re-collecting on each run.
+- **Module `set_fact: cacheable: true`**: alternative to persist a fact on the cache side (not the target side).
+- **Lab 14**: standard facts and magic vars (prerequisite).
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint labs/ecrire-code/custom-facts/lab.yml

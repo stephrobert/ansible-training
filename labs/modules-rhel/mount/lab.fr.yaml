@@ -1,0 +1,4 @@
+---
+id: modules-rhel-mount
+title: "Module mount : gérer fstab et les montages"
+description: "Gérer les 5 états de mount, monter un loop device, poser des options noatime/nodev/nosuid et faire survivre un montage au reboot."

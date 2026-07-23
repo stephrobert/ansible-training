@@ -1,78 +1,77 @@
-# Lab 62 — Molecule : introduction
+# Lab 62 — Molecule: introduction
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Pré-requis : `pipx install molecule molecule-plugins[podman]` (ou `[docker]`)
-> et **podman/docker** disponibles. Pas besoin des VMs Ansible — Molecule
-> teste dans des conteneurs locaux.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Prerequisite: `pipx install molecule molecule-plugins[podman]` (or `[docker]`)
+> and **podman/docker** available. No need for the Ansible VMs: Molecule
+> tests in local containers.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Tester un rôle Ansible avec Molecule**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-roles/molecule-introduction/)
+🔗 [**Testing an Ansible role with Molecule**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/tdd-molecule-introduction/)
 
-**Molecule** est l'outil de référence pour **tester les rôles Ansible**. Il
-automatise un cycle complet :
+**Molecule** is the reference tool for **testing Ansible roles**. It
+automates a full cycle:
 
 ```text
 create → prepare → converge → idempotence → verify → destroy
 ```
 
-| Étape | Effet |
+| Step | Effect |
 | --- | --- |
-| `create` | Crée un conteneur (Podman/Docker) ou une VM |
-| `prepare` | Installe les pré-requis dans l'instance |
-| `converge` | Applique le rôle (= `ansible-playbook converge.yml`) |
-| `idempotence` | Relance pour vérifier `changed=0` |
-| `verify` | Lance les assertions (verify.yml) |
-| `destroy` | Détruit l'instance |
+| `create` | Creates a container (Podman/Docker) or a VM |
+| `prepare` | Installs the prerequisites in the instance |
+| `converge` | Applies the role (= `ansible-playbook converge.yml`) |
+| `idempotence` | Re-runs to check `changed=0` |
+| `verify` | Runs the assertions (verify.yml) |
+| `destroy` | Destroys the instance |
 
-**Cycle TDD** : on écrit les `verify.yml` (assertions) **avant** d'écrire les
-tâches du rôle. Quand `verify` passe, le rôle fonctionne.
+**TDD cycle**: you write the `verify.yml` (assertions) **before** writing the
+role's tasks. When `verify` passes, the role works.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Comprendre l'arborescence d'un scénario Molecule (`molecule/default/`).
-2. Lire `molecule.yml`, `converge.yml`, `verify.yml`.
-3. Identifier le **driver** (Podman, Docker, delegated, default).
-4. Identifier les **plateformes** de test (instances à créer).
-5. Identifier le **verifier** (Ansible-assert ou testinfra).
+1. Understand the tree of a Molecule scenario (`molecule/default/`).
+2. Read `molecule.yml`, `converge.yml`, `verify.yml`.
+3. Identify the **driver** (Podman, Docker, delegated, default).
+4. Identify the test **platforms** (instances to create).
+5. Identify the **verifier** (Ansible-assert or testinfra).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
 pipx install molecule
 pipx inject molecule molecule-plugins[podman]
-podman --version       # ou docker --version
+podman --version       # or docker --version
 molecule --version
 ```
 
-## ⚙️ Arborescence du lab
+## ⚙️ Lab tree
 
 ```text
 labs/molecule/introduction/
 ├── README.md
-├── Makefile
 ├── roles/
-│   └── webserver/                    ← rôle à tester (livré)
+│   └── webserver/                    ← role to test (shipped)
 └── molecule/
-    └── default/                      ← scénario "default" (livré)
-        ├── molecule.yml              ← config Molecule (driver, platforms, verifier)
-        ├── converge.yml              ← play qui applique le rôle
-        └── verify.yml                ← assertions post-converge
+    └── default/                      ← "default" scenario (shipped)
+        ├── molecule.yml              ← Molecule config (driver, platforms, verifier)
+        ├── converge.yml              ← play that applies the role
+        └── verify.yml                ← post-converge assertions
 ```
 
-## 📚 Exercice 1 — Lire `molecule/default/molecule.yml`
+## 📚 Exercise 1 — Read `molecule/default/molecule.yml`
 
 ```bash
 cat labs/molecule/introduction/molecule/default/molecule.yml
 ```
 
-🔍 **Observation** — 4 sections obligatoires :
+🔍 **Observation**: 4 mandatory sections:
 
 ```yaml
 driver:
-  name: podman              # ou docker, default, delegated
+  name: podman              # or docker, default, delegated
 
 platforms:
   - name: instance-rhel
@@ -81,15 +80,15 @@ platforms:
     pre_build_image: true
 
 provisioner:
-  name: ansible             # toujours ansible
+  name: ansible             # always ansible
 
 verifier:
-  name: ansible             # ou testinfra
+  name: ansible             # or testinfra
 ```
 
-## 📚 Exercice 2 — Lire `converge.yml`
+## 📚 Exercise 2 — Read `converge.yml`
 
-C'est le play qui **applique le rôle** sur l'instance créée :
+This is the play that **applies the role** on the created instance:
 
 ```yaml
 ---
@@ -100,11 +99,11 @@ C'est le play qui **applique le rôle** sur l'instance créée :
     - role: webserver
 ```
 
-🔍 **Observation** : `hosts: all` cible **les instances Molecule** (pas vos
-managed nodes du lab Ansible). Molecule génère son propre inventaire à la
-volée.
+🔍 **Observation**: `hosts: all` targets **the Molecule instances** (not your
+managed nodes from the Ansible lab). Molecule generates its own inventory on
+the fly.
 
-## 📚 Exercice 3 — Lire `verify.yml`
+## 📚 Exercise 3 — Read `verify.yml`
 
 ```yaml
 ---
@@ -126,18 +125,18 @@ volée.
           - ansible_facts.services['nginx.service'].state == 'running'
 ```
 
-🔍 **Observation** : verify utilise des **assertions Ansible** (mode
-`verifier: ansible`). On peut aussi utiliser **testinfra** (mode
-`verifier: testinfra`) qui écrit des tests Python — couvert au lab 66.
+🔍 **Observation**: verify uses **Ansible assertions** (`verifier: ansible`
+mode). You can also use **testinfra** (`verifier: testinfra` mode) which
+writes Python tests: covered in lab 66.
 
-## 📚 Exercice 4 — Lancer Molecule
+## 📚 Exercise 4 — Run Molecule
 
 ```bash
 cd labs/molecule/introduction
 molecule test
 ```
 
-🔍 **Sortie attendue** (extrait) :
+🔍 **Expected output** (excerpt):
 
 ```text
 INFO     Running default > create
@@ -154,44 +153,48 @@ TASK [Vérifier que nginx est installé] *** ok
 INFO     Running default > destroy
 ```
 
-Si tout est vert, votre rôle fonctionne **et est idempotent**.
+If everything is green, your role works **and is idempotent**.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **1 lab = 1 scénario Molecule** : le scénario `default/` est le minimum.
-  On peut en avoir plusieurs (`default/`, `cluster/`, `upgrade/`) pour
-  tester différents cas d'usage.
-- **Conteneur ≠ VM** : Molecule + Podman teste très vite (~10-30 s) mais
-  sans systemd réel par défaut. Pour tester systemd : `pre_build_image`
-  + image Rocky/Alma avec systemd inclus.
-- **Idempotence forcée** : Molecule **échoue** si une tâche reste `changed`
-  au 2ème run. C'est un garde-fou indispensable.
+- **1 lab = 1 Molecule scenario**: the `default/` scenario is the minimum.
+  You can have several (`default/`, `cluster/`, `upgrade/`) to
+  test different use cases.
+- **Container ≠ VM**: Molecule + Podman tests very fast (~10-30 s) but
+  without real systemd by default. To test systemd, you need an image that
+  ships it: `pre_build_image: true` + an "init" variant
+  (`docker.io/almalinux/10-init`) with `command: /sbin/init` and
+  `privileged: true`. Watch out for the trap: a distro's base image
+  does NOT have systemd (`docker.io/rockylinux/rockylinux:9` does not even have
+  `/sbin/init`), and the role then fails on starting the service.
+- **Forced idempotence**: Molecule **fails** if a task stays `changed`
+  on the 2nd run. This is an essential safeguard.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voulez tester votre rôle sur **3 OS** différents (RHEL, Debian,
-   Ubuntu). Combien de plateformes déclarez-vous dans `molecule.yml` ?
-   (Indice : lab 65.)
+1. You want to test your role on **3 different OSes** (RHEL, Debian,
+   Ubuntu). How many platforms do you declare in `molecule.yml`?
+   (Hint: lab 65.)
 
-2. Le `verify.yml` utilise `verifier: ansible`. Quel est l'avantage
-   d'utiliser `verifier: testinfra` à la place ? (Indice : lab 66.)
+2. The `verify.yml` uses `verifier: ansible`. What is the advantage
+   of using `verifier: testinfra` instead? (Hint: lab 66.)
 
-3. Vous voulez que Molecule **garde** l'instance après `converge` (pour
-   inspecter manuellement). Quelle commande utiliser à la place de
-   `molecule test` ? (Indice : `molecule converge` + `molecule login`.)
+3. You want Molecule to **keep** the instance after `converge` (to
+   inspect it manually). Which command do you use instead of
+   `molecule test`? (Hint: `molecule converge` + `molecule login`.)
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`molecule converge`** seul : applique sans destroy. Utile pour debug.
-- **`molecule login`** : ouvre un shell dans l'instance.
-- **`molecule destroy --all`** : nettoie tous les scénarios.
-- **`MOLECULE_NO_LOG=false`** : verbose maximum pour debug.
+- **`molecule converge`** alone: applies without destroy. Useful for debugging.
+- **`molecule login`**: opens a shell in the instance.
+- **`molecule destroy --all`**: cleans up all scenarios.
+- **`MOLECULE_NO_LOG=false`**: maximum verbosity for debugging.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint labs/molecule/introduction/molecule/

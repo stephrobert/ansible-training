@@ -1,75 +1,75 @@
-# Lab 07 — Tags (cibler ou ignorer un sous-ensemble de tâches)
+# Lab 07 — Tags (targeting or ignoring a subset of tasks)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Tags Ansible : cibler ou ignorer un sous-ensemble de tâches**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/tags/)
+🔗 [**Ansible tags: targeting or ignoring a subset of tasks**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/tags/)
 
-Quand un playbook grossit (50, 100 tâches), vous ne voulez pas **tout** rejouer à chaque modif. Les **tags** sont des étiquettes qu'on pose sur les tâches pour pouvoir les **cibler** au lancement :
+When a playbook grows (50, 100 tasks), you do not want to replay **everything** on each change. **Tags** are labels you place on tasks so you can **target** them at launch time:
 
 ```bash
-ansible-playbook playbook.yml --tags install        # ne joue que les tâches taguées "install"
-ansible-playbook playbook.yml --skip-tags database  # joue tout sauf "database"
+ansible-playbook playbook.yml --tags install        # runs only the tasks tagged "install"
+ansible-playbook playbook.yml --skip-tags database  # runs everything except "database"
 ```
 
-Les tags peuvent être posés sur une **tâche**, un **block**, un **play entier**, ou un **rôle**. Ils s'**héritent** du conteneur vers les enfants.
+Tags can be placed on a **task**, a **block**, an **entire play**, or a **role**. They are **inherited** from the container down to the children.
 
-Tags spéciaux à connaître :
+Special tags to know:
 
-| Tag | Comportement |
+| Tag | Behavior |
 | --- | --- |
-| **`always`** | La tâche s'exécute **toujours**, même si vous filtrez `--tags autre`. Exception : `--skip-tags always` la coupe. |
-| **`never`** | La tâche **ne s'exécute jamais**, sauf si on lance explicitement `--tags <son tag>`. |
-| **`tagged`** | Filtre méta : exécute uniquement les tâches qui ont **au moins un tag**. |
-| **`untagged`** | Filtre méta : exécute uniquement les tâches **sans aucun tag**. |
+| **`always`** | The task **always** runs, even if you filter `--tags other`. Exception: `--skip-tags always` cuts it. |
+| **`never`** | The task **never runs**, unless you explicitly run `--tags <its tag>`. |
+| **`tagged`** | Meta filter: runs only the tasks that have **at least one tag**. |
+| **`untagged`** | Meta filter: runs only the tasks **with no tag at all**. |
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Poser un **tag** sur une tâche et plusieurs tâches.
-2. Cibler un sous-ensemble avec **`--tags`** et exclure avec **`--skip-tags`**.
-3. Inspecter le plan d'exécution sans rien lancer (`--list-tags`, `--list-tasks`).
-4. Utiliser le tag spécial **`always`** pour des tâches incontournables (logs, marqueurs).
-5. Utiliser le tag spécial **`never`** pour des tâches dangereuses (reset, drop).
-6. Comprendre l'**héritage** des tags depuis un `block:` ou un play.
+1. Place a **tag** on one task and on several tasks.
+2. Target a subset with **`--tags`** and exclude with **`--skip-tags`**.
+3. Inspect the execution plan without running anything (`--list-tags`, `--list-tasks`).
+4. Use the special tag **`always`** for unavoidable tasks (logs, markers).
+5. Use the special tag **`never`** for dangerous tasks (reset, drop).
+6. Understand the **inheritance** of tags from a `block:` or a play.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible web1.lab -m ansible.builtin.ping
 ansible web1.lab -b -m ansible.builtin.shell -a "rm -f /tmp/tag-*.txt"
 ```
 
-Réponse attendue : `pong`. Le second `ansible` nettoie les marqueurs des runs précédents.
+Expected response: `pong`. The second `ansible` cleans up the markers from previous runs.
 
-## ⚙️ Arborescence cible
+## ⚙️ Target tree
 
 ```text
 labs/ecrire-code/tags/
-├── README.md           ← ce fichier
-├── playbook.yml        ← À CRÉER — votre play avec tags
+├── README.md           ← this file
+├── playbook.yml        ← TO CREATE: your play with tags
 └── challenge/
-    ├── README.md       ← challenge final (déjà présent)
+    ├── README.md       ← final challenge (already present)
     └── tests/
-        └── test_*.py   ← (déjà présent — pytest+testinfra)
+        └── test_*.py   ← (already present: pytest+testinfra)
 ```
 
-## 📚 Exercice 1 — Squelette du playbook
+## 📚 Exercise 1 — Playbook skeleton
 
-Créez `labs/ecrire-code/tags/playbook.yml` avec 3 tâches qui posent chacune un fichier marqueur :
+Create `labs/ecrire-code/tags/playbook.yml` with 3 tasks that each drop a marker file:
 
 ```yaml
 ---
@@ -78,122 +78,129 @@ Créez `labs/ecrire-code/tags/playbook.yml` avec 3 tâches qui posent chacune un
   become: true
 
   tasks:
-    # Tâche 1 — taguée install
-    # Tâche 2 — taguée configuration
-    # Tâche 3 — taguée service
+    # Task 1: tagged install
+    # Task 2: tagged configuration
+    # Task 3: tagged service
 ```
 
-🔍 **Observation** : un tag est juste un mot-clé `tags:` ajouté à une tâche. Aucune contrainte sur le nom — choisissez ce qui décrit la phase logique (`install`, `configuration`, `database`, `cleanup`…).
+🔍 **Observation**: a tag is just a `tags:` keyword added to a task. No constraint on the name: choose what describes the logical phase (`install`, `configuration`, `database`, `cleanup`…).
 
-## 📚 Exercice 2 — Trois tâches taguées
+## 📚 Exercise 2 — Three tagged tasks
 
-Pour chaque tâche, utilisez `ansible.builtin.copy` avec `content:`. Voici la première en exemple :
+For each task, use `ansible.builtin.copy` with `content:`. Here is the first one as an example:
 
 ```yaml
 - name: Marqueur stage install
   ansible.builtin.copy:
     dest: /tmp/tag-install.txt
-    content: "install posé à {{ ansible_date_time.iso8601 }}\n"
+    content: "install\n"
     mode: "0644"
   tags: install
 ```
 
-Faites de même pour les tags `configuration` (dest = `/tmp/tag-configuration.txt`) et `service` (dest = `/tmp/tag-service.txt`).
+> 💡 The content is **stable**. What a marker must prove here is that its task
+> ran under a given tag filter: its **existence** proves it. Writing
+> `{{ ansible_date_time.iso8601 }}` in it would make the task report `changed`
+> on every pass, and you would lose idempotence without gaining anything. If you
+> want to know *when* the marker was dropped, its `mtime` already tells you:
+> `ls -l /tmp/tag-*.txt`.
 
-🔍 **Observation à anticiper** : `tags:` accepte une **valeur unique** (`tags: install`) ou une **liste** (`tags: [install, fast]`). Les deux formes sont valides.
+Do the same for the tags `configuration` (dest = `/tmp/tag-configuration.txt`) and `service` (dest = `/tmp/tag-service.txt`).
 
-## 📚 Exercice 3 — Lancer **sans filtre** (cas par défaut)
+🔍 **Observation to anticipate**: `tags:` accepts a **single value** (`tags: install`) or a **list** (`tags: [install, fast]`). Both forms are valid.
 
-Sans option `--tags`, **toutes** les tâches tournent :
+## 📚 Exercise 3 — Run **without a filter** (default case)
+
+Without the `--tags` option, **all** the tasks run:
 
 ```bash
 ansible-playbook labs/ecrire-code/tags/playbook.yml
 ```
 
-🔍 **Observation** : `PLAY RECAP` affiche `ok=4 changed=3` (les 3 tâches + le `gather_facts`). Les 3 marqueurs sont posés :
+🔍 **Observation**: `PLAY RECAP` shows `ok=4 changed=3` (the 3 tasks + the `gather_facts`). The 3 markers are dropped:
 
 ```bash
-ssh ansible@web1.lab 'ls /tmp/tag-*.txt'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab 'ls /tmp/tag-*.txt'
 # /tmp/tag-configuration.txt /tmp/tag-install.txt /tmp/tag-service.txt
 ```
 
-## 📚 Exercice 4 — Cibler un seul tag avec `--tags`
+## 📚 Exercise 4 — Target a single tag with `--tags`
 
-Nettoyez les marqueurs et relancez en **ciblant** uniquement `configuration` :
+Clean up the markers and rerun by **targeting** only `configuration`:
 
 ```bash
 ansible web1.lab -b -m ansible.builtin.shell -a "rm -f /tmp/tag-*.txt"
 ansible-playbook labs/ecrire-code/tags/playbook.yml --tags configuration
 ```
 
-🔍 **Observation** : `PLAY RECAP` affiche `ok=1 changed=1 skipped=2`. Les tâches `install` et `service` sont **skippées** (Ansible voit qu'elles n'ont pas le tag demandé).
+🔍 **Observation**: `PLAY RECAP` shows `ok=1 changed=1 skipped=2`. The `install` and `service` tasks are **skipped** (Ansible sees they do not have the requested tag).
 
 ```bash
-ssh ansible@web1.lab 'ls /tmp/tag-*.txt'
-# /tmp/tag-configuration.txt    ← seul ce fichier existe
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab 'ls /tmp/tag-*.txt'
+# /tmp/tag-configuration.txt    ← only this file exists
 ```
 
-## 📚 Exercice 5 — Exclure un tag avec `--skip-tags`
+## 📚 Exercise 5 — Exclude a tag with `--skip-tags`
 
-Inverse du précédent : tout, **sauf** `service`.
+The reverse of the previous one: everything, **except** `service`.
 
 ```bash
 ansible web1.lab -b -m ansible.builtin.shell -a "rm -f /tmp/tag-*.txt"
 ansible-playbook labs/ecrire-code/tags/playbook.yml --skip-tags service
 ```
 
-🔍 **Observation** : `install` et `configuration` tournent ; `service` est skippé. C'est utile en pratique pour « tout sauf la partie qui prend 10 min ».
+🔍 **Observation**: `install` and `configuration` run; `service` is skipped. In practice this is useful for "everything except the part that takes 10 min".
 
-## 📚 Exercice 6 — Inspecter sans exécuter (`--list-tags`, `--list-tasks`)
+## 📚 Exercise 6 — Inspect without executing (`--list-tags`, `--list-tasks`)
 
-Avant de lancer un long playbook avec un filtre, vérifiez que vous ciblez bien ce que vous croyez :
+Before running a long playbook with a filter, check that you are indeed targeting what you think:
 
 ```bash
 ansible-playbook labs/ecrire-code/tags/playbook.yml --list-tags
 ```
 
-🔍 **Observation** : sortie attendue :
+🔍 **Observation**: expected output:
 
 ```text
 play #1 (web1.lab): Démo tags Ansible    TAGS: []
     TASK TAGS: [configuration, install, service]
 ```
 
-Pour voir **quelles tâches** seraient exécutées avec un filtre donné :
+To see **which tasks** would be executed with a given filter:
 
 ```bash
 ansible-playbook labs/ecrire-code/tags/playbook.yml --list-tasks --tags configuration
 ```
 
-C'est l'équivalent d'un **dry-run de la sélection** — sans rien lancer ni se connecter aux managed nodes.
+This is the equivalent of a **dry-run of the selection**, without running anything or connecting to the managed nodes.
 
-## 📚 Exercice 7 — Tag spécial `always` (la tâche incontournable)
+## 📚 Exercise 7 — Special tag `always` (the unavoidable task)
 
-Ajoutez une 4e tâche **avant** les autres, taguée `always`. Elle servira de marqueur universel — peu importe le filtre passé, elle tourne toujours.
+Add a 4th task **before** the others, tagged `always`. It will serve as a universal marker: whatever filter is passed, it always runs.
 
 ```yaml
 - name: Marqueur run (always)
   ansible.builtin.copy:
     dest: /tmp/tag-run.txt
-    content: "run lancé à {{ ansible_date_time.iso8601 }}\n"
+    content: "run\n"
     mode: "0644"
   tags: always
 ```
 
-Testez :
+Test it:
 
 ```bash
 ansible web1.lab -b -m ansible.builtin.shell -a "rm -f /tmp/tag-*.txt"
 ansible-playbook labs/ecrire-code/tags/playbook.yml --tags configuration
-ssh ansible@web1.lab 'ls /tmp/tag-*.txt'
-# /tmp/tag-configuration.txt /tmp/tag-run.txt    ← run.txt existe alors qu'on a filtré configuration !
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab 'ls /tmp/tag-*.txt'
+# /tmp/tag-configuration.txt /tmp/tag-run.txt    ← run.txt exists even though we filtered configuration!
 ```
 
-🔍 **Observation** : `always` ignore le filtre `--tags`. **Cas d'usage typique** : pose d'un timestamp de début, log de qui a lancé le playbook, vérification de prérequis. À utiliser avec parcimonie — un play plein d'`always` est un play sans tags utiles.
+🔍 **Observation**: `always` ignores the `--tags` filter. **Typical use case**: checking prerequisites, loading variables, dropping a run marker. Use it sparingly: a play full of `always` is a play with no useful tags.
 
-## 📚 Exercice 8 — Tag spécial `never` (la tâche dangereuse)
+## 📚 Exercise 8 — Special tag `never` (the dangerous task)
 
-Ajoutez une 5e tâche taguée `[never, reset]` qui supprime tous les marqueurs :
+Add a 5th task tagged `[never, reset]` that removes all the markers:
 
 ```yaml
 - name: Marqueur reset destructif
@@ -201,24 +208,24 @@ Ajoutez une 5e tâche taguée `[never, reset]` qui supprime tous les marqueurs :
   tags: [never, reset]
 ```
 
-Testez **deux** scénarios :
+Test **two** scenarios:
 
 ```bash
-ansible-playbook labs/ecrire-code/tags/playbook.yml                    # sans filtre
-ansible-playbook labs/ecrire-code/tags/playbook.yml --tags configuration   # filtre configuration
+ansible-playbook labs/ecrire-code/tags/playbook.yml                    # without a filter
+ansible-playbook labs/ecrire-code/tags/playbook.yml --tags configuration   # configuration filter
 ```
 
-🔍 **Observation** : dans **les deux cas**, la tâche `reset` est **skippée**. `never` est plus fort que tout — sauf si on demande **explicitement** son tag :
+🔍 **Observation**: in **both cases**, the `reset` task is **skipped**. `never` is stronger than anything, except if you **explicitly** request its tag:
 
 ```bash
 ansible-playbook labs/ecrire-code/tags/playbook.yml --tags reset
 ```
 
-C'est seulement là qu'elle s'exécute. **Cas d'usage typique** : opérations destructives (drop database, suppression de fichiers, reset de config) qu'on ne veut **jamais** voir tourner par accident.
+Only then does it run. **Typical use case**: destructive operations (drop database, file deletion, config reset) that you **never** want to see run by accident.
 
-## 📚 Exercice 9 — Héritage : un tag sur un `block:`
+## 📚 Exercise 9 — Inheritance: a tag on a `block:`
 
-Au lieu de répéter `tags: install` sur 5 tâches, posez-le **une fois** sur un `block:` qui les regroupe :
+Instead of repeating `tags: install` on 5 tasks, place it **once** on a `block:` that groups them:
 
 ```yaml
 tasks:
@@ -235,62 +242,62 @@ tasks:
           dest: /tmp/tag-install-2.txt
           content: "install 2\n"
           mode: "0644"
-    tags: install      # hérité par les 2 tâches du block
+    tags: install      # inherited by the block's 2 tasks
 ```
 
-🔍 **Observation** : `--tags install` joue les deux tâches, alors qu'aucune n'a de `tags:` propre. C'est la règle d'**héritage** : un tag sur un conteneur (block, play, rôle) est ajouté à toutes les tâches enfants.
+🔍 **Observation**: `--tags install` runs both tasks, even though neither has its own `tags:`. This is the **inheritance** rule: a tag on a container (block, play, role) is added to all the child tasks.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- Un tag est **purement organisationnel** — c'est juste une étiquette. Aucun comportement par défaut associé (sauf les 4 spéciaux).
-- **`--tags A,B`** exécute les tâches taguées A **OU** B (union). **`--skip-tags A,B`** ignore les tâches taguées A ou B.
-- L'**héritage** propage de play → block → tâche. Une tâche cumule ses tags propres + ceux hérités.
-- **`always`** = toujours sauf `--skip-tags always`. **`never`** = jamais sauf `--tags <son tag>`. Pas de symétrie parfaite — à mémoriser.
-- **`--list-tags` et `--list-tasks`** sont vos amis avant un long playbook. Pas besoin de se connecter aux managed nodes pour les utiliser.
-- **Convention de nommage** : utiliser des verbes/phases courts (`install`, `configure`, `deploy`, `cleanup`). Évitez les tags génériques (`tag1`, `important`) qui n'aident personne.
+- A tag is **purely organizational**: it is just a label. No default behavior is associated with it (except the 4 special ones).
+- **`--tags A,B`** runs the tasks tagged A **OR** B (union). **`--skip-tags A,B`** skips the tasks tagged A or B.
+- **Inheritance** propagates from play → block → task. A task accumulates its own tags + the inherited ones.
+- **`always`** = always except `--skip-tags always`. **`never`** = never except `--tags <its tag>`. No perfect symmetry: memorize it.
+- **`--list-tags` and `--list-tasks`** are your friends before a long playbook. No need to connect to the managed nodes to use them.
+- **Naming convention**: use short verbs/phases (`install`, `configure`, `deploy`, `cleanup`). Avoid generic tags (`tag1`, `important`) that help no one.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous avez 3 tags `install`, `configure`, `start`. Vous voulez relancer **uniquement** la partie configuration **et** redémarrage du service, **sans** réinstaller. Quelle commande ?
+1. You have 3 tags `install`, `configure`, `start`. You want to rerun **only** the configuration part **and** the service restart, **without** reinstalling. Which command?
 
-2. Vous écrivez un playbook qui contient une tâche `Drop la base de production`. Quel tag mettre dessus pour qu'elle ne tourne **jamais** par accident, même si un collègue lance `--tags database` ?
+2. You are writing a playbook that contains a task `Drop la base de production`. Which tag do you put on it so it **never** runs by accident, even if a colleague runs `--tags database`?
 
-3. Vous voulez lancer **uniquement** les tâches **non taguées** d'un long playbook (audit / nettoyage). Quel tag spécial filtrer ?
+3. You want to run **only** the **untagged** tasks of a long playbook (audit / cleanup). Which special tag do you filter on?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Le challenge ([`challenge/README.md`](challenge/README.md)) consolide les exos 7 et 8 sur `db1.lab` : une tâche `always` (marqueur), une `configuration` standard, et une tâche `[never, reset]` destructive. Tests automatisés via `pytest+testinfra` :
+The challenge ([`challenge/README.md`](challenge/README.md)) consolidates exercises 7 and 8 on `db1.lab`: an `always` task (marker), a standard `configuration` one, and a destructive `[never, reset]` task. Automated tests via `pytest+testinfra`:
 
 ```bash
 pytest -v labs/ecrire-code/tags/challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Tags par environnement** : `tags: [prod, deploy]` sur certaines tâches, `tags: [staging, deploy]` sur d'autres. Lancez `--tags "prod,deploy"` pour cibler la prod uniquement.
-- **Tags + `--check`** : `ansible-playbook playbook.yml --tags configure --check --diff`. C'est le **dry-run filtré** — rapide, sûr, ciblé. Pattern idéal en pré-prod.
-- **Tags hérités d'un rôle** : si vous incluez un rôle avec `roles: [{ role: webserver, tags: [web] }]`, **toutes** les tâches du rôle reçoivent le tag `web`. Une commande, un rôle entier ciblé.
-- **`meta: end_play`** vs **`tags: never`** : `end_play` arrête le play **conditionnellement** (avec `when:`), `never` exclut **statiquement**. Choisir selon que la décision est runtime ou structurelle.
+- **Tags per environment**: `tags: [prod, deploy]` on some tasks, `tags: [staging, deploy]` on others. Run `--tags "prod,deploy"` to target prod only.
+- **Tags + `--check`**: `ansible-playbook playbook.yml --tags configure --check --diff`. This is the **filtered dry-run**: fast, safe, targeted. The ideal pattern in pre-prod.
+- **Tags inherited from a role**: if you include a role with `roles: [{ role: webserver, tags: [web] }]`, **all** the role's tasks receive the `web` tag. One command, an entire role targeted.
+- **`meta: end_play`** vs **`tags: never`**: `end_play` stops the play **conditionally** (with `when:`), `never` excludes **statically**. Choose depending on whether the decision is runtime or structural.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/ecrire-code/tags/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/ecrire-code/tags/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, RHCE 2026 target)
 ansible-lint --profile production labs/ecrire-code/tags/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

@@ -1,0 +1,4 @@
+---
+id: ecrire-code-variables-base
+title: "Variables : déclaration et portées"
+description: "Déclarer des variables via vars et vars_files, les surcharger avec --extra-vars et diagnostiquer une valeur inattendue liée au typage YAML."

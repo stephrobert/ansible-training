@@ -1,53 +1,53 @@
 # Lab 23 — `block:` / `rescue:` / `always:` (try / catch / finally)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Block / rescue / always Ansible : try/catch/finally**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/block-rescue-always/)
+🔗 [**Block / rescue / always Ansible: try/catch/finally**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/block-rescue-always/)
 
-`block:` regroupe plusieurs tâches sous une **structure de gestion d'erreurs** :
+`block:` groups several tasks under an **error-handling structure**:
 
-- **`block:`** = liste de tâches à essayer (équivalent du `try`).
-- **`rescue:`** = liste de tâches exécutées **si une tâche du block échoue** (`catch`).
-- **`always:`** = liste de tâches **toujours** exécutées, succès ou échec (`finally`).
+- **`block:`** = list of tasks to try (equivalent of `try`).
+- **`rescue:`** = list of tasks run **if a task in the block fails** (`catch`).
+- **`always:`** = list of tasks **always** run, on success or failure (`finally`).
 
-Cette structure est essentielle pour les **opérations transactionnelles** : déployer
-une nouvelle release, sauvegarder en cas d'échec, nettoyer un fichier temporaire.
-Sans `block/rescue`, un `failed_when` peut casser le play entier — avec
-`block/rescue`, on rattrape proprement.
+This structure is essential for **transactional operations**: deploy
+a new release, back up in case of failure, clean up a temporary file.
+Without `block/rescue`, a `failed_when` can break the whole play: with
+`block/rescue`, you catch cleanly.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Grouper** plusieurs tâches dans un `block:`.
-2. **Capturer** une erreur avec `rescue:` et **agir** (rollback, notification, log).
-3. **Garantir** un nettoyage avec `always:`.
-4. **Utiliser** `ansible_failed_task` et `ansible_failed_result` dans `rescue:`.
-5. **Imbriquer** des blocks pour des structures try/catch/finally complexes.
+1. **Group** several tasks in a `block:`.
+2. **Catch** an error with `rescue:` and **act** (rollback, notification, log).
+3. **Guarantee** a cleanup with `always:`.
+4. **Use** `ansible_failed_task` and `ansible_failed_result` in `rescue:`.
+5. **Nest** blocks for complex try/catch/finally structures.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 ansible db1.lab -b -m shell -a "rm -f /tmp/block-*.txt"
 ```
 
-## 📚 Exercice 1 — Block sans erreur (cas nominal)
+## 📚 Exercise 1 — Block without error (nominal case)
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -84,13 +84,13 @@ Créez `lab.yml` :
             mode: "0644"
 ```
 
-**Lancez** :
+**Run it**:
 
 ```bash
 ansible-playbook labs/ecrire-code/block-rescue-always/lab.yml
 ```
 
-🔍 **Observation** : sortie console :
+🔍 **Observation**: console output:
 
 ```
 TASK [Tache 1 - Marquer le debut] : ok / changed
@@ -98,16 +98,16 @@ TASK [Tache 2 - Operation principale] : ok / changed
 TASK [Always - cleanup] : ok / changed
 ```
 
-**`rescue:` n'est pas exécuté**. **`always:` est exécuté**. Sur db1 :
+**`rescue:` is not run**. **`always:` is run**. On db1:
 
 ```bash
-ssh ansible@db1.lab 'ls /tmp/block-*.txt'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'ls /tmp/block-*.txt'
 # block-cleanup.txt, block-main.txt, block-start.txt — PAS block-rescue.txt
 ```
 
-## 📚 Exercice 2 — Block avec erreur (déclenchement de `rescue:`)
+## 📚 Exercise 2 — Block with error (triggering `rescue:`)
 
-Modifiez la **Tâche 2** pour qu'elle échoue :
+Modify **Task 2** so that it fails:
 
 ```yaml
 - name: Tache 2 - Operation qui plante
@@ -116,13 +116,13 @@ Modifiez la **Tâche 2** pour qu'elle échoue :
     state: present
 ```
 
-**Lancez** :
+**Run it**:
 
 ```bash
 ansible-playbook labs/ecrire-code/block-rescue-always/lab.yml
 ```
 
-🔍 **Observation** : sortie console :
+🔍 **Observation**: console output:
 
 ```
 TASK [Tache 1 - Marquer le debut] : ok / changed
@@ -131,19 +131,19 @@ TASK [Rescue ...] : ok / changed
 TASK [Always - cleanup] : ok / changed
 ```
 
-**`rescue:` est exécuté** (la tâche 2 a échoué). **`always:` est exécuté aussi**.
-Le **PLAY RECAP** affiche `failed=0` car le `rescue:` a **rattrapé** l'erreur — le
-play se termine **avec succès**.
+**`rescue:` is run** (task 2 failed). **`always:` is run too**.
+The **PLAY RECAP** shows `failed=0` because the `rescue:` **caught** the error: the
+play ends **successfully**.
 
-C'est l'**équivalent du `try/except` Python** : sans `rescue:`, la tâche 2 aurait
-fait `failed=1` et arrêté le play.
+This is the **equivalent of Python's `try/except`**: without `rescue:`, task 2 would have
+done `failed=1` and stopped the play.
 
-## 📚 Exercice 3 — Variables magiques dans `rescue:`
+## 📚 Exercise 3 — Magic variables in `rescue:`
 
-Dans `rescue:`, Ansible expose **deux variables** très utiles :
+In `rescue:`, Ansible exposes **two** very useful **variables**:
 
-- **`ansible_failed_task`** : le dict de la tâche qui a échoué (`name`, `action`, ...).
-- **`ansible_failed_result`** : le résultat de la tâche (msg, rc, stderr, ...).
+- **`ansible_failed_task`**: the dict of the task that failed (`name`, `action`, ...).
+- **`ansible_failed_result`**: the result of the task (msg, rc, stderr, ...).
 
 ```yaml
 rescue:
@@ -162,13 +162,13 @@ rescue:
       msg: "ALERTE : tache '{{ ansible_failed_task.name }}' a echoue sur {{ inventory_hostname }}"
 ```
 
-🔍 **Observation** : ces variables permettent un **rescue ciblé** — log précis,
-notification structurée, branchement conditionnel selon l'erreur.
+🔍 **Observation**: these variables allow a **targeted rescue**: precise log,
+structured notification, conditional branching depending on the error.
 
-## 📚 Exercice 4 — `always:` pour cleanup transactionnel
+## 📚 Exercise 4 — `always:` for transactional cleanup
 
-Pattern classique : créer un fichier temporaire, faire l'opération, **toujours**
-le supprimer (succès ou échec).
+Classic pattern: create a temporary file, do the operation, **always**
+remove it (on success or failure).
 
 ```yaml
 - name: Operation transactionnelle avec cleanup garanti
@@ -201,17 +201,17 @@ le supprimer (succès ou échec).
             state: absent
 ```
 
-**Lancez** :
+**Run it**:
 
 ```bash
 ansible-playbook labs/ecrire-code/block-rescue-always/lab.yml
 ```
 
-🔍 **Observation** : `block-lock.txt` est **créé puis supprimé**. Même si l'opération
-critique échoue, le lock est nettoyé. C'est le **pattern transactionnel** essentiel
-pour éviter les locks orphelins.
+🔍 **Observation**: `block-lock.txt` is **created then removed**. Even if the critical
+operation fails, the lock is cleaned up. This is the essential **transactional pattern**
+to avoid orphan locks.
 
-## 📚 Exercice 5 — Block imbriqué (try / catch / finally complexe)
+## 📚 Exercise 5 — Nested block (complex try / catch / finally)
 
 ```yaml
 - name: Block externe
@@ -240,14 +240,14 @@ pour éviter les locks orphelins.
         msg: "Always externe"
 ```
 
-🔍 **Observation** : le **rescue interne** rattrape l'erreur, donc le **rescue externe
-n'est pas déclenché**. Pattern utile pour des **fallbacks en cascade** : essayer A,
-si A échoue essayer B, si B échoue alors notifier.
+🔍 **Observation**: the **inner rescue** catches the error, so the **outer rescue
+is not triggered**. A pattern useful for **cascading fallbacks**: try A,
+if A fails try B, if B fails then notify.
 
-## 📚 Exercice 6 — Le piège : `rescue:` qui plante aussi
+## 📚 Exercise 6 — The trap: a `rescue:` that also fails
 
-Si une tâche du `rescue:` **plante elle-même**, le `rescue` ne rattrape **pas**
-sa propre erreur — le play s'arrête.
+If a task in the `rescue:` **fails itself**, the `rescue` does **not** catch
+its own error: the play stops.
 
 ```yaml
 - name: Demo piege rescue qui plante
@@ -262,57 +262,57 @@ sa propre erreur — le play s'arrête.
         msg: "Always tourne quand meme"
 ```
 
-🔍 **Observation** : le **rescue plante**, le **always tourne quand même**, mais le
-PLAY RECAP affiche `failed=1`. Le play est en échec. Le rescue ne **rattrape pas
-sa propre erreur**.
+🔍 **Observation**: the **rescue fails**, the **always runs anyway**, but the
+PLAY RECAP shows `failed=1`. The play has failed. The rescue does not **catch
+its own error**.
 
-**Bonne pratique** : un `rescue:` doit être **simple et fiable** (une notification,
-un log, un cleanup) — ne pas y mettre des opérations qui peuvent elles-mêmes échouer.
+**Good practice**: a `rescue:` must be **simple and reliable** (a notification,
+a log, a cleanup): do not put operations in it that can themselves fail.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
 - **`block:`** = try, **`rescue:`** = catch, **`always:`** = finally.
-- **`rescue:` rattrape les erreurs** du block et empêche le play d'échouer.
-- **`always:`** s'exécute **toujours**, succès ou échec.
-- **`ansible_failed_task` / `ansible_failed_result`** = variables magiques dans `rescue:`.
-- **Blocks imbriqués** = fallbacks en cascade.
-- **`rescue:` qui plante** ne rattrape pas sa propre erreur — le `always:` tourne mais le play échoue.
+- **`rescue:` catches the errors** of the block and prevents the play from failing.
+- **`always:`** runs **always**, on success or failure.
+- **`ansible_failed_task` / `ansible_failed_result`** = magic variables in `rescue:`.
+- **Nested blocks** = cascading fallbacks.
+- **A `rescue:` that fails** does not catch its own error: the `always:` runs but the play fails.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous voulez **déployer une release** avec rollback automatique en cas d'échec.
-   Comment articulez-vous `block:` (déployer), `rescue:` (rollback), et `always:`
-   (notification) ?
+1. You want to **deploy a release** with automatic rollback in case of failure.
+   How do you articulate `block:` (deploy), `rescue:` (rollback), and `always:`
+   (notification)?
 
-2. Quelle est la différence sémantique entre `ignore_errors: true` (tâche unique)
-   et `block: + rescue:` (groupe de tâches) ? Quand préférer l'un ou l'autre ?
+2. What is the semantic difference between `ignore_errors: true` (single task)
+   and `block: + rescue:` (group of tasks)? When do you prefer one over the other?
 
-3. Un `rescue:` peut **modifier** des variables avec `set_fact`. Comment vérifier
-   après le block si la run est passée par le `rescue:` (pour conditionner une tâche
-   ultérieure) ?
+3. A `rescue:` can **modify** variables with `set_fact`. How do you check
+   after the block whether the run went through the `rescue:` (to condition a
+   later task)?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`when:` sur un block** : conditionne le block entier — équivalent à mettre
-  `when:` sur chaque tâche, mais DRY.
-- **`tags:` sur un block** : applique le tag à toutes les tâches du block. Utile
-  pour des sections "deploy" / "rollback" / "verify" tagguées.
-- **`become:` sur un block** : élève les droits pour toutes les tâches du block —
-  plus propre que de répéter `become: true` sur chaque tâche.
-- **Pattern saga** : enchaîner plusieurs blocks transactionnels avec leur propre
-  rescue. Si l'un échoue, déclencher les compensations des précédents (rollback en
-  cascade).
-- **Lab 25 (`ignore_errors`)** : alternative plus simple quand on veut juste **ne
-  pas planter** sans gérer le rattrapage.
+- **`when:` on a block**: conditions the whole block, equivalent to putting
+  `when:` on each task, but DRY.
+- **`tags:` on a block**: applies the tag to all the tasks of the block. Useful
+  for tagged "deploy" / "rollback" / "verify" sections.
+- **`become:` on a block**: elevates privileges for all the tasks of the block,
+  cleaner than repeating `become: true` on each task.
+- **Saga pattern**: chain several transactional blocks with their own
+  rescue. If one fails, trigger the compensations of the previous ones (cascading
+  rollback).
+- **Lab 25 (`ignore_errors`)**: a simpler alternative when you just want to **not
+  crash** without handling the catch.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 # Lint de votre fichier de lab (tutoriel guidé)
@@ -325,9 +325,9 @@ ansible-lint labs/ecrire-code/block-rescue-always/challenge/solution.yml
 ansible-lint --profile production labs/ecrire-code/block-rescue-always/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

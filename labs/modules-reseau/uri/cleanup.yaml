@@ -1,0 +1,58 @@
+---
+# Reset du lab uri : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup uri lab (API interne sur lab_api)
+  hosts: lab_api
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Retirer le vhost de l'API interne
+      ansible.builtin.file:
+        path: /etc/nginx/conf.d/lab-uri-api.conf
+        state: absent
+      failed_when: false
+
+    - name: Retirer le journal d'accès de l'API
+      ansible.builtin.file:
+        path: /var/log/nginx/lab-uri-api.log
+        state: absent
+      failed_when: false
+
+    - name: Refermer le port de l'API dans firewalld
+      ansible.posix.firewalld:
+        port: 8009/tcp
+        state: disabled
+        permanent: true
+        immediate: true
+      failed_when: false
+
+    # Recharger, jamais arrêter : le port 80 de cet hôte sert d'autres labs, et
+    # le paquet reste installé, chaque lab gérant son propre état de départ.
+    - name: Recharger nginx sans le couper
+      ansible.builtin.systemd_service:
+        name: nginx
+        state: reloaded
+      failed_when: false
+
+- name: Cleanup uri lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Retirer le nom de l'API interne de /etc/hosts
+      ansible.builtin.blockinfile:
+        path: /etc/hosts
+        marker: "# {mark} LAB modules-reseau/uri"
+        state: absent
+      failed_when: false
+
+    - name: Reset path, state (uri)
+      ansible.builtin.file:
+        path: "/opt/lab-uri-get.json"
+        state: "absent"
+      failed_when: false
+    - name: Reset path, state (uri)
+      ansible.builtin.file:
+        path: "/opt/lab-uri-post.json"
+        state: "absent"
+      failed_when: false

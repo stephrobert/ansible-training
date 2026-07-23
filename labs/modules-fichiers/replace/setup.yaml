@@ -1,0 +1,34 @@
+---
+# Mise en place du lab replace : pose l'état de départ, puis brief.
+# Rejouable : chaque relance repose le fichier initial, l'apprenant
+# peut recommencer autant qu'il veut.
+- name: Setup replace lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Poser le fichier de départ /etc/myapp.conf
+      ansible.builtin.copy:
+        dest: /etc/myapp.conf
+        content: |
+          url=http://api-old.example.com/v1
+          port=8080
+          [server]
+          ssl_enabled=false
+          host=localhost
+          [client]
+          ssl_enabled=false
+          host=localhost
+        owner: root
+        group: root
+        mode: "0644"
+
+- name: Brief the learner (replace)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Substitute a regex pattern throughout a file, scope it with before/after, and preserve parts of it with capture groups
+      run_once: true

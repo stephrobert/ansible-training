@@ -1,0 +1,7 @@
+---
+galaxy_info:
+  author: someguy42
+  description: Quick backup role
+  license: MIT
+  min_ansible_version: "2.9"
+dependencies: []

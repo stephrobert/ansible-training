@@ -1,0 +1,32 @@
+---
+id: ecrire-code-tests-jinja
+title: "Jinja2 tests: is defined, is mapping, is sequence"
+description: "Test a variable's definition and type, match a regex with is match and is search, and combine those tests in when and in {% if %}."
+section: ecrire-code
+level: l2
+difficulty: intermediate
+lab_type: lab
+estimated_time: "40m"
+skills:
+  - jinja2-tests
+  - type-checking
+  - when-conditions
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/tests-jinja/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

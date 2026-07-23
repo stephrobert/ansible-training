@@ -1,25 +1,58 @@
 ---
-# molecule.yml — premier scénario Molecule (driver delegated, ansible-native).
-# Démontre la philosophie Molecule v6+ où driver = collections Ansible.
+# Scénario « default » du rôle webserver : la configuration du harnais.
+#
+# Molecule lit ce fichier en premier : il déclare COMMENT l'instance de
+# test naît (driver, platforms), QUI la configure (provisioner) et QUI
+# juge le résultat (verifier).
+
 dependency:
   name: galaxy
 
 driver:
+  # Driver moderne de Molecule v6+ : « default » (ex-delegated). Molecule
+  # ne parle plus lui-même à Podman ou Docker : il délègue la création des
+  # instances aux collections Ansible (containers.podman, community.docker).
+  # C'est pour cela qu'aucun plugin de driver n'est nécessaire ici.
+  #
+  # Corollaire à ne pas manquer : « délégué » veut dire que Molecule ne
+  # crée RIEN tout seul. Ce sont create.yml et destroy.yml (fournis avec
+  # le lab) qui montent et détruisent l'instance. Sans eux, Molecule saute
+  # l'étape create sans broncher, et le converge part joindre une machine
+  # qui n'existe pas.
   name: default
+  options:
+    managed: true
+    # De quoi ouvrir un shell dans l'instance quand un test reste rouge :
+    #   molecule login -h instance-alma10
+    login_cmd_template: "podman exec -ti {instance} bash"
 
 platforms:
-  - name: instance
-    image: docker.io/rockylinux/rockylinux:9
+  # Au moins une instance. Une image « init » est indispensable : le rôle
+  # démarre nginx via systemd, donc le conteneur doit faire tourner un
+  # vrai PID 1 systemd, pas un shell. Une image de base ne convient pas :
+  # docker.io/rockylinux/rockylinux:9 n'a même pas /sbin/init.
+  - name: instance-alma10
+    # AlmaLinux 9 : la distribution de la formation (cf. distros du
+    # lab.yaml). La variante « -init » embarque systemd.
+    image: docker.io/almalinux/10-init:latest
+    # L'image est déjà construite en amont : aucun Dockerfile à bâtir,
+    # create.yml se contente de la tirer.
     pre_build_image: true
+    # systemd réclame des privilèges étendus (cgroups, montages).
     privileged: true
     command: /sbin/init
 
 provisioner:
+  # C'est Ansible qui joue converge.yml puis verify.yml.
   name: ansible
   config_options:
     defaults:
-      stdout_callback: yaml
-      callback_enabled: profile_tasks
+      # Molecule 26 ne met plus le roles/ du projet dans le roles path :
+      # sans cette ligne, converge échoue sur « the role was not found ».
+      roles_path: ${MOLECULE_PROJECT_DIRECTORY}/roles
 
 verifier:
+  # « ansible » : les assertions vivent dans verify.yml, en Ansible natif.
+  # Aucun outil tiers à apprendre, et le même langage que le rôle testé.
+  # L'alternative testinfra (assertions Python) fait l'objet du lab 66.
   name: ansible

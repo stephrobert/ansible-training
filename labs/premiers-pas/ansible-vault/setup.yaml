@@ -1,0 +1,28 @@
+---
+# Mise en place du lab ansible-vault : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup ansible-vault lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (ansible-vault)
+      ansible.builtin.file:
+        path: "/tmp/db-config.txt"
+        state: "absent"
+      failed_when: false
+    - name: Reset path, state (ansible-vault)
+      ansible.builtin.file:
+        path: "/tmp/db1-app.conf"
+        state: "absent"
+      failed_when: false
+
+- name: Brief the learner (ansible-vault)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Encrypt a secrets file with ansible-vault, consume it through vars_files and protect output with no_log and a 0600 .vault_password
+      run_once: true

@@ -1,0 +1,4 @@
+---
+id: modules-utilisateurs-authorized-key
+title: "Module authorized_key : clés SSH des utilisateurs"
+description: "Provisionner des clés SSH publiques, forcer une liste exclusive, restreindre une clé avec key_options et traiter plusieurs users avec subelements."

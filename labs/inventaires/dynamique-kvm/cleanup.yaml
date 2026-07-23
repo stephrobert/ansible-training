@@ -1,0 +1,13 @@
+---
+# Reset du lab dynamique-kvm : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup dynamique-kvm lab (labenv)
+  hosts: labenv
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (dynamique-kvm)
+      ansible.builtin.shell: |
+        rm -f /tmp/lab57-mark-*.txt
+      changed_when: false
+      failed_when: false

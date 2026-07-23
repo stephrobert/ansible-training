@@ -1,58 +1,58 @@
-# Lab 55 — group_vars et host_vars structurés
+# Lab 55 — Structured group_vars and host_vars
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
+> cd $ANSIBLE_TRAINING
 > ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
 > ```
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Inventaires Ansible : group_vars et host_vars**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/group-vars-host-vars/)
+🔗 [**Ansible inventories: group_vars and host_vars**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/group-vars-host-vars/)
 
-Ansible cherche **automatiquement** des variables dans deux dossiers placés **à côté de l'inventaire** :
+Ansible **automatically** looks for variables in two folders placed **next to the inventory**:
 
-- **`group_vars/<nom_groupe>.yml`** : variables appliquées à **tous les hôtes du groupe**.
-- **`host_vars/<nom_hote>.yml`** : variables appliquées à **un seul hôte** (priorité plus haute).
+- **`group_vars/<group_name>.yml`**: variables applied to **all the hosts of the group**.
+- **`host_vars/<host_name>.yml`**: variables applied to **a single host** (higher priority).
 
-Il existe aussi le groupe spécial **`all`** : `group_vars/all.yml` est appliqué à **tous les hôtes** de l'inventaire.
+There is also the special group **`all`**: `group_vars/all.yml` is applied to **all the hosts** of the inventory.
 
-**Précédence (de la plus faible à la plus forte)** :
+**Precedence (from weakest to strongest)**:
 
 ```text
 1. group_vars/all.yml
-2. group_vars/<groupe parent>.yml
-3. group_vars/<groupe enfant>.yml
+2. group_vars/<parent group>.yml
+3. group_vars/<child group>.yml
 4. host_vars/<host>.yml
 ```
 
-C'est cette **précédence** que vous allez démontrer dans ce lab.
+It is this **precedence** that you will demonstrate in this lab.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Structurer un **inventaire YAML** avec `group_vars/` et `host_vars/` à côté.
-2. Définir une variable à **3 niveaux** différents (all → groupe → host).
-3. Vérifier la **valeur résolue** par `ansible-inventory --host <host>`.
-4. Démontrer que la **règle "le plus local gagne"** s'applique.
+1. Structure a **YAML inventory** with `group_vars/` and `host_vars/` alongside.
+2. Define a variable at **3 different levels** (all → group → host).
+3. Check the **resolved value** with `ansible-inventory --host <host>`.
+4. Demonstrate that the **"most local wins" rule** applies.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training/labs/inventaires/group-vars-host-vars
+cd $ANSIBLE_TRAINING/labs/inventaires/group-vars-host-vars
 ```
 
-## ⚙️ Arborescence cible
+## ⚙️ Target tree
 
 ```text
 labs/inventaires/group-vars-host-vars/
-├── README.md           ← ce fichier
+├── README.md           ← this file
 ├── inventory/
-│   ├── hosts.yml       ← inventaire YAML
+│   ├── hosts.yml       ← YAML inventory
 │   ├── group_vars/
 │   │   ├── all.yml
 │   │   └── webservers.yml
@@ -65,9 +65,9 @@ labs/inventaires/group-vars-host-vars/
         └── test_precedence.py
 ```
 
-## 📚 Exercice 1 — L'inventaire YAML
+## 📚 Exercise 1 — The YAML inventory
 
-Créez `inventory/hosts.yml` :
+Create `inventory/hosts.yml`:
 
 ```yaml
 ---
@@ -82,42 +82,42 @@ all:
         db1.lab:
 ```
 
-🔍 **Observation** : la structure `all.children.<groupe>.hosts.<host>` est la **forme YAML standard**. Pas besoin de spécifier `ansible_host:` si la résolution DNS ou `/etc/hosts` est correcte.
+🔍 **Observation**: the structure `all.children.<group>.hosts.<host>` is the **standard YAML form**. No need to specify `ansible_host:` if DNS resolution or `/etc/hosts` is correct.
 
-## 📚 Exercice 2 — Variable au niveau `all` (faible précédence)
+## 📚 Exercise 2 — Variable at the `all` level (low precedence)
 
-Créez `inventory/group_vars/all.yml` :
+Create `inventory/group_vars/all.yml`:
 
 ```yaml
 ---
 app_port: 80
 ```
 
-Cette valeur s'applique à **tous les hôtes** par défaut.
+This value applies to **all the hosts** by default.
 
-## 📚 Exercice 3 — Variable au niveau d'un groupe
+## 📚 Exercise 3 — Variable at the level of a group
 
-Créez `inventory/group_vars/webservers.yml` :
+Create `inventory/group_vars/webservers.yml`:
 
 ```yaml
 ---
 app_port: 8080
 ```
 
-🔍 **Observation** : `app_port` est maintenant **redéfini** pour les hôtes du groupe `webservers`. La précédence dit que `group_vars/webservers.yml` **gagne** sur `group_vars/all.yml`.
+🔍 **Observation**: `app_port` is now **redefined** for the hosts of the `webservers` group. Precedence says that `group_vars/webservers.yml` **wins** over `group_vars/all.yml`.
 
-## 📚 Exercice 4 — Variable au niveau d'un host
+## 📚 Exercise 4 — Variable at the level of a host
 
-Créez `inventory/host_vars/web1.lab.yml` :
+Create `inventory/host_vars/web1.lab.yml`:
 
 ```yaml
 ---
 app_port: 9090
 ```
 
-🔍 **Observation** : pour `web1.lab` spécifiquement, `app_port` vaut **9090** — la valeur la plus locale gagne.
+🔍 **Observation**: for `web1.lab` specifically, `app_port` is **9090**: the most local value wins.
 
-## 📚 Exercice 5 — Vérifier la résolution
+## 📚 Exercise 5 — Check the resolution
 
 ```bash
 ansible-inventory -i inventory/hosts.yml --host web1.lab
@@ -125,23 +125,23 @@ ansible-inventory -i inventory/hosts.yml --host web2.lab
 ansible-inventory -i inventory/hosts.yml --host db1.lab
 ```
 
-**Sorties attendues** :
+**Expected outputs**:
 
-| Host | `app_port` résolu | Source |
+| Host | resolved `app_port` | Source |
 |---|---|---|
 | `web1.lab` | **9090** | `host_vars/web1.lab.yml` |
 | `web2.lab` | **8080** | `group_vars/webservers.yml` |
 | `db1.lab` | **80** | `group_vars/all.yml` |
 
-🔍 **Observation** : Ansible fusionne automatiquement les variables des **3 niveaux** et garde la **plus locale**. C'est exactement ce qu'on attend pour configurer un parc avec quelques exceptions ponctuelles.
+🔍 **Observation**: Ansible automatically merges the variables of the **3 levels** and keeps the **most local** one. This is exactly what you want to configure a fleet with a few pointed exceptions.
 
-## 📚 Exercice 6 — Vérifier le graph
+## 📚 Exercise 6 — Check the graph
 
 ```bash
 ansible-inventory -i inventory/hosts.yml --graph
 ```
 
-**Sortie attendue** :
+**Expected output**:
 
 ```text
 @all:
@@ -153,47 +153,47 @@ ansible-inventory -i inventory/hosts.yml --graph
   |  |--web2.lab
 ```
 
-🔍 **Observation** : `@ungrouped` apparaît même vide — c'est normal, c'est un groupe spécial qui contient les hôtes hors groupe.
+🔍 **Observation**: `@ungrouped` appears even when empty: this is normal, it is a special group that contains the hosts outside any group.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Idempotence** : un second run de votre solution doit afficher `changed=0`
-  partout dans le `PLAY RECAP`. C'est le signal mécanique d'un playbook
-  conforme aux bonnes pratiques.
-- **FQCN explicite** : préférez toujours `ansible.builtin.<module>` (ou la
-  collection appropriée) plutôt que le nom court — `ansible-lint --profile
-  production` le vérifie.
-- **Convention de ciblage** : ce lab cible all (4 VMs) ; pour adapter à un
-  autre groupe, ajustez `hosts:` dans `lab.yml`/`solution.yml` puis relancez.
-- **Reset isolé** : `make clean` à la racine du lab désinstalle proprement
-  ce que la solution a posé pour pouvoir rejouer le scénario.
+- **Idempotence**: a second run of your solution must show `changed=0`
+  everywhere in the `PLAY RECAP`. This is the mechanical signal of a playbook
+  that follows best practices.
+- **Explicit FQCN**: always prefer `ansible.builtin.<module>` (or the
+  appropriate collection) over the short name: `ansible-lint --profile
+  production` checks it.
+- **Targeting convention**: this lab targets all (4 VMs); to adapt to another
+  group, adjust `hosts:` in `lab.yml`/`solution.yml` then rerun.
+- **Isolated reset**: `dsoxlab clean <lab-id>` at the root of the lab cleanly
+  uninstalls what the solution set down so you can replay the scenario.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Si vous ajoutez `app_port: 1234` dans le **playbook** (`vars: app_port: 1234`), quelle valeur gagne sur `web1.lab` ?
+1. If you add `app_port: 1234` in the **playbook** (`vars: app_port: 1234`), which value wins on `web1.lab`?
 
-2. Comment **forcer** une valeur partout, qui ne peut être surchargée par aucun group_vars/host_vars ? (Indice : `--extra-vars`.)
+2. How do you **force** a value everywhere, one that cannot be overridden by any group_vars/host_vars? (Hint: `--extra-vars`.)
 
-3. Vous voulez stocker **un secret** chiffré pour `db1.lab`. Où le placez-vous et avec quel outil ?
+3. You want to store **an encrypted secret** for `db1.lab`. Where do you place it and with which tool?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Le challenge ([`challenge/README.md`](challenge/README.md)) demande de définir 3 variables à différents niveaux et de prouver leur résolution via un playbook qui crée des fichiers marqueurs sur chaque host. Tests automatisés via `pytest+testinfra` :
+The challenge ([`challenge/README.md`](challenge/README.md)) asks you to define 3 variables at different levels and to prove their resolution via a playbook that creates marker files on each host. Automated tests via `pytest+testinfra`:
 
 ```bash
 pytest -v challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`group_vars/<groupe>/main.yml`** : si une seule variable devient un dossier, vous pouvez splitter (`main.yml`, `vault.yml`, `network.yml`).
-- **Précédence complète (22 niveaux)** : voir la [page dédiée](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/precedence-variables/).
-- **Patterns d'hôtes** : voir [lab 56 — patterns d'hôtes](../56-inventaires-patterns-hotes/) pour cibler avec `--limit`.
+- **`group_vars/<group>/main.yml`**: if a single variable becomes a folder, you can split it (`main.yml`, `vault.yml`, `network.yml`).
+- **Full precedence (22 levels)**: see the [dedicated page](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/precedence-variables/).
+- **Host patterns**: see [lab 56: host patterns](../patterns-hotes/) to target with `--limit`.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 ansible-lint labs/inventaires/group-vars-host-vars/lab.yml
@@ -201,9 +201,9 @@ ansible-lint labs/inventaires/group-vars-host-vars/challenge/solution.yml
 ansible-lint --profile production labs/inventaires/group-vars-host-vars/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un
-> hook pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

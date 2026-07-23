@@ -1,53 +1,53 @@
-# Lab 35 — Modules `archive:` et `unarchive:` (compresser et extraire)
+# Lab 35 — `archive:` and `unarchive:` modules (compress and extract)
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Chaque lab de ce dépôt est **autonome**. Pré-requis unique : les 4 VMs du
-> lab doivent répondre au ping Ansible.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Every lab in this repo is **self-contained**. Single prerequisite: the 4 lab
+> VMs must respond to the Ansible ping.
 >
 > ```bash
-> cd /home/bob/Projets/ansible-training
-> ansible all -m ansible.builtin.ping   # → 4 "pong" attendus
+> cd $ANSIBLE_TRAINING
+> ansible all -m ansible.builtin.ping   # → 4 "pong" expected
 > ```
 >
-> Si KO, lancez `make bootstrap && make provision` à la racine du repo (cf.
-> [README racine](../../README.md#-démarrage-rapide) pour les détails).
+> If it fails, run `mise install && dsoxlab provision` at the repo root (see
+> [root README](../../../README.md#-démarrage-rapide) for the details).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Modules archive et unarchive Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/archive-unarchive/)
+🔗 [**Ansible archive and unarchive modules**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/archive-unarchive/)
 
-Deux modules complémentaires pour gérer des **tarballs** et **zips** :
+Two complementary modules to manage **tarballs** and **zips**:
 
-- **`archive:`** crée une archive (`.tar.gz`, `.zip`, etc.) **sur le managed node**
-  à partir d'un ou plusieurs chemins.
-- **`unarchive:`** extrait une archive vers un dossier — depuis le control node
-  (auto-copy), une URL, ou une archive déjà sur le managed node (`remote_src: true`).
+- **`archive:`** creates an archive (`.tar.gz`, `.zip`, etc.) **on the managed node**
+  from one or more paths.
+- **`unarchive:`** extracts an archive to a directory: from the control node
+  (auto-copy), a URL, or an archive already on the managed node (`remote_src: true`).
 
-Cas d'usage typiques : **backup avant migration** (archive d'un `/etc/myapp/`),
-**déploiement applicatif** depuis un tarball stocké sur S3, **restauration** d'un
-dump SQL compressé.
+Typical use cases: **backup before migration** (archiving a `/etc/myapp/`),
+**application deployment** from a tarball stored on S3, **restoration** of a
+compressed SQL dump.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. **Créer** une archive `.tar.gz` sur le managed node avec `archive:`.
-2. **Distinguer** les 3 modes de `unarchive:` (auto-copy, URL, `remote_src`).
-3. **Rendre** `unarchive:` idempotent avec `creates:`.
-4. **Identifier** le piège du **slash final** sur `archive: path:`.
-5. **Utiliser** `extra_opts: --strip-components=1` pour les archives upstream.
+1. **Create** a `.tar.gz` archive on the managed node with `archive:`.
+2. **Distinguish** the 3 modes of `unarchive:` (auto-copy, URL, `remote_src`).
+3. **Make** `unarchive:` idempotent with `creates:`.
+4. **Identify** the **trailing slash** pitfall on `archive: path:`.
+5. **Use** `extra_opts: --strip-components=1` for upstream archives.
 
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training
+cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
 ansible db1.lab -b -m shell -a "rm -rf /opt/data-source /opt/backup /opt/restored"
 ```
 
-## 📚 Exercice 1 — `archive:` simple
+## 📚 Exercise 1 — `archive:` basics
 
-Créez `lab.yml` :
+Create `lab.yml`:
 
 ```yaml
 ---
@@ -81,18 +81,18 @@ Créez `lab.yml` :
         format: gz
 ```
 
-**Lancez et inspectez** :
+**Run and inspect**:
 
 ```bash
 ansible-playbook labs/modules-fichiers/archive-unarchive/lab.yml
-ssh ansible@db1.lab 'ls -la /opt/backup/ && tar tzf /opt/backup/data.tar.gz'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'ls -la /opt/backup/ && tar tzf /opt/backup/data.tar.gz'
 ```
 
-🔍 **Observation** : l'archive contient `file1.txt`, `file2.txt`, `file3.txt`
-**au niveau racine** (pas dans `data-source/`). C'est l'effet du **slash final**
-sur `path: /opt/data-source/`.
+🔍 **Observation**: the archive contains `file1.txt`, `file2.txt`, `file3.txt`
+**at the root level** (not inside `data-source/`). This is the effect of the
+**trailing slash** on `path: /opt/data-source/`.
 
-## 📚 Exercice 2 — Le piège du slash final
+## 📚 Exercise 2 — The trailing slash pitfall
 
 ```yaml
 - name: Sans slash final - inclut le dossier parent
@@ -108,25 +108,25 @@ sur `path: /opt/data-source/`.
     format: gz
 ```
 
-**Comparez** :
+**Compare**:
 
 ```bash
-ssh ansible@db1.lab 'tar tzf /opt/backup/data-with-parent.tar.gz'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'tar tzf /opt/backup/data-with-parent.tar.gz'
 # data-source/file1.txt
 # data-source/file2.txt
 # data-source/file3.txt
 
-ssh ansible@db1.lab 'tar tzf /opt/backup/data-flat.tar.gz'
+ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'tar tzf /opt/backup/data-flat.tar.gz'
 # file1.txt
 # file2.txt
 # file3.txt
 ```
 
-🔍 **Observation** : avec slash → contenu **plat**. Sans slash → contenu **sous le
-dossier source**. Cela change la structure à l'extraction. **Toujours vérifier
-avec `tar tzf`** avant de déployer.
+🔍 **Observation**: with a slash → **flat** content. Without a slash → content
+**under the source directory**. This changes the structure at extraction. **Always
+check with `tar tzf`** before deploying.
 
-## 📚 Exercice 3 — `unarchive:` mode auto-copy (`src:` local)
+## 📚 Exercise 3 — `unarchive:` auto-copy mode (local `src:`)
 
 ```yaml
 - name: Repertoire pour extraction
@@ -143,15 +143,15 @@ avec `tar tzf`** avant de déployer.
     creates: /opt/restored/file1.txt
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **`remote_src: true`** : Ansible cherche `src:` côté managed node (pas côté control).
-- **`creates: /opt/restored/file1.txt`** : si ce fichier existe → tâche **skipped**.
-  Idempotence garantie.
+- **`remote_src: true`**: Ansible looks for `src:` on the managed node side (not the control side).
+- **`creates: /opt/restored/file1.txt`**: if this file exists → task **skipped**.
+  Idempotence guaranteed.
 
-**Lancer 2 fois** : 1ère fois `changed=1`, 2ème fois `ok` (skipped grâce à `creates:`).
+**Run twice**: first time `changed=1`, second time `ok` (skipped thanks to `creates:`).
 
-## 📚 Exercice 4 — `unarchive:` mode URL distante
+## 📚 Exercise 4 — `unarchive:` remote URL mode
 
 ```yaml
 - name: Telecharger et extraire (sans passer par le control node)
@@ -164,16 +164,16 @@ avec `tar tzf`** avant de déployer.
       - "--strip-components=0"
 ```
 
-🔍 **Observation** : Ansible **télécharge directement sur le managed node**
-(pas de download sur le control node + transfer SSH). Plus efficace pour des
-tarballs volumineux.
+🔍 **Observation**: Ansible **downloads directly onto the managed node**
+(no download on the control node plus SSH transfer). More efficient for large
+tarballs.
 
-**`extra_opts: ["--strip-components=N"]`** : retire les N premiers niveaux de
-l'arborescence. Astuce classique : convention `archive-X.Y.Z/...` upstream
-→ `--strip-components=1` pour extraire directement dans `dest:` sans le dossier
-parent.
+**`extra_opts: ["--strip-components=N"]`**: removes the first N levels of the
+tree. Classic trick: with the upstream `archive-X.Y.Z/...` convention
+→ `--strip-components=1` to extract directly into `dest:` without the parent
+directory.
 
-## 📚 Exercice 5 — `unarchive:` mode classique (auto-copy depuis files/)
+## 📚 Exercise 5 — `unarchive:` classic mode (auto-copy from files/)
 
 ```yaml
 - name: Extraire un tarball stocke localement (auto-copy)
@@ -183,21 +183,21 @@ parent.
     creates: /opt/myapp/bin/myapp
 ```
 
-🔍 **Observation** : sans `remote_src: true`, Ansible **transfère** le tarball
-depuis `files/` (côté control node) vers le managed node, puis l'extrait.
+🔍 **Observation**: without `remote_src: true`, Ansible **transfers** the tarball
+from `files/` (on the control node side) to the managed node, then extracts it.
 
-**Quand préférer cette approche** : tarballs versionnés dans le repo Ansible
-(version contrôlée, pas de dépendance à internet).
+**When to prefer this approach**: tarballs versioned in the Ansible repo
+(version controlled, no dependency on the internet).
 
-**Différences entre les 3 modes** :
+**Differences between the 3 modes**:
 
-| Mode | Source | Transfert |
+| Mode | Source | Transfer |
 |---|---|---|
-| auto-copy (défaut) | Control node (`files/`) | SSH vers managed |
-| URL (`remote_src: true`) | URL HTTP(S) | Direct vers managed (sans control) |
-| Local (`remote_src: true`) | Managed node | Pas de transfert (déjà là) |
+| auto-copy (default) | Control node (`files/`) | SSH to managed |
+| URL (`remote_src: true`) | HTTP(S) URL | Direct to managed (without control) |
+| Local (`remote_src: true`) | Managed node | No transfer (already there) |
 
-## 📚 Exercice 6 — `archive:` avec exclusions
+## 📚 Exercise 6 — `archive:` with exclusions
 
 ```yaml
 - name: Archiver /var/log avec exclusions
@@ -211,21 +211,21 @@ depuis `files/` (côté control node) vers le managed node, puis l'extrait.
       - /var/log/wtmp
 ```
 
-🔍 **Observation** : `exclude_path:` accepte une liste de chemins à **exclure**
-de l'archive. Pratique pour éviter d'embarquer des fichiers binaires de log
-système ou des fichiers volumineux non utiles.
+🔍 **Observation**: `exclude_path:` accepts a list of paths to **exclude** from
+the archive. Handy to avoid bundling binary system log files or large useless
+files.
 
-## 📚 Exercice 7 — Le piège : `creates:` sur le mauvais fichier
+## 📚 Exercise 7 — The pitfall: `creates:` on the wrong file
 
 ```yaml
-# ❌ Mauvais : creates ne match jamais → extrait a chaque run
+# ❌ Wrong: creates never matches → extracts on every run
 - ansible.builtin.unarchive:
     src: /opt/backup/data.tar.gz
     dest: /opt/restored
     remote_src: true
     creates: /opt/restored/binary-qui-n-existe-pas
 
-# ✅ Bon : creates pointe vers un fichier reel apres extraction
+# ✅ Good: creates points to a real file after extraction
 - ansible.builtin.unarchive:
     src: /opt/backup/data.tar.gz
     dest: /opt/restored
@@ -233,71 +233,70 @@ système ou des fichiers volumineux non utiles.
     creates: /opt/restored/file1.txt
 ```
 
-🔍 **Observation** : `creates:` doit pointer vers un **fichier qui existera
-**après** l'extraction**. Si le fichier référencé n'apparaît jamais (pas dans
-l'archive ou mauvais chemin), `unarchive:` extrait **à chaque run** → perte
-d'idempotence.
+🔍 **Observation**: `creates:` must point to a **file that will exist after
+extraction**. If the referenced file never appears (not in the archive or wrong
+path), `unarchive:` extracts **on every run** → loss of idempotence.
 
-**Bonne pratique** : utiliser un **fichier marqueur de version** (`/opt/myapp/VERSION`,
-`/opt/myapp/.installed`) qui contient le numéro de version installé.
+**Best practice**: use a **version marker file** (`/opt/myapp/VERSION`,
+`/opt/myapp/.installed`) that contains the installed version number.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`archive:`** crée des tarballs (`gz`, `bz2`, `xz`, `zip`).
-- **`unarchive:`** a **3 modes** : auto-copy (défaut), URL (`remote_src: true`), local-au-managed (`remote_src: true`).
-- **`creates:`** est obligatoire pour rendre `unarchive:` idempotent.
-- **Slash final sur `archive: path:`** change la structure de l'archive — toujours `tar tzf` avant de déployer.
-- **`extra_opts: ["--strip-components=1"]`** = pattern pour enlever le dossier racine d'une archive upstream.
-- **`exclude_path:`** sur `archive:` pour éviter des fichiers volumineux ou non pertinents.
+- **`archive:`** creates tarballs (`gz`, `bz2`, `xz`, `zip`).
+- **`unarchive:`** has **3 modes**: auto-copy (default), URL (`remote_src: true`), local-to-managed (`remote_src: true`).
+- **`creates:`** is mandatory to make `unarchive:` idempotent.
+- **Trailing slash on `archive: path:`** changes the archive structure: always `tar tzf` before deploying.
+- **`extra_opts: ["--strip-components=1"]`** = pattern to strip the root directory of an upstream archive.
+- **`exclude_path:`** on `archive:` to avoid large or irrelevant files.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Vous déployez node_exporter v1.7.0 depuis upstream. L'archive contient
-   `node_exporter-1.7.0.linux-amd64/node_exporter`. Quel `--strip-components:` et
-   quel `dest:` pour avoir `/opt/node_exporter/node_exporter` directement ?
+1. You deploy node_exporter v1.7.0 from upstream. The archive contains
+   `node_exporter-1.7.0.linux-amd64/node_exporter`. Which `--strip-components:` and
+   which `dest:` to get `/opt/node_exporter/node_exporter` directly?
 
-2. Vous voulez **rapatrier** `/var/log` de db1 vers le control node. Quel
-   pipeline : `archive:` + `fetch:`, ou directement `synchronize:` (rsync) ?
+2. You want to **pull back** `/var/log` from db1 to the control node. Which
+   pipeline: `archive:` + `fetch:`, or directly `synchronize:` (rsync)?
 
-3. Pourquoi `creates:` doit-il référencer un **fichier précis** plutôt que
-   `dest:` lui-même (qui existe toujours après le 1er run) ?
+3. Why must `creates:` reference a **specific file** rather than `dest:` itself
+   (which always exists after the 1st run)?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md) pour la validation pytest+testinfra.
+See [`challenge/README.md`](challenge/README.md) for the pytest+testinfra validation.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`archive: format: xz`** : compression plus efficace que `gz` (~30% de gain)
-  mais plus lente. Pour des backups froids.
-- **`archive: remove: true`** : supprime les sources après archivage. Pattern
-  rotation logs : archiver puis supprimer le contenu original.
-- **`unarchive: list_files: true`** : retourne la **liste des fichiers** dans
-  `register:` sans extraire. Pour audit ou vérification préalable.
-- **`synchronize:`** (collection ansible.posix) : rsync wrapper, alternative
-  pour transferts massifs avec delta — pas idempotent par défaut, plus complexe.
-- **Lab 31 (`copy:`)** + **Lab 34 (`fetch:`)** : modules de transfert simples
-  (un fichier).
+- **`archive: format: xz`**: more efficient compression than `gz` (~30% gain)
+  but slower. For cold backups.
+- **`archive: remove: true`**: removes the sources after archiving. Log rotation
+  pattern: archive then delete the original content.
+- **`unarchive: list_files: true`**: returns the **list of files** in
+  `register:` without extracting. For audit or prior verification.
+- **`synchronize:`** (ansible.posix collection): rsync wrapper, an alternative
+  for massive transfers with delta, not idempotent by default, more complex.
+- **Lab 31 (`copy:`)** + **Lab 34 (`fetch:`)**: simple transfer modules
+  (one file).
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
-# Lint de votre fichier de lab (tutoriel guidé)
+# Lint your lab file (guided tutorial)
 ansible-lint labs/modules-fichiers/archive-unarchive/lab.yml
 
-# Lint de votre solution challenge
+# Lint your challenge solution
 ansible-lint labs/modules-fichiers/archive-unarchive/challenge/solution.yml
 
-# Profil production (le plus strict — cible RHCE 2026)
+# Production profile (the strictest, target RHCE 2026)
 ansible-lint --profile production labs/modules-fichiers/archive-unarchive/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task, file modes as
+strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un hook
-> pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a pre-commit
+> hook to block any commit that would introduce anti-patterns.

@@ -1,0 +1,4 @@
+---
+id: roles-argument-specs
+title: "argument_specs : valider les variables d'entrée d'un rôle"
+description: "Écrire meta/argument_specs.yml pour typer, contraindre et documenter les variables d'entrée, puis observer le rejet automatique d'une entrée invalide."

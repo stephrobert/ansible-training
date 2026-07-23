@@ -1,0 +1,33 @@
+---
+id: ecrire-code-checkmode-diff
+title: "check mode and diff: dry-run and change preview"
+description: "Run a playbook with --check --diff, spot the modules that do not support check, force check_mode: false and diagnose a false changed positive."
+section: ecrire-code
+level: l2
+difficulty: intermediate
+lab_type: lab
+estimated_time: "45m"
+skills:
+  - check-mode
+  - diff-mode
+  - dry-run
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/checkmode-diff/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+        web1: web1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

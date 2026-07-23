@@ -1,0 +1,4 @@
+---
+id: modules-paquets-package
+title: "Module package : installation agnostique multi-distro"
+description: "Installer et désinstaller des paquets sans dépendre du gestionnaire de la distribution, en pesant state: present contre state: latest."

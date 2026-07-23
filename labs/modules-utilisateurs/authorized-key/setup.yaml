@@ -1,0 +1,70 @@
+---
+# Mise en place du lab authorized-key : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+#
+# Ce lab a besoin de deux paires de clés SSH côté control node : ce sont les
+# clés « d'alice » et « de bob » que l'apprenant va provisionner sur db1. Elles
+# sont gitignorées (une clé privée ne se commite jamais), donc ABSENTES d'un
+# clone frais. Le setup les génère : sans ça, le lab est injouable pour qui
+# clone le dépôt, et la solution de référence échoue sur un lookup introuvable.
+- name: Prepare the learner's key material (control node side)
+  hosts: localhost
+  connection: local
+  become: false
+  gather_facts: false
+  vars:
+    lab_files: "{{ playbook_dir }}/files"
+    # `localhost` est un hôte implicite : il n'est PAS dans l'inventaire, donc
+    # `inventory_dir` n'y est pas défini. Or les vars de `all` s'appliquent
+    # quand même et référencent `{{ inventory_dir }}` pour la clé SSH, ce qui
+    # fait échouer le play avant sa première tâche. On neutralise l'héritage :
+    # ce play travaille en local, il n'a besoin ni de clé ni de sudo.
+    ansible_ssh_private_key_file: null
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  tasks:
+    - name: Ensure the files directory exists
+      ansible.builtin.file:
+        path: "{{ lab_files }}"
+        state: directory
+        mode: "0755"
+
+    # Nommage trompeur hérité du lab : `alice.pub.key` est la clé PRIVÉE et
+    # `alice.pub.key.pub` la clé publique. On garde les noms, les tests et la
+    # solution s'y réfèrent.
+    #
+    # ssh-keygen plutôt que community.crypto.openssh_keypair : ce setup ne doit
+    # dépendre d'aucune collection. `creates` le rend idempotent, et ssh-keygen
+    # est présent partout où l'on fait du SSH.
+    - name: Generate the user keypairs, without overwriting existing ones
+      ansible.builtin.command:
+        cmd: >-
+          ssh-keygen -t ed25519 -N ''
+          -f {{ lab_files }}/{{ item.name }}.pub.key
+          -C {{ item.name }}@laptop
+        creates: "{{ lab_files }}/{{ item.name }}.pub.key"
+      loop:
+        - { name: alice }
+        - { name: bob }
+      loop_control:
+        label: "{{ item.name }}"
+
+- name: Setup authorized-key lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (authorized-key)
+      ansible.builtin.shell: |
+        rm -f /home/alice/.ssh/authorized_keys /home/bob/.ssh/authorized_keys
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (authorized-key)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Provision public SSH keys, force an exclusive list, restrict a key with key_options, and handle several users with subelements
+      run_once: true

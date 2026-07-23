@@ -1,0 +1,4 @@
+---
+id: decouvrir-declaratif-vs-imperatif
+title: "Déclaratif vs impératif : pourquoi Ansible ne dérive pas"
+description: "Comparer un script Bash qui dérive à chaque run et un playbook qui converge, puis prouver l'idempotence par le changed=0 du second passage."

@@ -1,0 +1,4 @@
+---
+id: ci-github-actions
+title: "GitHub Actions : workflow CI pour un rôle"
+description: "Écrire un workflow lint + molecule avec une matrice distros x versions d'ansible-core, cache pip, permissions minimales et persist-credentials désactivé."

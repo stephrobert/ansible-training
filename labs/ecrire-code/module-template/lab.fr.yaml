@@ -1,0 +1,4 @@
+---
+id: ecrire-code-module-template
+title: "Module template : validate, backup, whitespace"
+description: "Générer une config depuis un template Jinja2, rejeter une syntaxe invalide avec validate, sauvegarder l'ancienne et poser mode, owner et group."

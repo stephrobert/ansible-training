@@ -1,0 +1,12 @@
+---
+# Reset du lab debugger : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup debugger lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (debugger)
+      ansible.builtin.file:
+        path: "/tmp/lab90-debug.txt"
+        state: "absent"

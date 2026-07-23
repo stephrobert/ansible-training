@@ -1,5 +1,12 @@
 ---
-- name: S'assurer que SELinux est en mode {{ selinux_state }}
+- name: Tracer l'ordre d'exécution (preuve pour le challenge)
+  ansible.builtin.lineinfile:
+    path: /tmp/deps-order.txt
+    line: selinux_setup
+    create: true
+    mode: "0644"
+
+- name: S'assurer que SELinux est en mode {{ selinux_setup_state }}
   ansible.posix.selinux:
     policy: targeted
-    state: "{{ selinux_state }}"
+    state: "{{ selinux_setup_state }}"

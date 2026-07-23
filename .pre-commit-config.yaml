@@ -1,0 +1,134 @@
+# Pre-commit hooks for a CONTENT repo (lab catalog). Hard stop against leaking
+# secrets / private keys and against committing generated files. No mypy (there
+# is no package source); the declarative contract is validated with
+# `dsoxlab validate-structure`.
+#
+# Install once:  pre-commit install --install-hooks
+# Run on everything:  pre-commit run --all-files
+
+minimum_pre_commit_version: "3.5.0"
+default_install_hook_types: [pre-commit, pre-push]
+
+# `solution/` holds the reference solutions, ansible-vault encrypted. They are
+# ciphertext, not source: no hook may read or rewrite them. Ruff in particular
+# fails outright on an encrypted .py, and any formatting hook would corrupt the
+# vault payload.
+exclude: '^solution/'
+
+repos:
+  # General hygiene + a hard stop on committing secrets and private keys.
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '(^LICENSE$|\.md$)'
+      - id: end-of-file-fixer
+        exclude: '^LICENSE$'
+      # --unsafe : vérifie la SYNTAXE sans construire les objets Python. Sans lui,
+      # le tag Ansible `!vault` (variable chiffrée en ligne, 4 fichiers de labs)
+      # fait échouer le hook sur « could not determine a constructor », alors que
+      # le YAML est parfaitement valide pour Ansible.
+      - id: check-yaml # validates every lab.yaml / meta.yml
+        args: [--unsafe]
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-added-large-files
+        args: ['--maxkb=2048']
+      # Ces trois fichiers PARLENT de clés privées sans en contenir : deux README
+      # citent l'en-tête PEM comme motif à détecter dans un scan de secrets, et le
+      # test de integration-passbolt vérifie justement qu'aucune clé PGP n'a fuité
+      # dans le fichier produit. Vérifié séparément : aucun bloc de clé complet
+      # (en-tête + corps base64 + pied) n'existe dans le dépôt.
+      # NB : citer l'en-tête littéral ici ferait détecter CE fichier.
+      - id: detect-private-key # blocks committed SSH private keys
+        exclude: |
+          (?x)^(
+            labs/tests/ansible-lint-production/README\.(fr\.)?md|
+            labs/vault/integration-passbolt/challenge/tests/test_functional\.py
+          )$
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # Lab toolchain — lint the lab Python, scan for secrets, validate the contract.
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff (lint lab python)
+        entry: uvx ruff check --fix
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      - id: trufflehog
+        name: trufflehog (secret scan)
+        # --no-update: never auto-fetch a new binary at hook time (supply-chain hardening).
+        entry: trufflehog git file://. --since-commit HEAD --results=verified --fail --no-update
+        language: system
+        pass_filenames: false
+
+      # A solution must never land in clear text: it spoils the lab. The vault
+      # header is the proof of encryption, so check it rather than trust the
+      # author. Runs on every commit — this is the repo's cardinal rule.
+      - id: solutions-encrypted
+        name: solutions stay ansible-vault encrypted
+        entry: scripts/check-solutions-encrypted.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      # Les renvois internes des README cassent en silence : rien ne les exécute,
+      # seul l'apprenant tombe sur un lien mort. Relevé une fois : 150 liens
+      # cassés d'un coup (112 pointaient un niveau trop haut, 38 gardaient
+      # l'ancienne numérotation `NN-section-lab`). ~0,3 s sur 698 fichiers.
+      # Garde-fou d'outillage. Deux fois pendant une même session, une
+      # modification a disparu sans trace git : un test de catalogue, puis un
+      # hook. Plusieurs processus écrivent dans ce dépôt, et une disparition est
+      # muette par nature — un test absent ne proteste pas. Ce hook rend
+      # l'incohérence visible au commit.
+      - id: outillage-coherent
+        name: les vérificateurs de catalogue sont présents et câblés
+        entry: uv run --no-project --with pytest --with pyyaml pytest tests/test_outillage_coherent.py -q
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: internal-links
+        name: les liens relatifs des README pointent vers un fichier existant
+        entry: uv run --no-project --with pytest --with pyyaml pytest tests/test_liens_internes.py -q
+        language: system
+        pass_filenames: false
+        files: '\.md$'
+
+      # Une variable ANSIBLE_* inventée ne lève aucune erreur : l'apprenant la
+      # pose, rien ne se passe, et il conclut que l'outil est cassé. Aucun test
+      # fonctionnel ne peut l'attraper. Deux cas trouvés dans des labs de
+      # dépannage, dont un dont la sémantique était en plus inversée.
+      - id: ansible-vars-exist
+        name: les variables ANSIBLE_* citées existent vraiment
+        entry: uv run --no-project --with pytest --with pyyaml pytest tests/test_variables_ansible.py -q
+        language: system
+        pass_filenames: false
+        files: '\.(md|ya?ml|sh|cfg)$'
+
+      # The declarative contract is validated on push (kept off the per-commit
+      # path for speed). A provider must be selected even though nothing is
+      # provisioned here.
+      - id: validate-structure
+        name: dsoxlab validate-structure
+        entry: env DSOXLAB_PROVIDER=kvm uvx dsoxlab validate-structure
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      # The root README must list every lab with its guide URL. Regenerated from
+      # meta.yml; a stale catalog blocks the push.
+      # --no-project: ephemeral env with just pyyaml, so uv does NOT resolve this
+      # repo's pyproject — keeps the hook fast and independent of the venv.
+      - id: catalog-fresh
+        name: README catalog up to date (labs + guide URLs)
+        entry: uv run --no-project --with pyyaml python scripts/render-readme.py --check
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

@@ -1,139 +1,113 @@
-# 🎯 Challenge — `--check --diff` puis exécution réelle
+# 🎯 Challenge — `--check --diff` then real execution
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `challenge/solution.yml` qui pose un fichier `/etc/lab-checkmode.txt` sur
-**db1.lab** contenant la chaîne **`Lab checkmode validé`**.
+Write `challenge/solution.yml` that lays down a file `/etc/lab-checkmode.txt` on
+**db1.lab** containing the string **`Lab checkmode validé`**.
 
-Le but pédagogique : démontrer le **workflow audit → exécution** :
+The pedagogical goal: demonstrate the **audit → execution** workflow:
 
-1. **Audit** : on lance d'abord en `--check --diff` pour visualiser ce qui *va*
-   changer, sans rien écrire.
-2. **Exécution réelle** : une fois le diff validé, on relance sans `--check`.
+1. **Audit**: you first run in `--check --diff` to visualize what *will*
+   change, without writing anything.
+2. **Real execution**: once the diff is validated, you rerun without `--check`.
 
-## 🧩 Indices pour écrire `solution.yml`
+## 🧩 Stuck?
 
-- Cible : **un seul hôte**, `db1.lab`.
-- Élévation : il faut écrire dans `/etc/`, donc `become: true`.
-- Module : `ansible.builtin.copy` avec **`content:`** (pas `src:` — on n'a pas
-  de fichier source à pousser).
-- Permissions : `mode: "0644"` (lecture pour tous).
-
-Squelette à **compléter** :
-
-```yaml
----
-- name: Challenge - poser un marqueur checkmode
-  hosts: ???
-  become: ???
-  tasks:
-    - name: Poser /etc/lab-checkmode.txt
-      ansible.builtin.copy:
-        dest: ???
-        content: ???
-        mode: "0644"
+```bash
+dsoxlab hint ecrire-code-checkmode-diff
 ```
 
-> 💡 **Pièges** :
->
-> - **`--check` ≠ `--diff`** : `--check` simule, `--diff` affiche les
->   différences. À l'examen comme en prod, **les deux ensemble** sont la
->   pratique standard avant un run réel.
-> - **`content:` avec accent** : le caractère `é` est UTF-8 — assurez-vous
->   que votre éditeur sauve en UTF-8, sinon ansible-playbook râle.
-> - **Idempotence** : `copy:` compare le **checksum** du contenu. Au 2e
->   run, `changed=0` (pas d'écriture). C'est ce que valide implicitement
->   ce lab.
-> - **`/etc/`** nécessite `become: true` — sinon "Permission denied".
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
 
-## 🚀 Lancement en deux temps
+## 🚀 Launch in two steps
 
-### 1. Audit en `--check --diff`
+### 1. Audit in `--check --diff`
 
 ```bash
 ansible-playbook labs/ecrire-code/checkmode-diff/challenge/solution.yml \
     --check --diff
 ```
 
-🔍 **Ce que vous devez voir** :
+🔍 **What you should see**:
 
-- `PLAY RECAP` : `changed=1` (intention)
-- Un bloc diff montrant `before:` (vide) → `after:` (votre contenu)
-- **Côté db1**, le fichier n'existe **pas encore** :
+- `PLAY RECAP`: `changed=1` (intent)
+- A diff block showing `before:` (empty) → `after:` (your content)
+- **On the db1 side**, the file does **not exist yet**:
 
    ```bash
    ansible db1.lab -b -m ansible.builtin.command -a "ls /etc/lab-checkmode.txt"
    # Doit retourner: ls: cannot access ...: No such file or directory
    ```
 
-### 2. Exécution réelle
+### 2. Real execution
 
 ```bash
 ansible-playbook labs/ecrire-code/checkmode-diff/challenge/solution.yml --diff
 ```
 
-🔍 **Ce que vous devez voir** :
+🔍 **What you should see**:
 
-- `PLAY RECAP` : `changed=1` (cette fois pour de vrai)
-- Le diff identique à celui de l'audit
-- Le fichier est posé sur db1 :
+- `PLAY RECAP`: `changed=1` (this time for real)
+- The diff identical to the audit one
+- The file is laid down on db1:
 
    ```bash
    ansible db1.lab -m ansible.builtin.command -a "cat /etc/lab-checkmode.txt"
    ```
 
-### 3. Vérifier l'idempotence
+### 3. Check idempotence
 
 ```bash
 ansible-playbook labs/ecrire-code/checkmode-diff/challenge/solution.yml --diff
 ```
 
-🔍 `changed=0`, **pas de diff** affiché. C'est l'état stationnaire.
+🔍 `changed=0`, **no diff** shown. This is the steady state.
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/checkmode-diff/challenge/tests/
 ```
 
-Le test vérifie sur db1 :
+The test checks on db1:
 
-- `/etc/lab-checkmode.txt` existe.
-- Son contenu inclut `Lab checkmode validé`.
+- `/etc/lab-checkmode.txt` exists.
+- Its content includes `Lab checkmode validé`.
 
-> ⚠️ Le `conftest.py` racine joue automatiquement votre `solution.yml` avant
-> les tests (fixture `_apply_lab_state`). Si pytest **skippe** avec un message
-> *"Aucun challenge/solution.yml ni solution.sh trouvé"*, c'est qu'il faut
-> d'abord écrire `solution.yml` !
+> ⚠️ The root `conftest.py` automatically plays your `solution.yml` before
+> the tests (fixture `_apply_lab_state`). If pytest **skips** with a message
+> *"Aucun challenge/solution.yml ni solution.sh trouvé"*, it means you must
+> first write `solution.yml`!
 
-## 🧹 Reset (rejouer le scénario depuis zéro)
+## 🧹 Reset (replay the scenario from scratch)
 
 ```bash
-make -C labs/ecrire-code/checkmode-diff clean
+dsoxlab clean ecrire-code-checkmode-diff
 ```
 
-Cette cible supprime `/etc/lab-checkmode.txt` côté db1 pour rejouer l'audit
-diff "à blanc" (le diff doit re-montrer un ajout).
+This target removes `/etc/lab-checkmode.txt` on the db1 side to replay the audit
+diff "from blank" (the diff must show an addition again).
 
-## 🚀 Pour aller plus loin
+## 🚀 Going further
 
-- **Reproduire l'audit** : faites `make clean` puis ré-exécutez `--check --diff`
-  pour bien voir le diff "création depuis rien". Comparez avec un `--check
-  --diff` quand le fichier est déjà posé (idempotence : aucun diff).
-- **`check_mode: false`** : ajoutez une tâche `command:` qui lit la version d'un
-  binaire (`openssl version`) avec `check_mode: false` et `changed_when: false`.
-  Vérifiez qu'elle s'exécute même en `--check` (preuve : la sortie est
-  capturable via `register:` et utilisable dans un `debug:`).
-- **Lint avec `ansible-lint`** : avant de lancer votre playbook, validez sa
-  qualité avec :
+- **Reproduce the audit**: run `dsoxlab clean <id-du-lab>` then re-run `--check --diff`
+  to clearly see the "creation from nothing" diff. Compare with a `--check
+  --diff` when the file is already laid down (idempotence: no diff).
+- **`check_mode: false`**: add a `command:` task that reads the version of a
+  binary (`openssl version`) with `check_mode: false` and `changed_when: false`.
+  Check that it runs even in `--check` (proof: the output is
+  capturable via `register:` and usable in a `debug:`).
+- **Lint with `ansible-lint`**: before running your playbook, validate its
+  quality with:
 
    ```bash
    ansible-lint labs/ecrire-code/checkmode-diff/challenge/solution.yml
    ```
 
-   Si `ansible-lint` retourne sans erreur, le YAML est conforme aux bonnes
-   pratiques (FQCN, `name:` sur chaque tâche, modes en chaîne, etc.). Vous
-   pouvez aussi lancer le profil `production` (le plus strict) :
+   If `ansible-lint` returns without error, the YAML follows best
+   practices (FQCN, `name:` on every task, modes as strings, etc.). You
+   can also run the `production` profile (the strictest):
 
    ```bash
    ansible-lint --profile production \

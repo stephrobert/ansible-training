@@ -1,68 +1,65 @@
-# 🎯 Challenge — Valider la structure du scénario Molecule
+# 🎯 Challenge: write your first Molecule scenario
 
-## ✅ Objectif
+## ✅ Mission
 
-Le scénario Molecule **par défaut** est livré dans `molecule/default/`.
-Le challenge consiste à **vérifier qu'il est conforme** au standard :
+The `webserver` role is shipped complete in `roles/`. The Molecule scenario,
+however, is shipped as a **skeleton**: `molecule/default/{molecule.yml,
+converge.yml, verify.yml}` contain `???` and empty lists.
+Complete the three files to obtain a working scenario.
 
-| Fichier | Présence requise |
+`create.yml`, `destroy.yml` and `prepare.yml` are **provided**: they are the
+test harness, not the exercise. They still deserve a read, because they
+explain the least intuitive point of Molecule v6+: the `default` driver
+is **delegated**, it talks neither to Podman nor to Docker. These playbooks
+are the ones that actually bring up the instance by calling `containers.podman`. Without
+them, Molecule would skip the `create` step without flinching and the `converge`
+would go knocking at the door of a machine that does not exist.
+
+Expected state (this is what pytest checks):
+
+| File | Expectation |
 | --- | --- |
-| `molecule/default/molecule.yml` | ✅ |
-| `molecule/default/converge.yml` | ✅ |
-| `molecule/default/verify.yml` | ✅ |
+| `molecule.yml` | valid `driver`, at least 1 platform, `verifier` declared |
+| `converge.yml` | applies the `webserver` role with `become: true` |
+| `verify.yml` | at least 2 `ansible.builtin.assert` tasks that prove the state (nginx package, nginx.conf) |
+| Everything | `molecule syntax` passes (pytest actually runs it) |
 
-Et le contenu de `molecule.yml` doit déclarer :
-
-- `driver:` (name = `default`/`delegated`/`docker`/`podman`)
-- `platforms:` (≥ 1 plateforme)
-- `verifier:` (name = `ansible`/`testinfra`/`goss`)
-
-## 🧩 Indices
-
-Le challenge est **purement structurel** — pas de playbook à écrire. Posez
-juste un `solution.sh` minimal qui valide votre lecture des fichiers
-Molecule existants.
+## 🧩 Stuck?
 
 ```bash
-cat > labs/molecule/introduction/challenge/solution.sh <<'EOF'
-#!/usr/bin/env bash
-# Stub — le test pytest valide la structure des fichiers Molecule.
-echo "Challenge lab 62 : structure Molecule vérifiée par pytest."
-EOF
-chmod +x labs/molecule/introduction/challenge/solution.sh
+dsoxlab hint molecule-introduction
 ```
 
-## 🚀 Lancement
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.
+
+## 📓 Command log
+
+When your scenario is ready, record in `challenge/solution.sh` the
+Molecule commands you ran. This log must exist for
+pytest to run:
 
 ```bash
-# (Optionnel) lancer Molecule pour exécuter le cycle complet
-cd labs/molecule/introduction && molecule test
+chmod +x challenge/solution.sh
 ```
 
-🔍 Si Podman/Docker n'est pas disponible, le test pytest reste valide
-(il vérifie juste les fichiers, pas leur exécution).
-
-## 🧪 Validation automatisée
+## 🧪 Validation
 
 ```bash
 pytest -v labs/molecule/introduction/challenge/tests/
 ```
 
-Le test vérifie :
-
-- `molecule.yml`, `converge.yml`, `verify.yml` existent dans `molecule/default/`.
-- `molecule.yml` déclare `driver`, `platforms` (≥1), `verifier`.
-- `converge.yml` appelle le rôle `webserver`.
-- `verify.yml` utilise au moins une `ansible.builtin.assert`.
+The test loads your three YAML files, checks their semantics, then
+actually runs `molecule syntax`.
 
 ## 🧹 Reset
 
 ```bash
-make -C labs/molecule/introduction clean
+dsoxlab clean molecule-introduction
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- Lab **63** : ajouter `prepare.yml` + `requirements.yml`.
-- Lab **64** : cycle TDD complet sur un nouveau rôle.
-- Lab **65** : multi-distro (RHEL + Debian + Ubuntu).
+- Lab 63: enrich the config (prepare.yml, requirements.yml, test_sequence).
+- Lab 64: full TDD cycle on a new role.
+- Lab 65: multi-distro (RHEL + Debian + Ubuntu).

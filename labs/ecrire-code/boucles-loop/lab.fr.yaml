@@ -1,0 +1,4 @@
+---
+id: ecrire-code-boucles-loop
+title: "Boucles loop : itérer sur listes et dicts"
+description: "Boucler sur une liste et une liste de dicts, rendre la sortie lisible avec loop_control: label, itérer sur un dict via dict2items."

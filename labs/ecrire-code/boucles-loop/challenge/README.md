@@ -1,16 +1,16 @@
-# 🎯 Challenge — Créer 3 users dont 2 actifs (`loop` + `when` + `loop_control`)
+# 🎯 Challenge — Create 3 users, 2 of them active (`loop` + `when` + `loop_control`)
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `challenge/solution.yml` qui sur **db1.lab** :
+Write `challenge/solution.yml` that, on **db1.lab**:
 
-1. Itère sur une liste de 3 users.
-2. Crée **uniquement** ceux qui ont `enabled: true` (filtre via `when:` sur
-   l'item).
-3. Pose un fichier récapitulatif `/tmp/loop-result.txt` listant les users
-   actifs (séparés par virgule, ordre alphabétique).
+1. Iterates over a list of 3 users.
+2. Creates **only** those that have `enabled: true` (filter via `when:` on
+   the item).
+3. Lays down a summary file `/tmp/loop-result.txt` listing the active
+   users (comma-separated, alphabetical order).
 
-## 🧩 Données d'entrée
+## 🧩 Input data
 
 ```yaml
 challenge_users:
@@ -19,13 +19,13 @@ challenge_users:
   - { name: chal_charlie, shell: /bin/bash, enabled: true }
 ```
 
-Résultat attendu :
+Expected result:
 
-- Users `chal_alice` et `chal_charlie` créés.
-- User `chal_bob` **non** créé.
-- `/tmp/loop-result.txt` contient `chal_alice,chal_charlie`.
+- Users `chal_alice` and `chal_charlie` created.
+- User `chal_bob` **not** created.
+- `/tmp/loop-result.txt` contains `chal_alice,chal_charlie`.
 
-## 🧩 Modèle d'une boucle conditionnelle
+## 🧩 Model of a conditional loop
 
 ```yaml
 - name: Faire qqch sur certains items seulement
@@ -37,7 +37,7 @@ Résultat attendu :
   when: item.???              # filtre sur l'item courant
 ```
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -74,28 +74,28 @@ Résultat attendu :
         content: "{{ challenge_users | selectattr(???) | map(attribute='???') | sort | join(',') }}\n"
 ```
 
-> 💡 **`selectattr(...)` sans 2ᵉ argument** : par défaut, `selectattr('attr')`
-> garde les éléments où `attr` est **truthy** (équivalent à `if item.attr`).
+> 💡 **`selectattr(...)` without a 2nd argument**: by default, `selectattr('attr')`
+> keeps the elements where `attr` is **truthy** (equivalent to `if item.attr`).
 
-**Pièges** :
+**Traps**:
 
-> - **`loop:`** est moderne (Ansible 2.5+). Évitez `with_items`
->   (déprécié). Cf. lab 22 pour la migration.
-> - **`item`** est la variable par défaut dans une boucle. Pour la
->   renommer : `loop_control: { loop_var: user_data }`.
-> - **`label:`** dans `loop_control` : contrôle ce qui s'affiche dans la
->   sortie Ansible (`label: "{{ item.name }}"` au lieu d'afficher tout
->   le dict).
-> - **`selectattr` retourne un generator**. Chainer `| list` si vous
->   voulez `length` ou indexer (`[0]`).
+> - **`loop:`** is modern (Ansible 2.5+). Avoid `with_items`
+>   (deprecated). See lab 22 for the migration.
+> - **`item`** is the default variable in a loop. To rename it:
+>   `loop_control: { loop_var: user_data }`.
+> - **`label:`** in `loop_control`: controls what is shown in the
+>   Ansible output (`label: "{{ item.name }}"` instead of showing the whole
+>   dict).
+> - **`selectattr` returns a generator**. Chain `| list` if you
+>   want `length` or to index (`[0]`).
 
-## 🚀 Lancement
+## 🚀 Launch
 
 ```bash
 ansible-playbook labs/ecrire-code/boucles-loop/challenge/solution.yml
 ```
 
-🔍 Vérifiez :
+🔍 Check:
 
 ```bash
 ansible db1.lab -m ansible.builtin.command -a "id chal_alice chal_charlie"
@@ -103,7 +103,7 @@ ansible db1.lab -m ansible.builtin.command -a "id chal_bob" || echo "chal_bob ab
 ansible db1.lab -m ansible.builtin.command -a "cat /tmp/loop-result.txt"
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/boucles-loop/challenge/tests/
@@ -112,20 +112,20 @@ pytest -v labs/ecrire-code/boucles-loop/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/ecrire-code/boucles-loop clean
+dsoxlab clean ecrire-code-boucles-loop
 ```
 
-Supprime les 3 users + le fichier marqueur.
+Removes the 3 users + the marker file.
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`with_items` (deprecated)** : ancienne syntaxe équivalente à `loop:`.
-  Évitez-la dans le code neuf — `ansible-lint` la signale.
-- **`loop_control: pause: 2`** : ajoute un délai entre chaque itération
-  (utile pour ne pas surcharger une API tierce).
-- **`loop_control: extended: true`** : expose `ansible_loop.index`,
-  `ansible_loop.first`, `ansible_loop.last` (compteur, premier, dernier).
-- **Lint** :
+- **`with_items` (deprecated)**: old syntax equivalent to `loop:`.
+  Avoid it in new code: `ansible-lint` flags it.
+- **`loop_control: pause: 2`**: adds a delay between each iteration
+  (useful to avoid overloading a third-party API).
+- **`loop_control: extended: true`**: exposes `ansible_loop.index`,
+  `ansible_loop.first`, `ansible_loop.last` (counter, first, last).
+- **Lint**:
 
    ```bash
    ansible-lint labs/ecrire-code/boucles-loop/challenge/solution.yml

@@ -11,11 +11,16 @@
     name: "{{ webserver_package }}"
     state: reloaded
 
+# Handler « hors service » : un handler n'est pas forcément un systemd_service.
+# Son contenu est stable, comme celui de la tâche qui le notifie. La preuve que
+# ce handler a tourné n'est pas un horodatage dans le fichier, c'est le fichier
+# lui-même : le setup du lab l'efface, donc s'il est là, c'est ce déploiement
+# qui l'a écrit.
 - name: Notify deployment
   ansible.builtin.copy:
     dest: /var/log/deploy-notification.log
     content: |
-      Deployment completed: {{ ansible_date_time.iso8601 }}
+      Deployment completed
       Host: {{ inventory_hostname }}
       Webserver port: {{ webserver_listen_port }}
     mode: "0644"

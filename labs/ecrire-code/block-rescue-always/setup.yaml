@@ -1,0 +1,23 @@
+---
+# Mise en place du lab block-rescue-always : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup block-rescue-always lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (block-rescue-always)
+      ansible.builtin.shell: |
+        rm -f /tmp/challenge-rescue.txt /tmp/challenge-always.txt
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (block-rescue-always)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Group tasks in a block, catch the error with rescue to roll back, guarantee cleanup with always and read ansible_failed_task
+      run_once: true

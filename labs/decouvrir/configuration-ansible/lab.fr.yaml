@@ -1,0 +1,4 @@
+---
+id: decouvrir-configuration-ansible
+title: "ansible.cfg : précédence et options critiques"
+description: "Écrire un ansible.cfg projet, vérifier la config active avec ansible-config dump, surcharger par variable d'environnement et activer un callback."

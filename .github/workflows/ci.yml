@@ -1,0 +1,196 @@
+# Contribution gate for a CONTENT repo (lab catalog), not a Python package.
+# zizmor statically analyzes the workflows first (fast security gate); the
+# heavier jobs only run once it passes. No build, no publish, no artifact upload.
+#
+# Hardening baseline: every action is pinned to a full commit SHA, the default
+# token has no permissions, each job grants only what it needs, checkout never
+# persists credentials, and jobs are time-boxed.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Deny-by-default: jobs opt into the scopes they need, nothing is inherited.
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Fast security gate — the other jobs depend on it.
+  zizmor:
+    name: Zizmor (workflow static analysis)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Zizmor
+        uses: zizmorcore/zizmor-action@192e21d79ab29983730a13d1382995c2307fbcaa # v0.5.7
+        with:
+          version: "1.26.1"
+          advanced-security: false
+
+  # Workflow syntax gate. actionlint is the only scanner that rejects an
+  # invalid permission scope (e.g. the tempting-but-nonexistent
+  # `administration: read`) and shellchecks every `run:` block.
+  # Installed from the pinned release tarball with a SHA-256 check — same
+  # pattern as trufflehog below, so no extra third-party action enters the
+  # trust boundary just to lint.
+  actionlint:
+    name: Actionlint (workflow syntax)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Install actionlint (verified release binary)
+        env:
+          ACTIONLINT_VERSION: "1.7.12"
+        run: |
+          set -euo pipefail
+          workdir="$(mktemp -d)"
+          base="https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}"
+          asset="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl -fsSL -o "${workdir}/${asset}" "${base}/${asset}"
+          curl -fsSL -o "${workdir}/checksums.txt" "${base}/actionlint_${ACTIONLINT_VERSION}_checksums.txt"
+          (cd "${workdir}" && grep " ${asset}$" checksums.txt | sha256sum -c -)
+          tar -xzf "${workdir}/${asset}" -C "${workdir}" actionlint
+          sudo install -m 0755 "${workdir}/actionlint" /usr/local/bin/actionlint
+          actionlint --version
+
+      - name: Run actionlint
+        run: actionlint -color
+
+  # CI/CD exploit-chain analysis: models triggers, permissions and data flow to
+  # surface full attack scenarios (untrusted checkout exec, injection, risky
+  # default permissions). Complements zizmor rather than duplicating it.
+  poutine:
+    name: Poutine (CI/CD exploit chains)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Poutine
+        uses: boostsecurityio/poutine-action@e240ebd3eff8b2db5a8e5f6b28f58739d7db2247 # v1.1.4
+
+  # Parity gate — run EVERY pre-commit hook (commit AND push stages) exactly as
+  # a contributor's local pre-commit would. Nothing enforced locally (hygiene,
+  # ruff, trufflehog, validate-structure, catalog freshness) can then be slipped
+  # past with `git commit --no-verify`: any failing hook refuses the PR. This is
+  # the single source of truth — the CI runs the .pre-commit-config.yaml, not a
+  # hand-maintained copy of its steps.
+  pre-commit:
+    name: Pre-commit parity (all hooks)
+    needs: zizmor
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      # This repo declares several providers; the pre-push validate-structure
+      # hook needs one active even though CI provisions nothing.
+      DSOXLAB_PROVIDER: kvm
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0 # trufflehog walks git history
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+
+      - name: Install trufflehog (verified release binary; the hook runs with --no-update)
+        # Download the pinned release tarball and verify its SHA-256 against the
+        # published checksums before use — no piped remote script (Plumber
+        # ISSUE-411). Same version as the local pre-commit toolchain.
+        env:
+          TRUFFLEHOG_VERSION: "3.95.2"
+        run: |
+          set -euo pipefail
+          workdir="$(mktemp -d)"
+          base="https://github.com/trufflesecurity/trufflehog/releases/download/v${TRUFFLEHOG_VERSION}"
+          asset="trufflehog_${TRUFFLEHOG_VERSION}_linux_amd64.tar.gz"
+          curl -fsSL -o "${workdir}/${asset}" "${base}/${asset}"
+          curl -fsSL -o "${workdir}/checksums.txt" "${base}/trufflehog_${TRUFFLEHOG_VERSION}_checksums.txt"
+          (cd "${workdir}" && grep " ${asset}$" checksums.txt | sha256sum -c -)
+          tar -xzf "${workdir}/${asset}" -C "${workdir}" trufflehog
+          sudo install -m 0755 "${workdir}/trufflehog" /usr/local/bin/trufflehog
+          trufflehog --version
+
+      - name: Run every hook (commit stage)
+        run: uvx pre-commit@4.6.0 run --all-files --show-diff-on-failure --color always
+
+      - name: Run every hook (push stage)
+        run: uvx pre-commit@4.6.0 run --all-files --hook-stage pre-push --show-diff-on-failure --color always
+
+  # Static analysis of the repo's Python (lab tests, conftest). Findings post to
+  # the Security tab — no artifact is published.
+  codeql:
+    name: CodeQL (python)
+    needs: zizmor
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
+        with:
+          languages: python
+          build-mode: none # Python is interpreted, no build step to observe
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0

@@ -1,0 +1,4 @@
+---
+id: molecule-scenarios-multi-distro
+title: "Molecule : tester un rôle sur plusieurs distributions"
+description: "Étendre la matrice Molecule à trois distributions, charger vars/<os_family>.yml et absorber les écarts de paquets et de chemins avec le module package."

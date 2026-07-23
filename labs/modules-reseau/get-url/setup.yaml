@@ -1,0 +1,193 @@
+---
+# Mise en place du lab get-url : un dépôt de référence interne servi par nginx
+# depuis l'hôte lab_api, puis état de départ propre sur db1.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+#
+# POURQUOI UN DÉPÔT SERVI ICI, ET PLUS www.gnu.org
+# ------------------------------------------------
+# Ce lab téléchargeait deux textes sur www.gnu.org : 10 à 20 secondes de
+# latence, et des délais dépassés environ une fois sur trois en rafale. Le lab
+# était donc rouge sans rapport avec ce qu'il enseigne. Les deux textes sont
+# déjà présents sur chaque VM (paquet gmp) : on les sert depuis le lab, le
+# contenu est identique et la disponibilité ne dépend plus de personne.
+#
+# Le dépôt est servi par lab_api (web2.lab), et non par db1 : la configuration
+# nginx de db1 appartient aux labs de la section « roles », qui la remplacent
+# et vont jusqu'à désinstaller le paquet. web2 est le seul nœud dont le
+# nginx.conf est celui du paquet, donc le seul qui charge conf.d/*.conf.
+- name: Setup get-url lab (dépôt de référence interne sur lab_api)
+  hosts: lab_api
+  become: true
+  gather_facts: true
+  vars:
+    racine_depot: /var/www/lab-get-url
+    # Textes portés par le paquet gmp, présents sur toutes les VMs.
+    source_gpl: /usr/share/licenses/gmp/COPYINGv3
+    source_lgpl: /usr/share/licenses/gmp/COPYING.LESSERv3
+  tasks:
+    # mock-ex294 désinstalle nginx des trois managed nodes dans son propre
+    # setup : ne jamais supposer le paquet présent.
+    - name: Installer nginx, le seul serveur HTTP de la formation
+      ansible.builtin.dnf:
+        name: nginx
+        state: present
+
+    - name: Vérifier que les textes de référence sont sur l'hôte
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: sources
+      failed_when: not sources.stat.exists
+      loop:
+        - "{{ source_gpl }}"
+        - "{{ source_lgpl }}"
+
+    # /var/www est étiqueté httpd_sys_content_t par la politique SELinux par
+    # défaut : les fichiers déposés ici sont lisibles par nginx sans le moindre
+    # `semanage fcontext`. C'est pour cela qu'on ne sert pas directement
+    # /usr/share/licenses, qui ne porte pas ce type.
+    - name: Créer l'arborescence du dépôt
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      loop:
+        - "{{ racine_depot }}"
+        - "{{ racine_depot }}/depot"
+        - "{{ racine_depot }}/prive"
+
+    - name: Publier le texte de la GPL v3 dans la zone publique
+      ansible.builtin.copy:
+        src: "{{ source_gpl }}"
+        dest: "{{ racine_depot }}/depot/gpl-3.0.txt"
+        remote_src: true
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Publier le texte de la LGPL v3 dans la zone protégée
+      ansible.builtin.copy:
+        src: "{{ source_lgpl }}"
+        dest: "{{ racine_depot }}/prive/lgpl-3.0.txt"
+        remote_src: true
+        owner: root
+        group: root
+        mode: "0644"
+
+    # La somme de contrôle est CALCULÉE depuis le fichier réellement servi, et
+    # jamais codée en dur : si le paquet gmp change de version, le dépôt reste
+    # cohérent tout seul. C'est aussi ce qui permet au challenge de demander
+    # `checksum: sha256:<url>` sans figer une empreinte dans un README.
+    - name: Calculer l'empreinte sha256 du texte servi
+      ansible.builtin.stat:
+        path: "{{ racine_depot }}/depot/gpl-3.0.txt"
+        checksum_algorithm: sha256
+      register: empreinte_gpl
+
+    # Format sha256sum : « <empreinte>␣␣<nom de fichier> ». get_url cherche
+    # dans ce fichier la ligne dont le nom correspond au dernier segment de
+    # l'URL téléchargée, exactement comme le ferait `sha256sum -c`.
+    - name: Publier le fichier de sommes de contrôle à côté du texte
+      ansible.builtin.copy:
+        content: "{{ empreinte_gpl.stat.checksum }}  gpl-3.0.txt\n"
+        dest: "{{ racine_depot }}/depot/gpl-3.0.txt.sha256"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Déposer les identifiants du dépôt protégé
+      ansible.builtin.copy:
+        src: files/depot.htpasswd
+        dest: /etc/nginx/lab-get-url.htpasswd
+        owner: root
+        group: nginx
+        mode: "0640"
+
+    - name: Déposer le vhost du dépôt de référence
+      ansible.builtin.copy:
+        src: files/depot-interne.conf
+        dest: /etc/nginx/conf.d/lab-get-url-depot.conf
+        owner: root
+        group: root
+        mode: "0644"
+
+    # Le port 8008 est déjà étiqueté http_port_t par la politique SELinux
+    # (80, 81, 443, 488, 8008, 8009, 8443, 9000) : aucun `seport` n'est requis.
+    - name: Ouvrir le port du dépôt dans firewalld
+      ansible.posix.firewalld:
+        port: 8008/tcp
+        state: enabled
+        permanent: true
+        immediate: true
+
+    - name: Vérifier la configuration nginx avant de la charger
+      ansible.builtin.command:
+        cmd: nginx -t
+      changed_when: false
+
+    - name: Démarrer nginx et charger le vhost
+      ansible.builtin.systemd_service:
+        name: nginx
+        state: reloaded
+        enabled: true
+
+    # Vider le journal EN PLACE : le réécrire créerait un nouvel inode, et
+    # nginx continuerait d'écrire dans l'ancien, déjà supprimé. Les tests
+    # liraient alors un journal vide et le lab échouerait sans raison visible.
+    - name: Remettre le journal d'accès du dépôt à zéro
+      ansible.builtin.command:
+        cmd: truncate -s 0 /var/log/nginx/lab-get-url-depot.log
+      changed_when: false
+
+    # Si le nginx.conf de l'hôte n'incluait pas conf.d, le vhost ne serait pas
+    # chargé et le port n'écouterait pas : échouer ici, fort, plutôt que de
+    # laisser l'apprenant chercher pourquoi son get_url ne trouve rien.
+    - name: Attendre que le dépôt réponde sur son port
+      ansible.builtin.wait_for:
+        port: 8008
+        host: 127.0.0.1
+        timeout: 30
+
+- name: Setup get-url lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    # Le DNS du réseau libvirt sert des enregistrements périmés : depuis db1,
+    # web2.lab résout vers une adresse qui n'existe plus, et db1.lab vers ::1.
+    # Le lab ne peut donc pas compter sur les noms du réseau. On publie notre
+    # propre nom, construit depuis les FAITS de l'hôte qui sert le dépôt :
+    # aucune adresse n'est codée, et le nom reste juste quand Terraform
+    # réattribue les IP. Le bloc est marqué : le cleanup le retire seul.
+    - name: Publier le nom du dépôt interne dans /etc/hosts
+      ansible.builtin.blockinfile:
+        path: /etc/hosts
+        marker: "# {mark} LAB modules-reseau/get-url"
+        block: >-
+          {{ hostvars[groups['lab_api'][0]]['ansible_default_ipv4']['address'] }} depot-interne.lab
+        state: present
+
+    - name: Reset path, state (get-url)
+      ansible.builtin.file:
+        path: "/opt/lab-gpl3.txt"
+        state: "absent"
+      failed_when: false
+    # Le fichier de la LGPL, pas un « lab-mit.txt » qui n'a jamais existé : le
+    # challenge et ses tests portent sur /opt/lab-lgpl3.txt. Sans ce reset, le
+    # lab n'était pas rejouable depuis un état propre.
+    - name: Reset path, state (get-url)
+      ansible.builtin.file:
+        path: "/opt/lab-lgpl3.txt"
+        state: "absent"
+      failed_when: false
+
+- name: Brief the learner (get-url)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Download a file onto the managed node idempotently, check its integrity with a sha256 checksum, and authenticate the request
+      run_once: true

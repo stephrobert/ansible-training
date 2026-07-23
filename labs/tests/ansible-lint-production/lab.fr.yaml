@@ -1,0 +1,4 @@
+---
+id: tests-ansible-lint-production
+title: "ansible-lint profil production avec pre-commit"
+description: "Configurer .ansible-lint en profil production et un .yamllint strict, puis les câbler dans pre-commit avec un hook anti-fuite de secrets."

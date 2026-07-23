@@ -1,0 +1,16 @@
+---
+# Reset du lab custom-facts : rejouable, idempotent, jamais en échec.
+# Les VMs sont partagées entre labs : ce qui traîne ici fausse le suivant.
+- name: Cleanup custom-facts lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (custom-facts)
+      ansible.builtin.file:
+        path: "/etc/ansible/facts.d"
+        state: "absent"
+    - name: Reset path, state (custom-facts)
+      ansible.builtin.file:
+        path: "/tmp/lab14a-custom-facts.txt"
+        state: "absent"

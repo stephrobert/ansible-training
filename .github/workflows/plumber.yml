@@ -1,0 +1,71 @@
+# Validates ansible-training's CI/CD with Plumber (getplumber.io): it analyzes the
+# repo's GitHub Actions workflows and repository settings against .plumber.yaml,
+# uploads findings to Code Scanning, publishes the compliance score to the
+# README badge, and fails below the threshold. The action verifies the
+# downloaded Plumber binary's SLSA build-provenance attestation before running.
+#
+# This workflow runs ONLY in trusted contexts (push to main, schedule, manual):
+# it needs a privileged token (Administration:read) to verify branch protection,
+# and that secret must never be exposed to pull_request runs — especially from
+# forks. Pull requests are gated for workflow security by zizmor in ci.yml,
+# which uses no secrets.
+name: Plumber compliance
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '30 2 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  plumber:
+    name: Plumber analyze
+    # Skips while private (SARIF upload needs Advanced Security, free on public
+    # repos); activates automatically once the repo is public.
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    # The privileged token lives in this protected environment, which is
+    # restricted to the main branch — it is unreachable from pull_request runs.
+    environment: security
+    permissions:
+      contents: read
+      security-events: write   # upload SARIF to Code Scanning
+      actions: read            # read the workflow run for Plumber status
+      id-token: write          # OIDC to publish the score to score.getplumber.io
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Plumber compliance scan
+        uses: getplumber/plumber@fdd2a2d0555bb3b33cbb2efff3b955dea5a6bbf0 # v0.4.3
+        with:
+          version: "v0.4.3"
+          verify-attestation: "true"   # check the binary's SLSA provenance before running
+          # Gate on the Plumber Score itself. `threshold` is DEPRECATED and its
+          # value 100 is explicitly "treated as unset" by the action — it gated
+          # nothing. min-points + soft-fail:false is the real gate: the job only
+          # passes at a full 100/100, and any finding fails it.
+          min-points: "100"
+          soft-fail: "false"
+          upload-sarif: "true"          # findings to the Security tab (internal)
+          upload-artifacts: "false"     # no downloadable artifact published
+          score-push: "true"           # publish the score (drives the README badge)
+          # Fine-grained PAT (Administration + Contents + Metadata = Read),
+          # stored as an environment secret in the protected `security`
+          # environment, so branchMustBeProtected is verified for real.
+          github-token: ${{ secrets.PLUMBER_ADMIN_TOKEN }}

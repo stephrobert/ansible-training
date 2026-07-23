@@ -1,27 +1,33 @@
 # Challenge `lineinfile:`
 
-## Énoncé
+## Brief
 
-Sur **db1.lab**, écrivez un playbook **`solution.yml`** qui :
+On **db1.lab**, write a **`solution.yml`** playbook that:
 
-1. **Désactive** le login root SSH (`PermitRootLogin no`).
-2. Réduit **MaxAuthTries** à `3` (en gardant l'indentation existante via `backrefs`).
-3. Ajoute la ligne **`AllowUsers ansible`** si absente.
-4. **Valide** chaque modif avec `sshd -t -f %s` avant écriture.
-5. Notifie un **handler** `Restart sshd` qui ne se déclenche qu'à la fin si
-   au moins une des 3 tâches a `changed`.
+1. **Disables** SSH root login (`PermitRootLogin no`).
+2. Reduces **MaxAuthTries** to `3` (keeping the existing indentation via `backrefs`).
+3. Adds the line **`AllowUsers ansible`** if absent.
+4. **Validates** each change with `sshd -t -f %s` before writing.
+5. Notifies a **handler** `Restart sshd` that triggers only at the end if
+   at least one of the 3 tasks is `changed`.
 
-## Critères de réussite
+> 🎯 **No skeleton here, on purpose.** By this point you have written enough
+> playbooks to start from a blank file, and that is exactly what the EX294
+> asks: the exam hands you no canvas. The hints below target the traps of
+> this module, not the YAML syntax.
 
-- Premier run : `changed: 3` ou plus selon l'état initial.
-- Deuxième run : **`changed: 0`** (idempotence stricte).
-- `sshd -T | grep -E "PermitRootLogin|MaxAuthTries|AllowUsers"` retourne les 3 lignes attendues.
-- `sshd -t` ne renvoie **aucune** erreur.
+## Success criteria
 
-## Indices
+- First run: `changed: 3` or more depending on the initial state.
+- Second run: **`changed: 0`** (strict idempotence).
+- `sshd -T | grep -E "PermitRootLogin|MaxAuthTries|AllowUsers"` returns the 3 expected lines.
+- `sshd -t` returns **no** error.
 
-- Pour l'idempotence avec `backrefs: true`, la regexp doit matcher à la fois
-  la ligne d'origine et la ligne après modification — utilisez un groupe
-  qui capture le préfixe (espaces + nom du paramètre).
-- `AllowUsers` peut ne pas exister du tout — utiliser un `lineinfile:` sans
-  `backrefs` pour cette tâche-là.
+## 🧩 Stuck?
+
+```bash
+dsoxlab hint modules-fichiers-lineinfile
+```
+
+Hints are progressive and **cost points**: the first one points you in the
+right direction, the last one unblocks you.

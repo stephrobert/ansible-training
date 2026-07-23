@@ -1,0 +1,33 @@
+---
+id: modules-fichiers-copy
+title: "copy module: transfer files and inline content"
+description: "Transfer a file with src: or write inline content with content:, mastering mode, owner, backup and validate."
+section: modules-fichiers
+level: l1
+difficulty: beginner
+lab_type: lab
+estimated_time: "35m"
+skills:
+  - copy
+  - file-transfer
+  - file-permissions
+  - idempotence
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-copy/
+certification_tags:
+  - rhce
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        web1: web1.lab
+  default: rhce
+validation:
+  functional: true
+  security: false
+  persistence_after_reboot: false

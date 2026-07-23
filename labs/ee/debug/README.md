@@ -1,58 +1,61 @@
-# Lab 88 — Debug d'un Execution Environment cassé
+# Lab 88 — Debug a broken Execution Environment
 
-> 💡 **Pré-requis** : labs 84, 85, 86 validés (vous savez builder et tester un EE).
+> 💡 **Prerequisites**: labs 84, 85, 86 completed (you know how to build and test an EE).
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**Pièges courants ansible-builder v3**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/ee-builder/#pièges-courants)
+🔗 [**Debugging a broken Execution Environment**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/debug-ee-casse/)
 
-Trois **pièges classiques 2026** d'ansible-builder cassent silencieusement un EE :
+EE definitions break in an often **silent** way: a badly declared schema
+makes whole sections ignored, an unresolvable dependency drowns
+in verbose logs, and a build that "succeeds" can produce
+an unusable image. The page linked above details the classic
+pitfalls of ansible-builder.
 
-1. **`version: 3` oublié** : ansible-builder lit en mode v1 hérité, **ignore** les sections de dépendances modernes. Le build "réussit" mais l'EE est vide. **Bug le plus fréquent**.
-2. **Collection inexistante dans `requirements.yml`** : `ansible-galaxy` retourne `404` mais l'erreur peut passer inaperçue dans des logs verbeux.
-3. **Version Python inexistante** : `kubernetes==9999.0.0` → `pip` retourne `ERROR: No matching distribution found` — souvent confondu avec un problème de proxy.
+This lab provides a **deliberately broken** EE (4 planted defects) and asks
+you to **diagnose** then **fix** it. The defects are not
+listed here: finding them IS the exercise.
 
-Ce lab fournit un EE **volontairement cassé** et demande à l'apprenant de **diagnostiquer** puis **corriger**.
+## 🎯 Objectives
 
-## 🎯 Objectifs
+By the end of this lab, you will know how to:
 
-À la fin de ce lab, vous saurez :
+1. **Recognize** an EE that builds "OK" but does not contain ansible-core.
+2. **Read** the `ansible-builder build --verbosity 2` logs to identify the step that fails.
+3. **Diagnose** a nonexistent Galaxy collection.
+4. **Diagnose** a nonexistent PyPI version.
+5. **Inspect** a built EE with `podman run --rm <ee> ansible --version`.
 
-1. **Reconnaître** un EE qui build "OK" mais ne contient pas ansible-core.
-2. **Lire** les logs `ansible-builder build --verbosity 2` pour identifier l'étape qui échoue.
-3. **Diagnostiquer** une collection Galaxy inexistante.
-4. **Diagnostiquer** une version PyPI inexistante.
-5. **Inspecter** un EE construit avec `podman run --rm <ee> ansible --version`.
-
-## 🔧 Préparation
+## 🔧 Preparation
 
 ```bash
-cd /home/bob/Projets/ansible-training/labs/ee/debug/
+cd $ANSIBLE_TRAINING/labs/ee/debug/
 
-# Inspecter le fichier buggy
+# Inspect the buggy file
 cat execution-environment-buggy.yml
 cat requirements-buggy.yml
 cat requirements-buggy.txt
 ```
 
-## ⚙️ Arborescence
+## ⚙️ Tree
 
 ```text
 labs/ee/debug/
 ├── README.md
-├── execution-environment-buggy.yml      ← VERSION CASSÉE (3 bugs)
+├── execution-environment-buggy.yml      ← BROKEN VERSION (4 defects)
 ├── requirements-buggy.yml
 ├── requirements-buggy.txt
 └── challenge/
-    ├── execution-environment.yml         ← version corrigée
-    ├── requirements.yml
-    ├── requirements.txt
-    ├── bindep.txt
-    └── tests/
-        └── test_ee_debug.py              ← 6 tests de validation
+    ├── README.md                         ← your mission
+    └── tests/                            ← pytest validation
+        └── test_functional.py
+
+# To be produced by you (absent from the repo):
+# challenge/execution-environment.yml, requirements.yml,
+# requirements.txt, bindep.txt
 ```
 
-## 📚 Exercice 1 — Tenter le build buggy
+## 📚 Exercise 1 — Attempt the buggy build
 
 ```bash
 ansible-builder build \
@@ -63,56 +66,49 @@ ansible-builder build \
   --verbosity 2
 ```
 
-Observation typique :
+🔍 **Read EVERYTHING**: the warnings at the very start of the build matter as much as
+the red errors at the end. Note every anomaly before touching a
+single file.
 
-```text
-WARNING: No 'version' key found, defaulting to schema v1
-[1/2] Building image...
-ERROR: galaxy install failed: collection 'community.does-not-exist' not found
-```
-
-🔍 **Le 1er warning est crucial** : sans `version: 3`, ansible-builder utilise le schéma v1. Les sections `dependencies.ansible_core`, `dependencies.python`, `dependencies.system` sont **silencieusement ignorées**. L'EE produit n'a **pas** ansible-core.
-
-## 📚 Exercice 2 — Diagnostic du bug n°1 (version: 3 manquant)
+## 📚 Exercise 2 : a "successful" build proves nothing
 
 ```bash
-# Cas où le build "réussit" sans erreur visible mais l'EE est vide :
 podman run --rm local/lab88-buggy:dev ansible --version
-# → /bin/sh: ansible: command not found
 ```
 
-🔍 **Diagnostic** : aucune commande `ansible` dans l'image. La cause : **`version: 3` manquant** dans `execution-environment-buggy.yml` → ansible-builder a ignoré la section `dependencies.ansible_core`.
+🔍 If this command fails while the build passed, it means a
+part of your definition was **silently ignored**. Which build warning
+announced it? Which line is missing in the definition so that
+`dependencies.*` is actually taken into account?
 
-**Correction** : ajouter `version: 3` en première ligne.
+## 📚 Exercise 3 : check each dependency individually
 
-## 📚 Exercice 3 — Diagnostic du bug n°2 (collection inexistante)
+Do not take the definition at its word: every collection and every
+declared Python package must exist where they are supposed to be
+downloaded.
 
-Une fois `version: 3` ajouté :
+```bash
+# Does a declared collection really exist, in this version?
+ansible-galaxy collection install <namespace.collection>:<version>
 
-```text
-[1/3] Galaxy stage:
-  Installing community.does-not-exist:1.2.3 ... 
-  ERROR! - community.does-not-exist:1.2.3 was NOT installed successfully:
-  could not find versions that match: 1.2.3 for: community.does-not-exist
+# Does a declared Python version really exist on PyPI?
+pip index versions <paquet>
 ```
 
-🔍 **Diagnostic** : Galaxy retourne **404 / no matching version**. Vérifier l'existence sur https://galaxy.ansible.com/ui/repo/published/community/does-not-exist/.
+🔍 **Diagnosis**: note precisely which component fails and why
+(Galaxy 404, PyPI no matching distribution...). This diagnosis is what
+you will fix in `challenge/`.
 
-**Correction** : remplacer par une collection valide (ex: `kubernetes.core`).
+## 📚 Exercise 4 : system dependencies
 
-## 📚 Exercice 4 — Diagnostic du bug n°3 (version Python inexistante)
+Embedded collections often rely on system binaries
+(git, ssh clients...). How does ansible-builder install them in
+the image? Which section and which file are missing from the buggy
+definition?
 
-```text
-[2/3] Python deps:
-  ERROR: Could not find a version that satisfies the requirement kubernetes==9999.0.0
-  ERROR: No matching distribution found for kubernetes==9999.0.0
-```
+## 📚 Exercise 5 : build your fixed version
 
-🔍 **Diagnostic** : `pip` n'a pas trouvé la version sur PyPI. Vérifier sur https://pypi.org/project/kubernetes/.
-
-**Correction** : remplacer par une version réelle (`kubernetes==31.0.0`).
-
-## 📚 Exercice 5 — Build de la version corrigée
+Once your 4 fixes are placed in `challenge/`:
 
 ```bash
 cd challenge/
@@ -123,91 +119,75 @@ ansible-builder build \
   --context ../context-fixed \
   --verbosity 2
 
-# Vérifier
+# Check that the EE is actually usable
 podman run --rm local/lab88-fixed:dev ansible --version | head -1
 podman run --rm local/lab88-fixed:dev ansible-galaxy collection list
 ```
 
-Sortie attendue :
+🔍 **Final validation**: ansible-core present, collections **actually**
+installed, Python dependencies resolved.
 
-```text
-ansible [core 2.18.1]
-
-Collection         Version
------------------- -------
-ansible.builtin    2.18.1
-ansible.posix      2.0.0
-kubernetes.core    5.1.1
-```
-
-🔍 **Validation finale** : ansible-core présent, collections **réellement** installées, deps Python OK.
-
-## 📚 Exercice 6 — Inspecter le Containerfile généré
+## 📚 Exercise 6 — Inspect the generated Containerfile
 
 ```bash
 cat ../context-fixed/Containerfile
 ```
 
-Vous voyez un build **multi-stage** : `base`, `galaxy`, `builder`, `final`. Le stage `final` ne contient que ce qui est utile au runtime (pas les compilers Python qui ont servi au build des wheels).
+You see a **multi-stage** build: `base`, `galaxy`, `builder`, `final`. The `final` stage contains only what is useful at runtime (not the Python compilers used to build the wheels).
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **Idempotence** : un second run de votre solution doit afficher `changed=0`
-  partout dans le `PLAY RECAP`. C'est le signal mécanique d'un playbook
-  conforme aux bonnes pratiques.
-- **FQCN explicite** : préférez toujours `ansible.builtin.<module>` (ou la
-  collection appropriée) plutôt que le nom court — `ansible-lint --profile
-  production` le vérifie.
-- **Convention de ciblage** : ce lab cible votre poste local + un EE existant ; pour adapter à un
-  autre groupe, ajustez `hosts:` dans `lab.yml`/`solution.yml` puis relancez.
-- **Reset isolé** : `make clean` à la racine du lab désinstalle proprement
-  ce que la solution a posé pour pouvoir rejouer le scénario.
+- **Idempotence**: a second run of your solution must show `changed=0`
+  everywhere in the `PLAY RECAP`. This is the mechanical signal of a playbook
+  compliant with best practices.
+- **Explicit FQCN**: always prefer `ansible.builtin.<module>` (or the
+  appropriate collection) over the short name. `ansible-lint --profile
+  production` checks it.
+- **Targeting convention**: this lab targets your local machine + an existing EE. To adapt it to
+  another group, adjust `hosts:` in `lab.yml`/`solution.yml` then rerun.
+- **Isolated reset**: `dsoxlab clean <lab-id>` at the lab root cleanly uninstalls
+  what the solution set up so you can replay the scenario.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Pourquoi ansible-builder accepte-t-il un fichier sans `version:` au lieu de retourner une erreur ?
+1. Why does ansible-builder accept a file without `version:` instead of returning an error?
 
-2. Quelle commande Podman vous permet d'**ouvrir un shell interactif dans l'EE** pour inspecter les fichiers ?
+2. Which Podman command lets you **open an interactive shell in the EE** to inspect the files?
 
-3. Comment **détecter automatiquement** dans la CI qu'un EE construit ne contient pas ansible-core ?
+3. How do you **automatically detect** in CI that a built EE does not contain ansible-core?
 
-4. **Cache Podman** : modifier `requirements.yml` ne déclenche pas toujours un rebuild de la couche galaxy. Comment forcer ?
+4. **Podman cache**: modifying `requirements.yml` does not always trigger a rebuild of the galaxy layer. How do you force it?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Le challenge ([`challenge/tests/`](challenge/tests/)) valide via **6 tests pytest** :
-
-- Les fichiers buggy sont présents (pour le diagnostic).
-- Le buggy n'a **pas** `version: 3` (illustration du bug).
-- La version corrigée a **bien** `version: 3`.
-- La collection inexistante est remplacée.
-- La version Python inexistante est corrigée.
-- `bindep.txt` ajoute les system deps.
+See [`challenge/README.md`](challenge/README.md): the pytest tests
+check that your 4 fixed files in `challenge/` each solve one of the
+planted defects, and submit your definition to `ansible-builder create`
+if the tool is present.
 
 ```bash
-LAB_NO_REPLAY=1 pytest -v challenge/tests/
+pytest -v challenge/tests/
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`ansible-builder create`** (sans `build`) : génère le Containerfile sans build → debug rapide.
-- **`podman build --no-cache`** : force le rebuild complet, utile quand le cache masque un bug.
-- **`podman run -it --entrypoint /bin/bash <ee>`** : shell interactif dans l'EE pour inspection.
-- **`ansible-navigator images --eei <ee>`** : exploration TUI structurée.
-- **CI smoke test** : étape post-build qui exécute `ansible --version` dans l'image et fail si absent.
+- **`ansible-builder create`** (without `build`): generates the Containerfile without building -> fast debug.
+- **`podman build --no-cache`**: forces a full rebuild, useful when the cache hides a bug.
+- **`podman run -it --entrypoint /bin/bash <ee>`**: interactive shell in the EE for inspection.
+- **`ansible-navigator images --eei <ee>`**: structured TUI exploration.
+- **CI smoke test**: a post-build step that runs `ansible --version` in the image and fails if absent.
 
-## 🔍 Sécurité — bonnes pratiques 2026
+## 🔍 Security — 2026 best practices
 
-- **`version: 3`** **toujours** en première ligne de `execution-environment.yml`.
-- **Smoke test post-build** : `podman run --rm $TAG ansible --version` doit retourner sans erreur.
-- **`--verbosity 2`** au minimum dans la CI pour capter les warnings comme « schema v1 default ».
-- **Pinning par digest** sur la base image (`@sha256:abc...`) — empêche un repush silencieux upstream.
-- **CI smoke test** sur les collections **critiques** : `ansible-doc kubernetes.core.k8s` doit retourner.
+- **Post-build smoke test**: `podman run --rm $TAG ansible --version` must return without error.
+- **`--verbosity 2`** at minimum in CI to catch warnings such as "schema v1 default".
+- **Pinning by digest** on the base image (`@sha256:abc...`): prevents a silent upstream repush.
+- **CI smoke test** on the **critical** collections: `ansible-doc kubernetes.core.k8s` must return.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
-Avant de lancer pytest, validez la qualité de votre `lab.yml` et de votre
-`challenge/solution.yml` avec **`ansible-lint`** :
+Before running pytest, validate the quality of your `lab.yml` and your
+`challenge/solution.yml` with **`ansible-lint`**:
 
 ```bash
 ansible-lint labs/ee/debug/lab.yml
@@ -215,9 +195,9 @@ ansible-lint labs/ee/debug/challenge/solution.yml
 ansible-lint --profile production labs/ee/debug/challenge/solution.yml
 ```
 
-Si `ansible-lint` retourne `Passed: 0 failure(s), 0 warning(s)`, votre code
-est conforme aux bonnes pratiques : FQCN explicite, `name:` sur chaque tâche,
-modes de fichier en chaîne, idempotence respectée, modules dépréciés évités.
+If `ansible-lint` returns `Passed: 0 failure(s), 0 warning(s)`, your code
+follows best practices: explicit FQCN, `name:` on every task,
+file modes as strings, idempotence respected, deprecated modules avoided.
 
-> 💡 **Astuce CI** : intégrez `ansible-lint --profile production` dans un
-> hook pre-commit pour bloquer tout commit qui introduirait des anti-patterns.
+> 💡 **CI tip**: integrate `ansible-lint --profile production` into a
+> pre-commit hook to block any commit that would introduce anti-patterns.

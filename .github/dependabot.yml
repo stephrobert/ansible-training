@@ -1,0 +1,29 @@
+version: 2
+updates:
+  # Garde les actions GitHub (épinglées par SHA) à jour — l'écosystème
+  # pertinent pour ce dépôt de contenu.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(ci)"
+    # Laisser décanter une nouvelle release : un paquet compromis est
+    # généralement retiré en quelques jours, un cooldown réduit la fenêtre.
+    cooldown:
+      default-days: 7
+
+  # Surveille la seule dev-dep du dépôt : la CLI dsoxlab, tirée de PyPI.
+  # Le reste du pyproject.toml est vide (package = false, dependencies = []) :
+  # ce dépôt est un fournisseur de labs, pas un paquet Python. Les outils
+  # Ansible (ansible-core, ansible-lint, molecule…) vivent dans
+  # requirements.txt et sont installés via pipx/mise, hors périmètre de
+  # Dependabot.
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(deps)"
+    cooldown:
+      default-days: 7

@@ -1,0 +1,53 @@
+---
+id: rhce-mock-ex294-2
+title: "Mock RHCE EX294 #2"
+description: "A second full timed EX294 mock: the same 19 categories as mock #1, but every concrete value differs (Apache/valkey stack, different users, LVM layout, ports, SELinux boolean, cron schedule, collection), so nothing can be copied from memory. Each task is proven by pytest."
+section: rhce
+level: l3
+difficulty: advanced
+lab_type: capstone
+estimated_time: "4h"
+skills:
+  - rhce-exam-prep
+  - playbook-authoring
+  - time-management
+  # Mêmes compétences que le mock #1 : le capstone n'examine que du déjà vu. La
+  # variante ne change pas les compétences, elle change la situation.
+  - block-rescue-always
+  - error-handling
+  - serial-rolling-update
+  - delegate-to
+  - run-once
+  - tags
+  - cron
+  - custom-facts
+  - facts-d
+  - content-collections
+  - requirements-yml
+distros:
+  - alma9
+doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/certifications/rhce/
+certification_tags:
+  - rhce
+track:
+  - ex294
+runtime:
+  type: vm
+  targets:
+    - name: rhce
+      host: control-node.lab
+      label_en: "AlmaLinux 9 control node"
+      label_fr: "Control node AlmaLinux 9"
+      roles:
+        db1: db1.lab
+        web1: web1.lab
+        web2: web2.lab
+  default: rhce
+validation:
+  functional: true
+  # SELinux (booléen persistant) et pare-feu permanent (port valkey) font partie
+  # du sujet : le durcissement est examiné, pas décoré.
+  security: true
+  # Prouvé, pas supposé : test_99 redémarre web1 et db1, puis re-vérifie l'état
+  # runtime (booléen, ports, montage, service, cron, facts, sysctl).
+  persistence_after_reboot: true

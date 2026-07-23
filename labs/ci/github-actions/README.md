@@ -1,54 +1,52 @@
-# Lab 69 — CI/CD : GitHub Actions
+# Lab 69 — CI/CD: GitHub Actions
 
-> 💡 **Vous arrivez directement à ce lab sans avoir fait les précédents ?**
-> Pré-requis local : aucun (vous écrivez juste un workflow YAML). Pour
-> exécuter : un compte GitHub + un fork de votre rôle.
+> 💡 **Landing directly on this lab without having done the previous ones?**
+> Local prerequisite: none (you just write a YAML workflow). To run it: a GitHub
+> account + a fork of your role.
 
-## 🧠 Rappel
+## 🧠 Recap
 
-🔗 [**CI Ansible avec GitHub Actions**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-roles/ci-github-actions/)
+🔗 [**Ansible CI with GitHub Actions**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ci-github-actions/)
 
-Une CI **complète** pour un rôle Ansible orchestre, à chaque PR :
+A **complete** CI for an Ansible role orchestrates, on every PR:
 
 ```text
 1. Lint (ansible-lint --profile production + yamllint)
-2. Test Molecule (matrice OS × versions Ansible)
-3. (optionnel) Publication sur Galaxy si tag git
+2. Molecule test (matrix OS × Ansible versions)
+3. (optional) Publish to Galaxy on git tag
 ```
 
-GitHub Actions est gratuit pour repos publics, idéal pour les rôles open
-source.
+GitHub Actions is free for public repos, ideal for open source roles.
 
-## 🎯 Objectifs
+## 🎯 Objectives
 
-À la fin de ce lab, vous saurez :
+By the end of this lab, you will know how to:
 
-1. Écrire `.github/workflows/test.yml` avec **2 jobs** (lint + molecule).
-2. Utiliser **`strategy.matrix`** pour tester N distros × M versions
-   Ansible **en parallèle**.
-3. Cacher le `pip install` entre runs avec **`actions/setup-python@v5`**.
-4. Configurer des **permissions minimales** (`permissions: read-all`).
-5. Désactiver `persist-credentials: false` sur `actions/checkout` (sécurité).
+1. Write `.github/workflows/test.yml` with **2 jobs** (lint + molecule).
+2. Use **`strategy.matrix`** to test N distros × M Ansible versions
+   **in parallel**.
+3. Cache `pip install` between runs with **`actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0`**.
+4. Configure **minimal permissions** (`permissions: {}`).
+5. Disable `persist-credentials: false` on `actions/checkout` (security).
 
-## 🔧 Préparation
+## 🔧 Preparation
 
-Aucune installation locale. Optionnel : `act` pour exécuter des workflows
-GitHub Actions localement (debug).
+No local installation. Optional: `act` to run GitHub Actions workflows locally
+(debug).
 
-## ⚙️ Arborescence
+## ⚙️ Layout
 
 ```text
 labs/ci/github-actions/
 ├── README.md
-├── Makefile
 ├── requirements.yml                    ← collections + roles
 ├── roles/webserver/
 └── .github/
     └── workflows/
-        └── test.yml                    ← workflow CI complet
+        └── test.yml                    ← full CI workflow
 ```
 
-## 📚 Exercice 1 — Squelette du workflow
+## 📚 Exercise 1 — Workflow skeleton
 
 ```yaml
 ---
@@ -59,19 +57,19 @@ on:
     branches: [main]
   pull_request:
   schedule:
-    - cron: "0 6 * * 1"     # lundi matin (anti-rot)
+    - cron: "0 6 * * 1"     # Monday morning (anti-rot)
 
-permissions: read-all       # principe du moindre privilège
+permissions: {}             # least privilege: grant per job, only what it needs
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          persist-credentials: false      # sécurité
+          persist-credentials: false      # security
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version: "3.12"
           cache: pip
@@ -90,127 +88,125 @@ jobs:
           - quay.io/centos/centos:stream10
           - docker.io/library/debian:12
           - docker.io/library/ubuntu:24.04
-        ansible_version: ["2.16", "2.17", "2.18"]
+        ansible: ["2.16", "2.17", "2.18"]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version: "3.12"
           cache: pip
 
       - run: |
           pip install molecule molecule-plugins[podman]
-          pip install ansible-core>=${{ matrix.ansible_version }},<$(echo ${{ matrix.ansible_version }} | awk -F. '{print $1"."$2+1}')
+          pip install ansible-core>=${{ matrix.ansible }},<$(echo ${{ matrix.ansible }} | awk -F. '{print $1"."$2+1}')
 
       - run: molecule test
         env:
           MOLECULE_DISTRO: ${{ matrix.distro }}
 ```
 
-🔍 **Observation** :
+🔍 **Observation**:
 
-- **`needs: lint`** : le job `molecule` ne tourne que si `lint` passe.
-- **`fail-fast: false`** : si une combinaison échoue, on continue les
-  autres pour avoir un rapport complet.
-- **`matrix.distro × matrix.ansible_version`** = **9 jobs en parallèle**.
+- **`needs: lint`**: the `molecule` job runs only if `lint` passes.
+- **`fail-fast: false`**: if a combination fails, we continue the others to get
+  a complete report.
+- **`matrix.distro × matrix.ansible`** = **9 jobs in parallel**.
 
-## 📚 Exercice 2 — Permissions minimales
+## 📚 Exercise 2 — Minimal permissions
 
 ```yaml
-permissions: read-all
-# OU plus précis :
+permissions: {}
+# OR more precise:
 permissions:
   contents: read
-  pull-requests: write       # uniquement si on commente la PR
+  pull-requests: write       # only if we comment the PR
 ```
 
-🔍 **Observation** : par défaut, `GITHUB_TOKEN` a beaucoup de droits. En
-production, on **réduit au strict nécessaire** pour limiter le blast
-radius en cas de workflow compromis.
+🔍 **Observation**: by default, `GITHUB_TOKEN` has a lot of rights. In
+production, we **reduce to the strict minimum** to limit the blast radius if a
+workflow is compromised.
 
-## 📚 Exercice 3 — `persist-credentials: false`
+## 📚 Exercise 3 — `persist-credentials: false`
 
 ```yaml
-- uses: actions/checkout@v4
+- uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
   with:
     persist-credentials: false
 ```
 
-🔍 **Observation** : par défaut, `actions/checkout` laisse le
-`GITHUB_TOKEN` accessible sur le filesystem du runner. Si une dépendance
-malveillante l'exfiltre, c'est game over. Désactivez-le sauf si vous
-en avez explicitement besoin (pour pousser un commit auto par exemple).
+🔍 **Observation**: by default, `actions/checkout` leaves the `GITHUB_TOKEN`
+accessible on the runner's filesystem. If a malicious dependency exfiltrates it,
+it is game over. Disable it unless you explicitly need it (to push an auto
+commit for example).
 
-## 📚 Exercice 4 — Cache pip
+## 📚 Exercise 4 — pip cache
 
 ```yaml
-- uses: actions/setup-python@v5
+- uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
   with:
     python-version: "3.12"
     cache: pip
 ```
 
-🔍 **Observation** : sans cache, chaque run réinstalle ~50 paquets pip
-(~30 s). Avec cache, c'est ~5 s. Sur 9 jobs matrix, ça change la durée
-totale de la CI.
+🔍 **Observation**: without cache, each run reinstalls ~50 pip packages (~30 s).
+With cache, it is ~5 s. On 9 matrix jobs, that changes the total CI duration.
 
-## 📚 Exercice 5 — Schedule (anti-rot)
+## 📚 Exercise 5 — Schedule (anti-rot)
 
 ```yaml
 on:
   schedule:
-    - cron: "0 6 * * 1"     # lundi matin
+    - cron: "0 6 * * 1"     # Monday morning
 ```
 
-🔍 **Observation** : un rôle peut **se casser** sans qu'on touche au
-code (Ansible upstream change, distrib upgrade). Lancer la CI
-hebdomadairement détecte les régressions silencieuses.
+🔍 **Observation**: a role can **break** without touching the code (Ansible
+upstream changes, distro upgrade). Running the CI weekly detects silent
+regressions.
 
-## 🔍 Observations à noter
+## 🔍 Observations to note
 
-- **`needs:`** chaîne les jobs (lint → molecule).
-- **`strategy.matrix`** = parallélisation gratuite. Multi-distro × multi-version
-  en quelques lignes YAML.
-- **Permissions minimales** + **`persist-credentials: false`** =
-  défense en profondeur.
-- **`schedule`** = détecter les régressions silencieuses (anti-rot).
-- **GitHub Actions est gratuit** sur repos publics. Sur repos privés :
-  2000 minutes/mois gratuites, puis facturé.
+- **`needs:`** chains the jobs (lint → molecule).
+- **`strategy.matrix`** = free parallelization. Multi-distro × multi-version
+  in a few lines of YAML.
+- **Minimal permissions** + **`persist-credentials: false`** =
+  defense in depth.
+- **`schedule`** = detect silent regressions (anti-rot).
+- **GitHub Actions is free** on public repos. On private repos:
+  2000 free minutes/month, then billed.
 
-## 🤔 Questions de réflexion
+## 🤔 Reflection questions
 
-1. Comment adapter votre solution si la cible passait de **1 host** à un
-   parc de **50 serveurs** ? Quels paramètres (`forks`, `serial`, `strategy`)
-   faudrait-il ajuster pour conserver des temps d'exécution acceptables ?
+1. How would you adapt your solution if the target went from **1 host** to a
+   fleet of **50 servers**? Which parameters (`forks`, `serial`, `strategy`)
+   would you need to tune to keep acceptable execution times?
 
-2. Quels modules Ansible alternatifs auriez-vous pu utiliser pour atteindre
-   le même résultat ? Quels sont leurs trade-offs (idempotence garantie,
-   performance, dépendances de collection externe) ?
+2. Which alternative Ansible modules could you have used to reach the same
+   result? What are their trade-offs (guaranteed idempotence, performance,
+   external collection dependency)?
 
-3. Si une étape du playbook échoue en cours d'exécution, quel est l'impact
-   sur les hôtes déjà traités ? Comment rendre le scénario reprenable
-   (`block/rescue/always`, `--start-at-task`, `serial`) ?
+3. If a playbook step fails mid-run, what is the impact on the hosts already
+   processed? How do you make the scenario resumable (`block/rescue/always`,
+   `--start-at-task`, `serial`)?
 
-## 🚀 Challenge final
+## 🚀 Final challenge
 
-Voir [`challenge/README.md`](challenge/README.md).
+See [`challenge/README.md`](challenge/README.md).
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **`act`** (local) : `act -W .github/workflows/test.yml` exécute le
-  workflow sur votre poste.
-- **Reusable workflows** : `uses: org/.github/workflows/ansible-test.yml@main`
-  pour mutualiser entre plusieurs rôles.
-- **Dependabot** : auto-PR pour mettre à jour les versions des actions
-  (`actions/checkout@v4` → `v5`).
-- **GitGuardian / TruffleHog** : ajouter un job de scan de secrets en
-  plus de pre-commit.
+- **`act`** (local): `act -W .github/workflows/test.yml` runs the workflow on
+  your machine.
+- **Reusable workflows**: `uses: org/.github/workflows/ansible-test.yml@main`
+  to share across several roles.
+- **Dependabot**: auto-PR to update action versions
+  (it bumps the pinned SHA **and** its `# vX.Y.Z` comment, so pinning stays maintainable).
+- **GitGuardian / TruffleHog**: add a secret scanning job on top of pre-commit.
 
-## 🔍 Linter avec `ansible-lint`
+## 🔍 Linting with `ansible-lint`
 
 ```bash
 ansible-lint labs/ci/github-actions/

@@ -1,16 +1,16 @@
-# 🎯 Challenge — Filtrer une liste de dicts avec `selectattr`
+# 🎯 Challenge — Filter a list of dicts with `selectattr`
 
-## ✅ Objectif
+## ✅ Objective
 
-Écrire `challenge/solution.yml` qui sur **db1.lab** :
+Write `challenge/solution.yml` that on **db1.lab**:
 
-1. Déclare dans `vars:` une **liste de dicts** `services` (4 services).
-2. Pose `/tmp/services-production.txt` qui contient **uniquement** les services
-   du tier `production`, au format `<name>:<port>` (un par ligne).
+1. Declares in `vars:` a **list of dicts** `services` (4 services).
+2. Writes `/tmp/services-production.txt` that contains **only** the services
+   of the `production` tier, in the format `<name>:<port>` (one per line).
 
-## 🧩 Données d'entrée
+## 🧩 Input data
 
-À copier dans le `vars:` du play :
+To copy into the play's `vars:`:
 
 ```yaml
 services:
@@ -20,33 +20,33 @@ services:
   - { name: dev-db, port: 5432, tier: dev }
 ```
 
-## 🧩 Sortie attendue
+## 🧩 Expected output
 
-Le fichier `/tmp/services-production.txt` doit contenir **exactement** :
+The `/tmp/services-production.txt` file must contain **exactly**:
 
 ```text
 api:8080
 cache:6379
 ```
 
-Les services `web` (staging) et `dev-db` (dev) sont **exclus**.
+The `web` (staging) and `dev-db` (dev) services are **excluded**.
 
-## 🧩 Outils Jinja2 à connaître
+## 🧩 Jinja2 tools to know
 
-Trois filtres à combiner pour traiter une liste de dicts :
+Three filters to combine to process a list of dicts:
 
-| Filtre | Effet |
+| Filter | Effect |
 | --- | --- |
-| `selectattr('attr', 'equalto', 'value')` | Garde les éléments dont `attr == value` |
-| `map(attribute='name')` | Extrait le champ `name` de chaque élément |
-| `join(',')` | Concatène une liste en chaîne |
+| `selectattr('attr', 'equalto', 'value')` | Keeps the elements where `attr == value` |
+| `map(attribute='name')` | Extracts the `name` field from each element |
+| `join(',')` | Concatenates a list into a string |
 
-> 💡 Ici on cherche à **filtrer** sur `tier == "production"`, puis à itérer
-> dans un template `content:` pour produire `<name>:<port>` ligne par ligne.
-> Vous pouvez le faire avec une **boucle Jinja2** (`{% for ... %}`) directement
-> dans la chaîne `content:`.
+> 💡 Here we want to **filter** on `tier == "production"`, then iterate
+> in a `content:` template to produce `<name>:<port>` line by line.
+> You can do this with a **Jinja2 loop** (`{% for ... %}`) directly
+> in the `content:` string.
 
-## 🧩 Squelette
+## 🧩 Skeleton
 
 ```yaml
 ---
@@ -56,7 +56,7 @@ Trois filtres à combiner pour traiter une liste de dicts :
 
   vars:
     services:
-      # ... copier la liste ci-dessus ...
+      # ... copy the list above ...
 
   tasks:
     - name: Poser /tmp/services-production.txt (production seulement)
@@ -69,28 +69,28 @@ Trois filtres à combiner pour traiter une liste de dicts :
           {% endfor %}
 ```
 
-> 💡 **Pièges** :
+> 💡 **Traps**:
 >
-> - **Boucle Jinja2 dans `content:`** : utilisez `{% for ... %}` (avec `%`,
->   pas `{{ }}` qui sert à l'évaluation simple).
-> - **`selectattr` retourne un generator**, pas une liste — bien chaîner
->   avec `| list` si vous voulez `length` ou indexer.
-> - **Indentation YAML** : le `content: |` (block scalar) préserve la
->   structure brute. Les `{% for %}` peuvent rester en début de ligne, ce
->   qui est lisible mais introduit un saut de ligne entre items. C'est OK
->   pour ce challenge.
-> - **Test exact** : la sortie doit contenir `api:8080` ET `cache:6379`,
->   et **PAS** `web:80` ni `dev-db:5432`. Vérifiez bien la syntaxe
+> - **Jinja2 loop in `content:`**: use `{% for ... %}` (with `%`,
+>   not `{{ }}` which is for simple evaluation).
+> - **`selectattr` returns a generator**, not a list: be sure to chain
+>   with `| list` if you want `length` or to index.
+> - **YAML indentation**: the `content: |` (block scalar) preserves the
+>   raw structure. The `{% for %}` can stay at the start of the line, which
+>   is readable but introduces a line break between items. That is OK
+>   for this challenge.
+> - **Exact test**: the output must contain `api:8080` AND `cache:6379`,
+>   and **NOT** `web:80` nor `dev-db:5432`. Double-check the syntax
 >   `selectattr('tier', 'equalto', 'production')`.
 
-## 🚀 Lancement
+## 🚀 Run
 
 ```bash
 ansible-playbook labs/ecrire-code/types-collections/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "cat /tmp/services-production.txt"
 ```
 
-## 🧪 Validation automatisée
+## 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/types-collections/challenge/tests/
@@ -99,19 +99,19 @@ pytest -v labs/ecrire-code/types-collections/challenge/tests/
 ## 🧹 Reset
 
 ```bash
-make -C labs/ecrire-code/types-collections clean
+dsoxlab clean ecrire-code-types-collections
 ```
 
-## 💡 Pour aller plus loin
+## 💡 Going further
 
-- **Sans `selectattr`** : reproduire le filtre avec un `for` + `if`
-  (`{% for s in services if s.tier == "production" %}`). C'est plus verbeux
-  mais utile quand on a plusieurs conditions complexes.
-- **Tri** : ajoutez un `| sort(attribute='port')` après `selectattr` pour trier
-  par numéro de port croissant.
-- **Lookup `dict2items`** : pour itérer sur un dict de dicts plutôt que sur
-  une liste de dicts.
-- **Lint** :
+- **Without `selectattr`**: reproduce the filter with a `for` + `if`
+  (`{% for s in services if s.tier == "production" %}`). It is more verbose
+  but useful when you have several complex conditions.
+- **Sorting**: add a `| sort(attribute='port')` after `selectattr` to sort
+  by ascending port number.
+- **`dict2items` lookup**: to iterate over a dict of dicts rather than
+  a list of dicts.
+- **Lint**:
 
    ```bash
    ansible-lint labs/ecrire-code/types-collections/challenge/solution.yml

@@ -1,0 +1,22 @@
+---
+# Mise en place du lab jinja2-base : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup jinja2-base lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset path, state (jinja2-base)
+      ansible.builtin.file:
+        path: "/etc/motd-challenge"
+        state: "absent"
+
+- name: Brief the learner (jinja2-base)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Interpolate variables, loop and branch inside a template, then kill stray blank lines with whitespace control
+      run_once: true

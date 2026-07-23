@@ -1,0 +1,27 @@
+---
+# Mise en place du lab navigator : état de départ propre, puis brief.
+# Rejouable : l'apprenant doit pouvoir recommencer autant qu'il veut.
+- name: Setup navigator lab (lab_db1)
+  hosts: lab_db1
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Reset state (navigator)
+      ansible.builtin.shell: |
+        rm -f /tmp/lab-navigator-*.txt
+        rm -f /etc/sysctl.d/70-navigator-lab.conf
+        sysctl -w vm.swappiness=60
+      changed_when: false
+      failed_when: false
+
+- name: Brief the learner (navigator)
+  hosts: lab_db1
+  gather_facts: false
+  tasks:
+    - name: What this lab expects from you
+      ansible.builtin.debug:
+        msg: >-
+          Use ansible-navigator to discover a module inside an installed
+          collection, apply it to set a kernel parameter on db1.lab, and
+          validate an inventory with ansible-navigator inventory.
+      run_once: true

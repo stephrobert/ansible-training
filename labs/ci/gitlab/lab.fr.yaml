@@ -1,0 +1,4 @@
+---
+id: ci-gitlab
+title: "GitLab CI : pipeline parallel:matrix pour un rôle"
+description: "Écrire un .gitlab-ci.yml en stages lint, test et release, décliner la matrice avec parallel:matrix et réserver la publication Galaxy aux tags Git via rules:."
