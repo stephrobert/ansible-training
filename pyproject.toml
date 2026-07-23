@@ -70,6 +70,6 @@ package = false
 # qui veulent un venv local (édition, IDE) ; l'apprenant, lui, utilise le tool
 # global.
 dev = [
-    "pyyaml>=6",
+    "pyyaml>=6.0.3",
     "dsoxlab>=0.1.6",
 ]
