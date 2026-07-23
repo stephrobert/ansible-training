@@ -1,6 +1,6 @@
 version: 2
 updates:
-  # Garde les actions GitHub (épinglées par SHA) à jour — l'écosystème
+  # Garde les actions GitHub (épinglées par SHA) à jour : l'écosystème
   # pertinent pour ce dépôt de contenu.
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -12,6 +12,15 @@ updates:
     # généralement retiré en quelques jours, un cooldown réduit la fenêtre.
     cooldown:
       default-days: 7
+    # Toutes les actions dans UNE seule PR par semaine. Sans regroupement,
+    # Dependabot ouvre une PR par composant, et bumper github/codeql-action/init
+    # sans github/codeql-action/analyze (ou l'inverse) casse CodeQL : ses
+    # composants doivent tourner à la même version. Le groupe les fait avancer
+    # ensemble et supprime ce mismatch.
+    groups:
+      actions:
+        patterns:
+          - "*"
 
   # Surveille la seule dev-dep du dépôt : la CLI dsoxlab, tirée de PyPI.
   # Le reste du pyproject.toml est vide (package = false, dependencies = []) :
