@@ -1,3 +1,15 @@
 # Default owner for everything in the repository. Pull requests require a
-# review from a code owner (enforced by branch protection on `main`).
+# review from a code owner (enforced by the ruleset on `main`).
 * @stephrobert
+
+# The CI/CD chain is the most sensitive surface in the repo: any change here can
+# exfiltrate secrets or weaken every other gate. Owned explicitly so a review is
+# always required, even if the default owner above is ever broadened.
+/.github/workflows/ @stephrobert
+/.github/dependabot.yml @stephrobert
+/.plumber.yaml @stephrobert
+/.poutine.yml @stephrobert
+/.pre-commit-config.yaml @stephrobert
+
+# Encrypted trainer solutions (ansible-vault): a leak here defeats every lab.
+/solution/ @stephrobert
