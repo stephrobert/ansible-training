@@ -44,7 +44,7 @@ def test_github_workflow_pins_actions_by_sha():
 
 def test_github_workflow_matrix_has_two_ansible_versions():
     data = yaml.safe_load(GH_WORKFLOW.read_text())
-    sanity_job = data["jobs"].get("sanity") or list(data["jobs"].values())[0]
+    sanity_job = data["jobs"].get("sanity") or next(iter(data["jobs"].values()))
     matrix = sanity_job.get("strategy", {}).get("matrix", {})
     ansible_versions = matrix.get("ansible", [])
     assert len(ansible_versions) >= 2, (
@@ -54,7 +54,7 @@ def test_github_workflow_matrix_has_two_ansible_versions():
 
 def test_github_workflow_matrix_has_two_python_versions():
     data = yaml.safe_load(GH_WORKFLOW.read_text())
-    sanity_job = data["jobs"].get("sanity") or list(data["jobs"].values())[0]
+    sanity_job = data["jobs"].get("sanity") or next(iter(data["jobs"].values()))
     python_versions = sanity_job.get("strategy", {}).get("matrix", {}).get("python", [])
     assert len(python_versions) >= 2, (
         f"La matrice doit contenir ≥2 versions de Python, vu : {python_versions}"

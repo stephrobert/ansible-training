@@ -85,6 +85,7 @@ def test_invalid_choice_makes_play_fail():
         capture_output=True,
         text=True,
         env=env,
+        check=False,
     )
     # On attend un échec (rc != 0) avec le message de validation
     assert result.returncode != 0, "argument_specs aurait dû rejeter la valeur invalide"

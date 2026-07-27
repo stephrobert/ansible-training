@@ -105,6 +105,7 @@ def _converge(_meta_dependencies):
         capture_output=True,
         text=True,
         env=env,
+        check=False,
     )
     if result.returncode != 0:
         raise RuntimeError(

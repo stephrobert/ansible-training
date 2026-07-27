@@ -57,6 +57,7 @@ def test_pattern_ne_cible_que_les_vms_du_lab():
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
+        check=False,
     )
     assert res.returncode == 0, (
         f"`ansible {PATTERN} --list-hosts` a échoué :\n{res.stderr}"

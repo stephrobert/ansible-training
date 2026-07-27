@@ -374,6 +374,7 @@ def _protect_lab_tree(request, lab_root: Path) -> None:
     res = subprocess.run(
         ["git", "ls-files", "-z", "--", str(lab_root)],
         cwd=REPO_ROOT, capture_output=True,
+        check=False,
     )
     if res.returncode != 0:
         return  # hors dépôt git : rien à protéger
@@ -463,8 +464,14 @@ def _lab_key(lab_root: Path) -> str:
 
 
 def _run(cmd, **kwargs):
-    """Exécute une commande, lève en cas d'échec avec stdout/stderr lisibles."""
-    result = subprocess.run(cmd, capture_output=True, text=True, **kwargs)
+    """Exécute une commande, lève en cas d'échec avec stdout/stderr lisibles.
+
+    Ne pas lui passer `check` : c'est cette fonction qui décide de lever, et
+    son message vaut mieux que le `CalledProcessError` de subprocess, qui perd
+    stdout et stderr. Un `check=` dans les kwargs lève un TypeError immédiat,
+    ce qui est le bon moment pour l'apprendre.
+    """
+    result = subprocess.run(cmd, capture_output=True, text=True, **kwargs, check=False)
     if result.returncode != 0:
         raise RuntimeError(
             f"Commande échouée (exit {result.returncode}) : {' '.join(cmd)}\n"
@@ -534,6 +541,7 @@ def _domain_disks(domain: str) -> list[str]:
     res = subprocess.run(
         ["sudo", "virsh", "domblklist", domain, "--details"],
         capture_output=True, text=True,
+        check=False,
     )
     disks: list[str] = []
     for line in res.stdout.splitlines():
@@ -571,6 +579,7 @@ def _domain_uuid(fqdn: str) -> str | None:
     """UUID du domaine libvirt tel qu'il existe MAINTENANT, ou None."""
     res = subprocess.run(
         ["sudo", "virsh", "domuuid", fqdn], capture_output=True, text=True,
+        check=False,
     )
     return res.stdout.strip() or None
 
@@ -580,6 +589,7 @@ def _saved_image_uuid(path: str) -> str | None:
     res = subprocess.run(
         ["sudo", "virsh", "save-image-dumpxml", path],
         capture_output=True, text=True,
+        check=False,
     )
     if res.returncode != 0:
         return None
@@ -641,6 +651,7 @@ def _wait_ssh(fqdns: list[str], timeout: int = 240) -> None:
                  "-o", "BatchMode=yes", fqdn,
                  "systemctl is-system-running 2>/dev/null || true"],
                 capture_output=True, text=True,
+                check=False,
             )
             if probe.stdout.strip() in ("running", "degraded"):
                 break
@@ -658,7 +669,7 @@ def snapshot_base(fqdns: list[str]) -> None:
     neuf pour que l'état figé parte propre).
     """
     for fqdn in fqdns:
-        subprocess.run(["sudo", "virsh", "destroy", fqdn], capture_output=True)
+        subprocess.run(["sudo", "virsh", "destroy", fqdn], capture_output=True, check=False)
         for disk in _domain_disks(fqdn):
             base = _base_path(disk)
             if not Path(base).exists():
@@ -706,7 +717,7 @@ def snapshot_reset(fqdns: list[str]) -> bool:
             and _golden_is_usable(fqdn, mem)
         ):
             reset_any = True
-            subprocess.run(["sudo", "virsh", "destroy", fqdn], capture_output=True)
+            subprocess.run(["sudo", "virsh", "destroy", fqdn], capture_output=True, check=False)
             for disk in disks:
                 tmp = disk + ".new"
                 _run(["sudo", "cp", disk + ".postboot", tmp])
@@ -719,7 +730,7 @@ def snapshot_reset(fqdns: list[str]) -> bool:
         if not all(Path(b).exists() for _, b in pairs):
             continue
         reset_any = True
-        subprocess.run(["sudo", "virsh", "destroy", fqdn], capture_output=True)
+        subprocess.run(["sudo", "virsh", "destroy", fqdn], capture_output=True, check=False)
         for disk, base in pairs:
             tmp = disk + ".new"
             _run(["sudo", "qemu-img", "create", "-f", "qcow2", "-F", "qcow2",
@@ -766,6 +777,7 @@ def _resync_clocks(fqdns: list[str]) -> None:
              fqdn, f"sudo -n date -s @{int(time.time())}"],
             capture_output=True,
             timeout=30,
+            check=False,
         )
 
 

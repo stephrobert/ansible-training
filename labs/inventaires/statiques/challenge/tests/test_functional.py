@@ -41,6 +41,7 @@ def _inventory_list():
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
+        check=False,
     )
     assert res.returncode == 0, (
         "ansible-inventory n'a pas su lire l'inventaire du lab :\n"
@@ -56,6 +57,7 @@ def _inventory_host(host):
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
+        check=False,
     )
     assert res.returncode == 0, (
         f"ansible-inventory --host {host} a échoué :\n"
@@ -72,6 +74,7 @@ def _ping(pattern):
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
+        check=False,
     )
 
 
