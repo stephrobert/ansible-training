@@ -2,7 +2,7 @@
 
 import pytest
 
-from conftest import lab_host, assert_idempotent
+from conftest import assert_idempotent, lab_host
 
 TARGET_HOST = "db1.lab"
 
@@ -73,7 +73,6 @@ def test_default_port_80_ALSO_open(host):
     Ce test ne fait que documenter que 8080 est en plus de la config existante.
     """
     # Ce test peut être skip — il documente juste qu'on n'a pas FERMÉ le 80.
-    pass
 
 
 def test_solution_idempotente():

@@ -13,8 +13,16 @@ import pytest
 import yaml
 
 from conftest import (
-    REPO_ROOT, lab_host, lab_playbook, lab_solution_text, lab_inventory_args,
-    assert_idempotent, reboot_and_wait, replay_solution, _EXTRA_ARGS, _roles_path,
+    _EXTRA_ARGS,
+    REPO_ROOT,
+    _roles_path,
+    assert_idempotent,
+    lab_host,
+    lab_inventory_args,
+    lab_playbook,
+    lab_solution_text,
+    reboot_and_wait,
+    replay_solution,
 )
 
 _LAB_ROOT = REPO_ROOT / "labs" / "rhce" / "mock-ex294"
@@ -1089,7 +1097,7 @@ def test_19b_un_module_de_la_collection_a_ete_utilise(db1):
         "Le fichier INI produit par community.general.ini_file doit porter la "
         f"section [collections] (tâche 19).\nContenu : {contenu.strip()[:200]}"
     )
-    assert re.search(r"^\s*installed\s*=\s*community\.general\s*$", contenu, re.M), (
+    assert re.search(r"^\s*installed\s*=\s*community\.general\s*$", contenu, re.MULTILINE), (
         "La section [collections] doit contenir « installed = community.general "
         "», la clé que community.general.ini_file a écrite depuis la collection "
         f"installée.\nContenu : {contenu.strip()[:200]}"

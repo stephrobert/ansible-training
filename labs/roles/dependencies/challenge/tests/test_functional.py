@@ -18,10 +18,10 @@ import yaml
 # labs/ (un cran trop bas), donc un cwd sans ansible.cfg (ni inventaire, ni clé).
 from conftest import (
     REPO_ROOT,
+    assert_idempotent,
     lab_host,
     lab_playbook,
     lab_solution_text,
-    assert_idempotent,
 )
 
 # Ne JAMAIS poser LAB_NO_REPLAY ici : `os.environ[...]` au niveau module

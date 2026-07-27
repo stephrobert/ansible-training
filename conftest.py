@@ -31,6 +31,7 @@ import time
 from pathlib import Path
 
 import pytest
+
 # testinfra n'est importé que dans lab_host(), à l'usage. Il ne sert qu'aux
 # labs vm, alors qu'un import en tête de fichier casse le chargement de ce
 # conftest pour TOUS les tests du dépôt, y compris les vérificateurs de
@@ -786,6 +787,7 @@ def _lab_groups_inventory(lab_root: Path) -> Path:
     - `lab_<role>`: un par entrée de `roles`.
     """
     import json
+
     import yaml as _yaml
 
     lab_yaml = lab_root / "lab.yaml"

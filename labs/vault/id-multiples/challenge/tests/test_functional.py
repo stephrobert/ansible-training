@@ -1,7 +1,8 @@
 """Tests lab 79 : vault-id multiples."""
 
 import pytest
-from conftest import lab_host, assert_idempotent
+
+from conftest import assert_idempotent, lab_host
 
 
 @pytest.fixture(scope="module")

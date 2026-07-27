@@ -4,11 +4,12 @@ Valide la structure générée par l'apprenant : galaxy.yml conforme,
 module Python avec DOCUMENTATION/EXAMPLES/RETURN, tarball buildé.
 """
 
-import re
 import json
+import re
 import tarfile
-import yaml
 from pathlib import Path
+
+import yaml
 
 LAB_DIR = Path(__file__).resolve().parents[2]
 CHALLENGE_DIR = LAB_DIR / "challenge"

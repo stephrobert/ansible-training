@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import lab_host, assert_idempotent, lab_artifact
+from conftest import assert_idempotent, lab_artifact, lab_host
 
 TARGET_HOST = "db1.lab"
 RESULT_FILE = "/tmp/db1-app.conf"

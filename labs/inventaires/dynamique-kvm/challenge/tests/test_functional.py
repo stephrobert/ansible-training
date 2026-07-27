@@ -4,7 +4,7 @@ import subprocess
 
 import pytest
 
-from conftest import REPO_ROOT, lab_host, assert_idempotent
+from conftest import REPO_ROOT, assert_idempotent, lab_host
 
 # Les 4 VMs du lab, nommées comme le domaine libvirt (`virsh list --all`).
 # C'est aussi le nom que remonte `inventory_hostname: name`, et celui du bloc

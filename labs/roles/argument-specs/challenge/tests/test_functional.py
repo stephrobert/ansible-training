@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import lab_host, lab_playbook, assert_idempotent, REPO_ROOT
+from conftest import REPO_ROOT, assert_idempotent, lab_host, lab_playbook
 
 LAB_ROOT = Path(__file__).resolve().parents[2]
 TARGET_HOST = "db1.lab"

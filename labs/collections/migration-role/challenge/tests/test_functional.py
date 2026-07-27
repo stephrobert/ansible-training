@@ -1,13 +1,12 @@
 """Tests pytest+testinfra pour le challenge lab 97 — migration rôle → collection."""
 
 import re
-
-import yaml
 from pathlib import Path
 
 import pytest
+import yaml
 
-from conftest import lab_host, assert_idempotent
+from conftest import assert_idempotent, lab_host
 
 LAB_DIR = Path(__file__).resolve().parents[2]
 CHALLENGE_DIR = LAB_DIR / "challenge"
@@ -110,7 +109,7 @@ def test_proof_file_mode(host):
 def test_proof_file_contains_new_fqcn_result(host):
     """Le fichier doit prouver que le module a tourné via le nouveau FQCN."""
     content = host.file(RESULT_FILE).content_string
-    assert re.search(r"^new:\s*lab97-migrated-OK\s*$", content, re.M), (
+    assert re.search(r"^new:\s*lab97-migrated-OK\s*$", content, re.MULTILINE), (
         "Le fichier doit porter une ligne `new: lab97-migrated-OK`, sortie du "
         f"module appelé par son FQCN complet. Vu : {content[:200]!r}"
     )
@@ -126,7 +125,7 @@ def test_proof_file_prouve_que_l_ancien_nom_marche(host):
     « couldn't resolve module/action » et ce fichier n'existerait pas.
     """
     content = host.file(RESULT_FILE).content_string
-    assert re.search(r"^legacy:\s*lab97-migrated-OK\s*$", content, re.M), (
+    assert re.search(r"^legacy:\s*lab97-migrated-OK\s*$", content, re.MULTILINE), (
         "Le fichier doit porter une ligne `legacy: lab97-migrated-OK` : la "
         "preuve qu'un appel à l'ANCIEN nom a bien été servi par la "
         f"redirection. Vu : {content[:200]!r}"

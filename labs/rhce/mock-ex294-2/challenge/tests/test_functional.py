@@ -19,8 +19,16 @@ import pytest
 import yaml
 
 from conftest import (
-    REPO_ROOT, lab_host, lab_playbook, lab_solution_text, lab_inventory_args,
-    assert_idempotent, reboot_and_wait, replay_solution, _EXTRA_ARGS, _roles_path,
+    _EXTRA_ARGS,
+    REPO_ROOT,
+    _roles_path,
+    assert_idempotent,
+    lab_host,
+    lab_inventory_args,
+    lab_playbook,
+    lab_solution_text,
+    reboot_and_wait,
+    replay_solution,
 )
 
 _LAB_ROOT = REPO_ROOT / "labs" / "rhce" / "mock-ex294-2"

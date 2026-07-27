@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import lab_host, lab_script, REPO_ROOT
+from conftest import REPO_ROOT, lab_host, lab_script
 
 LAB_ROOT = Path(__file__).resolve().parents[2]
 REPO_PULL = LAB_ROOT / "repo-pull"

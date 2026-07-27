@@ -13,7 +13,7 @@ On prouve l'ÉTAT, pas la frappe :
 
 import pytest
 
-from conftest import lab_host, assert_idempotent
+from conftest import assert_idempotent, lab_host
 
 TARGET_HOST = "db1.lab"
 DOC_PROOF = "/tmp/lab-navigator-doc.txt"

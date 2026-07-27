@@ -4,7 +4,7 @@ Tests pytest+testinfra pour le challenge "Handlers" (nginx avec deux handlers).
 
 import pytest
 
-from conftest import lab_host, assert_idempotent
+from conftest import assert_idempotent, lab_host
 
 TARGET_HOST = "db1.lab"
 NGINX_CONF = "/etc/nginx/nginx.conf"

@@ -2,7 +2,7 @@
 
 import pytest
 
-from conftest import lab_host, assert_idempotent
+from conftest import assert_idempotent, lab_host
 
 TARGET_HOST = "db1.lab"
 RESULT_FILE = "/tmp/filtres-avances.txt"

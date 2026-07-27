@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from conftest import lab_host, assert_idempotent
+from conftest import assert_idempotent, lab_host
 
 TARGET_HOST = "db1.lab"
 SUMMARY_FILE = "/tmp/facts-summary.txt"

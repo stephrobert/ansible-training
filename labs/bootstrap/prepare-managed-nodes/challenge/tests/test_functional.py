@@ -16,8 +16,7 @@ import re
 
 import pytest
 
-from conftest import lab_host, assert_idempotent
-
+from conftest import assert_idempotent, lab_host
 
 # Hôtes managés (correspondent au groupe `rhce_lab` de l'inventaire)
 MANAGED_NODES = ["web1.lab", "web2.lab", "db1.lab"]
@@ -77,7 +76,7 @@ def test_etc_hosts_contains_all_lab_nodes(host, adresses_reelles):
     for node, ip in adresses_reelles.items():
         court = node.split(".")[0]
         attendu = rf"^{re.escape(ip)}\s+.*\b{re.escape(court)}\b"
-        assert re.search(attendu, contenu, re.M), (
+        assert re.search(attendu, contenu, re.MULTILINE), (
             f"/etc/hosts de {host.backend.hostname} ne mappe pas {node} sur son "
             f"adresse réelle {ip}.\nContenu :\n{contenu}"
         )

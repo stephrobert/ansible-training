@@ -9,7 +9,7 @@ import re
 
 import pytest
 
-from conftest import lab_host, assert_idempotent, reboot_and_wait
+from conftest import assert_idempotent, lab_host, reboot_and_wait
 
 TARGET_HOST = "db1.lab"
 DEVICE = "/dev/vdb"

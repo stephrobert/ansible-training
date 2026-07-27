@@ -10,7 +10,7 @@ Lancement (depuis la racine du repo) :
 
 import pytest
 
-from conftest import lab_host, assert_idempotent
+from conftest import assert_idempotent, lab_host
 
 TARGET_HOST = "db1.lab"
 HTTP_PORT = 8888

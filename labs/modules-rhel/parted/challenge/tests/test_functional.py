@@ -7,7 +7,7 @@ disque à zéro : lancez le lab via dsoxlab avant de jouer votre solution.
 
 import pytest
 
-from conftest import lab_host, assert_idempotent
+from conftest import assert_idempotent, lab_host
 
 TARGET_HOST = "db1.lab"
 DEVICE = "/dev/vdb"

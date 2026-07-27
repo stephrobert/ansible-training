@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import lab_host, assert_idempotent
+from conftest import assert_idempotent, lab_host
 
 TARGET_HOST = "db1.lab"
 RESULT_FILE = "/tmp/lab03a-config.txt"
@@ -110,14 +110,14 @@ def test_proof_file_contains_config_keys(host):
 def _dumped(host, key):
     """Ligne du dump pour une clé, ou None. Format : CLÉ(source) = valeur."""
     content = host.file(RESULT_FILE).content_string
-    m = re.search(rf"^{re.escape(key)}\(([^)]*)\)\s*=\s*(.+)$", content, re.M)
+    m = re.search(rf"^{re.escape(key)}\(([^)]*)\)\s*=\s*(.+)$", content, re.MULTILINE)
     return (m.group(1), m.group(2).strip()) if m else None
 
 
 def test_dump_prouve_que_le_cfg_du_lab_est_actif(host):
     """CONFIG_FILE du dump doit désigner l'ansible.cfg du lab."""
     content = host.file(RESULT_FILE).content_string
-    m = re.search(r"^CONFIG_FILE\(\)\s*=\s*(.+)$", content, re.M)
+    m = re.search(r"^CONFIG_FILE\(\)\s*=\s*(.+)$", content, re.MULTILINE)
     assert m, "Le dump ne contient pas CONFIG_FILE : ansible-config a-t-il tourné ?"
     assert m.group(1).strip().endswith(
         "labs/decouvrir/configuration-ansible/ansible.cfg"

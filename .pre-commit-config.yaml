@@ -56,7 +56,12 @@ repos:
     hooks:
       - id: ruff
         name: ruff (lint lab python)
-        entry: uvx ruff check --fix
+        # Version ÉPINGLÉE, et ce n'est pas du zèle : `uvx ruff` sans contrainte
+        # prend la dernière version publiée. Le poste garde la sienne en cache,
+        # la CI télécharge la neuve, et le jour où ruff élargit ses règles par
+        # défaut (0.16.0 l'a fait), la CI vire au rouge sur du code que personne
+        # n'a touché — pendant que le hook local reste vert. Vécu sur la PR #53.
+        entry: uvx ruff@0.16.0 check --fix
         language: system
         types_or: [python, pyi]
         require_serial: true

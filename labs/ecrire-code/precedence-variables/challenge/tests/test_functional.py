@@ -15,7 +15,7 @@ Deux duels sont vérifiés ici, et il faut les deux :
 
 import pytest
 
-from conftest import lab_host, assert_idempotent
+from conftest import assert_idempotent, lab_host
 
 TARGET_HOST = "db1.lab"
 RESULT_FILE = "/tmp/precedence-result.txt"
