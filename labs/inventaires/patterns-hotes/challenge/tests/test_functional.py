@@ -61,6 +61,7 @@ def _run_playbook(limit_pattern):
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
+        check=False,
     )
     if result.returncode != 0:
         raise RuntimeError(

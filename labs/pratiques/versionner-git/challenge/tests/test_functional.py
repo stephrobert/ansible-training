@@ -34,6 +34,7 @@ def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:
         ["git", "-C", str(repo), *args],
         capture_output=True,
         text=True,
+        check=False,
     )
 
 
@@ -54,6 +55,7 @@ def run_solution() -> subprocess.CompletedProcess:
         capture_output=True,
         text=True,
         timeout=120,
+        check=False,
     )
 
 

@@ -105,7 +105,7 @@ def _lancer_solution(*args_supplementaires):
     cmd += list(args_supplementaires)
     env = os.environ.copy()
     env.update(_roles_path(_LAB_ROOT))
-    return subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, text=True, env=env)
+    return subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, text=True, env=env, check=False)
 
 
 def _recap_de(sortie, hote):
@@ -148,6 +148,7 @@ def _facts_locaux(hote):
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
+        check=False,
     )
     assert res.returncode == 0, (
         f"La collecte de facts a échoué sur {hote} :\n"
@@ -196,6 +197,7 @@ def test_01_inventory_groups(db1, web1):
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
+        check=False,
     )
     assert graph.returncode == 0, (
         "ansible-inventory n'a pas su lire l'inventaire du lab :\n"
@@ -222,6 +224,7 @@ def test_01_inventory_groups(db1, web1):
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
+        check=False,
     )
     assert ping.returncode == 0, (
         "Les 3 hôtes doivent répondre au ping Ansible à travers VOTRE "
@@ -920,7 +923,7 @@ def test_17_les_tags_selectionnent_vraiment_les_taches(db1):
     )
 
     db1.check_output("sh -c 'rm -f /tmp/lab100-tag-*.txt'")
-    for nom, chemin in _MARQUEURS_TAGS.items():
+    for chemin in _MARQUEURS_TAGS.values():
         assert not db1.file(chemin).exists, f"Table rase incomplète : {chemin}"
 
     res = _lancer_solution("--tags", "deploiement")

@@ -50,6 +50,7 @@ def test_solution_script_returns_zero():
         capture_output=True,
         text=True,
         timeout=30,
+        check=False,
     )
     assert result.returncode == 0, (
         f"solution.sh a échoué (exit {result.returncode}).\n"

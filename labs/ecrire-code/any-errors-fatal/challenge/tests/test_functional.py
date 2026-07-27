@@ -55,7 +55,7 @@ def _run_solution(extra_args=None):
     playbook, vault_args = lab_playbook(__file__)
     cmd = ["ansible-playbook", *vault_args, str(playbook)]
     cmd += extra_args or []
-    return subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, text=True)
+    return subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, text=True, check=False)
 
 
 def _step1(host):
