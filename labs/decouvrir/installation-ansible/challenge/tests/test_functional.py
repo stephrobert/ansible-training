@@ -11,7 +11,6 @@ import re
 import subprocess
 from pathlib import Path
 
-
 CHALLENGE_DIR = Path(__file__).resolve().parent.parent
 SOLUTION = CHALLENGE_DIR / "solution.sh"
 

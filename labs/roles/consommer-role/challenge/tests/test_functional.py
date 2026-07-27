@@ -19,7 +19,7 @@ import pytest
 
 # REPO_ROOT vient de conftest : le compter en parents[] depuis ce fichier donnait
 # labs/ (un cran trop bas), donc un cwd sans ansible.cfg (ni inventaire, ni clé).
-from conftest import REPO_ROOT, lab_host, lab_playbook, assert_idempotent
+from conftest import REPO_ROOT, assert_idempotent, lab_host, lab_playbook
 
 # Ce module orchestre lui-même ses runs : le marqueur désactive le replay
 # POUR CE MODULE. Poser os.environ["LAB_NO_REPLAY"] ici le désactivait pour

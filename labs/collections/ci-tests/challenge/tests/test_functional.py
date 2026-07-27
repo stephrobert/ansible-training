@@ -1,9 +1,9 @@
 """Tests structurels lab 96 — pipeline CI collection."""
 
 import re
+from pathlib import Path
 
 import yaml
-from pathlib import Path
 
 LAB_DIR = Path(__file__).resolve().parents[2]
 CHALLENGE_DIR = LAB_DIR / "challenge"

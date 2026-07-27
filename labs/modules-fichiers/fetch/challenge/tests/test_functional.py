@@ -10,7 +10,6 @@ from pathlib import Path
 
 from conftest import assert_idempotent
 
-
 # Le dest fetch est relatif au cwd du playbook ansible-playbook, soit la racine
 # du dépôt. On la déduit de l'emplacement de ce fichier
 # (labs/<section>/<lab>/challenge/tests/) plutôt que de la coder en dur :

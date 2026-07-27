@@ -5,6 +5,24 @@ description = "Lab pédagogique Ansible RHCE EX294 — fournisseur de labs pour 
 requires-python = ">=3.11"
 dependencies = []
 
+[tool.ruff.lint]
+# Sélection EXPLICITE, parce que l'absence de config ne veut pas dire « pas de
+# règles » : elle veut dire « celles que ruff décidera demain ». La 0.16.0 a
+# élargi son jeu par défaut (PL, PERF, RUF, S, B…) et a rougi la CI d'un dépôt
+# que personne n'avait touché.
+#
+# E4/E7/E9 + F : ce que ruff active par défaut, écrit noir sur blanc. Pas `E`
+# entier : il embarque E501 (longueur de ligne), et 96 lignes du catalogue la
+# dépassent — un test qui cite un chemin ou un message d'erreur complet est plus
+# lisible long que coupé. I : imports triés, ce que la 0.16.0 a imposé au
+# catalogue et qu'on garde, c'est lisible.
+#
+# Volontairement dehors : PLW1510 (`subprocess.run` sans `check`). Les tests de
+# labs inspectent le `returncode` ligne suivante — c'est la façon idiomatique
+# d'écrire un test, pas un oubli. Idem PERF102 et RUF015, micro-optimisations
+# sans objet dans du code pédagogique qui doit d'abord se lire.
+select = ["E4", "E7", "E9", "F", "I"]
+
 [tool.pytest.ini_options]
 # Le contrat dsoxlab impose que chaque lab nomme son test challenge/tests/
 # test_functional.py. Les 108 fichiers partagent donc le même basename, dans

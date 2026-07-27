@@ -4,7 +4,7 @@ Tests pytest+testinfra pour le challenge "Tags" (tags always/configuration/never
 
 import pytest
 
-from conftest import lab_host, assert_idempotent
+from conftest import assert_idempotent, lab_host
 
 TARGET_HOST = "db1.lab"
 ALWAYS_FILE = "/tmp/challenge-tag-always.txt"

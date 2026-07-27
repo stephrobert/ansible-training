@@ -1,17 +1,16 @@
 """Tests pytest+testinfra pour le challenge lab 94 — requirements.yml multi-sources."""
 
 import re
+from pathlib import Path
 
 import pytest
 import yaml
 
-from pathlib import Path
-
 from conftest import (
-    lab_host,
     assert_idempotent,
-    lab_solution_text,
+    lab_host,
     lab_playbook,
+    lab_solution_text,
 )
 
 TARGET_HOST = "db1.lab"

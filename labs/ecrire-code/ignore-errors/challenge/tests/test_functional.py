@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from conftest import lab_host, assert_idempotent, lab_solution_text
+from conftest import assert_idempotent, lab_host, lab_solution_text
 
 TARGET_HOST = "db1.lab"
 RESULT_FILE = "/tmp/ignore-after.txt"
@@ -43,7 +43,7 @@ def test_ignore_errors_est_le_mecanisme_employe():
     """
     solution = lab_solution_text(__file__)
 
-    assert re.search(r"^\s*ignore_errors:\s*(true|yes)\b", solution, re.M | re.I), (
+    assert re.search(r"^\s*ignore_errors:\s*(true|yes)\b", solution, re.MULTILINE | re.IGNORECASE), (
         "Aucun `ignore_errors:` dans votre playbook. Le fichier de résultat "
         "peut exister sans lui (par exemple avec `failed_when: false`), mais "
         "ce n'est pas le mécanisme que ce challenge demande : `ignore_errors` "

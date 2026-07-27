@@ -2,7 +2,7 @@
 
 import pytest
 
-from conftest import lab_host, lab_solution_text, assert_idempotent
+from conftest import assert_idempotent, lab_host, lab_solution_text
 
 TARGET_HOST = "db1.lab"
 

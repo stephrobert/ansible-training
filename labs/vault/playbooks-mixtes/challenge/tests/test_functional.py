@@ -1,7 +1,8 @@
 """Tests lab 80 — playbook mixte clair + vault."""
 
 import pytest
-from conftest import lab_host, assert_idempotent
+
+from conftest import assert_idempotent, lab_host
 
 
 @pytest.fixture(scope="module")

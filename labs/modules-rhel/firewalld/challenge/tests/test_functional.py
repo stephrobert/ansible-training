@@ -2,7 +2,7 @@
 
 import pytest
 
-from conftest import lab_host, assert_idempotent, reboot_and_wait
+from conftest import assert_idempotent, lab_host, reboot_and_wait
 
 TARGET_HOST = "web1.lab"
 
