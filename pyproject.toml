@@ -54,8 +54,14 @@ testpaths = ["labs"]
 # variable de conftest.py. Déclarée ici, elle était silencieusement ignorée
 # (« PytestConfigWarning: Unknown config option »), donc les exclusions
 # ci-dessus ne protégeaient de rien. Elle vit désormais dans conftest.py.
+# PAS de "molecule" ici. `norecursedirs` matche un NOM de répertoire à
+# n'importe quelle profondeur : l'entrée visait les scénarios `labs/*/*/molecule/`
+# mais emportait aussi la SECTION `labs/molecule/` — ses 4 labs et leurs 30 tests
+# ne tournaient pas, pendant que la campagne annonçait « 113 labs ». Un lab non
+# joué qu'on croit vert est pire qu'un lab rouge. Les scénarios internes restent
+# exclus par `collect_ignore_glob` du conftest, qui, lui, est ancré sur le chemin.
 norecursedirs = [
-    "molecule", "ansible_collections", "deps", "solution", "*.egg", ".git",
+    "ansible_collections", "deps", "solution", "*.egg", ".git",
 ]
 
 [tool.uv]

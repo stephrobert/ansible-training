@@ -34,5 +34,20 @@ collections:
   - name: containers.podman
     version: ">=1.19.0"
 
+  # Lookups vault_kv2_get / vault_read du lab vault/integration-hashicorp. Elle
+  # manquait ici alors que le lab l'importe : ses tests ne l'ont jamais signalé
+  # parce qu'ils se skippent quand aucun Vault ne répond, et qu'aucun Vault ne
+  # répondait. Le jour où un serveur a écouté sur 8200, le lab s'est exécuté et
+  # a échoué sur « lookup plugin (community.hashi_vault.vault_kv2_get) not
+  # found ». Un skip conditionnel masque une dépendance absente aussi bien qu'il
+  # masque un service absent.
+  - name: community.hashi_vault
+    version: ">=7.0.0"
+
+  # Lookup passbolt du lab vault/integration-passbolt, même famille : le lab
+  # l'importe, elle était installée sur le poste mais déclarée nulle part.
+  - name: anatomicjc.passbolt
+    version: ">=0.0.15"
+
 # Roles Galaxy à installer pour les exemples de la formation
 roles: []

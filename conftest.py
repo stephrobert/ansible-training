@@ -463,6 +463,49 @@ def _lab_key(lab_root: Path) -> str:
     return rel.as_posix()
 
 
+def _start_lab_services(lab_root: Path) -> None:
+    """Monte les services conteneurisés que le lab déclare (`runtime.services`).
+
+    `dsoxlab run` et `dsoxlab check` le font pour l'apprenant, mais la campagne
+    formateur lance pytest directement : sans ce crochet, un lab à service se
+    skippe systématiquement ici, et ses dépendances ne sont jamais exercées.
+    C'est exactement ce qui a laissé `vault/integration-hashicorp` cacher deux
+    dépendances absentes jusqu'à ce qu'un serveur étranger passe sur son port.
+
+    Sans effet pour les 112 autres labs, qui ne déclarent aucun service. Docker
+    injoignable : on ne lève pas, le test du lab se skippera avec son propre
+    message, plus parlant qu'une erreur de fixture.
+    """
+    import yaml as _yaml
+
+    try:
+        from dsoxlab.models.lab import LabDefinition
+        from dsoxlab.runtimes import services as svc
+    except ImportError:
+        return  # dsoxlab non importable : rien à monter, le lab dira pourquoi
+
+    lab_yaml = lab_root / "lab.yaml"
+    if not lab_yaml.is_file():
+        return
+    try:
+        lab = LabDefinition.from_yaml(lab_yaml)
+    except (KeyError, ValueError, _yaml.YAMLError):
+        return  # lab.yaml invalide : ce n'est pas ici qu'on le signale
+    if not lab.runtime.services or not svc.docker_available():
+        return
+
+    for service in lab.runtime.services:
+        svc.start(service, _repo_id())
+
+
+def _repo_id() -> str:
+    """`repo.id` du meta.yml — le namespace des conteneurs de services."""
+    import yaml as _yaml
+
+    meta = _yaml.safe_load((REPO_ROOT / "meta.yml").read_text(encoding="utf-8")) or {}
+    return str((meta.get("repo") or {}).get("id") or REPO_ROOT.name)
+
+
 def _run(cmd, **kwargs):
     """Exécute une commande, lève en cas d'échec avec stdout/stderr lisibles.
 
@@ -932,6 +975,8 @@ def _apply_lab_state(request):
     lab_root = _find_lab_root(test_path)
     if lab_root is None:
         return  # test hors d'un lab
+
+    _start_lab_services(lab_root)
 
     # Isolation par overlay : on reset les hôtes que CE lab utilise (lab.yaml)
     # à leur base AVANT de rejouer setup+solution. Ne reset que le nécessaire,

@@ -10,6 +10,22 @@ based on [Keep a Changelog](https://keepachangelog.com/), and the project follow
 
 ### Added
 
+- **`vault/integration-hashicorp` brings its own server.** The lab declares its
+  Vault under `runtime.services` (dsoxlab ≥ 0.1.38): `dsoxlab run` starts it,
+  waits until it answers (`ready_exec: vault status`), seeds `secret/lab82`
+  (`post_start`), and `dsoxlab clean` stops it. The `setup-vault.sh` the learner
+  had to remember to run is gone — and with it, the lab that silently skipped
+  for whoever forgot.
+
+  It listens on **8201** rather than the default 8200, which is what lets it
+  coexist with another course's Vault — whose mere presence was enough to break
+  this lab.
+
+- **The conftest starts the services a lab declares.** `dsoxlab run` does it for
+  the learner, but the instructor campaign runs pytest directly: without this
+  hook, a lab with a service skips on every campaign and its dependencies are
+  never exercised. No effect on the other 112 labs.
+
 - Bilingual governance (EN/FR): `CONTRIBUTING`, `CODE_OF_CONDUCT`, `SECURITY`,
   `RELEASING`, `CHANGELOG`, aligned with the reference repository
   `linux-dsoxlab-training`.
@@ -32,6 +48,31 @@ based on [Keep a Changelog](https://keepachangelog.com/), and the project follow
 
 ### Fixed
 
+- **The Vault lab now recognises its own server.** Its guard tested "a port
+  answers", which proves nothing on Vault's default port: another course's
+  `dsoxlab-terraform-training-vault` container was listening there, so the
+  module stopped skipping and its four tests failed on
+  `Forbidden: Permission Denied to path ['lab82']`. It now requires both marks
+  of its own server — token accepted and `secret/lab82` present — and skips
+  naming the cause. The check moved from a module-level `pytest.skip` to a
+  fixture: a module skip is evaluated at IMPORT, hence before the conftest has
+  started the service.
+- **`community.hashi_vault` and `anatomicjc.passbolt` declared** in
+  `requirements.yml`, and **`hvac` attached to ansible-core** (`uvx_args` in
+  `mise.toml`), like `libvirt-python`. The labs imported them with nothing
+  declaring them: since their tests skipped for want of a server, the absence
+  was never reported. A conditional skip hides a missing dependency just as well
+  as it hides a missing service.
+- **The 4 labs under `molecule/` were excluded from the campaign.**
+  `norecursedirs = ["molecule", …]` matches a directory *name* at any depth:
+  written for the `labs/*/*/molecule/` scenarios, it took the whole section with
+  it. 30 tests never ran while the script announced "113 labs". Inner scenarios
+  are still excluded by the conftest's path-anchored `collect_ignore_glob`.
+- **`mise run test-all` checks the infrastructure is up** before running
+  anything. The script already required `.vault-pass` and a non-empty catalog,
+  but not the VMs: a destroyed infrastructure showed up as hundreds of
+  connection errors blaming the labs, several minutes in. It now stops within
+  seconds, with the way out.
 - **`vault/dans-roles`**: the reference solution never created
   `roles/secured_app/vars/main.yml`, the encrypted file the challenge asks the
   learner to write. It is gitignored on purpose (shipping it would hand out the
