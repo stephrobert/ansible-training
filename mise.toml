@@ -37,7 +37,9 @@
 # Déclarer la collection ne suffit pas — sans hvac, le lookup échoue sur
 # « Failed to import the required Python library (hvac) », en désignant
 # l'interpréteur d'ansible-core, pas le poste.
-"pipx:ansible-core" = { version = "2.18", uvx_args = "--with libvirt-python --with hvac" }
+# py-passbolt : même histoire que hvac, pour le lookup de
+# anatomicjc.passbolt (vault/integration-passbolt).
+"pipx:ansible-core" = { version = "2.18", uvx_args = "--with libvirt-python --with hvac --with py-passbolt --with standard-imghdr" }
 
 # Chaîne qualité. Le profil production d'ansible-lint est ce que la CI exige :
 # une montée de version change ce qui passe, d'où le pin sur la mineure.

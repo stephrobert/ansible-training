@@ -45,11 +45,11 @@ cd $ANSIBLE_TRAINING/labs/vault/integration-passbolt/
 # Install the Passbolt collection
 ansible-galaxy collection install anatomicjc.passbolt
 
-# Install py-passbolt (Python client)
-pipx inject ansible py-passbolt
+# py-passbolt travels with ansible-core (mise.toml), nothing to inject
+mise install
 
-# Start local Passbolt
-./setup-passbolt.sh
+# Starting Passbolt is dsoxlab's job
+dsoxlab run vault-integration-passbolt
 ```
 
 ## ⚙️ Target tree
@@ -57,7 +57,7 @@ pipx inject ansible py-passbolt
 ```text
 labs/vault/integration-passbolt/
 ├── README.md
-├── setup-passbolt.sh                ← starts Passbolt + MariaDB in containers
+├── lab.yaml                         ← declares both services (MariaDB + Passbolt)
 ├── .passbolt-private.asc            ← your exported private key (gitignored)
 └── challenge/
     ├── README.md                    ← challenge contract
@@ -69,19 +69,26 @@ labs/vault/integration-passbolt/
 ## 📚 Exercise 1 — Start local Passbolt
 
 ```bash
-./setup-passbolt.sh
+dsoxlab run vault-integration-passbolt
 ```
 
-Typical output:
+The lab declares both containers; dsoxlab starts them in order, waits for each
+to actually answer, and creates the admin account:
 
-```text
-[setup-passbolt] Création du réseau passbolt-lab83...
-[setup-passbolt] Démarrage MariaDB...
-[setup-passbolt] Démarrage Passbolt CE...
-[setup-passbolt] Initialisation admin user...
-
-[setup-passbolt] OK — Passbolt disponible sur https://localhost:8443
+```yaml
+services:
+  - name: db
+    image: mariadb:11.4
+    ready_exec: ["healthcheck.sh", "--connect"]   # ask the server, don't guess
+  - name: app
+    image: passbolt/passbolt:latest-ce
+    ports: ["8443:443"]
+    env:
+      DATASOURCES_DEFAULT_HOST: db                # by name: services share a network
 ```
+
+Passbolt is then on `https://localhost:8443` (self-signed certificate), and the
+registration link is printed by the `post_start` command.
 
 🔍 **Observation**: Passbolt = **2 containers** (DB + app). An architecture close to a classic Rails/Django app. No HA cluster included in the CE version.
 
@@ -105,7 +112,7 @@ For Ansible to use Passbolt, we need the private key of a dedicated user (recomm
 
 ```bash
 # Create a dedicated Ansible user
-podman exec passbolt-app-lab83 su -m -c \
+docker exec dsoxlab-ansible-training-app su -m -c \
   "/usr/share/php/passbolt/bin/cake passbolt register_user \
     -u ansible@lab83.local -f Ansible -l Bot -r user" www-data
 
