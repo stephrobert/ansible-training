@@ -17,7 +17,7 @@ to follow: nothing passes "empty".
 
 ```bash
 cd labs/vault/integration-hashicorp/
-./setup-vault.sh                          # dev Vault on 127.0.0.1:8200 (podman required)
+dsoxlab run vault-integration-hashicorp   # dev Vault on 127.0.0.1:8201, secrets included
 ansible-galaxy collection install community.hashi_vault
 pipx inject ansible hvac                  # Python Vault client
 ```
@@ -102,14 +102,14 @@ in the proof or in your YAML, and idempotence on the second run.
 ## 🧹 Reset
 
 ```bash
-podman stop vault-lab82
+dsoxlab clean vault-integration-hashicorp
 rm -f /tmp/lab82-vault-lookup.txt
 ```
 
 ## 💡 Going further
 
-- **OpenBao**: `podman stop vault-lab82 && IMAGE=openbao/openbao:latest
-  ./setup-vault.sh`, then run the playbook and tests again: nothing to change,
+- **OpenBao**: `dsoxlab clean vault-integration-hashicorp && IMAGE=openbao/openbao:latest
+  the `image:` in lab.yaml`, then run the playbook and tests again: nothing to change,
   the API is compatible.
 - **AppRole**: replace the token with `auth_method='approle'` with
   `role_id`/`secret_id` (cf. the lab README, exercise 4).

@@ -45,6 +45,37 @@ if [[ ! -f .vault-pass ]]; then
     exit 1
 fi
 
+# L'infra doit être DEBOUT : ce script joue les labs, il ne les provisionne pas.
+# Le conftest fait de l'isolation (snapshot_reset restaure des VM existantes),
+# pas de la création. Sans ce contrôle, une infra détruite ne se voit qu'au bout
+# de plusieurs minutes, sous la forme de centaines d'erreurs de connexion qui
+# désignent les labs alors que le fautif est l'hyperviseur. Vécu le 2026-07-28 :
+# 184 erreurs sur 237 tests, toutes « pas de VM ».
+mapfile -t LAB_HOSTS < <(
+    python3 -c "
+import sys, yaml
+meta = yaml.safe_load(open('meta.yml'))
+for h in (meta.get('infra') or {}).get('hosts') or []:
+    print(h['name'])
+" 2>/dev/null
+)
+if [[ "${#LAB_HOSTS[@]}" -gt 0 ]]; then
+    manquants=()
+    for host in "${LAB_HOSTS[@]}"; do
+        etat="$(virsh -c qemu:///system domstate "${host}" 2>/dev/null || true)"
+        [[ "${etat}" == "running" ]] || manquants+=("${host} (${etat:-domaine absent})")
+    done
+    if [[ "${#manquants[@]}" -gt 0 ]]; then
+        fail "infrastructure incomplète, les tests ne prouveraient rien :"
+        printf '       - %s\n' "${manquants[@]}" >&2
+        echo "" >&2
+        echo "       Monte-la d'abord :" >&2
+        echo "         mise run provision   # crée les VM" >&2
+        echo "         mise run rebase      # fige leur état de base (isolation)" >&2
+        exit 1
+    fi
+fi
+
 if pytest labs/ "$@"; then
     ok "tous les labs passent"
 else

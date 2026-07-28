@@ -20,6 +20,33 @@ certification_tags:
 runtime:
   type: shell
   workdir: challenge/work
+  # Le serveur Vault du lab, monté par dsoxlab (`run`/`check`) et arrêté par
+  # `clean`. Il remplace le setup-vault.sh que l'apprenant devait lancer à la
+  # main : un lab qui dépend d'un geste manuel se skippe en silence chez qui ne
+  # l'a pas fait, et ses dépendances ne sont alors jamais exercées.
+  services:
+    - name: vault
+      image: hashicorp/vault:1.21
+      # 8201 côté hôte, pas 8200 : le port par défaut de Vault est occupé dès
+      # qu'une autre formation monte le sien, et le lab dialoguait alors avec le
+      # serveur du voisin — token refusé, quatre tests rouges pour une cause
+      # étrangère au lab.
+      ports: ["8201:8200"]
+      env:
+        VAULT_DEV_ROOT_TOKEN_ID: lab82-root
+        VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+        # Pour le CLI *dans* le conteneur (ready_exec, post_start) : sans elles
+        # il vise https://127.0.0.1:8200 et échoue sur le TLS.
+        VAULT_ADDR: http://127.0.0.1:8200
+        VAULT_TOKEN: lab82-root
+      run_args: ["--cap-add=IPC_LOCK"]
+      ready_tcp: 8201
+      # La vraie preuve de disponibilité : sur un port publié, ready_tcp répond
+      # dès le `run` (le proxy Docker accepte avant que Vault écoute).
+      ready_exec: vault status
+      ready_timeout: 60
+      post_start:
+        - vault kv put secret/lab82 db_password=VaultPassLab82 api_key=vault_api_xyz_lab82
 validation:
   functional: true
   security: false

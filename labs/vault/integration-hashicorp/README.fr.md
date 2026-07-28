@@ -39,25 +39,27 @@
 ```bash
 cd $ANSIBLE_TRAINING/labs/vault/integration-hashicorp/
 
-# Installer hvac (client Python Vault)
-pipx inject ansible hvac
+# hvac et la collection sont déclarés par le dépôt : rien à installer à la main
+mise install                       # hvac voyage avec ansible-core (mise.toml)
+ansible-galaxy collection install -r $ANSIBLE_TRAINING/requirements.yml
 
-# Installer la collection
-ansible-galaxy collection install community.hashi_vault
-
-# Démarrer Vault en mode dev
-./setup-vault.sh                   # HashiCorp Vault par défaut
-
-# Pour OpenBao :
-IMAGE=openbao/openbao:latest ./setup-vault.sh
+# Démarrer Vault : c'est dsoxlab qui s'en charge
+dsoxlab run vault-integration-hashicorp
 ```
+
+Le serveur est déclaré dans `runtime.services` du `lab.yaml` : `dsoxlab run` le
+démarre, attend qu'il réponde, y pose `secret/lab82`, et `dsoxlab clean`
+l'arrête. Il écoute sur **8201**, pas sur le 8200 par défaut, pour cohabiter
+avec un autre Vault déjà présent sur le poste.
+
+Pour OpenBao, changez l'`image:` du service dans le `lab.yaml`.
 
 ## ⚙️ Arborescence cible
 
 ```text
 labs/vault/integration-hashicorp/
 ├── README.md
-├── setup-vault.sh                ← démarre Vault dev en container + pose les secrets
+├── lab.yaml                      ← déclare le service Vault (image, port, secrets)
 └── challenge/
     ├── README.md                 ← contrat du challenge
     ├── solution.yml              ← à écrire : lookup vault_kv2_get + preuve
@@ -68,32 +70,34 @@ labs/vault/integration-hashicorp/
 ## 📚 Exercice 1 — Démarrer Vault local
 
 ```bash
-./setup-vault.sh
+dsoxlab run vault-integration-hashicorp
 ```
 
-Sortie :
+Le lab déclare son serveur, dsoxlab l'exécute :
 
-```text
-[setup-vault] Lancement de hashicorp/vault:latest...
-[setup-vault] OK — Vault disponible sur http://localhost:8200
-  Token : lab82-root
-  Path  : secret/lab82
-
-Variables d'env à exporter pour le playbook :
-  export VAULT_ADDR=http://localhost:8200
-  export VAULT_TOKEN=lab82-root
+```yaml
+services:
+  - name: vault
+    image: hashicorp/vault:1.21
+    ports: ["8201:8200"]          # 8201 côté hôte : le 8200 est souvent pris
+    ready_exec: vault status      # attendre qu'il RÉPONDE, pas que le port ouvre
+    post_start:
+      - vault kv put secret/lab82 db_password=… api_key=…
 ```
+
+À l'issue : `http://127.0.0.1:8201`, token `lab82-root`, secrets dans
+`secret/lab82`. Rien à exporter, le playbook a les mêmes valeurs par défaut.
 
 🔍 **Observation** : Vault dev mode = **non sécurisé** (pas de TLS, pas de seal, root token statique). **Strictement** pour développement local. En prod : Vault HA + TLS + auto-unseal.
 
 ## 📚 Exercice 2 — Stocker des secrets dans Vault
 
 ```bash
-# Le script setup-vault.sh a déjà posé secret/lab82
-podman exec vault-lab82 vault kv get secret/lab82
+# Le post_start du service a déjà posé secret/lab82
+docker exec dsoxlab-ansible-training-vault vault kv get secret/lab82
 
 # Pour ajouter un secret manuellement :
-podman exec -e VAULT_TOKEN=lab82-root vault-lab82 \
+docker exec -e VAULT_TOKEN=lab82-root dsoxlab-ansible-training-vault \
   vault kv put secret/lab82-app \
     db_url=postgres://... \
     db_password=DemoPass123
@@ -132,10 +136,10 @@ En prod, **on n'utilise pas le token root**. Pattern recommandé : **AppRole**.
 
 ```bash
 # Activer AppRole
-podman exec -e VAULT_TOKEN=lab82-root vault-lab82 vault auth enable approle
+docker exec -e VAULT_TOKEN=lab82-root dsoxlab-ansible-training-vault vault auth enable approle
 
 # Créer une policy "ansible-readonly"
-podman exec -e VAULT_TOKEN=lab82-root vault-lab82 sh -c '
+docker exec -e VAULT_TOKEN=lab82-root dsoxlab-ansible-training-vault sh -c '
   cat << EOF | vault policy write ansible-readonly -
 path "secret/data/lab82" {
   capabilities = ["read"]
@@ -144,16 +148,16 @@ EOF
 '
 
 # Créer un AppRole
-podman exec -e VAULT_TOKEN=lab82-root vault-lab82 \
+docker exec -e VAULT_TOKEN=lab82-root dsoxlab-ansible-training-vault \
   vault write auth/approle/role/ansible-app \
     token_policies="ansible-readonly" \
     token_ttl=1h \
     token_max_ttl=4h
 
 # Récupérer role_id et secret_id
-ROLE_ID=$(podman exec -e VAULT_TOKEN=lab82-root vault-lab82 \
+ROLE_ID=$(docker exec -e VAULT_TOKEN=lab82-root dsoxlab-ansible-training-vault \
   vault read -field=role_id auth/approle/role/ansible-app/role-id)
-SECRET_ID=$(podman exec -e VAULT_TOKEN=lab82-root vault-lab82 \
+SECRET_ID=$(docker exec -e VAULT_TOKEN=lab82-root dsoxlab-ansible-training-vault \
   vault write -field=secret_id -f auth/approle/role/ansible-app/secret-id)
 
 echo "role_id=$ROLE_ID, secret_id=$SECRET_ID"
@@ -180,8 +184,8 @@ Le playbook utilise alors `auth_method: approle` :
 Lancer le même playbook avec **OpenBao** :
 
 ```bash
-podman stop vault-lab82
-IMAGE=openbao/openbao:latest ./setup-vault.sh
+# Changez l'image du service dans lab.yaml pour openbao/openbao:latest, puis :
+dsoxlab clean vault-integration-hashicorp && dsoxlab run vault-integration-hashicorp
 
 # Le playbook fonctionne IDENTIQUEMENT
 ansible-playbook challenge/solution.yml

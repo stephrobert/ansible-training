@@ -31,7 +31,13 @@
 #
 # Elle se compile (aucune wheel sur PyPI) : libvirt-dev et pkg-config doivent
 # être installés par la distribution, comme libvirt et qemu-kvm ci-dessus.
-"pipx:ansible-core" = { version = "2.18", uvx_args = "--with libvirt-python" }
+#
+# hvac suit la même logique : les lookups de community.hashi_vault
+# (vault/integration-hashicorp) tournent sur le CONTRÔLEUR et l'importent.
+# Déclarer la collection ne suffit pas — sans hvac, le lookup échoue sur
+# « Failed to import the required Python library (hvac) », en désignant
+# l'interpréteur d'ansible-core, pas le poste.
+"pipx:ansible-core" = { version = "2.18", uvx_args = "--with libvirt-python --with hvac" }
 
 # Chaîne qualité. Le profil production d'ansible-lint est ce que la CI exige :
 # une montée de version change ce qui passe, d'où le pin sur la mineure.

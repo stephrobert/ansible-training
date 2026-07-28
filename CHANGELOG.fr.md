@@ -10,6 +10,22 @@ suit le [versionnage sémantique](https://semver.org/lang/fr/).
 
 ### Ajouté
 
+- **`vault/integration-hashicorp` monte son propre serveur.** Le lab déclare son
+  Vault dans `runtime.services` (dsoxlab ≥ 0.1.38) : `dsoxlab run` le démarre,
+  attend qu'il réponde (`ready_exec: vault status`), y pose `secret/lab82`
+  (`post_start`), et `dsoxlab clean` l'arrête. Le `setup-vault.sh` que
+  l'apprenant devait lancer à la main disparaît — avec lui disparaît le lab qui
+  se skippe en silence chez qui l'a oublié.
+
+  Le serveur écoute sur **8201**, pas sur le 8200 par défaut : c'est ce qui lui
+  permet de cohabiter avec le Vault d'une autre formation, dont la présence
+  suffisait à faire échouer ce lab.
+
+- **Le conftest monte les services déclarés par un lab.** `dsoxlab run` le fait
+  pour l'apprenant, mais la campagne formateur lance pytest directement : sans
+  ce crochet, un lab à service se skippe à chaque campagne, et ses dépendances
+  ne sont jamais exercées. Sans effet pour les 112 autres labs.
+
 - Gouvernance bilingue (EN/FR) : `CONTRIBUTING`, `CODE_OF_CONDUCT`, `SECURITY`,
   `RELEASING`, `CHANGELOG`, alignée sur le dépôt de référence
   `linux-dsoxlab-training`.
@@ -33,6 +49,32 @@ suit le [versionnage sémantique](https://semver.org/lang/fr/).
 
 ### Corrigé
 
+- **Le lab Vault reconnaît son propre serveur.** Son garde-fou testait « un port
+  répond », ce qui ne prouve rien sur le port par défaut de Vault : le conteneur
+  `dsoxlab-terraform-training-vault` d'une autre formation écoutait là, le
+  module a donc cessé de se skipper, et ses quatre tests ont échoué sur
+  `Forbidden: Permission Denied to path ['lab82']`. Il exige désormais les deux
+  marques de son serveur — token accepté et `secret/lab82` présent — et skippe
+  en nommant la cause. La vérification passe d'un `pytest.skip` de module à une
+  fixture : un skip de module s'évalue à l'IMPORT, donc avant que le conftest
+  n'ait monté le service.
+- **`community.hashi_vault` et `anatomicjc.passbolt` déclarées** dans
+  `requirements.yml`, et **`hvac` attaché à ansible-core** (`uvx_args` du
+  `mise.toml`), comme `libvirt-python`. Les labs les importaient sans que rien
+  ne les déclare : leurs tests se skippant faute de serveur, l'absence n'a
+  jamais été signalée. Un skip conditionnel masque une dépendance manquante
+  aussi bien qu'il masque un service absent.
+- **Les 4 labs de la section `molecule/` étaient exclus de la campagne.**
+  `norecursedirs = ["molecule", …]` matche un nom de répertoire à n'importe
+  quelle profondeur : écrit pour les scénarios `labs/*/*/molecule/`, il
+  emportait la section entière. 30 tests ne tournaient pas pendant que le script
+  annonçait « 113 labs ». Les scénarios internes restent exclus par le
+  `collect_ignore_glob` du conftest, qui est ancré sur le chemin.
+- **`mise run test-all` vérifie que l'infra est debout** avant de jouer quoi que
+  ce soit. Le script exigeait déjà `.vault-pass` et un catalogue non vide, mais
+  pas les VM : une infra détruite se traduisait par des centaines d'erreurs de
+  connexion accusant les labs, au bout de plusieurs minutes. Il s'arrête
+  désormais en quelques secondes avec la marche à suivre.
 - **`vault/dans-roles`** : la solution de référence ne créait jamais
   `roles/secured_app/vars/main.yml`, le fichier chiffré que le challenge demande
   à l'apprenant d'écrire. Il est gitignoré à dessein (le livrer donnerait la
