@@ -45,8 +45,9 @@ def _passbolt_reachable() -> bool:
 if not _passbolt_reachable():
     pytest.skip(
         f"Serveur Passbolt injoignable sur {PASSBOLT_URL} : lancez "
-        "labs/vault/integration-passbolt/setup-passbolt.sh (podman requis) "
-        "et terminez l'inscription via l'interface web, puis relancez pytest.",
+        "`dsoxlab run vault-integration-passbolt` (Docker requis), qui monte "
+        "MariaDB puis Passbolt et crée le compte admin, terminez l'inscription "
+        "via l'interface web, puis relancez pytest.",
         allow_module_level=True,
     )
 

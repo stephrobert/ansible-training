@@ -19,7 +19,7 @@ or the passphrase is not in the environment, they go into a
 
 ```bash
 cd labs/vault/integration-passbolt/
-./setup-passbolt.sh                 # Passbolt CE + MariaDB (podman required)
+dsoxlab run vault-integration-passbolt   # Passbolt CE + MariaDB, admin créé
 ```
 
 Then, via the interface (`https://localhost:8443`, self-signed certificate):
@@ -34,8 +34,8 @@ Then, via the interface (`https://localhost:8443`, self-signed certificate):
 Finally, on the shell side:
 
 ```bash
-ansible-galaxy collection install anatomicjc.passbolt
-pipx inject ansible py-passbolt
+ansible-galaxy collection install -r $ANSIBLE_TRAINING/requirements.yml
+mise install   # py-passbolt voyage avec ansible-core
 export PASSBOLT_PASSPHRASE='<votre passphrase>'
 ```
 
@@ -119,7 +119,7 @@ consistent length, no cleartext secret in the YAML). Otherwise: an explicit
 ## 🧹 Reset
 
 ```bash
-podman stop passbolt-app-lab83 passbolt-db-lab83
+dsoxlab clean vault-integration-passbolt
 rm -f /tmp/lab83-passbolt-lookup.txt
 ```
 

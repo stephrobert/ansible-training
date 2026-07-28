@@ -10,6 +10,25 @@ based on [Keep a Changelog](https://keepachangelog.com/), and the project follow
 
 ### Added
 
+- **`vault/integration-passbolt` declares its two containers.** MariaDB and
+  Passbolt CE are started by dsoxlab (>= 0.1.39), in order: the database first,
+  with `ready_exec: healthcheck.sh --connect` as its probe, so Passbolt never
+  starts against a database that refuses connections yet. The application
+  reaches it by the name `db`, since a repository's services share a Docker
+  network. `setup-passbolt.sh`, which created its own podman network for lack of
+  anything better, is gone.
+
+  Three details found by running it, not by reading it: `su` without
+  `-s /bin/sh` fails with "This account is currently not available" (the
+  `www-data` account has `nologin` as its shell); `register_user` is not
+  idempotent and exits 1 on the second start, while `post_start` replays on
+  every `run`; and the published port proves nothing, hence a `curl` probe on
+  the healthcheck.
+
+  The lab's tests still skip during a campaign, and rightly so: completing the
+  registration, generating the OpenPGP key and exporting the private key go
+  through a human — that is the exercise.
+
 - **`vault/integration-hashicorp` brings its own server.** The lab declares its
   Vault under `runtime.services` (dsoxlab ≥ 0.1.38): `dsoxlab run` starts it,
   waits until it answers (`ready_exec: vault status`), seeds `secret/lab82`

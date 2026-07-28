@@ -10,6 +10,24 @@ suit le [versionnage sémantique](https://semver.org/lang/fr/).
 
 ### Ajouté
 
+- **`vault/integration-passbolt` déclare ses deux conteneurs.** MariaDB et
+  Passbolt CE sont montés par dsoxlab (>= 0.1.39), dans l'ordre : la base
+  d'abord, avec `ready_exec: healthcheck.sh --connect` comme sonde, si bien que
+  Passbolt ne démarre jamais contre une base qui n'accepte pas encore de
+  connexion. L'application la joint par le nom `db`, les services d'un dépôt
+  partageant un réseau Docker. `setup-passbolt.sh`, qui créait lui-même un
+  réseau podman faute de mieux, disparaît.
+
+  Trois détails trouvés en exécutant, pas en relisant : `su` sans `-s /bin/sh`
+  sort sur « This account is currently not available » (le compte `www-data` a
+  `nologin` pour shell) ; `register_user` n'est pas idempotent et sort en 1 au
+  second démarrage, alors que `post_start` est rejoué à chaque `run` ; et le
+  port publié ne prouve rien, d'où une sonde `curl` sur le healthcheck.
+
+  Les tests du lab continuent de skipper en campagne, et c'est normal :
+  compléter l'inscription, générer la clé OpenPGP et exporter la clé privée
+  passent par un humain — c'est l'exercice.
+
 - **`vault/integration-hashicorp` monte son propre serveur.** Le lab déclare son
   Vault dans `runtime.services` (dsoxlab ≥ 0.1.38) : `dsoxlab run` le démarre,
   attend qu'il réponde (`ready_exec: vault status`), y pose `secret/lab82`
