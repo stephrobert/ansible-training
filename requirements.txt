@@ -14,7 +14,7 @@ ansible-core>=2.18,<2.19
 libvirt-python>=11.0
 ansible-navigator>=25.0
 ansible-lint>=26.6.0
-molecule>=25.0
+molecule>=26.6.0
 molecule-plugins[docker,libvirt]
 yamllint>=1.38.0
 
