@@ -11,7 +11,7 @@ ansible-core>=2.18,<2.19
 # uvx_args), pas à côté : le plugin d'inventaire community.libvirt.libvirt
 # l'importe depuis l'interpréteur du contrôleur. Il se compile, donc libvirt-dev
 # et pkg-config doivent venir de la distribution.
-libvirt-python>=11.0
+libvirt-python>=12.5.0
 ansible-navigator>=25.0
 ansible-lint>=26.6.0
 molecule>=25.0
