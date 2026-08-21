@@ -5,7 +5,7 @@
 # Chaque outil est installé dans son propre environnement isolé via pipx
 # pour éviter les conflits avec les autres labs Python du poste.
 
-ansible-core>=2.18,<2.19
+ansible-core>=2.19.11,<2.20
 
 # libvirt-python s'installe DANS l'environnement d'ansible-core (mise.toml :
 # uvx_args), pas à côté : le plugin d'inventaire community.libvirt.libvirt
