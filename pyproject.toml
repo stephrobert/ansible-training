@@ -88,5 +88,5 @@ package = false
 # global.
 dev = [
     "pyyaml>=6",
-    "dsoxlab>=0.1.6",
+    "dsoxlab>=0.1.31",
 ]
