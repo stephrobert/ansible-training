@@ -736,9 +736,24 @@ def snapshot_base(fqdns: list[str]) -> None:
         _run(["sudo", "virsh", "start", fqdn])
 
 
-def snapshot_reset(fqdns: list[str]) -> bool:
-    """Reset chaque VM à son état de base propre. Retourne True si au moins une
-    VM a été reset. No-op sur les VM non basées.
+class IsolationEteinte(RuntimeError):
+    """L'isolation entre labs n'a pas pu s'appliquer, et c'est bloquant.
+
+    Une suite dont le garde-fou s'est éteint sans le dire ne mesure plus rien :
+    chaque lab note alors l'état laissé par son prédécesseur sur des VM
+    partagées, d'où des labs verts un par un et une section rouge en bloc — le
+    symptôme qui envoie chercher le bug dans les labs alors qu'il est chez leur
+    voisin.
+    """
+
+
+def snapshot_reset(fqdns: list[str]) -> list[str]:
+    """Reset chaque VM à son état de base propre.
+
+    Rend la liste des FQDN qui **n'ont pas pu** être réinitialisés — vide quand
+    tout s'est bien passé. L'ancienne version rendait un booléen « au moins une
+    VM a été reset », que son unique appelant ignorait : une base absente
+    faisait un `continue` muet, et l'isolation était silencieusement inactive.
 
     Deux modes :
     - RAPIDE (par défaut si `snapshot_base` a figé un état mémoire) : restaure le
@@ -748,9 +763,13 @@ def snapshot_reset(fqdns: list[str]) -> bool:
       si aucun état mémoire figé n'existe.
     """
     reset_any = False
+    manques: list[str] = []
     for fqdn in fqdns:
         disks = _domain_disks(fqdn)
         if not disks:
+            # Aucun disque : ce FQDN n'a pas de domaine libvirt ici. Ce n'est
+            # pas une isolation ratée, c'est un hôte qui n'existe pas.
+            manques.append(fqdn)
             continue
         mem = _mem_save_path(fqdn)
         postboots = [d + ".postboot" for d in disks]
@@ -771,6 +790,10 @@ def snapshot_reset(fqdns: list[str]) -> bool:
             continue
         pairs = [(d, _base_path(d)) for d in disks]
         if not all(Path(b).exists() for _, b in pairs):
+            # C'est ICI que l'isolation s'éteignait sans un mot : pas de base,
+            # donc rien à restaurer, donc on passait au lab suivant comme si
+            # de rien n'était.
+            manques.append(fqdn)
             continue
         reset_any = True
         subprocess.run(["sudo", "virsh", "destroy", fqdn], capture_output=True, check=False)
@@ -784,7 +807,7 @@ def snapshot_reset(fqdns: list[str]) -> bool:
     if reset_any:
         _wait_ssh(fqdns)
         _resync_clocks(fqdns)
-    return reset_any
+    return manques
 
 
 def _resync_clocks(fqdns: list[str]) -> None:
@@ -983,10 +1006,28 @@ def _apply_lab_state(request):
     # pas les 4 VM : chaque lab nettoie ses hôtes avant de les toucher, ce qui
     # suffit à l'isolation et divise le temps du run global. Le reset jette tout
     # résidu (fstab, sysctl.d, paquets, reboot) et répare même une VM bloquée au
-    # boot. No-op tant que les bases n'existent pas (snapshot_base) ; opt-out par
-    # DSOXLAB_SNAPSHOT_ISOLATION=0.
+    # boot.
+    #
+    # Un hôte qui n'a pas pu être réinitialisé fait ÉCHOUER le lab, il n'est plus
+    # sauté en silence. C'était un no-op tant que les bases n'existaient pas, et
+    # une suite dont le garde-fou s'éteint sans le dire ne mesure plus rien :
+    # son rouge n'est pas exploitable, et son vert ne le serait pas davantage.
+    #
+    # L'opt-out DSOXLAB_SNAPSHOT_ISOLATION=0 reste possible — mais c'est alors
+    # un choix explicite, pas un silence.
     if os.environ.get("DSOXLAB_SNAPSHOT_ISOLATION") != "0":
-        snapshot_reset(_lab_vm_fqdns(lab_root))
+        hotes = _lab_vm_fqdns(lab_root)
+        manques = snapshot_reset(hotes)
+        if manques:
+            raise IsolationEteinte(
+                f"{_lab_key(lab_root)} : isolation impossible sur "
+                f"{', '.join(manques)}.\n"
+                "Leur base de snapshot manque — joue `mise run rebase` après le "
+                "dernier `dsoxlab provision`, ou pose "
+                "DSOXLAB_SNAPSHOT_ISOLATION=0 pour l'assumer explicitement.\n"
+                "Sans isolation, chaque lab note l'état laissé par son "
+                "prédécesseur : les labs passent un par un et échouent en bloc."
+            )
 
     lab_name = _lab_key(lab_root)  # ex : "vault/introduction"
     challenge_yml = lab_root / "challenge" / "solution.yml"
