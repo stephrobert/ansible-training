@@ -92,6 +92,13 @@ repos:
       # hook. Plusieurs processus écrivent dans ce dépôt, et une disparition est
       # muette par nature — un test absent ne proteste pas. Ce hook rend
       # l'incohérence visible au commit.
+      - id: isolation-bruyante
+        name: l'isolation entre labs ne peut pas s'éteindre en silence
+        entry: uv run --no-project --with pytest pytest tests/test_isolation_bruyante.py -q
+        language: system
+        pass_filenames: false
+        always_run: true
+
       - id: outillage-coherent
         name: les vérificateurs de catalogue sont présents et câblés
         entry: uv run --no-project --with pytest --with pyyaml pytest tests/test_outillage_coherent.py -q

@@ -27,7 +27,7 @@ import pytest
 RACINE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RACINE))
 
-import conftest  # noqa: E402
+import conftest
 
 
 def test_snapshot_reset_nomme_les_hotes_manques(
