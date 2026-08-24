@@ -5,16 +5,16 @@
 # Chaque outil est installé dans son propre environnement isolé via pipx
 # pour éviter les conflits avec les autres labs Python du poste.
 
-ansible-core>=2.18,<2.19
+ansible-core>=2.19.11,<2.20
 
 # libvirt-python s'installe DANS l'environnement d'ansible-core (mise.toml :
 # uvx_args), pas à côté : le plugin d'inventaire community.libvirt.libvirt
 # l'importe depuis l'interpréteur du contrôleur. Il se compile, donc libvirt-dev
 # et pkg-config doivent venir de la distribution.
-libvirt-python>=11.0
-ansible-navigator>=25.0
+libvirt-python>=12.5.0
+ansible-navigator>=26.6.0
 ansible-lint>=26.6.0
-molecule>=25.0
+molecule>=26.6.0
 molecule-plugins[docker,libvirt]
 yamllint>=1.38.0
 
