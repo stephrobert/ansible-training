@@ -138,6 +138,17 @@ repos:
       # meta.yml; a stale catalog blocks the push.
       # --no-project: ephemeral env with just pyyaml, so uv does NOT resolve this
       # repo's pyproject — keeps the hook fast and independent of the venv.
+      # The catalogue scripts run in CI over PULL REQUEST content: meta.yml is
+      # editable by a contributor, and a YAML typo used to surface a
+      # yaml.scanner.ScannerError in the terminal instead of naming the file.
+      # The contract is the one the dsoxlab CLI applies to itself.
+      - id: yaml-malforme
+        name: an unreadable catalogue YAML reports itself, it does not break the tooling
+        entry: uv run --no-project --with pytest --with pyyaml pytest tests/test_yaml_malforme.py -q
+        language: system
+        pass_filenames: false
+        always_run: true
+
       - id: catalog-fresh
         name: README catalog up to date (labs + guide URLs)
         entry: uv run --no-project --with pyyaml python scripts/render-readme.py --check
