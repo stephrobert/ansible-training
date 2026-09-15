@@ -17,7 +17,9 @@ import re
 import sys
 from pathlib import Path
 
-import yaml
+# Un seul chemin de lecture pour le catalogue : voir scripts/lecture_yaml.py.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lecture_yaml import YamlIllisible, lire_yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 META_YML = REPO_ROOT / "meta.yml"
@@ -31,8 +33,16 @@ END_MARKER = "<!-- LABS_LIST_END -->"
 
 
 def load_meta() -> dict:
-    with META_YML.open(encoding="utf-8") as f:
-        return yaml.safe_load(f)
+    """meta.yml est la seule source du catalogue : sans lui, rien à rendre.
+
+    Il est modifiable par une pull request, donc écrit par quelqu'un d'autre.
+    Une coquille de YAML y faisait remonter une yaml.scanner.ScannerError
+    jusqu'au terminal ; on s'arrête toujours, mais en DISANT quoi.
+    """
+    try:
+        return lire_yaml(META_YML)
+    except YamlIllisible as exc:
+        sys.exit(f"catalogue ingénérable — {exc}")
 
 
 def lab_short_title(lab_rel: str) -> str:
