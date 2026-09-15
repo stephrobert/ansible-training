@@ -1,38 +1,77 @@
+# Règles Dependabot communes aux dépôts stephrobert.
+#
+# Ce fichier est le MÊME modèle sur kubernetes-dsoxlab-training,
+# linux-dsoxlab-training, ansible-training, dsoxlab et scankit. Seul
+# l'écosystème de paquets change selon le langage du dépôt : `uv` pour les
+# quatre dépôts Python, `gomod` pour scankit. Une divergence se corrige en
+# réalignant le dépôt sur ce modèle, pas en adaptant le modèle au dépôt.
+#
+# Ce que le modèle règle : le NOMBRE de pull requests. Sans bloc `groups`,
+# Dependabot ouvre une branche, une PR et une CI complète PAR DÉPENDANCE.
+# Mesuré le 2026-09-15, les cinq dépôts avaient cinq configurations
+# différentes : ansible-training, le seul dont l'écosystème de paquets n'avait
+# aucun groupe, portait 6 PR ouvertes, dont 5 pour cinq paquets de la même
+# famille qui sortent leurs versions le même jour et ne se fusionnent jamais
+# séparément.
 version: 2
 updates:
-  # Garde les actions GitHub (épinglées par SHA) à jour : l'écosystème
-  # pertinent pour ce dépôt de contenu.
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    commit-message:
-      prefix: "chore(ci)"
-    # Laisser décanter une nouvelle release : un paquet compromis est
-    # généralement retiré en quelques jours, un cooldown réduit la fenêtre.
-    cooldown:
-      default-days: 7
-    # Toutes les actions dans UNE seule PR par semaine. Sans regroupement,
-    # Dependabot ouvre une PR par composant, et bumper github/codeql-action/init
-    # sans github/codeql-action/analyze (ou l'inverse) casse CodeQL : ses
-    # composants doivent tourner à la même version. Le groupe les fait avancer
-    # ensemble et supprime ce mismatch.
-    groups:
-      actions:
-        patterns:
-          - "*"
-
-  # Surveille la seule dev-dep du dépôt : la CLI dsoxlab, tirée de PyPI.
-  # Le reste du pyproject.toml est vide (package = false, dependencies = []) :
-  # ce dépôt est un fournisseur de labs, pas un paquet Python. Les outils
-  # Ansible (ansible-core, ansible-lint, molecule…) vivent dans
-  # requirements.txt et sont installés via pipx/mise, hors périmètre de
-  # Dependabot.
+  # --- Paquets Python ------------------------------------------------------
+  #
+  # Le dépôt verrouille ses dépendances dans `uv.lock` : c'est le verrou que
+  # Dependabot fait avancer, et c'est lui que les scanners de vulnérabilités
+  # lisent. Sans verrou, une contrainte `>=` laisse chaque installation
+  # résoudre ce qu'elle veut et aucun outil ne peut affirmer ce qui tourne.
   - package-ecosystem: "uv"
     directory: "/"
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 5
     commit-message:
       prefix: "chore(deps)"
+    # Laisser décanter une nouvelle release : un paquet compromis est
+    # généralement retiré en quelques jours, et le cooldown réduit d'autant la
+    # fenêtre pendant laquelle on l'aurait tiré.
+    #
+    # Les paliers semver sont supportés pour les écosystèmes de PAQUETS : une
+    # majeure attend deux semaines, un correctif trois jours.
     cooldown:
       default-days: 7
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
+    groups:
+      deps-minor-and-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  # --- Actions GitHub ------------------------------------------------------
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(ci)"
+    # `default-days` SEUL ici : les paliers semver-{major,minor,patch}-days ne
+    # sont PAS supportés pour l'écosystème github-actions. Les déclarer fait
+    # échouer la validation du fichier côté GitHub, qui cesse alors d'ouvrir
+    # des PR — et cela ressemble exactement à « aucune mise à jour
+    # disponible ».
+    cooldown:
+      default-days: 7
+    # Un lot par semaine plutôt qu'une branche par action. Ce dépôt et son
+    # jumeau Linux avaient chacun eu cinq PR ouvertes en même temps, dont trois
+    # pour les trois actions github/codeql-action/*, qui sortent toujours la
+    # même version le même jour.
+    #
+    # Les majeures restent seules : ce sont elles qui cassent, elles méritent
+    # d'être lues, et les grouper ferait qu'une action incompatible bloquerait
+    # toutes les autres du lot.
+    #
+    # Les alertes de sécurité restent hors groupe, ce qui est le défaut
+    # (`applies-to: version-updates`) : elles sont urgentes et méritent une PR
+    # ciblée plutôt que d'attendre le lot hebdomadaire.
+    groups:
+      actions-minor-and-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]

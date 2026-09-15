@@ -82,11 +82,19 @@ package = false
 # (cf. requirements.txt).
 
 [dependency-groups]
-# dsoxlab embarque pytest + pytest-testinfra : aucun outil de test à installer
-# côté dépôt de labs. On le garde en dev-dep uniquement pour les contributeurs
-# qui veulent un venv local (édition, IDE) ; l'apprenant, lui, utilise le tool
-# global.
+# dsoxlab n'est PAS déclaré ici, et c'est délibéré : la CLI est un OUTIL,
+# installé à part, comme dans les deux catalogues dsoxlab jumeaux.
+#
+#     uv tool install dsoxlab      # ou : uvx dsoxlab <commande>
+#
+# La déclarer en dev-dep faisait entrer TOUT son graphe dans le verrou du
+# dépôt : 30 paquets, dont ansible-core, cryptography et click, ce dernier
+# portant une vulnérabilité connue qui n'a rien à faire ici puisque ce dépôt
+# ne l'exécute jamais. Mesuré le 2026-09-15 : le verrou passe de 30 paquets à
+# 2 en la retirant.
+#
+# Aucun hook ni aucun job n'en dépendait : tous passent par `uvx dsoxlab` ou
+# `uv run --no-project`, vérifié avant de la retirer.
 dev = [
     "pyyaml>=6",
-    "dsoxlab>=0.1.31",
 ]

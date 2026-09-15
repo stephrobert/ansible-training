@@ -165,6 +165,13 @@ jobs:
       - name: Run every hook (push stage)
         run: uvx pre-commit@4.6.0 run --all-files --hook-stage pre-push --show-diff-on-failure --color always
 
+      # A lock file that has drifted from its pyproject locks nothing: the
+      # vulnerability scanners keep reading uv.lock, which no longer describes
+      # what gets installed. `--check` neither resolves nor writes; it fails if
+      # the lock is stale.
+      - name: The lock still describes the pyproject
+        run: uv lock --check
+
   # Static analysis of the repo's Python (lab tests, conftest). Findings post to
   # the Security tab — no artifact is published.
   codeql:
