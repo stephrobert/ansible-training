@@ -12,7 +12,7 @@ ansible-core>=2.19.11,<2.20
 # l'importe depuis l'interpréteur du contrôleur. Il se compile, donc libvirt-dev
 # et pkg-config doivent venir de la distribution.
 libvirt-python>=12.7.0
-ansible-navigator>=26.6.0
+ansible-navigator>=26.8.0
 ansible-lint>=26.6.0
 molecule>=26.6.0
 molecule-plugins[docker,libvirt]
