@@ -505,4 +505,16 @@ Mocks examen complets 4h, 19 tâches chacun, validées par pytest.
 - Contributions : voir [CONTRIBUTING](./CONTRIBUTING.md).
 - Conduite : [Code de conduite](./CODE_OF_CONDUCT.md) · Sécurité : [SECURITY](./SECURITY.md).
 - Publication : [RELEASING](./RELEASING.md) (bundles tar.gz, pas de PyPI).
-- Licence : [CC BY-SA 4.0](./LICENSE).
+
+Copyright (c) 2026 Stéphane Robert, https://blog.stephane-robert.info
+
+Ce catalogue est publié sous licence
+[Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)](./LICENSE).
+Vous pouvez le partager et l'adapter, y compris commercialement, à deux
+conditions : créditer Stéphane Robert avec un lien vers le blog et indiquer ce
+que vous avez modifié, et distribuer vos contributions sous la même licence.
+
+> L'attribution vit ici plutôt qu'en tête du fichier `LICENSE`, et c'est
+> délibéré : GitHub ne reconnaît une licence qu'à son **texte officiel nu**. Un
+> en-tête personnalisé au-dessus rend tout le fichier indétectable, le dépôt
+> passe en `NOASSERTION`, et le contrôle License de Scorecard tombe de 10 à 9.

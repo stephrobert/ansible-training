@@ -506,4 +506,16 @@ Mocks examen complets 4h, 19 tâches chacun, validées par pytest.
 - Contributions: see [CONTRIBUTING](./CONTRIBUTING.md).
 - Conduct: [Code of Conduct](./CODE_OF_CONDUCT.md) · Security: [SECURITY](./SECURITY.md).
 - Publishing: [RELEASING](./RELEASING.md) (tar.gz bundles, no PyPI).
-- License: [CC BY-SA 4.0](./LICENSE).
+
+Copyright (c) 2026 Stéphane Robert, https://blog.stephane-robert.info
+
+This catalogue is published under the
+[Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)](./LICENSE)
+license. You may share and adapt it, including commercially, on two conditions:
+credit Stéphane Robert with a link to the blog and state what you changed, and
+distribute your contributions under the same license.
+
+> The attribution lives here rather than at the top of `LICENSE`, and that is
+> deliberate: GitHub only identifies a license from its **bare official text**.
+> A custom header above it makes the whole file unrecognisable, the repository is
+> reported as `NOASSERTION`, and Scorecard's License check drops from 10 to 9.
