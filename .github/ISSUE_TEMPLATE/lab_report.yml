@@ -1,0 +1,71 @@
+name: Problème sur un lab
+description: Énoncé faux, test qui échoue à tort, setup cassé, documentation absente
+labels: ["lab"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ce dépôt porte les **labs**. Pour un défaut de l'outil lui-même
+        (`dsoxlab` plante, une commande se comporte mal), ouvrez plutôt
+        l'issue sur https://github.com/stephrobert/dsoxlab/issues
+  - type: input
+    id: lab
+    attributes:
+      label: Lab concerné
+      description: L'identifiant rendu par `dsoxlab list-labs`.
+      placeholder: vault-integration-passbolt
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Ce qui s'est passé
+      description: Ce que vous attendiez, et ce que vous avez obtenu à la place.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Étapes pour reproduire
+      description: Les commandes exactes, depuis quel répertoire.
+      placeholder: |
+        1. dsoxlab run <lab>
+        2. ...
+    validations:
+      required: false
+  - type: textarea
+    id: support
+    attributes:
+      label: Rapport de diagnostic
+      description: >-
+        Sortie de `dsoxlab support`. Elle rassemble version, système, outils
+        externes, catalogue et dernières traces, et elle est anonymisée par
+        défaut : ni chemin personnel, ni adresse publique, ni nom de machine.
+      render: markdown
+    validations:
+      required: false
+  - type: input
+    id: os
+    attributes:
+      label: Système d'exploitation
+      placeholder: Ubuntu 24.04 / AlmaLinux 10 / ...
+    validations:
+      required: false
+  - type: dropdown
+    id: runtime
+    attributes:
+      label: Runtime du lab
+      options:
+        - shell
+        - vm
+        - not applicable
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sortie / journaux
+      description: Rendu comme du code, pas besoin de backticks.
+      render: shell
+    validations:
+      required: false

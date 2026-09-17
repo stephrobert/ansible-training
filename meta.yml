@@ -10,6 +10,13 @@ repo:
   category: ansible             # 'ansible' | 'kubernetes' | 'linux' | 'terraform' | …
   title: "Ansible Training — RHCE EX294 2026"
   blog_url: "https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/"
+  # Où `dsoxlab support --issue` dépose le rapport d'un apprenant.
+  #
+  # Sans ce champ, dsoxlab retombe sur `git remote get-url origin`, ce qui
+  # marche ici mais suppose deux choses : un remote nommé `origin`, et un
+  # hébergeur dont les issues vivent sous `<dépôt>/issues`. Le déclarer lève
+  # la supposition.
+  issues_url: "https://github.com/stephrobert/ansible-training/issues"
   description: |
     Lab pédagogique public de la formation Ansible RHCE EX294 2026.
     Chaque lab est autonome : tutoriel guidé + challenge testé par pytest+testinfra.

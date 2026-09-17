@@ -1,0 +1,8 @@
+# `blank_issues_enabled: true` est délibéré : une version de dsoxlab
+# antérieure à `support --issue` dépose un corps libre, et cette voie doit
+# continuer de marcher.
+blank_issues_enabled: true
+contact_links:
+  - name: Défaut de l'outil dsoxlab
+    url: https://github.com/stephrobert/dsoxlab/issues/new/choose
+    about: Le moteur plante ou se comporte mal, indépendamment d'un lab.
