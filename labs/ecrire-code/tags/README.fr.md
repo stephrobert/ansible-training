@@ -133,7 +133,7 @@ ansible web1.lab -b -m ansible.builtin.shell -a "rm -f /tmp/tag-*.txt"
 ansible-playbook labs/ecrire-code/tags/playbook.yml --tags configuration
 ```
 
-🔍 **Observation** : `PLAY RECAP` affiche `ok=1 changed=1 skipped=2`. Les tâches `install` et `service` sont **skippées** (Ansible voit qu'elles n'ont pas le tag demandé).
+🔍 **Observation** : `PLAY RECAP` affiche `ok=2 changed=1 skipped=0`. Les deux `ok` sont la collecte des faits, qui porte implicitement le tag `always`, et la tâche `configuration`. Les tâches `install` et `service` ne sont **pas** comptées en `skipped` : Ansible les écarte dès la **sélection** des tâches, avant l'exécution, si bien qu'elles n'apparaissent ni dans la sortie ni dans le récapitulatif. Le compteur `skipped` ne concerne que les tâches écartées **pendant** l'exécution, par une condition `when:` par exemple.
 
 ```bash
 ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab 'ls /tmp/tag-*.txt'
@@ -149,7 +149,7 @@ ansible web1.lab -b -m ansible.builtin.shell -a "rm -f /tmp/tag-*.txt"
 ansible-playbook labs/ecrire-code/tags/playbook.yml --skip-tags service
 ```
 
-🔍 **Observation** : `install` et `configuration` tournent ; `service` est skippé. C'est utile en pratique pour « tout sauf la partie qui prend 10 min ».
+🔍 **Observation** : `install` et `configuration` tournent (`ok=3 changed=2 skipped=0`) ; `service` est écartée de la sélection, sans apparaître dans la sortie. C'est utile en pratique pour « tout sauf la partie qui prend 10 min ».
 
 ## 📚 Exercice 6 — Inspecter sans exécuter (`--list-tags`, `--list-tasks`)
 
@@ -215,7 +215,7 @@ ansible-playbook labs/ecrire-code/tags/playbook.yml                    # sans fi
 ansible-playbook labs/ecrire-code/tags/playbook.yml --tags configuration   # filtre configuration
 ```
 
-🔍 **Observation** : dans **les deux cas**, la tâche `reset` est **skippée**. `never` est plus fort que tout — sauf si on demande **explicitement** son tag :
+🔍 **Observation** : dans **les deux cas**, la tâche `reset` ne tourne **pas** : elle est écartée de la sélection, et n'apparaît donc ni dans la sortie ni dans le compteur `skipped`. `never` est plus fort que tout — sauf si on demande **explicitement** son tag :
 
 ```bash
 ansible-playbook labs/ecrire-code/tags/playbook.yml --tags reset

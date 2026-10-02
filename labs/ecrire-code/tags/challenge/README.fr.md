@@ -76,9 +76,9 @@ Squelette à compléter :
 > 💡 **Pièges** :
 >
 > - **`always`** s'exécute **même avec `--tags X`** (où X ≠ always).
->   Pour le skipper : `--skip-tags always`.
+>   Pour l'écarter : `--skip-tags always`.
 > - **`never`** s'exécute **uniquement** si demandé explicitement par
->   `--tags <son_tag>`. Sans `--tags`, il est skippé.
+>   `--tags <son_tag>`. Sans `--tags`, il ne tourne pas.
 > - **Multi-tags** : `tags: [a, b]` permet à la tâche de matcher `--tags a`
 >   OU `--tags b`. Pour matcher les deux, il faudrait `--tags a,b`.
 > - **Le conftest** lance le replay avec `--tags configuration` (cf.
@@ -111,7 +111,7 @@ pytest -v labs/ecrire-code/tags/challenge/tests/
 ## 🚀 Pour aller plus loin
 
 - Refaites le challenge en lançant **sans `--tags`** : `always` tourne,
-  `configuration` aussi, `never` toujours skippé.
+  `configuration` aussi, `never` toujours écarté.
 - Lancez avec **`--tags reset`** : `always` tourne, `reset` aussi, et les
   fichiers configuration/always sont supprimés. Vérifie ensuite avec un
   `ls /tmp/challenge-tag-*.txt`.

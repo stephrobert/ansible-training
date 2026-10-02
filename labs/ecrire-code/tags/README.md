@@ -133,7 +133,7 @@ ansible web1.lab -b -m ansible.builtin.shell -a "rm -f /tmp/tag-*.txt"
 ansible-playbook labs/ecrire-code/tags/playbook.yml --tags configuration
 ```
 
-🔍 **Observation**: `PLAY RECAP` shows `ok=1 changed=1 skipped=2`. The `install` and `service` tasks are **skipped** (Ansible sees they do not have the requested tag).
+🔍 **Observation**: `PLAY RECAP` shows `ok=2 changed=1 skipped=0`. The two `ok` are fact gathering, which implicitly carries the `always` tag, and the `configuration` task. The `install` and `service` tasks are **not** counted as `skipped`: Ansible drops them at task **selection**, before execution, so they appear neither in the output nor in the recap. The `skipped` counter only covers tasks dropped **during** execution, by a `when:` condition for instance.
 
 ```bash
 ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab 'ls /tmp/tag-*.txt'
@@ -149,7 +149,7 @@ ansible web1.lab -b -m ansible.builtin.shell -a "rm -f /tmp/tag-*.txt"
 ansible-playbook labs/ecrire-code/tags/playbook.yml --skip-tags service
 ```
 
-🔍 **Observation**: `install` and `configuration` run; `service` is skipped. In practice this is useful for "everything except the part that takes 10 min".
+🔍 **Observation**: `install` and `configuration` run (`ok=3 changed=2 skipped=0`); `service` is dropped from the selection and does not appear in the output. In practice this is useful for "everything except the part that takes 10 min".
 
 ## 📚 Exercise 6 — Inspect without executing (`--list-tags`, `--list-tasks`)
 
@@ -215,7 +215,7 @@ ansible-playbook labs/ecrire-code/tags/playbook.yml                    # without
 ansible-playbook labs/ecrire-code/tags/playbook.yml --tags configuration   # configuration filter
 ```
 
-🔍 **Observation**: in **both cases**, the `reset` task is **skipped**. `never` is stronger than anything, except if you **explicitly** request its tag:
+🔍 **Observation**: in **both cases**, the `reset` task does **not** run: it is dropped from the selection, so it appears neither in the output nor in the `skipped` counter. `never` is stronger than anything, except if you **explicitly** request its tag:
 
 ```bash
 ansible-playbook labs/ecrire-code/tags/playbook.yml --tags reset

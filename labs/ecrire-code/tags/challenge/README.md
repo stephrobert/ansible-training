@@ -78,7 +78,7 @@ Skeleton to complete:
 > - **`always`** runs **even with `--tags X`** (where X ≠ always).
 >   To skip it: `--skip-tags always`.
 > - **`never`** runs **only** if requested explicitly with
->   `--tags <its_tag>`. Without `--tags`, it is skipped.
+>   `--tags <its_tag>`. Without `--tags`, it does not run.
 > - **Multi-tags**: `tags: [a, b]` lets the task match `--tags a`
 >   OR `--tags b`. To match both, you would need `--tags a,b`.
 > - **The conftest** runs the replay with `--tags configuration` (see
@@ -111,7 +111,7 @@ pytest -v labs/ecrire-code/tags/challenge/tests/
 ## 🚀 Going further
 
 - Redo the challenge running **without `--tags`**: `always` runs,
-  `configuration` too, `never` still skipped.
+  `configuration` too, `never` still left out.
 - Run with **`--tags reset`**: `always` runs, `reset` too, and the
   configuration/always files are removed. Then check with an
   `ls /tmp/challenge-tag-*.txt`.
