@@ -15,7 +15,7 @@ Your mission:
 2. Make the pre-flight marker run **whatever** the operator asked for, using the
    `always` tag.
 3. Lock the destructive reset behind **`never`**, alongside its own `reset` tag:
-   skipped by default, skipped even on a bare run, reachable only on demand.
+   left out by default, left out even on a bare run, reachable only on demand.
 4. Verify by running with `--tags configuration`: the `always` and
    `configuration` markers are there, the reset marker is not.
 
