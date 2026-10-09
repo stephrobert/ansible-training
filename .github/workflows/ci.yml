@@ -139,7 +139,7 @@ jobs:
           fetch-depth: 0 # trufflehog walks git history
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
 
       - name: Install trufflehog (verified release binary; the hook runs with --no-update)
         # Download the pinned release tarball and verify its SHA-256 against the
@@ -206,7 +206,7 @@ jobs:
           persist-credentials: false
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
         with:
           languages: ${{ matrix.language }}
           # Neither Python nor workflows compile: there is no build to observe,
@@ -216,4 +216,4 @@ jobs:
           queries: security-extended
 
       - name: Analyze
-        uses: github/codeql-action/analyze@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
