@@ -1,0 +1,99 @@
+# Atteste la provenance d'un artefact, et rien d'autre.
+#
+# POURQUOI CE FICHIER EXISTE, alors que trois lignes dans release.yml
+# suffiraient à produire une attestation. C'est la différence entre SLSA Build
+# Level 2 et Level 3, et elle tient à un seul mot : isolation.
+#
+# La documentation GitHub la formule ainsi : « Artifact attestations by itself
+# provides SLSA v1.0 Build Level 2 », et « Reusable workflows can provide
+# isolation between the build process and the calling workflow, to meet SLSA
+# v1.0 Build Level 3 ».
+#
+# Autrement dit : tant que le job qui CONSTRUIT l'archive est aussi celui qui
+# SIGNE sa provenance, rien n'empêche techniquement le processus de build de
+# fabriquer une provenance qui ment. Le niveau 3 exige que la signature se fasse
+# hors de sa portée. Ce workflow réutilisable est cette frontière : il est le
+# seul du dépôt à recevoir la permission `attestations: write`, il ne voit
+# jamais le contenu de l'archive, seulement son empreinte, et il n'exécute
+# aucun code du dépôt.
+#
+# Le badge du README annonçait déjà le niveau 3 avant ce fichier, alors que le
+# workflow produisait du niveau 2. C'est ce qu'il corrige.
+#
+# La preuve se lit côté vérification. L'identité inscrite dans le certificat
+# n'est pas celle du workflow de release mais celle de CE fichier, ce qui se
+# contrôle avec :
+#
+#   gh attestation verify <archive> \
+#     --repo <owner>/<repo> \
+#     --signer-workflow <owner>/<repo>/.github/workflows/attester.yml
+#
+# Une archive attestée depuis le job de build échouerait à ce contrôle.
+name: Attester la provenance
+
+on:
+  workflow_call:
+    inputs:
+      subject-name:
+        description: "Nom de l'artefact tel qu'il doit apparaître dans l'attestation."
+        required: true
+        type: string
+      subject-digest:
+        description: "Empreinte de l'artefact, au format algorithme:hexadécimal."
+        required: true
+        type: string
+      artefact-provenance:
+        description: "Nom de l'artefact de workflow où déposer le bundle de provenance."
+        required: false
+        default: provenance
+        type: string
+
+# Deny-by-default : le job opte pour les scopes dont il a besoin.
+permissions: {}
+
+jobs:
+  attester:
+    name: Attester la provenance du bundle
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      # Les deux permissions qui signent. Elles ne sont accordées nulle part
+      # ailleurs dans ce dépôt, et c'est tout l'intérêt.
+      id-token: write # OIDC : l'identité qui signe est celle de ce workflow
+      attestations: write # enregistrer l'attestation auprès de GitHub
+      contents: read
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      # Aucun checkout : ce job n'a pas à lire le dépôt. Il reçoit une
+      # empreinte et signe cette empreinte. Moins il en voit, moins il peut
+      # être influencé par ce qu'il atteste.
+      - name: Attester la provenance du build
+        id: attest
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ${{ inputs.subject-name }}
+          subject-digest: ${{ inputs.subject-digest }}
+
+      # Scorecard Signed-Releases cherche un asset `*.intoto.jsonl` attaché à la
+      # release, et non l'attestation seule : ce sont deux artefacts distincts.
+      # Le bundle repart donc en artefact de workflow, pour que le job de
+      # publication l'attache sans jamais avoir eu le droit de le produire.
+      - name: Déposer le bundle de provenance
+        env:
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+        run: |
+          set -euo pipefail
+          cp "${BUNDLE}" provenance.intoto.jsonl
+          ls -l provenance.intoto.jsonl
+
+      - name: Publier le bundle en artefact de workflow
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ inputs.artefact-provenance }}
+          path: provenance.intoto.jsonl
+          if-no-files-found: error
+          retention-days: 1
