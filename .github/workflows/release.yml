@@ -208,7 +208,12 @@ jobs:
           PKG: ${{ needs.build.outputs.pkg }}
         run: |
           set -euo pipefail
+          # `--repo` est obligatoire ICI : ce job ne fait aucun checkout, donc
+          # `gh` n'a pas de `.git` où lire le dépôt, et répondait
+          # « fatal: not a git repository ». Mesuré sur la première release
+          # jamais lancée de la flotte.
           gh release create "${GITHUB_REF_NAME}" \
+            --repo "${GITHUB_REPOSITORY}" \
             --title "${GITHUB_REF_NAME}" \
             --generate-notes \
             "${PKG}.tar.gz" \
