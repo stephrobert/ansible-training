@@ -6,7 +6,7 @@ Tous les changements notables de ce projet sont consignés dans ce fichier. Le
 format s'appuie sur [Keep a Changelog](https://keepachangelog.com/), et le projet
 suit le [versionnage sémantique](https://semver.org/lang/fr/).
 
-## [Non publié]
+## [0.1.0] - 2026-10-09
 
 ### Ajouté
 
@@ -124,3 +124,6 @@ suit le [versionnage sémantique](https://semver.org/lang/fr/).
   `lab.yaml` par lab, des playbooks `setup.yaml` / `cleanup.yaml`, et l'infra
   déclarée dans `meta.yml`. Tant que la migration n'est pas terminée, les
   contributions de nouveaux labs sont mises en attente.
+
+[Non publié]: https://github.com/stephrobert/ansible-training/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/stephrobert/ansible-training/releases/tag/v0.1.0
