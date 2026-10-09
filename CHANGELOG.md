@@ -6,7 +6,7 @@ All notable changes to this project are documented in this file. The format is
 based on [Keep a Changelog](https://keepachangelog.com/), and the project follows
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.1.0] - 2026-10-09
 
 ### Added
 
@@ -123,3 +123,6 @@ based on [Keep a Changelog](https://keepachangelog.com/), and the project follow
   (`uv tool install dsoxlab`) with a `lab.yaml` per lab, `setup.yaml` /
   `cleanup.yaml` playbooks, and infrastructure declared in `meta.yml`. Until the
   migration lands, new lab contributions are on hold.
+
+[Unreleased]: https://github.com/stephrobert/ansible-training/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/stephrobert/ansible-training/releases/tag/v0.1.0
