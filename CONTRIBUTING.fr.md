@@ -88,6 +88,40 @@ disparaît **silencieusement** du catalogue, et `validate-structure` ne valide q
 les labs déjà découverts. Un lab absent de `list-labs` est presque toujours un
 `lab.yaml` invalide.
 
+## Attester un lab dans les deux sens
+
+`dsoxlab check` dit si un travail passe les tests ; il ne dit pas si les tests
+**échouent avant le travail**. Un lab vert sur son état de départ ne mesure
+rien. `scripts/valider-labs.py` exige les deux : un lab doit rendre **0 avant
+le travail** et réussir **tous ses tests après la solution de référence**, puis
+il écrit le verdict daté dans `validation-labs.json`, le relevé qu'affiche le
+site.
+
+```bash
+mise exec -- python3 scripts/valider-labs.py --lab <id-du-lab>   # répétable
+mise exec -- python3 scripts/valider-labs.py --section vault
+python3 scripts/valider-labs.py --check     # échoue si un verdict est ROUGE
+```
+
+C'est un outil de **formateur** : il déchiffre les solutions, donc il exige
+`.vault-pass`, et il exige les quatre VM debout avec leur base figée. Avant
+chaque lab VM, il ramène ses machines à cette base (l'isolation du
+`conftest.py`) : sans cela, le premier check noterait aussi ce qu'ont laissé
+les labs joués avant lui. La base se fige après chaque `provision`, qui
+recrée les domaines :
+
+```bash
+mise run provision
+mise run rebase
+```
+
+Le premier check se joue **sans `.vault-pass`**, écarté le temps de ce seul
+check, parce que le `conftest.py` retombe sur la solution de référence quand il
+la trouve : l'apprenant, lui, ne l'a jamais. Un lab qui laisse un conteneur, un
+fichier versionné modifié ou une solution dans `challenge/` est ROUGE. Un
+`challenge/solution.yml` déjà présent bloque le lab : c'est un travail en
+cours, le script n'y touche pas.
+
 ## Conventions
 
 - **Id de lab :** `<section>-<slug>` (ex. `decouvrir-installation-ansible`), pour

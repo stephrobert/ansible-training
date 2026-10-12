@@ -86,6 +86,40 @@ In that order, with `list-labs` first: a `lab.yaml` that raises while parsing
 labs that were already discovered. A lab missing from `list-labs` is almost
 always an invalid `lab.yaml`.
 
+## Attesting a lab both ways
+
+`dsoxlab check` tells whether some work passes the tests; it does not tell
+whether the tests **fail before the work**. A lab that is green on its starting
+state measures nothing. `scripts/valider-labs.py` requires both: a lab must
+score **0 before any work** and pass **all its tests after the reference
+solution**, then the dated verdict is written to `validation-labs.json`, the
+record the site displays.
+
+```bash
+mise exec -- python3 scripts/valider-labs.py --lab <lab-id>   # repeatable
+mise exec -- python3 scripts/valider-labs.py --section vault
+python3 scripts/valider-labs.py --check     # fails if a verdict is RED
+```
+
+It is an **instructor** tool: it decrypts the solutions, so it needs
+`.vault-pass`, and it needs the four VMs up with their frozen base. Before each
+VM lab, it brings its machines back to that base (the `conftest.py`
+isolation): otherwise the first check would also grade whatever earlier labs
+left behind. The base is frozen again after every `provision`, which
+recreates the domains:
+
+```bash
+mise run provision
+mise run rebase
+```
+
+The first check runs **without `.vault-pass`**, moved aside for that single
+check, because `conftest.py` falls back to the reference solution when it can
+read it, and a learner never can. A lab that leaves a container, a modified
+tracked file or a solution in `challenge/` is RED. An existing
+`challenge/solution.yml` blocks the lab: it is work in progress, and the script
+does not touch it.
+
 ## Conventions
 
 - **Lab id:** `<section>-<slug>` (e.g. `decouvrir-installation-ansible`), for a

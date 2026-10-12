@@ -99,6 +99,16 @@ repos:
         pass_filenames: false
         always_run: true
 
+      # Le validateur des deux sens (0 avant le travail, 100 après la référence)
+      # écrit le relevé que le site affiche. Ses règles se tiennent sans jouer
+      # un seul lab : les commandes sont remplacées par des doublures.
+      - id: valider-labs
+        name: le validateur de labs juge dans les deux sens
+        entry: uv run --no-project --with pytest --with pyyaml pytest tests/test_valider_labs.py -q
+        language: system
+        pass_filenames: false
+        files: '^(scripts/(valider-labs|lecture_yaml)\.py|tests/test_valider_labs\.py)$'
+
       - id: outillage-coherent
         name: les vérificateurs de catalogue sont présents et câblés
         entry: uv run --no-project --with pytest --with pyyaml pytest tests/test_outillage_coherent.py -q
