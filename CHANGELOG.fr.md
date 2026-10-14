@@ -6,6 +6,23 @@ Tous les changements notables de ce projet sont consignés dans ce fichier. Le
 format s'appuie sur [Keep a Changelog](https://keepachangelog.com/), et le projet
 suit le [versionnage sémantique](https://semver.org/lang/fr/).
 
+## [0.1.1] - 2026-10-14
+
+### Ajouté
+
+- `scripts/valider-labs.py` éprouve chaque lab dans les deux sens : note
+  nulle avant le travail, barème complet après la solution, note nulle de
+  nouveau après `clean` et `run`, et le poste rendu intact. Un test qui
+  passe ne prouve rien tant qu'on n'a pas vu échouer ce qui doit échouer.
+- `tests/test_valider_labs.py` tient le validateur lui-même : c'est lui qui
+  décide si un lab est publiable, il ne peut pas être le seul code du dépôt
+  sans test.
+
+### Modifié
+
+- `ansible-lint` passe à `>=26.9.0`, `libvirt-python` à `>=12.8.0`, et cinq
+  actions GitHub sont remises à jour.
+
 ## [0.1.0] - 2026-10-09
 
 ### Ajouté
@@ -125,5 +142,6 @@ suit le [versionnage sémantique](https://semver.org/lang/fr/).
   déclarée dans `meta.yml`. Tant que la migration n'est pas terminée, les
   contributions de nouveaux labs sont mises en attente.
 
-[Non publié]: https://github.com/stephrobert/ansible-training/compare/v0.1.0...HEAD
+[Non publié]: https://github.com/stephrobert/ansible-training/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/stephrobert/ansible-training/releases/tag/v0.1.1
 [0.1.0]: https://github.com/stephrobert/ansible-training/releases/tag/v0.1.0

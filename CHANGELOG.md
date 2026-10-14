@@ -6,6 +6,23 @@ All notable changes to this project are documented in this file. The format is
 based on [Keep a Changelog](https://keepachangelog.com/), and the project follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.1] - 2026-10-14
+
+### Added
+
+- `scripts/valider-labs.py` proves every lab in both directions: zero before
+  the work, full score after the solution, zero again after `clean` and
+  `run`, and the machine left as it was found. A passing test proves nothing
+  until you have seen the right thing fail.
+- `tests/test_valider_labs.py` covers the validator itself: it is what
+  decides whether a lab is publishable, so it cannot be the one piece of
+  code in the repository without a test.
+
+### Changed
+
+- `ansible-lint` moves to `>=26.9.0`, `libvirt-python` to `>=12.8.0`, and
+  five GitHub actions are brought up to date.
+
 ## [0.1.0] - 2026-10-09
 
 ### Added
@@ -124,5 +141,6 @@ based on [Keep a Changelog](https://keepachangelog.com/), and the project follow
   `cleanup.yaml` playbooks, and infrastructure declared in `meta.yml`. Until the
   migration lands, new lab contributions are on hold.
 
-[Unreleased]: https://github.com/stephrobert/ansible-training/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/stephrobert/ansible-training/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/stephrobert/ansible-training/releases/tag/v0.1.1
 [0.1.0]: https://github.com/stephrobert/ansible-training/releases/tag/v0.1.0
