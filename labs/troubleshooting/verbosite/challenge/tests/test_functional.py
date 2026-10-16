@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import assert_idempotent, lab_host
+from conftest import assert_idempotent, lab_host, message
 
 TARGET_HOST = "db1.lab"
 RESULT_FILE = "/tmp/lab89-profile.txt"
@@ -19,23 +19,27 @@ def host():
 
 def test_file_exists(host):
     f = host.file(RESULT_FILE)
-    assert f.exists, (
-        f"{RESULT_FILE} absent sur {TARGET_HOST} — solution.yml a-t-elle tourné "
-        f"avec ANSIBLE_CONFIG=labs/troubleshooting/verbosite/ansible.cfg ?"
+    assert f.exists, message(
+        en=f"{RESULT_FILE} missing on {TARGET_HOST}: did solution.yml run with "
+        f"ANSIBLE_CONFIG=labs/troubleshooting/verbosite/ansible.cfg?",
+        fr=f"{RESULT_FILE} absent sur {TARGET_HOST} — solution.yml a-t-elle tourné "
+        f"avec ANSIBLE_CONFIG=labs/troubleshooting/verbosite/ansible.cfg ?",
     )
 
 
 def test_file_mode_0644(host):
     f = host.file(RESULT_FILE)
-    assert f.mode == 0o644, (
-        f"{RESULT_FILE} doit avoir mode 0644, vu : {oct(f.mode)}"
+    assert f.mode == 0o644, message(
+        en=f"{RESULT_FILE} must be mode 0644, seen: {oct(f.mode)}",
+        fr=f"{RESULT_FILE} doit avoir mode 0644, vu : {oct(f.mode)}",
     )
 
 
 def test_file_owned_by_root(host):
     f = host.file(RESULT_FILE)
-    assert f.user == "root", (
-        f"{RESULT_FILE} doit appartenir à root, vu : {f.user}"
+    assert f.user == "root", message(
+        en=f"{RESULT_FILE} must belong to root, seen: {f.user}",
+        fr=f"{RESULT_FILE} doit appartenir à root, vu : {f.user}",
     )
 
 
@@ -43,10 +47,13 @@ def test_file_has_three_non_empty_lines(host):
     """Le fichier contient EXACTEMENT 3 lignes non vides (les 3 noms de tâches)."""
     content = host.file(RESULT_FILE).content_string
     lines = [line for line in content.splitlines() if line.strip()]
-    assert len(lines) == 3, (
-        f"{RESULT_FILE} doit contenir exactement 3 lignes non vides "
+    assert len(lines) == 3, message(
+        en=f"{RESULT_FILE} must contain exactly 3 non-empty lines (the 3 task "
+        f"names), seen: {len(lines)} line(s).\n"
+        f"Contents: {content[:200]}",
+        fr=f"{RESULT_FILE} doit contenir exactement 3 lignes non vides "
         f"(les 3 noms de tâches), vu : {len(lines)} ligne(s).\n"
-        f"Contenu : {content[:200]}"
+        f"Contenu : {content[:200]}",
     )
 
 
@@ -59,9 +66,11 @@ def test_ansible_cfg_livrable_existe():
     ce dernier tout autant.
     """
     lab_cfg = LAB_ROOT / "ansible.cfg"
-    assert lab_cfg.is_file(), (
-        f"{lab_cfg} absent — créez l'ansible.cfg du lab (étape 1 du challenge) "
-        "qui active ansible.posix.profile_tasks."
+    assert lab_cfg.is_file(), message(
+        en=f"{lab_cfg} missing: create the lab's ansible.cfg (step 1 of the "
+        "challenge), which enables ansible.posix.profile_tasks.",
+        fr=f"{lab_cfg} absent — créez l'ansible.cfg du lab (étape 1 du challenge) "
+        "qui active ansible.posix.profile_tasks.",
     )
 
 
@@ -85,13 +94,17 @@ def test_ansible_cfg_active_profile_tasks():
     parser.read(lab_cfg)
     enabled = parser.get("defaults", "callbacks_enabled", fallback="")
     callbacks = [c.strip() for c in enabled.split(",") if c.strip()]
-    assert "ansible.posix.profile_tasks" in callbacks, (
-        f"ansible.posix.profile_tasks absent de callbacks_enabled dans "
-        f"{lab_cfg}. callbacks_enabled vu : {callbacks}"
+    assert "ansible.posix.profile_tasks" in callbacks, message(
+        en=f"ansible.posix.profile_tasks is absent from callbacks_enabled in "
+        f"{lab_cfg}. callbacks_enabled seen: {callbacks}",
+        fr=f"ansible.posix.profile_tasks absent de callbacks_enabled dans "
+        f"{lab_cfg}. callbacks_enabled vu : {callbacks}",
     )
-    assert parser.get("defaults", "callback_result_format", fallback="") == "yaml", (
-        f"L'ansible.cfg du lab doit définir callback_result_format = yaml dans {lab_cfg} "
-        "(le callback `yaml` n'existe plus depuis ansible-core 2.19)."
+    assert parser.get("defaults", "callback_result_format", fallback="") == "yaml", message(
+        en=f"The lab's ansible.cfg must set callback_result_format = yaml in {lab_cfg} "
+        "(the `yaml` callback no longer exists since ansible-core 2.19).",
+        fr=f"L'ansible.cfg du lab doit définir callback_result_format = yaml dans {lab_cfg} "
+        "(le callback `yaml` n'existe plus depuis ansible-core 2.19).",
     )
 
 

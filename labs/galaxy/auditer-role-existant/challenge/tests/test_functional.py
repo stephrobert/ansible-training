@@ -12,6 +12,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from conftest import message
+
 LAB_ROOT = Path(__file__).resolve().parents[2]
 ROLE = LAB_ROOT / "vendor" / "thirdparty_backup"
 AUDIT = LAB_ROOT / "challenge" / "audit.yml"
@@ -77,28 +79,36 @@ def _facts():
 
 
 def _audit():
-    assert AUDIT.is_file(), (
-        "challenge/audit.yml manquant : livrez votre rapport d'audit au "
-        "format documenté dans challenge/README.md"
+    assert AUDIT.is_file(), message(
+        en="challenge/audit.yml missing: deliver your audit report in the format "
+        "documented in challenge/README.md",
+        fr="challenge/audit.yml manquant : livrez votre rapport d'audit au "
+        "format documenté dans challenge/README.md",
     )
     data = yaml.safe_load(AUDIT.read_text())
-    assert isinstance(data, dict), "audit.yml doit être un mapping YAML"
+    assert isinstance(data, dict), message(
+        en="audit.yml must be a YAML mapping",
+        fr="audit.yml doit être un mapping YAML",
+    )
     return data
 
 
 def test_role_under_audit_untouched():
     """Le rôle audité ne doit pas être modifié : on audite, on ne corrige pas."""
     tasks = _tasks()
-    assert len(tasks) >= 4, (
-        "vendor/thirdparty_backup/tasks/main.yml semble modifié : l'audit "
-        "porte sur le rôle TEL QUE LIVRÉ (dsoxlab clean le restaure)"
+    assert len(tasks) >= 4, message(
+        en="vendor/thirdparty_backup/tasks/main.yml looks modified: the audit is "
+        "about the role AS DELIVERED (dsoxlab clean restores it)",
+        fr="vendor/thirdparty_backup/tasks/main.yml semble modifié : l'audit "
+        "porte sur le rôle TEL QUE LIVRÉ (dsoxlab clean le restaure)",
     )
 
 
 def test_audit_identifies_role():
     audit = _audit()
-    assert audit.get("role") == "thirdparty_backup", (
-        "audit.yml doit identifier le rôle audité (role: thirdparty_backup)"
+    assert audit.get("role") == "thirdparty_backup", message(
+        en="audit.yml must identify the audited role (role: thirdparty_backup)",
+        fr="audit.yml doit identifier le rôle audité (role: thirdparty_backup)",
     )
 
 
@@ -118,14 +128,19 @@ def test_audit_facts_are_true(key):
     """Chaque conclusion du rapport est recalculée depuis le code du rôle."""
     audit = _audit()
     facts = _facts()
-    assert key in audit, (
-        f"audit.yml : clé {key!r} manquante (voir le format dans "
-        "challenge/README.md)"
+    assert key in audit, message(
+        en=f"audit.yml: key {key!r} missing (see the format in "
+        "challenge/README.md)",
+        fr=f"audit.yml : clé {key!r} manquante (voir le format dans "
+        "challenge/README.md)",
     )
-    assert audit[key] == facts[key], (
-        f"audit.yml : {key} = {audit[key]!r}, or l'analyse du rôle donne "
+    assert audit[key] == facts[key], message(
+        en=f"audit.yml: {key} = {audit[key]!r}, while analysing the role gives "
+        f"{facts[key]!r}. Go back and read the role's code: an audit only "
+        "states what it has checked",
+        fr=f"audit.yml : {key} = {audit[key]!r}, or l'analyse du rôle donne "
         f"{facts[key]!r}. Retournez lire le code du rôle : un audit "
-        "n'affirme que ce qu'il a vérifié"
+        "n'affirme que ce qu'il a vérifié",
     )
 
 
@@ -133,15 +148,21 @@ def test_audit_verdict_consistent():
     """Secret en clair + zéro test : la conclusion ne fait pas débat."""
     audit = _audit()
     score = audit.get("score")
-    assert isinstance(score, int) and 0 <= score <= 10, (
-        "audit.yml : score doit être un entier entre 0 et 10"
+    assert isinstance(score, int) and 0 <= score <= 10, message(
+        en="audit.yml: score must be an integer between 0 and 10",
+        fr="audit.yml : score doit être un entier entre 0 et 10",
     )
-    assert score <= 4, (
-        f"Score {score}/10 trop indulgent : mot de passe en clair dans "
+    assert score <= 4, message(
+        en=f"A score of {score}/10 is too lenient: a password in clear in "
+        "defaults, no test at all, broken idempotence. Read the grid in "
+        "AUDIT_CHECKLIST.md again",
+        fr=f"Score {score}/10 trop indulgent : mot de passe en clair dans "
         "defaults, aucun test, idempotence cassée. Relisez la grille de "
-        "AUDIT_CHECKLIST.md"
+        "AUDIT_CHECKLIST.md",
     )
-    assert audit.get("verdict") == "reject", (
-        "Verdict attendu : reject. Un rôle qui embarque un secret en clair "
-        "et n'a aucun test ne s'adopte pas et ne se forke pas tel quel"
+    assert audit.get("verdict") == "reject", message(
+        en="Expected verdict: reject. A role that embeds a clear-text secret and "
+        "has no test is neither adopted nor forked as it is",
+        fr="Verdict attendu : reject. Un rôle qui embarque un secret en clair "
+        "et n'a aucun test ne s'adopte pas et ne se forke pas tel quel",
     )

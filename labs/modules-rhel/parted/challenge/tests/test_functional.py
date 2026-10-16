@@ -7,7 +7,7 @@ disque à zéro : lancez le lab via dsoxlab avant de jouer votre solution.
 
 import pytest
 
-from conftest import assert_idempotent, lab_host
+from conftest import assert_idempotent, lab_host, message
 
 TARGET_HOST = "db1.lab"
 DEVICE = "/dev/vdb"
@@ -25,9 +25,11 @@ def host():
 def parted_output(host):
     """Sortie machine-readable de parted : en-têtes + une ligne par partition."""
     result = host.run(f"sudo parted -sm {DEVICE} unit MiB print")
-    assert result.rc == 0, (
-        f"parted a échoué sur {DEVICE} : {result.stderr}. "
-        f"Le disque secondaire existe-t-il ? Relancez le setup du lab (dsoxlab)."
+    assert result.rc == 0, message(
+        en=f"parted failed on {DEVICE}: {result.stderr}. "
+        f"Does the second disk exist? Replay the lab's setup (dsoxlab).",
+        fr=f"parted a échoué sur {DEVICE} : {result.stderr}. "
+        f"Le disque secondaire existe-t-il ? Relancez le setup du lab (dsoxlab).",
     )
     return result.stdout
 
@@ -42,31 +44,43 @@ def partition_lines(parted_output):
 
 def _size_bytes(host, dev):
     result = host.run(f"sudo blockdev --getsize64 {dev}")
-    assert result.rc == 0, f"blockdev a échoué sur {dev} : {result.stderr}"
+    assert result.rc == 0, message(
+        en=f"blockdev failed on {dev}: {result.stderr}",
+        fr=f"blockdev a échoué sur {dev} : {result.stderr}",
+    )
     return int(result.stdout.strip())
 
 
 def test_vdb_existe(host):
     result = host.run(f"sudo test -b {DEVICE}")
-    assert result.rc == 0, (
-        f"{DEVICE} doit être un block device : c'est le disque secondaire de "
-        f"db1.lab, provisionné par l'infra du lab. Relancez le setup (dsoxlab)."
+    assert result.rc == 0, message(
+        en=f"{DEVICE} must be a block device: it is db1.lab's second disk, "
+        f"provisioned by the lab's infrastructure. Replay the setup (dsoxlab).",
+        fr=f"{DEVICE} doit être un block device : c'est le disque secondaire de "
+        f"db1.lab, provisionné par l'infra du lab. Relancez le setup (dsoxlab).",
     )
 
 
 def test_table_gpt(host):
     result = host.run(f"sudo parted -s {DEVICE} print")
-    assert result.rc == 0, f"parted a échoué : {result.stderr}"
-    assert "gpt" in result.stdout.lower(), (
-        f"Table de partitions attendue : gpt, vu :\n{result.stdout}\n"
-        f"Posez le label GPT via le paramètre label du module de partitionnement."
+    assert result.rc == 0, message(
+        en=f"parted failed: {result.stderr}",
+        fr=f"parted a échoué : {result.stderr}",
+    )
+    assert "gpt" in result.stdout.lower(), message(
+        en=f"Expected partition table: gpt, seen:\n{result.stdout}\n"
+        f"Set the GPT label through the partitioning module's label parameter.",
+        fr=f"Table de partitions attendue : gpt, vu :\n{result.stdout}\n"
+        f"Posez le label GPT via le paramètre label du module de partitionnement.",
     )
 
 
 def test_3_partitions(partition_lines, parted_output):
-    assert len(partition_lines) == 3, (
-        f"3 partitions attendues sur {DEVICE}, vu : {len(partition_lines)}. "
-        f"Sortie parted -sm :\n{parted_output}"
+    assert len(partition_lines) == 3, message(
+        en=f"3 partitions expected on {DEVICE}, seen: {len(partition_lines)}. "
+        f"parted -sm output:\n{parted_output}",
+        fr=f"3 partitions attendues sur {DEVICE}, vu : {len(partition_lines)}. "
+        f"Sortie parted -sm :\n{parted_output}",
     )
 
 
@@ -74,25 +88,31 @@ def test_3_partitions(partition_lines, parted_output):
 def test_partition_est_block_device(host, part_number):
     part = f"{DEVICE}{part_number}"
     result = host.run(f"sudo test -b {part}")
-    assert result.rc == 0, (
-        f"{part} doit exister en tant que block device. "
-        f"Vérifiez le découpage de {DEVICE} (numéro, part_start, part_end)."
+    assert result.rc == 0, message(
+        en=f"{part} must exist as a block device. "
+        f"Check how {DEVICE} is cut up (number, part_start, part_end).",
+        fr=f"{part} doit exister en tant que block device. "
+        f"Vérifiez le découpage de {DEVICE} (numéro, part_start, part_end).",
     )
 
 
 def test_vdb1_taille_500mib(host):
     size = _size_bytes(host, f"{DEVICE}1")
-    assert 450 * MIB <= size <= 550 * MIB, (
-        f"{DEVICE}1 doit faire environ 500 MiB (partition EFI), "
-        f"vu : {size / MIB:.0f} MiB. Bornes attendues : 1MiB à 501MiB."
+    assert 450 * MIB <= size <= 550 * MIB, message(
+        en=f"{DEVICE}1 must be about 500 MiB (the EFI partition), "
+        f"seen: {size / MIB:.0f} MiB. Expected bounds: 1MiB to 501MiB.",
+        fr=f"{DEVICE}1 doit faire environ 500 MiB (partition EFI), "
+        f"vu : {size / MIB:.0f} MiB. Bornes attendues : 1MiB à 501MiB.",
     )
 
 
 def test_vdb2_taille_4gib(host):
     size = _size_bytes(host, f"{DEVICE}2")
-    assert 3.8 * GIB <= size <= 4.2 * GIB, (
-        f"{DEVICE}2 doit faire environ 4 GiB (future partition de données), "
-        f"vu : {size / GIB:.2f} GiB. Elle démarre là où finit {DEVICE}1."
+    assert 3.8 * GIB <= size <= 4.2 * GIB, message(
+        en=f"{DEVICE}2 must be about 4 GiB (the future data partition), "
+        f"seen: {size / GIB:.2f} GiB. It starts where {DEVICE}1 ends.",
+        fr=f"{DEVICE}2 doit faire environ 4 GiB (future partition de données), "
+        f"vu : {size / GIB:.2f} GiB. Elle démarre là où finit {DEVICE}1.",
     )
 
 
@@ -104,28 +124,35 @@ def test_vdb3_prend_le_reste(parted_output, partition_lines):
     )
     disk_end = float(disk_line.split(":")[1].rstrip("MiB"))
     p3_end = float(partition_lines[2].split(":")[2].rstrip("MiB"))
-    assert p3_end >= disk_end * 0.98, (
-        f"{DEVICE}3 doit occuper tout le reste du disque : fin attendue vers "
+    assert p3_end >= disk_end * 0.98, message(
+        en=f"{DEVICE}3 must take all the remaining space: expected end around "
+        f"{disk_end:.0f} MiB, seen {p3_end:.0f} MiB. Use a relative end bound "
+        f"(100%) rather than a fixed size.",
+        fr=f"{DEVICE}3 doit occuper tout le reste du disque : fin attendue vers "
         f"{disk_end:.0f} MiB, vu {p3_end:.0f} MiB. Utilisez une borne de fin "
-        f"relative (100%) plutôt qu'une taille figée."
+        f"relative (100%) plutôt qu'une taille figée.",
     )
 
 
 def test_vdb1_flags_boot_esp(partition_lines):
     """La partition 1 porte les flags d'une partition EFI (boot, esp)."""
     flags = partition_lines[0].split(":")[-1].rstrip(";")
-    assert "esp" in flags, (
-        f"{DEVICE}1 doit porter le flag esp (partition EFI), flags vus : "
-        f"'{flags}'. Posez les flags boot et esp sur la partition 1."
+    assert "esp" in flags, message(
+        en=f"{DEVICE}1 must carry the esp flag (EFI partition), flags seen: "
+        f"'{flags}'. Set the boot and esp flags on partition 1.",
+        fr=f"{DEVICE}1 doit porter le flag esp (partition EFI), flags vus : "
+        f"'{flags}'. Posez les flags boot et esp sur la partition 1.",
     )
 
 
 def test_vdb3_flag_lvm(partition_lines):
     """La partition 3 porte le flag lvm (futur PV)."""
     flags = partition_lines[2].split(":")[-1].rstrip(";")
-    assert "lvm" in flags, (
-        f"{DEVICE}3 doit porter le flag lvm, flags vus : '{flags}'. "
-        f"Posez le flag lvm sur la partition 3."
+    assert "lvm" in flags, message(
+        en=f"{DEVICE}3 must carry the lvm flag, flags seen: '{flags}'. "
+        f"Set the lvm flag on partition 3.",
+        fr=f"{DEVICE}3 doit porter le flag lvm, flags vus : '{flags}'. "
+        f"Posez le flag lvm sur la partition 3.",
     )
 
 

@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from conftest import assert_idempotent, lab_host
+from conftest import assert_idempotent, lab_host, message
 
 TARGET_HOST = "db1.lab"
 
@@ -64,18 +64,33 @@ def journal(api):
 
 def test_get_json_file_exists(host):
     f = host.file("/opt/lab-uri-get.json")
-    assert f.exists
-    assert f.is_file
-    assert f.mode == 0o644
+    assert f.exists, message(
+        en="/opt/lab-uri-get.json is missing: the GET response was never "
+           "written. The uri module returns the parsed body in its result; a "
+           "task has to write it.",
+        fr="/opt/lab-uri-get.json est absent : la réponse du GET n'a jamais "
+           "été écrite. Le module uri rend le corps analysé dans son "
+           "résultat ; c'est une tâche qui l'écrit.",
+    )
+    assert f.is_file, message(
+        en="/opt/lab-uri-get.json is not an ordinary file.",
+        fr="/opt/lab-uri-get.json n'est pas un fichier ordinaire.",
+    )
+    assert f.mode == 0o644, message(
+        en=f"/opt/lab-uri-get.json is {oct(f.mode)}, expected 0644.",
+        fr=f"/opt/lab-uri-get.json est en {oct(f.mode)}, attendu 0644.",
+    )
 
 
 def test_get_json_is_valid_json(host):
     """Le fichier doit porter la charge utile servie par l'API, à l'identique."""
     content = host.file("/opt/lab-uri-get.json").content_string
     data = json.loads(content)
-    assert data == CHARGE_REFERENCE, (
-        f"Le corps de la réponse GET doit être écrit tel quel. "
-        f"Attendu {CHARGE_REFERENCE}, vu {data}"
+    assert data == CHARGE_REFERENCE, message(
+        en=f"The GET response body must be written as it is. "
+        f"Expected {CHARGE_REFERENCE}, seen {data}",
+        fr=f"Le corps de la réponse GET doit être écrit tel quel. "
+        f"Attendu {CHARGE_REFERENCE}, vu {data}",
     )
 
 
@@ -83,16 +98,25 @@ def test_get_json_is_valid_json(host):
 
 def test_post_json_file_exists(host):
     f = host.file("/opt/lab-uri-post.json")
-    assert f.exists
-    assert f.mode == 0o644
+    assert f.exists, message(
+        en="/opt/lab-uri-post.json is missing: the POST response was never "
+           "written.",
+        fr="/opt/lab-uri-post.json est absent : la réponse du POST n'a jamais "
+           "été écrite.",
+    )
+    assert f.mode == 0o644, message(
+        en=f"/opt/lab-uri-post.json is {oct(f.mode)}, expected 0644.",
+        fr=f"/opt/lab-uri-post.json est en {oct(f.mode)}, attendu 0644.",
+    )
 
 
 def test_post_response_is_creation_receipt(host):
     """L'API répond 201 avec un accusé de création : c'est lui qu'on persiste."""
     content = host.file("/opt/lab-uri-post.json").content_string
     data = json.loads(content)
-    assert data == {"statut": "cree", "ressource": "/api/noeuds/rhce"}, (
-        f"La réponse POST analysée doit être écrite telle quelle, vu : {data}"
+    assert data == {"statut": "cree", "ressource": "/api/noeuds/rhce"}, message(
+        en=f"The parsed POST response must be written as it is, seen: {data}",
+        fr=f"La réponse POST analysée doit être écrite telle quelle, vu : {data}",
     )
 
 
@@ -105,14 +129,22 @@ def test_le_get_a_bien_ete_emis(journal):
     Un `command: curl`, que le README interdit, s'annoncerait autrement.
     """
     gets = [e for e in journal if e["methode"] == "GET" and e["chemin"] == "/api/reference"]
-    assert gets, (
-        "Aucun GET sur /api/reference dans le journal de l'API : le fichier "
-        f"a-t-il été produit sans appel HTTP ? Journal : {journal}"
+    assert gets, message(
+        en="No GET on /api/reference in the API's log: was the file produced "
+        f"without an HTTP call? Log: {journal}",
+        fr="Aucun GET sur /api/reference dans le journal de l'API : le fichier "
+        f"a-t-il été produit sans appel HTTP ? Journal : {journal}",
     )
-    assert any(e["statut"] == "200" for e in gets), f"Aucun GET en 200, vu : {gets}"
-    assert any(e["agent"].startswith("ansible-httpget") for e in gets), (
-        f"Le GET n'a pas été émis par le module uri (agent vu : "
-        f"{[e['agent'] for e in gets]}). Le module s'annonce ansible-httpget."
+    assert any(e["statut"] == "200" for e in gets), message(
+        en=f"No GET returned 200, seen: {gets}",
+        fr=f"Aucun GET en 200, vu : {gets}",
+    )
+    assert any(e["agent"].startswith("ansible-httpget") for e in gets), message(
+        en=f"The GET did not come from the uri module (agent seen: "
+        f"{[e['agent'] for e in gets]}). The module announces itself as "
+        f"ansible-httpget.",
+        fr=f"Le GET n'a pas été émis par le module uri (agent vu : "
+        f"{[e['agent'] for e in gets]}). Le module s'annonce ansible-httpget.",
     )
 
 
@@ -123,21 +155,27 @@ def test_le_post_a_bien_ete_emis_avec_le_bon_corps(journal):
     une vraie exigence, que le défaut du module ([200]) ne satisfait pas.
     """
     posts = [e for e in journal if e["methode"] == "POST" and e["chemin"] == "/api/noeuds"]
-    assert posts, (
-        f"Aucun POST sur /api/noeuds dans le journal de l'API. Journal : {journal}"
+    assert posts, message(
+        en=f"No POST on /api/noeuds in the API's log. Log: {journal}",
+        fr=f"Aucun POST sur /api/noeuds dans le journal de l'API. Journal : {journal}",
     )
-    assert any(e["statut"] == "201" for e in posts), (
-        f"Le POST n'a pas été accepté en 201, vu : {[e['statut'] for e in posts]}"
+    assert any(e["statut"] == "201" for e in posts), message(
+        en=f"The POST was not accepted with a 201, seen: {[e['statut'] for e in posts]}",
+        fr=f"Le POST n'a pas été accepté en 201, vu : {[e['statut'] for e in posts]}",
     )
-    assert any(e["agent"].startswith("ansible-httpget") for e in posts), (
-        f"Le POST n'a pas été émis par le module uri (agent vu : "
-        f"{[e['agent'] for e in posts]})."
+    assert any(e["agent"].startswith("ansible-httpget") for e in posts), message(
+        en=f"The POST did not come from the uri module (agent seen: "
+        f"{[e['agent'] for e in posts]}).",
+        fr=f"Le POST n'a pas été émis par le module uri (agent vu : "
+        f"{[e['agent'] for e in posts]}).",
     )
     corps = [json.loads(e["corps"]) for e in posts if e["corps"]]
-    assert CORPS_ATTENDU in corps, (
-        f"Aucun POST avec le corps {CORPS_ATTENDU}. Corps vus : {corps}. "
+    assert CORPS_ATTENDU in corps, message(
+        en=f"No POST carried the body {CORPS_ATTENDU}. Bodies seen: {corps}. "
+        "The body must be built as a YAML structure, with body_format: json.",
+        fr=f"Aucun POST avec le corps {CORPS_ATTENDU}. Corps vus : {corps}. "
         "Le body doit être construit comme une structure YAML, avec "
-        "body_format: json."
+        "body_format: json.",
     )
 
 

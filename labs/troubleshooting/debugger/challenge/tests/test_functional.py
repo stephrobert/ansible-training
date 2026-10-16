@@ -2,7 +2,7 @@
 
 import pytest
 
-from conftest import assert_idempotent, lab_host
+from conftest import assert_idempotent, lab_host, message
 
 TARGET_HOST = "db1.lab"
 RESULT_FILE = "/tmp/lab90-debug.txt"
@@ -15,30 +15,38 @@ def host():
 
 def test_file_exists(host):
     f = host.file(RESULT_FILE)
-    assert f.exists, (
-        f"{RESULT_FILE} absent — solution.yml doit définir vars: target_dir=/tmp "
-        f"et déposer le fichier preuve."
+    assert f.exists, message(
+        en=f"{RESULT_FILE} missing: solution.yml must set vars: target_dir=/tmp "
+        f"and write the proof file.",
+        fr=f"{RESULT_FILE} absent — solution.yml doit définir vars: target_dir=/tmp "
+        f"et déposer le fichier preuve.",
     )
 
 
 def test_file_mode_0644(host):
     f = host.file(RESULT_FILE)
-    assert f.mode == 0o644, (
-        f"{RESULT_FILE} doit avoir mode 0644, vu : {oct(f.mode)}"
+    assert f.mode == 0o644, message(
+        en=f"{RESULT_FILE} must be mode 0644, seen: {oct(f.mode)}",
+        fr=f"{RESULT_FILE} doit avoir mode 0644, vu : {oct(f.mode)}",
     )
 
 
 def test_file_owned_by_root(host):
     f = host.file(RESULT_FILE)
-    assert f.user == "root", f"{RESULT_FILE} doit appartenir à root, vu : {f.user}"
+    assert f.user == "root", message(
+        en=f"{RESULT_FILE} must belong to root, seen: {f.user}",
+        fr=f"{RESULT_FILE} doit appartenir à root, vu : {f.user}",
+    )
 
 
 def test_file_contains_marker(host):
     """Le fichier contient la marque attendue après le fix."""
     content = host.file(RESULT_FILE).content_string
-    assert "Debugger fix" in content or "lab 90" in content.lower(), (
-        f"{RESULT_FILE} doit contenir 'Debugger fix' ou 'lab 90', "
-        f"vu : {content[:200]}"
+    assert "Debugger fix" in content or "lab 90" in content.lower(), message(
+        en=f"{RESULT_FILE} must contain 'Debugger fix' or 'lab 90', "
+        f"seen: {content[:200]}",
+        fr=f"{RESULT_FILE} doit contenir 'Debugger fix' ou 'lab 90', "
+        f"vu : {content[:200]}",
     )
 
 

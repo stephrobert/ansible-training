@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from conftest import assert_idempotent, lab_host, lab_solution_text
+from conftest import assert_idempotent, lab_host, lab_solution_text, message
 
 TARGET_HOST = "db1.lab"
 
@@ -16,20 +16,44 @@ def host():
 
 def test_marker_exists(host):
     f = host.file("/tmp/lab-assert-validated.txt")
-    assert f.exists, "Le marker doit exister apres validation reussie"
-    assert f.is_file
-    assert f.mode == 0o644
+    assert f.exists, message(
+        en="The marker must exist after a successful validation",
+        fr="Le marker doit exister après validation réussie",
+    )
+    assert f.is_file, message(
+        en="The marker exists but is not an ordinary file.",
+        fr="Le marqueur existe mais n'est pas un fichier ordinaire.",
+    )
+    assert f.mode == 0o644, message(
+        en=f"The marker is {oct(f.mode)}, expected 0644.",
+        fr=f"Le marqueur est en {oct(f.mode)}, attendu 0644.",
+    )
 
 
 def test_marker_contains_validation_ok(host):
     content = host.file("/tmp/lab-assert-validated.txt").content_string
-    assert "Validations OK" in content
+    assert "Validations OK" in content, message(
+        en="The marker does not carry « Validations OK »: it must be written "
+           "AFTER the assert, so that its presence proves the checks passed.",
+        fr="Le marqueur ne porte pas « Validations OK » : il doit être écrit "
+           "APRÈS l'assert, pour que sa présence prouve que les contrôles "
+           "sont passés.",
+    )
 
 
 def test_marker_contains_os_info(host):
     content = host.file("/tmp/lab-assert-validated.txt").content_string
     # AlmaLinux 9.x ou similaire
-    assert "AlmaLinux" in content or "Rocky" in content or "RedHat" in content
+    assert (
+        "AlmaLinux" in content or "Rocky" in content or "RedHat" in content
+    ), message(
+        en=f"The marker does not name the target's distribution. Render a "
+           f"real fact (ansible_distribution): a hardcoded value would prove "
+           f"nothing.\nSeen: {content[:150]}",
+        fr=f"Le marqueur ne nomme pas la distribution de la cible. Rends un "
+           f"vrai fact (ansible_distribution) : une valeur écrite en dur ne "
+           f"prouverait rien.\nVu : {content[:150]}",
+    )
 
 
 def test_solution_defends_with_fail_and_assert():
@@ -45,19 +69,27 @@ def test_solution_defends_with_fail_and_assert():
     """
     text = lab_solution_text(__file__)
 
-    assert re.search(r"\bfail:", text) or "ansible.builtin.fail" in text, (
-        "La solution doit refuser un mauvais hôte avec ansible.builtin.fail."
+    assert re.search(r"\bfail:", text) or "ansible.builtin.fail" in text, message(
+        en="The solution must refuse a wrong host with ansible.builtin.fail.",
+        fr="La solution doit refuser un mauvais hôte avec ansible.builtin.fail.",
     )
-    assert "when:" in text and "inventory_hostname" in text, (
-        "Le fail défensif doit être gardé par un when: sur inventory_hostname."
+    assert "when:" in text and "inventory_hostname" in text, message(
+        en="The defensive fail must be guarded by a when: on inventory_hostname.",
+        fr="Le fail défensif doit être gardé par un when: sur inventory_hostname.",
     )
-    assert re.search(r"\bassert:", text) or "ansible.builtin.assert" in text, (
-        "La solution doit valider les prérequis avec ansible.builtin.assert."
+    assert re.search(r"\bassert:", text) or "ansible.builtin.assert" in text, message(
+        en="The solution must validate the prerequisites with ansible.builtin.assert.",
+        fr="La solution doit valider les prérequis avec ansible.builtin.assert.",
     )
-    assert "that:" in text, "Le module assert doit porter une liste 'that:'."
-    assert "ansible_distribution" in text, (
-        "La précondition assert doit porter sur des facts réels de la cible "
-        "(ex. ansible_distribution), pas sur une condition triviale."
+    assert "that:" in text, message(
+        en="The assert module must carry a 'that:' list.",
+        fr="Le module assert doit porter une liste 'that:'.",
+    )
+    assert "ansible_distribution" in text, message(
+        en="The assert precondition must be about real facts of the target "
+        "(ansible_distribution for instance), not a trivial condition.",
+        fr="La précondition assert doit porter sur des facts réels de la cible "
+        "(ex. ansible_distribution), pas sur une condition triviale.",
     )
 
 

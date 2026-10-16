@@ -2,7 +2,7 @@
 
 import pytest
 
-from conftest import assert_idempotent, lab_host, lab_solution_text
+from conftest import assert_idempotent, lab_host, lab_solution_text, message
 
 TARGET_HOST = "db1.lab"
 
@@ -20,38 +20,49 @@ def host():
 def test_solution_uses_import_tasks():
     """Le solution.yml utilise import_tasks (FQCN)."""
     content = lab_solution_text(__file__)
-    assert "import_tasks" in content, (
-        "Le solution.yml doit utiliser ansible.builtin.import_tasks"
+    assert "import_tasks" in content, message(
+        en="solution.yml must use ansible.builtin.import_tasks",
+        fr="Le solution.yml doit utiliser ansible.builtin.import_tasks",
     )
 
 
 def test_solution_uses_include_tasks():
     """Le solution.yml utilise include_tasks (FQCN)."""
     content = lab_solution_text(__file__)
-    assert "include_tasks" in content, (
-        "Le solution.yml doit utiliser ansible.builtin.include_tasks (loop NE marche pas avec import_tasks)"
+    assert "include_tasks" in content, message(
+        en="solution.yml must use ansible.builtin.include_tasks (loop does NOT work with import_tasks)",
+        fr="Le solution.yml doit utiliser ansible.builtin.include_tasks (loop NE marche pas avec import_tasks)",
     )
 
 
 def test_solution_uses_loop():
     """Le solution.yml a un loop: pour la version dynamique."""
     content = lab_solution_text(__file__)
-    assert "loop:" in content, (
-        "Le solution.yml doit contenir un loop: (sur include_tasks)"
+    assert "loop:" in content, message(
+        en="solution.yml must contain a loop: (on include_tasks)",
+        fr="Le solution.yml doit contenir un loop: (sur include_tasks)",
     )
 
 
 def test_import_marker_exists(host):
     """Le marker de import_tasks est déposé."""
     f = host.file("/tmp/lab30a-import.txt")
-    assert f.exists, "/tmp/lab30a-import.txt absent — import_tasks a-t-il tourné ?"
-    assert f.mode == 0o644
-    assert f.user == "root", (
-        f"Le fichier produit doit appartenir à root (owner: root), vu : {f.user}"
+    assert f.exists, message(
+        en="/tmp/lab30a-import.txt missing: did import_tasks run?",
+        fr="/tmp/lab30a-import.txt absent — import_tasks a-t-il tourné ?",
+    )
+    assert f.mode == 0o644, message(
+        en=f"The import marker is {oct(f.mode)}, expected 0644.",
+        fr=f"Le marqueur d'import est en {oct(f.mode)}, attendu 0644.",
+    )
+    assert f.user == "root", message(
+        en=f"The produced file must belong to root (owner: root), seen: {f.user}",
+        fr=f"Le fichier produit doit appartenir à root (owner: root), vu : {f.user}",
     )
     content = f.content_string
-    assert "import-static" in content or "import" in content.lower(), (
-        f"Le marker import doit contenir 'import-static' ou 'import', vu : {content[:100]}"
+    assert "import-static" in content or "import" in content.lower(), message(
+        en=f"The import marker must contain 'import-static' or 'import', seen: {content[:100]}",
+        fr=f"Le marker import doit contenir 'import-static' ou 'import', vu : {content[:100]}",
     )
 
 
@@ -59,13 +70,18 @@ def test_loop_markers_exist(host):
     """Les 3 markers de la loop sont déposés."""
     for n in (1, 2, 3):
         f = host.file(f"/tmp/lab30a-loop-{n}.txt")
-        assert f.exists, (
-            f"/tmp/lab30a-loop-{n}.txt absent — la loop sur include_tasks a-t-elle tourné ?"
+        assert f.exists, message(
+            en=f"/tmp/lab30a-loop-{n}.txt missing: did the loop on include_tasks run?",
+            fr=f"/tmp/lab30a-loop-{n}.txt absent — la loop sur include_tasks a-t-elle tourné ?",
         )
-        assert f.mode == 0o644
+        assert f.mode == 0o644, message(
+            en=f"/tmp/lab30a-loop-{n}.txt is {oct(f.mode)}, expected 0644.",
+            fr=f"/tmp/lab30a-loop-{n}.txt est en {oct(f.mode)}, attendu 0644.",
+        )
         content = f.content_string
-        assert str(n) in content, (
-            f"/tmp/lab30a-loop-{n}.txt doit contenir '{n}', vu : {content[:80]}"
+        assert str(n) in content, message(
+            en=f"/tmp/lab30a-loop-{n}.txt must contain '{n}', seen: {content[:80]}",
+            fr=f"/tmp/lab30a-loop-{n}.txt doit contenir '{n}', vu : {content[:80]}",
         )
 
 

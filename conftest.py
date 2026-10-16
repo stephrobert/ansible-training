@@ -106,6 +106,44 @@ def _dsoxlab_ssh_config() -> Path | None:
 os.environ.setdefault("ANSIBLE_PRIVATE_KEY_FILE", str(SSH_KEY))
 
 
+def message(en, fr):
+    """Le message d'une assertion, dans la langue de l'apprenant.
+
+    Pourquoi ce helper
+    ------------------
+
+    Quand un test échoue, `dsoxlab check` affiche le **message écrit par
+    l'auteur** : c'est la seule consigne que l'apprenant reçoit à cet instant.
+    Or tout le reste du catalogue existe dans les deux langues (`README.md` et
+    `README.fr.md`), et ce texte-là ne peut pas : le contrat dsoxlab impose un
+    nom de fichier unique, `challenge/tests/test_functional.py`. Il n'y a donc
+    pas de version anglaise possible par duplication, d'où ce choix à
+    l'exécution.
+
+    Pourquoi ici et pas dans dsoxlab
+    --------------------------------
+
+    Un test de lab doit rester jouable par un simple `pytest`, sans l'outil
+    installé : c'est le test de non-couplage du catalogue. Un
+    `from dsoxlab… import` en tête d'un fichier de tests le casserait. dsoxlab
+    ne reconnaît donc que la **forme** de l'appel, `message(en=…, fr=…)`, et
+    `dsoxlab instructor audit` compte combien de messages la portent.
+
+    La langue vient de `DSOXLAB_LANG`, comme pour le reste de l'outil, et
+    l'anglais est le défaut.
+
+    Usage :
+
+        from conftest import lab_host, message
+
+        assert f.exists, message(
+            en="/etc/myapp is missing. Create it with ansible.builtin.file.",
+            fr="/etc/myapp est absent. Crée-le avec ansible.builtin.file.",
+        )
+    """
+    return fr if os.environ.get("DSOXLAB_LANG", "en").lower().startswith("fr") else en
+
+
 def lab_host(name):
     """Retourne un host testinfra connecté à une VM du lab.
 

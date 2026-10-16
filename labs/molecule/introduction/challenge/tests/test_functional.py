@@ -14,6 +14,8 @@ from pathlib import Path
 
 import yaml
 
+from conftest import message
+
 LAB_ROOT = Path(__file__).resolve().parents[2]
 MOLECULE_DIR = LAB_ROOT / "molecule" / "default"
 
@@ -24,45 +26,56 @@ def _load(name):
 
 def test_scenario_files_present():
     for name in ("molecule.yml", "converge.yml", "verify.yml"):
-        assert (MOLECULE_DIR / name).exists(), (
-            f"molecule/default/{name} manquant : le squelette livré a-t-il été supprimé ?"
+        assert (MOLECULE_DIR / name).exists(), message(
+            en=f"molecule/default/{name} missing: was the provided skeleton deleted?",
+            fr=f"molecule/default/{name} manquant : le squelette livré a-t-il été supprimé ?",
         )
 
 
 def test_molecule_yml_has_driver():
     config = _load("molecule.yml")
     driver = config.get("driver", {}).get("name")
-    assert driver in ("default", "delegated", "docker", "podman"), (
-        f"driver.name invalide ({driver!r}) : le driver moderne de Molecule "
-        "v6+ s'appelle 'default'"
+    assert driver in ("default", "delegated", "docker", "podman"), message(
+        en=f"Invalid driver.name ({driver!r}): Molecule v6+'s modern driver is "
+        "called 'default'",
+        fr=f"driver.name invalide ({driver!r}) : le driver moderne de Molecule "
+        "v6+ s'appelle 'default'",
     )
 
 
 def test_molecule_yml_has_platforms():
     config = _load("molecule.yml")
     platforms = config.get("platforms") or []
-    assert len(platforms) >= 1, (
-        "Déclarez au moins une plateforme (name, image systemd, "
-        "pre_build_image, command /sbin/init)"
+    assert len(platforms) >= 1, message(
+        en="Declare at least one platform (name, systemd image, pre_build_image, "
+        "command /sbin/init)",
+        fr="Déclarez au moins une plateforme (name, image systemd, "
+        "pre_build_image, command /sbin/init)",
     )
     for p in platforms:
-        assert "name" in p and "image" in p, (
-            "Chaque plateforme doit déclarer au minimum name et image"
+        assert "name" in p and "image" in p, message(
+            en="Every platform must declare at least name and image",
+            fr="Chaque plateforme doit déclarer au minimum name et image",
         )
 
 
 def test_molecule_yml_has_verifier():
     config = _load("molecule.yml")
     verifier = config.get("verifier", {}).get("name")
-    assert verifier in ("ansible", "testinfra", "goss"), (
-        f"verifier.name invalide ({verifier!r}) : pour ce lab, les "
-        "assertions sont en Ansible natif (verify.yml)"
+    assert verifier in ("ansible", "testinfra", "goss"), message(
+        en=f"Invalid verifier.name ({verifier!r}): for this lab, the assertions "
+        "are plain Ansible (verify.yml)",
+        fr=f"verifier.name invalide ({verifier!r}) : pour ce lab, les "
+        "assertions sont en Ansible natif (verify.yml)",
     )
 
 
 def test_converge_applies_webserver_role():
     plays = _load("converge.yml")
-    assert isinstance(plays, list) and plays, "converge.yml doit contenir un play"
+    assert isinstance(plays, list) and plays, message(
+        en="converge.yml must contain a play",
+        fr="converge.yml doit contenir un play",
+    )
     play = plays[0]
     roles = play.get("roles") or []
     role_names = [r.get("role") if isinstance(r, dict) else r for r in roles]
@@ -72,29 +85,39 @@ def test_converge_applies_webserver_role():
         if isinstance(t, dict)
         and any("include_role" in k or "import_role" in k for k in t)
     ]
-    assert "webserver" in role_names or includes, (
-        "converge.yml doit appliquer le rôle 'webserver' (section roles: "
-        "ou include_role/import_role)"
+    assert "webserver" in role_names or includes, message(
+        en="converge.yml must apply the 'webserver' role (a roles: section or "
+        "include_role/import_role)",
+        fr="converge.yml doit appliquer le rôle 'webserver' (section roles: "
+        "ou include_role/import_role)",
     )
-    assert play.get("become") is True, (
-        "converge.yml doit élever les privilèges (become: true) : le rôle "
-        "installe des paquets et gère des services"
+    assert play.get("become") is True, message(
+        en="converge.yml must raise privileges (become: true): the role installs "
+        "packages and manages services",
+        fr="converge.yml doit élever les privilèges (become: true) : le rôle "
+        "installe des paquets et gère des services",
     )
 
 
 def test_verify_has_real_assertions():
     plays = _load("verify.yml")
-    assert isinstance(plays, list) and plays, "verify.yml doit contenir un play"
+    assert isinstance(plays, list) and plays, message(
+        en="verify.yml must contain a play",
+        fr="verify.yml doit contenir un play",
+    )
     tasks = plays[0].get("tasks") or []
     asserts = [t for t in tasks if isinstance(t, dict) and "ansible.builtin.assert" in t]
-    assert len(asserts) >= 2, (
-        f"Au moins 2 tâches ansible.builtin.assert attendues, vu : {len(asserts)}. "
-        "Prouvez l'état : paquet nginx installé ET /etc/nginx/nginx.conf présent"
+    assert len(asserts) >= 2, message(
+        en=f"At least 2 ansible.builtin.assert tasks expected, seen: {len(asserts)}. "
+        "Prove the state: the nginx package installed AND /etc/nginx/nginx.conf present",
+        fr=f"Au moins 2 tâches ansible.builtin.assert attendues, vu : {len(asserts)}. "
+        "Prouvez l'état : paquet nginx installé ET /etc/nginx/nginx.conf présent",
     )
     for t in asserts:
         body = t["ansible.builtin.assert"]
-        assert body and body.get("that"), (
-            "Chaque assert doit porter une condition 'that:' non vide"
+        assert body and body.get("that"), message(
+            en="Every assert must carry a non-empty 'that:' condition",
+            fr="Chaque assert doit porter une condition 'that:' non vide",
         )
 
 
@@ -131,7 +154,10 @@ def test_verify_asserts_prove_nginx_state():
     `nginx_package.rc == 0` et `nginx_conf.stat.exists`.
     """
     plays = _load("verify.yml")
-    assert isinstance(plays, list) and plays, "verify.yml doit contenir un play"
+    assert isinstance(plays, list) and plays, message(
+        en="verify.yml must contain a play",
+        fr="verify.yml doit contenir un play",
+    )
     tasks = plays[0].get("tasks") or []
     asserts = [t for t in tasks if isinstance(t, dict) and "ansible.builtin.assert" in t]
 
@@ -141,13 +167,20 @@ def test_verify_asserts_prove_nginx_state():
         if "nginx" in _assert_that_text(t)
         and any(tok in _assert_that_text(t) for tok in _STATE_TOKENS)
     ]
-    assert proving, (
-        "Aucune condition `that:` ne prouve un état concret de nginx. L'énoncé "
+    assert proving, message(
+        en="No `that:` condition proves a concrete state of nginx. The brief asks "
+        "you to prove the nginx package is installed AND that "
+        "/etc/nginx/nginx.conf exists: at least one assertion must carry, in "
+        "its `that:`, the substring 'nginx' and some notion of "
+        "package/service/file (for instance `nginx_package.rc == 0`, "
+        "`nginx_conf.stat.exists`). "
+        f"`that:` seen: {[_assert_that_text(t) for t in asserts]!r}",
+        fr="Aucune condition `that:` ne prouve un état concret de nginx. L'énoncé "
         "demande de prouver le paquet nginx installé ET /etc/nginx/nginx.conf "
         "présent : au moins une assertion doit porter, dans son `that:`, la "
         "sous-chaîne 'nginx' et une notion de paquet/service/fichier "
         "(ex. `nginx_package.rc == 0`, `nginx_conf.stat.exists`). "
-        f"`that:` vus : {[_assert_that_text(t) for t in asserts]!r}"
+        f"`that:` vus : {[_assert_that_text(t) for t in asserts]!r}",
     )
 
 
@@ -157,9 +190,11 @@ def test_molecule_syntax_passes():
     L'action syntax valide dependency + syntax-check ansible-playbook sans
     créer d'instance : pas besoin de Podman ni de réseau.
     """
-    assert shutil.which("molecule"), (
-        "molecule est introuvable sur le poste : installez-le "
-        "(pipx install molecule), c'est l'outil enseigné par ce lab"
+    assert shutil.which("molecule"), message(
+        en="molecule is not on this machine: install it (pipx install molecule), "
+        "it is the tool this lab teaches",
+        fr="molecule est introuvable sur le poste : installez-le "
+        "(pipx install molecule), c'est l'outil enseigné par ce lab",
     )
     env = dict(os.environ, ANSIBLE_ROLES_PATH=str(LAB_ROOT / "roles"))
     result = subprocess.run(
@@ -171,6 +206,7 @@ def test_molecule_syntax_passes():
         timeout=300,
         check=False,
     )
-    assert result.returncode == 0, (
-        f"`molecule syntax` échoue sur votre scénario :\n{result.stdout}{result.stderr}"
+    assert result.returncode == 0, message(
+        en=f"`molecule syntax` fails on your scenario:\n{result.stdout}{result.stderr}",
+        fr=f"`molecule syntax` échoue sur votre scénario :\n{result.stdout}{result.stderr}",
     )

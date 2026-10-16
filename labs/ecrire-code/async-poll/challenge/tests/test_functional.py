@@ -2,7 +2,7 @@
 
 import pytest
 
-from conftest import lab_host
+from conftest import lab_host, message
 
 TARGET_HOST = "db1.lab"
 ASYNC_FILE = "/tmp/async-done.txt"
@@ -15,16 +15,19 @@ def host():
 
 def test_async_file_exists(host):
     f = host.file(ASYNC_FILE)
-    assert f.exists, (
-        f"{ASYNC_FILE} n'existe pas. Le job async a peut-être été tué "
-        f"par le timeout, ou async_status n'a pas attendu sa fin."
+    assert f.exists, message(
+        en=f"{ASYNC_FILE} does not exist. The async job may have been killed by "
+        f"the timeout, or async_status did not wait for it to finish.",
+        fr=f"{ASYNC_FILE} n'existe pas. Le job async a peut-être été tué "
+        f"par le timeout, ou async_status n'a pas attendu sa fin.",
     )
 
 
 def test_async_file_content(host):
     f = host.file(ASYNC_FILE)
-    assert "Async OK" in f.content_string, (
-        f"{ASYNC_FILE} ne contient pas 'Async OK'."
+    assert "Async OK" in f.content_string, message(
+        en=f"{ASYNC_FILE} does not contain 'Async OK'.",
+        fr=f"{ASYNC_FILE} ne contient pas 'Async OK'.",
     )
 
 # Pas de test d'idempotence ici, volontairement.

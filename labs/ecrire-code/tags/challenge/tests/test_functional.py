@@ -4,7 +4,7 @@ Tests pytest+testinfra pour le challenge "Tags" (tags always/configuration/never
 
 import pytest
 
-from conftest import assert_idempotent, lab_host
+from conftest import assert_idempotent, lab_host, message
 
 TARGET_HOST = "db1.lab"
 ALWAYS_FILE = "/tmp/challenge-tag-always.txt"
@@ -20,27 +20,33 @@ def host():
 def test_always_file_exists(host):
     """La tâche taguée 'always' doit s'exécuter même avec --tags configuration."""
     f = host.file(ALWAYS_FILE)
-    assert f.exists, (
-        f"{ALWAYS_FILE} n'existe pas. La tâche taguée 'always' doit "
-        f"s'exécuter quel que soit --tags."
+    assert f.exists, message(
+        en=f"{ALWAYS_FILE} does not exist. The task tagged 'always' must run "
+        f"whatever --tags says.",
+        fr=f"{ALWAYS_FILE} n'existe pas. La tâche taguée 'always' doit "
+        f"s'exécuter quel que soit --tags.",
     )
 
 
 def test_configuration_file_exists(host):
     """La tâche taguée 'configuration' a tourné via --tags configuration."""
     f = host.file(CONFIG_FILE)
-    assert f.exists, (
-        f"{CONFIG_FILE} n'existe pas. La tâche taguée 'configuration' "
-        f"doit s'exécuter avec --tags configuration."
+    assert f.exists, message(
+        en=f"{CONFIG_FILE} does not exist. The task tagged 'configuration' must "
+        f"run with --tags configuration.",
+        fr=f"{CONFIG_FILE} n'existe pas. La tâche taguée 'configuration' "
+        f"doit s'exécuter avec --tags configuration.",
     )
 
 
 def test_reset_file_does_not_exist(host):
     """La tâche taguée 'never' ne doit PAS s'exécuter sans --tags reset."""
     f = host.file(RESET_FILE)
-    assert not f.exists, (
-        f"{RESET_FILE} existe — la tâche 'never' s'est exécutée alors "
-        f"qu'elle ne devrait pas. Vérifier les tags."
+    assert not f.exists, message(
+        en=f"{RESET_FILE} exists: the 'never' task ran although it should not "
+        f"have. Check the tags.",
+        fr=f"{RESET_FILE} existe — la tâche 'never' s'est exécutée alors "
+        f"qu'elle ne devrait pas. Vérifier les tags.",
     )
 
 

@@ -1,8 +1,14 @@
-"""Tests pytest+testinfra pour le challenge jinja2-base."""
+"""Tests pytest+testinfra pour le challenge jinja2-base.
+
+Chaque assertion porte un message, et dans les deux langues : c'est le seul
+texte que `dsoxlab check` affiche quand un test échoue. Le fichier ne pouvant
+pas exister en deux versions, son nom étant imposé par le contrat, il suit le
+modèle de `hints.yaml` et porte ses deux langues avec `message(en=, fr=)`.
+"""
 
 import pytest
 
-from conftest import assert_idempotent, lab_host
+from conftest import assert_idempotent, lab_host, message
 
 TARGET_HOST = "db1.lab"
 RESULT_FILE = "/etc/motd-challenge"
@@ -14,24 +20,50 @@ def host():
 
 
 def test_file_exists(host):
-    assert host.file(RESULT_FILE).exists
+    assert host.file(RESULT_FILE).exists, message(
+        en=f"{RESULT_FILE} is missing. ansible.builtin.template renders the "
+           f".j2 file onto the target.",
+        fr=f"{RESULT_FILE} est absent. ansible.builtin.template rend le "
+           f"fichier .j2 sur la cible.",
+    )
 
 
 def test_contains_hostname(host):
     content = host.file(RESULT_FILE).content_string
-    assert "Bienvenue sur db1.lab" in content
+    assert "Bienvenue sur db1.lab" in content, message(
+        en="The hostname does not appear. It comes from inventory_hostname, "
+           "rendered by the template: writing db1.lab by hand would give the "
+           "same file on every host.",
+        fr="Le nom d'hôte n'apparaît pas. Il vient d'inventory_hostname, "
+           "rendu par le template : écrire db1.lab à la main donnerait le "
+           "même fichier sur tous les hôtes.",
+    )
 
 
 def test_if_branch_db(host):
     """Le {% if host_role == 'DB' %} doit s'évaluer vrai."""
     content = host.file(RESULT_FILE).content_string
-    assert "Profil : DB" in content
+    assert "Profil : DB" in content, message(
+        en="« Profil : DB » is missing: the {% if %} did not take the "
+           "expected branch. Check how host_role is set, and that the "
+           "comparison is on the same case.",
+        fr="« Profil : DB » manque : le {% if %} n'a pas pris la branche "
+           "attendue. Vérifie comment host_role est posé, et que la "
+           "comparaison porte sur la même casse.",
+    )
 
 
 @pytest.mark.parametrize("svc", ["postgresql", "chronyd", "firewalld"])
 def test_for_loop_services(host, svc):
     content = host.file(RESULT_FILE).content_string
-    assert f"- {svc}" in content
+    assert f"- {svc}" in content, message(
+        en=f"« - {svc} » is missing from the list. The {{% for %}} walks the "
+           f"services variable: if one is missing, the list is incomplete or "
+           f"the loop filters it out.",
+        fr=f"« - {svc} » manque de la liste. Le {{% for %}} parcourt la "
+           f"variable des services : s'il en manque un, la liste est "
+           f"incomplète ou la boucle le filtre.",
+    )
 
 
 def test_whitespace_control_aucune_ligne_vide(host):
@@ -50,12 +82,17 @@ def test_whitespace_control_aucune_ligne_vide(host):
     content = host.file(RESULT_FILE).content_string
     vides = [n for n, ligne in enumerate(content.splitlines(), 1) if not ligne.strip()]
 
-    assert not vides, (
-        f"{RESULT_FILE} contient {len(vides)} ligne(s) vide(s), aux lignes "
+    assert not vides, message(
+        en=f"{RESULT_FILE} contains {len(vides)} empty line(s), at lines "
+        f"{vides}. Each Jinja tag leaves a line behind it: use "
+        "`{%- ... -%}` to absorb them, or enable `trim_blocks: true` and "
+        "`lstrip_blocks: true` on the template module.\n"
+        f"Rendering obtained:\n{content}",
+        fr=f"{RESULT_FILE} contient {len(vides)} ligne(s) vide(s), aux lignes "
         f"{vides}. Les balises Jinja laissent chacune une ligne derrière elles : "
         "utilisez `{%- ... -%}` pour les absorber, ou activez `trim_blocks: true` "
         "et `lstrip_blocks: true` sur le module template.\n"
-        f"Rendu obtenu :\n{content}"
+        f"Rendu obtenu :\n{content}",
     )
 
 

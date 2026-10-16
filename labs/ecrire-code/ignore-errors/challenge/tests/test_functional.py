@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from conftest import assert_idempotent, lab_host, lab_solution_text
+from conftest import assert_idempotent, lab_host, lab_solution_text, message
 
 TARGET_HOST = "db1.lab"
 RESULT_FILE = "/tmp/ignore-after.txt"
@@ -18,11 +18,19 @@ def host():
 def test_play_continued(host):
     """Le fichier existe = le play a continué malgré l'erreur ignorée."""
     f = host.file(RESULT_FILE)
-    assert f.exists, (
-        f"{RESULT_FILE} n'existe pas — soit ignore_errors n'a pas été posé, "
-        f"soit la tâche suivante a aussi planté."
+    assert f.exists, message(
+        en=f"{RESULT_FILE} does not exist: either ignore_errors was not set, or "
+        f"the following task failed too.",
+        fr=f"{RESULT_FILE} n'existe pas — soit ignore_errors n'a pas été posé, "
+        f"soit la tâche suivante a aussi planté.",
     )
-    assert "play continued" in f.content_string
+    assert "play continued" in f.content_string, message(
+        en="The file does not say « play continued »: it exists, but nothing "
+           "proves the task that follows the ignored error is what wrote it.",
+        fr="Le fichier ne dit pas « play continued » : il existe, mais rien "
+           "ne prouve que c'est la tâche suivant l'erreur ignorée qui l'a "
+           "écrit.",
+    )
 
 
 def test_ignore_errors_est_le_mecanisme_employe():
@@ -43,12 +51,17 @@ def test_ignore_errors_est_le_mecanisme_employe():
     """
     solution = lab_solution_text(__file__)
 
-    assert re.search(r"^\s*ignore_errors:\s*(true|yes)\b", solution, re.MULTILINE | re.IGNORECASE), (
-        "Aucun `ignore_errors:` dans votre playbook. Le fichier de résultat "
+    assert re.search(r"^\s*ignore_errors:\s*(true|yes)\b", solution, re.MULTILINE | re.IGNORECASE), message(
+        en="No `ignore_errors:` in your playbook. The result file can exist "
+        "without it (with `failed_when: false` for instance), but that is "
+        "not the mechanism this challenge asks for: `ignore_errors` leaves "
+        "the task failed and carries on with the play, where "
+        "`failed_when: false` pretends it succeeded.",
+        fr="Aucun `ignore_errors:` dans votre playbook. Le fichier de résultat "
         "peut exister sans lui (par exemple avec `failed_when: false`), mais "
         "ce n'est pas le mécanisme que ce challenge demande : `ignore_errors` "
         "laisse la tâche en échec et poursuit le play, là où `failed_when: "
-        "false` prétend qu'elle a réussi."
+        "false` prétend qu'elle a réussi.",
     )
 
 
