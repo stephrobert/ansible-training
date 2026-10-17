@@ -1,4 +1,4 @@
-# Ansible Training — RHCE EX294
+# Formation Ansible : RHCE EX294
 
 **Langue :** [English](./README.md) · [Français](./README.fr.md)
 
@@ -29,7 +29,7 @@ La CLI `dsoxlab` est le point d'entrée unique : elle prépare un lab, affiche l
 mission, valide, note et rend compte. Elle vit dans **son propre dépôt** et
 s'installe **séparément** : elle ne fait pas partie de ce dépôt.
 
-## Pré-requis
+## Prérequis
 
 - Python 3.11+ et [`uv`](https://docs.astral.sh/uv/)
 - [`mise`](https://mise.jdx.dev/) pour la chaîne Ansible (voir ci-dessous)
@@ -500,11 +500,17 @@ Mocks examen complets 4h, 19 tâches chacun, validées par pytest.
 | Un lab échoue après un autre | état hérité : `dsoxlab clean <id-du-lab>` |
 | Lab risqué à jouer | `mise run snapshot` avant, `mise run restore` après |
 
-## Contribuer & licence
+## Contribuer
 
 - Contributions : voir [CONTRIBUTING](./CONTRIBUTING.md).
 - Conduite : [Code de conduite](./CODE_OF_CONDUCT.md) · Sécurité : [SECURITY](./SECURITY.md).
 - Publication : [RELEASING](./RELEASING.md) (bundles tar.gz, pas de PyPI).
+
+Un lab est prouvé **dans les deux sens** avant d'être fusionné,
+`dsoxlab validate-structure` est vert, et l'énoncé existe en anglais et en
+français.
+
+## Licence
 
 Copyright (c) 2026 Stéphane Robert, https://blog.stephane-robert.info
 
