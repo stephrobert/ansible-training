@@ -45,9 +45,33 @@ def load_meta() -> dict:
         sys.exit(f"catalogue ingénérable — {exc}")
 
 
-def lab_short_title(lab_rel: str) -> str:
-    """Titre humain à partir du chemin du lab (dernier segment, tirets en espaces)."""
-    return lab_rel.split("/")[-1].replace("-", " ")
+def lab_declare(lab_rel: str, lang: str) -> tuple[str, str]:
+    """L'identifiant et le titre que le lab DÉCLARE, dans la langue demandée.
+
+    Le chemin ne dit pas ce que fait un lab. Cette fonction rendait pourtant
+    `lab_rel.split("/")[-1].replace("-", " ")`, soit « prepare managed nodes »
+    pour `bootstrap/prepare-managed-nodes` : ni l'identifiant que l'apprenant
+    tape, ni le titre que le lab porte.
+
+    Un `lab.yaml` illisible n'est pas une raison de rendre un catalogue muet :
+    on retombe sur le chemin, qui reste une information juste, plutôt que de
+    s'arrêter. Le contrat, lui, est vérifié par `dsoxlab validate-structure`.
+    """
+    chemin = REPO_ROOT / "labs" / lab_rel / "lab.yaml"
+    try:
+        declare = lire_yaml(chemin) or {}
+    except (YamlIllisible, OSError):
+        return lab_rel.split("/")[-1], ""
+
+    identifiant = str(declare.get("id") or lab_rel.split("/")[-1])
+    titre = str(declare.get("title") or "")
+    if lang == "fr":
+        traduit = REPO_ROOT / "labs" / lab_rel / "lab.fr.yaml"
+        try:
+            titre = str((lire_yaml(traduit) or {}).get("title") or titre)
+        except (YamlIllisible, OSError):
+            pass
+    return identifiant, titre
 
 
 def render_section(section: dict, lang: str = "fr") -> list[str]:
@@ -74,7 +98,10 @@ def render_section(section: dict, lang: str = "fr") -> list[str]:
     # relatifs à labs/ (decouvrir/installation-ansible) et non plus des ids
     # préfixés : il n'y a plus de nom de répertoire à reconstruire.
     for lab_rel in section["labs"]:
-        lines.append(f"- [`{lab_short_title(lab_rel)}`](./labs/{lab_rel}/)")
+        identifiant, titre = lab_declare(lab_rel, lang)
+        separateur = " : " if lang == "fr" else ": "
+        suite = f"{separateur}{titre}" if titre else ""
+        lines.append(f"- [`{identifiant}`](./labs/{lab_rel}/){suite}")
 
     lines.append("")
     return lines

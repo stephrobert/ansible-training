@@ -265,229 +265,229 @@ generated: run `python3 scripts/render-readme.py` to refresh it.
 
 Préparation système des managed nodes (jouée par `dsoxlab provision`).
 
-- [`prepare managed nodes`](./labs/bootstrap/prepare-managed-nodes/)
+- [`bootstrap-prepare-managed-nodes`](./labs/bootstrap/prepare-managed-nodes/): Prepare Ansible managed nodes
 
 ### Découvrir Ansible
 
 Premiers contacts : déclaratif vs impératif, installation, CLI, configuration.
 
-- [`declaratif vs imperatif`](./labs/decouvrir/declaratif-vs-imperatif/)
-- [`installation ansible`](./labs/decouvrir/installation-ansible/)
-- [`configuration ansible`](./labs/decouvrir/configuration-ansible/)
-- [`prise en main cli`](./labs/decouvrir/prise-en-main-cli/)
+- [`decouvrir-declaratif-vs-imperatif`](./labs/decouvrir/declaratif-vs-imperatif/): Declarative vs imperative: why Ansible does not drift
+- [`decouvrir-installation-ansible`](./labs/decouvrir/installation-ansible/): Ansible installation: verify your control node
+- [`decouvrir-configuration-ansible`](./labs/decouvrir/configuration-ansible/): ansible.cfg: precedence and critical options
+- [`decouvrir-prise-en-main-cli`](./labs/decouvrir/prise-en-main-cli/): Ansible CLI: the 8 everyday commands
 
 ### Premiers pas
 
 Premier playbook, premiers secrets vault.
 
-- [`premier playbook`](./labs/premiers-pas/premier-playbook/)
-- [`ansible vault`](./labs/premiers-pas/ansible-vault/)
+- [`premiers-pas-premier-playbook`](./labs/premiers-pas/premier-playbook/): First playbook: install nginx on the webservers
+- [`premiers-pas-ansible-vault`](./labs/premiers-pas/ansible-vault/): First steps with ansible-vault
 
 ### Écrire du code Ansible
 
 Structure d'un play, contrôle d'exécution, variables, Jinja2, conditions, boucles, gestion d'erreurs.
 
-- [`plays et tasks`](./labs/ecrire-code/plays-et-tasks/)
-- [`handlers`](./labs/ecrire-code/handlers/)
-- [`tags`](./labs/ecrire-code/tags/)
-- [`checkmode diff`](./labs/ecrire-code/checkmode-diff/)
-- [`variables base`](./labs/ecrire-code/variables-base/)
-- [`types collections`](./labs/ecrire-code/types-collections/)
-- [`facts magic vars`](./labs/ecrire-code/facts-magic-vars/)
-- [`custom facts`](./labs/ecrire-code/custom-facts/)
-- [`precedence variables`](./labs/ecrire-code/precedence-variables/)
-- [`register set fact`](./labs/ecrire-code/register-set-fact/)
-- [`parallelisme strategies`](./labs/ecrire-code/parallelisme-strategies/)
-- [`async poll`](./labs/ecrire-code/async-poll/)
-- [`delegation`](./labs/ecrire-code/delegation/)
-- [`lookups`](./labs/ecrire-code/lookups/)
-- [`jinja2 base`](./labs/ecrire-code/jinja2-base/)
-- [`filtres jinja essentiels`](./labs/ecrire-code/filtres-jinja-essentiels/)
-- [`conditions when`](./labs/ecrire-code/conditions-when/)
-- [`boucles loop`](./labs/ecrire-code/boucles-loop/)
-- [`boucles with deprecated`](./labs/ecrire-code/boucles-with-deprecated/)
-- [`block rescue always`](./labs/ecrire-code/block-rescue-always/)
-- [`failed when changed when`](./labs/ecrire-code/failed-when-changed-when/)
-- [`ignore errors`](./labs/ecrire-code/ignore-errors/)
-- [`any errors fatal`](./labs/ecrire-code/any-errors-fatal/)
-- [`filtres jinja avances`](./labs/ecrire-code/filtres-jinja-avances/)
-- [`tests jinja`](./labs/ecrire-code/tests-jinja/)
-- [`module template`](./labs/ecrire-code/module-template/)
-- [`lineinfile vs template`](./labs/ecrire-code/lineinfile-vs-template/)
-- [`import include`](./labs/ecrire-code/import-include/)
+- [`ecrire-code-plays-et-tasks`](./labs/ecrire-code/plays-et-tasks/): Plays and tasks: anatomy and execution order
+- [`ecrire-code-handlers`](./labs/ecrire-code/handlers/): handlers: the restart-on-config-change pattern
+- [`ecrire-code-tags`](./labs/ecrire-code/tags/): tags: target or skip a subset of tasks
+- [`ecrire-code-checkmode-diff`](./labs/ecrire-code/checkmode-diff/): check mode and diff: dry-run and change preview
+- [`ecrire-code-variables-base`](./labs/ecrire-code/variables-base/): Variables: declaration and scope
+- [`ecrire-code-types-collections`](./labs/ecrire-code/types-collections/): Collection types: lists, dicts, nested structures
+- [`ecrire-code-facts-magic-vars`](./labs/ecrire-code/facts-magic-vars/): facts and magic vars: ansible_facts, hostvars
+- [`ecrire-code-custom-facts`](./labs/ecrire-code/custom-facts/): Custom facts: facts.d and ansible_local
+- [`ecrire-code-precedence-variables`](./labs/ecrire-code/precedence-variables/): Variable precedence: the 22 levels
+- [`ecrire-code-register-set-fact`](./labs/ecrire-code/register-set-fact/): register and set_fact: capture and create variables
+- [`ecrire-code-parallelisme-strategies`](./labs/ecrire-code/parallelisme-strategies/): Parallelism: forks, serial, throttle, strategy
+- [`ecrire-code-async-poll`](./labs/ecrire-code/async-poll/): async and poll: long tasks without blocking SSH
+- [`ecrire-code-delegation`](./labs/ecrire-code/delegation/): Delegation: delegate_to, run_once, local_action
+- [`ecrire-code-lookups`](./labs/ecrire-code/lookups/): lookups: fetch external data at runtime
+- [`ecrire-code-jinja2-base`](./labs/ecrire-code/jinja2-base/): Jinja2: interpolation, logic and whitespace
+- [`ecrire-code-filtres-jinja-essentiels`](./labs/ecrire-code/filtres-jinja-essentiels/): Essential Jinja2 filters: default, combine, selectattr
+- [`ecrire-code-conditions-when`](./labs/ecrire-code/conditions-when/): when conditions: operators and Jinja tests
+- [`ecrire-code-boucles-loop`](./labs/ecrire-code/boucles-loop/): loop: iterate over lists and dicts
+- [`ecrire-code-boucles-with-deprecated`](./labs/ecrire-code/boucles-with-deprecated/): Legacy with_* loops: migrating to loop
+- [`ecrire-code-block-rescue-always`](./labs/ecrire-code/block-rescue-always/): block, rescue, always: try/catch/finally
+- [`ecrire-code-failed-when-changed-when`](./labs/ecrire-code/failed-when-changed-when/): failed_when and changed_when: redefine success and change
+- [`ecrire-code-ignore-errors`](./labs/ecrire-code/ignore-errors/): ignore_errors: legitimate use vs anti-pattern
+- [`ecrire-code-any-errors-fatal`](./labs/ecrire-code/any-errors-fatal/): any_errors_fatal: stop the play on the first error
+- [`ecrire-code-filtres-jinja-avances`](./labs/ecrire-code/filtres-jinja-avances/): Advanced Jinja2 filters: regex, b64, password_hash
+- [`ecrire-code-tests-jinja`](./labs/ecrire-code/tests-jinja/): Jinja2 tests: is defined, is mapping, is sequence
+- [`ecrire-code-module-template`](./labs/ecrire-code/module-template/): template module: validate, backup, whitespace
+- [`ecrire-code-lineinfile-vs-template`](./labs/ecrire-code/lineinfile-vs-template/): lineinfile vs template: which module when
+- [`ecrire-code-import-include`](./labs/ecrire-code/import-include/): import vs include: static or dynamic
 
 ### Modules fichiers
 
 Manipulation de fichiers : copy, file, blockinfile, lineinfile, replace, fetch, archive.
 
-- [`copy`](./labs/modules-fichiers/copy/)
-- [`file`](./labs/modules-fichiers/file/)
-- [`blockinfile`](./labs/modules-fichiers/blockinfile/)
-- [`lineinfile`](./labs/modules-fichiers/lineinfile/)
-- [`replace`](./labs/modules-fichiers/replace/)
-- [`fetch`](./labs/modules-fichiers/fetch/)
-- [`archive unarchive`](./labs/modules-fichiers/archive-unarchive/)
+- [`modules-fichiers-copy`](./labs/modules-fichiers/copy/): copy module: transfer files and inline content
+- [`modules-fichiers-file`](./labs/modules-fichiers/file/): file module: states, permissions and symlinks
+- [`modules-fichiers-blockinfile`](./labs/modules-fichiers/blockinfile/): blockinfile module: idempotent multi-line block
+- [`modules-fichiers-lineinfile`](./labs/modules-fichiers/lineinfile/): lineinfile module: edit a line in an existing file
+- [`modules-fichiers-replace`](./labs/modules-fichiers/replace/): replace module: substitute a pattern in a file
+- [`modules-fichiers-fetch`](./labs/modules-fichiers/fetch/): fetch module: retrieve files from managed nodes
+- [`modules-fichiers-archive-unarchive`](./labs/modules-fichiers/archive-unarchive/): archive and unarchive modules: compress and extract
 
 ### Modules paquets
 
 Gestion paquets agnostique (package), options dnf, dépôts RPM.
 
-- [`package`](./labs/modules-paquets/package/)
-- [`dnf options`](./labs/modules-paquets/dnf-options/)
-- [`yum repository`](./labs/modules-paquets/yum-repository/)
+- [`modules-paquets-package`](./labs/modules-paquets/package/): package module: distro-agnostic installation
+- [`modules-paquets-dnf-options`](./labs/modules-paquets/dnf-options/): dnf module: enablerepo, security, exclude, autoremove
+- [`modules-paquets-yum-repository`](./labs/modules-paquets/yum-repository/): yum_repository module: declare an RPM repository
 
 ### Modules services
 
 Gestion services systemd et tâches planifiées cron.
 
-- [`systemd`](./labs/modules-services/systemd/)
-- [`cron`](./labs/modules-services/cron/)
+- [`modules-services-systemd`](./labs/modules-services/systemd/): systemd_service module: manage systemd services
+- [`modules-services-cron`](./labs/modules-services/cron/): cron module: schedule idempotent jobs
 
 ### Modules utilisateurs
 
 Gestion users, groups, clés SSH, sudoers.
 
-- [`user`](./labs/modules-utilisateurs/user/)
-- [`group`](./labs/modules-utilisateurs/group/)
-- [`authorized key`](./labs/modules-utilisateurs/authorized-key/)
-- [`sudoers`](./labs/modules-utilisateurs/sudoers/)
+- [`modules-utilisateurs-user`](./labs/modules-utilisateurs/user/): user module: create, modify and remove accounts
+- [`modules-utilisateurs-group`](./labs/modules-utilisateurs/group/): group module: manage Linux groups
+- [`modules-utilisateurs-authorized-key`](./labs/modules-utilisateurs/authorized-key/): authorized_key module: user SSH keys
+- [`modules-utilisateurs-sudoers`](./labs/modules-utilisateurs/sudoers/): sudoers module: manage sudo rights safely
 
 ### Modules RHEL
 
 Spécificités RHEL : firewalld, SELinux, sysctl, mount, parted, filesystem, LVM.
 
-- [`firewalld`](./labs/modules-rhel/firewalld/)
-- [`sysctl`](./labs/modules-rhel/sysctl/)
-- [`selinux`](./labs/modules-rhel/selinux/)
-- [`mount`](./labs/modules-rhel/mount/)
-- [`parted`](./labs/modules-rhel/parted/)
-- [`filesystem`](./labs/modules-rhel/filesystem/)
-- [`lvm storage`](./labs/modules-rhel/lvm-storage/)
+- [`modules-rhel-firewalld`](./labs/modules-rhel/firewalld/): firewalld module: manage the RHEL firewall
+- [`modules-rhel-sysctl`](./labs/modules-rhel/sysctl/): sysctl module: persisted kernel parameters
+- [`modules-rhel-selinux`](./labs/modules-rhel/selinux/): selinux module: modes, booleans and contexts
+- [`modules-rhel-mount`](./labs/modules-rhel/mount/): mount module: manage fstab and mount points
+- [`modules-rhel-parted`](./labs/modules-rhel/parted/): parted module: create a disk partition
+- [`modules-rhel-filesystem`](./labs/modules-rhel/filesystem/): filesystem module: create a filesystem
+- [`modules-rhel-lvm-storage`](./labs/modules-rhel/lvm-storage/): LVM: chaining lvg, lvol, filesystem and mount
 
 ### Modules réseau
 
 Téléchargement et appels HTTP : get_url, uri.
 
-- [`get url`](./labs/modules-reseau/get-url/)
-- [`uri`](./labs/modules-reseau/uri/)
+- [`modules-reseau-get-url`](./labs/modules-reseau/get-url/): get_url module: download a file over HTTP/HTTPS
+- [`modules-reseau-uri`](./labs/modules-reseau/uri/): uri module: REST API calls
 
 ### Modules diagnostic
 
 Inspection et synchronisation : stat, find, assert/fail, wait_for/pause.
 
-- [`stat`](./labs/modules-diagnostic/stat/)
-- [`find`](./labs/modules-diagnostic/find/)
-- [`assert fail`](./labs/modules-diagnostic/assert-fail/)
-- [`wait for pause`](./labs/modules-diagnostic/wait-for-pause/)
+- [`modules-diagnostic-stat`](./labs/modules-diagnostic/stat/): stat module: inspect files and directories
+- [`modules-diagnostic-find`](./labs/modules-diagnostic/find/): find module: multi-file search
+- [`modules-diagnostic-assert-fail`](./labs/modules-diagnostic/assert-fail/): assert and fail modules: defensive validation
+- [`modules-diagnostic-wait-for-pause`](./labs/modules-diagnostic/wait-for-pause/): wait_for and pause modules: synchronization
 
 ### Inventaires
 
 group_vars/host_vars, patterns d'hôtes, inventaire dynamique libvirt.
 
-- [`statiques`](./labs/inventaires/statiques/)
-- [`group vars host vars`](./labs/inventaires/group-vars-host-vars/)
-- [`patterns hotes`](./labs/inventaires/patterns-hotes/)
-- [`dynamique kvm`](./labs/inventaires/dynamique-kvm/)
+- [`inventaires-statiques`](./labs/inventaires/statiques/): Write a static inventory from scratch: groups, children and group vars
+- [`inventaires-group-vars-host-vars`](./labs/inventaires/group-vars-host-vars/): group_vars and host_vars: structured inventory variables
+- [`inventaires-patterns-hotes`](./labs/inventaires/patterns-hotes/): Host patterns: wildcards and the :, & and ! operators
+- [`inventaires-dynamique-kvm`](./labs/inventaires/dynamique-kvm/): Dynamic KVM inventory with community.libvirt
 
 ### Rôles
 
 Anatomie d'un rôle, variables, handlers, argument_specs, consommation, dépendances, rôles système RHEL.
 
-- [`creer premier role`](./labs/roles/creer-premier-role/)
-- [`variables defaults vars`](./labs/roles/variables-defaults-vars/)
-- [`handlers meta`](./labs/roles/handlers-meta/)
-- [`argument specs`](./labs/roles/argument-specs/)
-- [`consommer role`](./labs/roles/consommer-role/)
-- [`dependencies`](./labs/roles/dependencies/)
-- [`system roles`](./labs/roles/system-roles/)
+- [`roles-creer-premier-role`](./labs/roles/creer-premier-role/): Create your first role with ansible-galaxy role init
+- [`roles-variables-defaults-vars`](./labs/roles/variables-defaults-vars/): Role variables: defaults/ vs vars/ and precedence
+- [`roles-handlers-meta`](./labs/roles/handlers-meta/): Role handlers and meta: notify and galaxy_info
+- [`roles-argument-specs`](./labs/roles/argument-specs/): argument_specs: validate a role's input variables
+- [`roles-consommer-role`](./labs/roles/consommer-role/): Consume a role: roles:, import_role, include_role
+- [`roles-dependencies`](./labs/roles/dependencies/): Role dependencies via meta/main.yml
+- [`roles-system-roles`](./labs/roles/system-roles/): RHEL system roles: converge time synchronisation with timesync
 
 ### Tests Molecule
 
 Cycle TDD avec Molecule, scénarios multi-distro.
 
-- [`introduction`](./labs/molecule/introduction/)
-- [`installation config`](./labs/molecule/installation-config/)
-- [`tdd cycle`](./labs/molecule/tdd-cycle/)
-- [`scenarios multi distro`](./labs/molecule/scenarios-multi-distro/)
+- [`molecule-introduction`](./labs/molecule/introduction/): Molecule: anatomy of a test scenario
+- [`molecule-installation-config`](./labs/molecule/installation-config/): Molecule: enrich a scenario beyond the defaults
+- [`molecule-tdd-cycle`](./labs/molecule/tdd-cycle/): Molecule: build a users role test-first
+- [`molecule-scenarios-multi-distro`](./labs/molecule/scenarios-multi-distro/): Molecule: test a role across distributions
 
 ### Tests Python & lint
 
 testinfra, tox multi-version, ansible-lint profil production.
 
-- [`testinfra`](./labs/tests/testinfra/)
-- [`tox multiversion`](./labs/tests/tox-multiversion/)
-- [`ansible lint production`](./labs/tests/ansible-lint-production/)
+- [`tests-testinfra`](./labs/tests/testinfra/): Molecule + testinfra: Python assertions on a role
+- [`tests-tox-multiversion`](./labs/tests/tox-multiversion/): tox: test a role against several ansible-core versions
+- [`tests-ansible-lint-production`](./labs/tests/ansible-lint-production/): ansible-lint production profile with pre-commit
 
 ### CI/CD
 
 Pipelines GitHub Actions et GitLab CI pour rôles et collections.
 
-- [`github actions`](./labs/ci/github-actions/)
-- [`gitlab`](./labs/ci/gitlab/)
+- [`ci-github-actions`](./labs/ci/github-actions/): GitHub Actions: CI workflow for a role
+- [`ci-gitlab`](./labs/ci/gitlab/): GitLab CI: parallel:matrix pipeline for a role
 
 ### Galaxy & publication
 
 ansible-galaxy CLI, requirements.yml, audit de rôles tiers, versioning et publication.
 
-- [`ansible galaxy cli`](./labs/galaxy/ansible-galaxy-cli/)
-- [`installer roles`](./labs/galaxy/installer-roles/)
-- [`auditer role existant`](./labs/galaxy/auditer-role-existant/)
-- [`versionner publier`](./labs/galaxy/versionner-publier/)
+- [`galaxy-ansible-galaxy-cli`](./labs/galaxy/ansible-galaxy-cli/): ansible-galaxy CLI: init, install, list, build, publish
+- [`galaxy-installer-roles`](./labs/galaxy/installer-roles/): Install roles and collections from Galaxy or Git
+- [`galaxy-auditer-role-existant`](./labs/galaxy/auditer-role-existant/): Audit a Galaxy role before adopting it
+- [`galaxy-versionner-publier`](./labs/galaxy/versionner-publier/): Version and publish a role: semver, Git tags, Galaxy
 
 ### Ansible Vault
 
 Vault complet : encrypt_string, vault-id multiples, mixtes, dans rôles, intégration HashiCorp/Passbolt.
 
-- [`introduction`](./labs/vault/introduction/)
-- [`chiffrer fichier variable`](./labs/vault/chiffrer-fichier-variable/)
-- [`id multiples`](./labs/vault/id-multiples/)
-- [`playbooks mixtes`](./labs/vault/playbooks-mixtes/)
-- [`dans roles`](./labs/vault/dans-roles/)
-- [`integration hashicorp`](./labs/vault/integration-hashicorp/)
-- [`integration passbolt`](./labs/vault/integration-passbolt/)
+- [`vault-introduction`](./labs/vault/introduction/): Ansible Vault: encrypt your first secrets file
+- [`vault-chiffrer-fichier-variable`](./labs/vault/chiffrer-fichier-variable/): encrypt_string vs whole-file encryption
+- [`vault-id-multiples`](./labs/vault/id-multiples/): Multiple vault-ids: isolate dev, staging and prod
+- [`vault-playbooks-mixtes`](./labs/vault/playbooks-mixtes/): Mixed playbooks: main.yml plus vault.yml per group
+- [`vault-dans-roles`](./labs/vault/dans-roles/): Vault inside a role: plaintext defaults, encrypted vars
+- [`vault-integration-hashicorp`](./labs/vault/integration-hashicorp/): Fetch secrets from HashiCorp Vault or OpenBao
+- [`vault-integration-passbolt`](./labs/vault/integration-passbolt/): Fetch secrets from Passbolt
 
 ### Execution Environments
 
 ansible-navigator, ansible-builder, EE custom, pipeline CI, debug.
 
-- [`hello`](./labs/ee/hello/)
-- [`inspection`](./labs/ee/inspection/)
-- [`builder custom`](./labs/ee/builder-custom/)
-- [`ci pipeline`](./labs/ee/ci-pipeline/)
-- [`debug`](./labs/ee/debug/)
+- [`ee-hello`](./labs/ee/hello/): First run inside an Execution Environment
+- [`ee-inspection`](./labs/ee/inspection/): Inspect an Execution Environment and pick the right one
+- [`ee-builder-custom`](./labs/ee/builder-custom/): Build a custom EE with ansible-builder v3
+- [`ee-ci-pipeline`](./labs/ee/ci-pipeline/): CI/CD pipeline for Execution Environments
+- [`ee-debug`](./labs/ee/debug/): Debug a broken Execution Environment
 
 ### Troubleshooting
 
 Verbosité, debugger interactif, idempotence et performance.
 
-- [`verbosite`](./labs/troubleshooting/verbosite/)
-- [`debugger`](./labs/troubleshooting/debugger/)
-- [`idempotence perfs`](./labs/troubleshooting/idempotence-perfs/)
+- [`troubleshooting-verbosite`](./labs/troubleshooting/verbosite/): Verbosity levels and callback plugins
+- [`troubleshooting-debugger`](./labs/troubleshooting/debugger/): Interactive debugger: debugger: on_failed
+- [`troubleshooting-idempotence-perfs`](./labs/troubleshooting/idempotence-perfs/): Fix broken idempotence and tune performance
 
 ### Collections
 
 Découverte, requirements, création, CI tests, migration depuis un rôle.
 
-- [`decouvrir`](./labs/collections/decouvrir/)
-- [`navigator`](./labs/collections/navigator/)
-- [`requirements`](./labs/collections/requirements/)
-- [`creer custom`](./labs/collections/creer-custom/)
-- [`ci tests`](./labs/collections/ci-tests/)
-- [`migration role`](./labs/collections/migration-role/)
+- [`collections-decouvrir`](./labs/collections/decouvrir/): Explore Ansible collections: FQCN and structure
+- [`collections-navigator`](./labs/collections/navigator/): Automation content navigator: discover a module in a collection and use it
+- [`collections-requirements`](./labs/collections/requirements/): requirements.yml: multi-source install with GPG signatures
+- [`collections-creer-custom`](./labs/collections/creer-custom/): Build your own collection with a custom Python module
+- [`collections-ci-tests`](./labs/collections/ci-tests/): CI matrix for a collection: ansible-core x Python
+- [`collections-migration-role`](./labs/collections/migration-role/): Migrate a standalone role to a collection
 
 ### Pratiques avancées
 
 Versionner ses playbooks avec Git, ansible-pull mode GitOps.
 
-- [`versionner git`](./labs/pratiques/versionner-git/)
-- [`ansible pull gitops`](./labs/pratiques/ansible-pull-gitops/)
+- [`pratiques-versionner-git`](./labs/pratiques/versionner-git/): Version your playbooks with Git
+- [`pratiques-ansible-pull-gitops`](./labs/pratiques/ansible-pull-gitops/): ansible-pull: GitOps and Edge pattern
 
 ### Examen RHCE EX294
 
 Mocks examen complets 4h, 19 tâches chacun, validées par pytest.
 
-- [`mock ex294`](./labs/rhce/mock-ex294/)
-- [`mock ex294 2`](./labs/rhce/mock-ex294-2/)
+- [`rhce-mock-ex294`](./labs/rhce/mock-ex294/): RHCE EX294 mock exam: 19 tasks in 4 hours
+- [`rhce-mock-ex294-2`](./labs/rhce/mock-ex294-2/): Mock RHCE EX294 #2
 
 <!-- LABS_LIST_END -->
 
