@@ -24,7 +24,7 @@ import subprocess
 
 import pytest
 
-from conftest import REPO_ROOT, lab_inventory_args
+from conftest import REPO_ROOT, lab_inventory_args, message
 
 # Ce module n'a pas de playbook à rejouer (son livrable est l'inventaire). Sans
 # ce marqueur, la fixture de replay du conftest skipperait le module, faute de
@@ -43,9 +43,11 @@ def _inventory_list():
         text=True,
         check=False,
     )
-    assert res.returncode == 0, (
-        "ansible-inventory n'a pas su lire l'inventaire du lab :\n"
-        f"--- stderr ---\n{res.stderr.strip()}"
+    assert res.returncode == 0, message(
+        en="ansible-inventory could not read the lab's inventory:\n"
+        f"--- stderr ---\n{res.stderr.strip()}",
+        fr="ansible-inventory n'a pas su lire l'inventaire du lab :\n"
+        f"--- stderr ---\n{res.stderr.strip()}",
     )
     return json.loads(res.stdout)
 
@@ -59,9 +61,11 @@ def _inventory_host(host):
         text=True,
         check=False,
     )
-    assert res.returncode == 0, (
-        f"ansible-inventory --host {host} a échoué :\n"
-        f"--- stderr ---\n{res.stderr.strip()}"
+    assert res.returncode == 0, message(
+        en=f"ansible-inventory --host {host} failed:\n"
+        f"--- stderr ---\n{res.stderr.strip()}",
+        fr=f"ansible-inventory --host {host} a échoué :\n"
+        f"--- stderr ---\n{res.stderr.strip()}",
     )
     return json.loads(res.stdout)
 
@@ -93,22 +97,30 @@ def test_les_groupes_declarent_les_bons_hotes():
     """
     inv = _inventory_list()
 
-    assert "webservers" in inv, (
-        f"Groupe `webservers` absent de l'inventaire résolu. Groupes vus : "
-        f"{sorted(g for g in inv if g != '_meta')}"
+    assert "webservers" in inv, message(
+        en=f"The `webservers` group is absent from the resolved inventory. Groups "
+        f"seen: {sorted(g for g in inv if g != '_meta')}",
+        fr=f"Groupe `webservers` absent de l'inventaire résolu. Groupes vus : "
+        f"{sorted(g for g in inv if g != '_meta')}",
     )
-    assert sorted(inv["webservers"].get("hosts", [])) == ["web1.lab", "web2.lab"], (
-        "Le groupe `webservers` doit contenir EXACTEMENT web1.lab et web2.lab, "
-        f"vu : {sorted(inv['webservers'].get('hosts', [])) or 'aucun hôte'}."
+    assert sorted(inv["webservers"].get("hosts", [])) == ["web1.lab", "web2.lab"], message(
+        en="The `webservers` group must contain EXACTLY web1.lab and web2.lab, "
+        f"seen: {sorted(inv['webservers'].get('hosts', [])) or 'no host'}.",
+        fr="Le groupe `webservers` doit contenir EXACTEMENT web1.lab et web2.lab, "
+        f"vu : {sorted(inv['webservers'].get('hosts', [])) or 'aucun hôte'}.",
     )
 
-    assert "dbservers" in inv, (
-        f"Groupe `dbservers` absent de l'inventaire résolu. Groupes vus : "
-        f"{sorted(g for g in inv if g != '_meta')}"
+    assert "dbservers" in inv, message(
+        en=f"The `dbservers` group is absent from the resolved inventory. Groups "
+        f"seen: {sorted(g for g in inv if g != '_meta')}",
+        fr=f"Groupe `dbservers` absent de l'inventaire résolu. Groupes vus : "
+        f"{sorted(g for g in inv if g != '_meta')}",
     )
-    assert sorted(inv["dbservers"].get("hosts", [])) == ["db1.lab"], (
-        "Le groupe `dbservers` doit contenir EXACTEMENT db1.lab, "
-        f"vu : {sorted(inv['dbservers'].get('hosts', [])) or 'aucun hôte'}."
+    assert sorted(inv["dbservers"].get("hosts", [])) == ["db1.lab"], message(
+        en="The `dbservers` group must contain EXACTLY db1.lab, "
+        f"seen: {sorted(inv['dbservers'].get('hosts', [])) or 'no host'}.",
+        fr="Le groupe `dbservers` doit contenir EXACTEMENT db1.lab, "
+        f"vu : {sorted(inv['dbservers'].get('hosts', [])) or 'aucun hôte'}.",
     )
 
 
@@ -122,16 +134,22 @@ def test_le_groupe_parent_agrege_ses_enfants():
     """
     inv = _inventory_list()
 
-    assert "datacenter" in inv, (
-        f"Groupe parent `datacenter` absent de l'inventaire résolu. Groupes "
-        f"vus : {sorted(g for g in inv if g != '_meta')}"
+    assert "datacenter" in inv, message(
+        en=f"The parent group `datacenter` is absent from the resolved inventory. "
+        f"Groups seen: {sorted(g for g in inv if g != '_meta')}",
+        fr=f"Groupe parent `datacenter` absent de l'inventaire résolu. Groupes "
+        f"vus : {sorted(g for g in inv if g != '_meta')}",
     )
     enfants = set(inv["datacenter"].get("children", []))
-    assert {"webservers", "dbservers"} <= enfants, (
-        "Le groupe parent `datacenter` doit agréger webservers ET dbservers "
+    assert {"webservers", "dbservers"} <= enfants, message(
+        en="The parent group `datacenter` must aggregate webservers AND dbservers "
+        f"through `children`, children seen: {sorted(enfants) or 'none'}.\n"
+        "A parent that does not reference both children will not reach every "
+        "host of the site.",
+        fr="Le groupe parent `datacenter` doit agréger webservers ET dbservers "
         f"via `children`, enfants vus : {sorted(enfants) or 'aucun'}.\n"
         "Un parent qui ne référence pas ses deux enfants ne joindra pas tous "
-        "les hôtes du site."
+        "les hôtes du site.",
     )
 
 
@@ -145,53 +163,76 @@ def test_le_ping_par_groupe_joint_exactement_les_bons_hotes():
     ne produit pas le bon compte de « pong ».
     """
     web = _ping("webservers")
-    assert web.returncode == 0, (
-        "Le ping du groupe `webservers` a échoué :\n"
+    assert web.returncode == 0, message(
+        en="Pinging the `webservers` group failed:\n"
         f"--- stdout ---\n{web.stdout.strip()}\n"
-        f"--- stderr ---\n{web.stderr.strip()}"
+        f"--- stderr ---\n{web.stderr.strip()}",
+        fr="Le ping du groupe `webservers` a échoué :\n"
+        f"--- stdout ---\n{web.stdout.strip()}\n"
+        f"--- stderr ---\n{web.stderr.strip()}",
     )
-    assert "web1.lab | SUCCESS" in web.stdout and "web2.lab | SUCCESS" in web.stdout, (
-        "web1.lab et web2.lab doivent répondre au ping via `webservers`.\n"
-        f"Vu :\n{web.stdout.strip()}"
+    assert "web1.lab | SUCCESS" in web.stdout and "web2.lab | SUCCESS" in web.stdout, message(
+        en="web1.lab and web2.lab must answer the ping through `webservers`.\n"
+        f"Seen:\n{web.stdout.strip()}",
+        fr="web1.lab et web2.lab doivent répondre au ping via `webservers`.\n"
+        f"Vu :\n{web.stdout.strip()}",
     )
-    assert "db1.lab" not in web.stdout, (
-        "db1.lab NE doit PAS être joint par le groupe `webservers` : il n'y a "
-        f"pas sa place.\nVu :\n{web.stdout.strip()}"
+    assert "db1.lab" not in web.stdout, message(
+        en="db1.lab must NOT be reached by the `webservers` group: it does not "
+        f"belong there.\nSeen:\n{web.stdout.strip()}",
+        fr="db1.lab NE doit PAS être joint par le groupe `webservers` : il n'y a "
+        f"pas sa place.\nVu :\n{web.stdout.strip()}",
     )
-    assert _pongs(web) == 2, (
-        f"Exactement 2 « pong » attendus pour `webservers`, vu {_pongs(web)}.\n"
-        f"{web.stdout.strip()}"
+    assert _pongs(web) == 2, message(
+        en=f"Exactly 2 « pong » expected for `webservers`, seen {_pongs(web)}.\n"
+        f"{web.stdout.strip()}",
+        fr=f"Exactement 2 « pong » attendus pour `webservers`, vu {_pongs(web)}.\n"
+        f"{web.stdout.strip()}",
     )
 
     db = _ping("dbservers")
-    assert db.returncode == 0, (
-        f"Le ping du groupe `dbservers` a échoué :\n{db.stdout.strip()}\n"
-        f"{db.stderr.strip()}"
+    assert db.returncode == 0, message(
+        en=f"Pinging the `dbservers` group failed:\n{db.stdout.strip()}\n"
+        f"{db.stderr.strip()}",
+        fr=f"Le ping du groupe `dbservers` a échoué :\n{db.stdout.strip()}\n"
+        f"{db.stderr.strip()}",
     )
-    assert "db1.lab | SUCCESS" in db.stdout and _pongs(db) == 1, (
-        "Seul db1.lab doit répondre via `dbservers` (1 « pong » attendu), vu "
-        f"{_pongs(db)}.\n{db.stdout.strip()}"
+    assert "db1.lab | SUCCESS" in db.stdout and _pongs(db) == 1, message(
+        en="Only db1.lab must answer through `dbservers` (1 « pong » expected), "
+        f"seen {_pongs(db)}.\n{db.stdout.strip()}",
+        fr="Seul db1.lab doit répondre via `dbservers` (1 « pong » attendu), vu "
+        f"{_pongs(db)}.\n{db.stdout.strip()}",
     )
-    assert "web1.lab" not in db.stdout and "web2.lab" not in db.stdout, (
-        "Aucun webserver ne doit être joint par `dbservers`.\n"
-        f"Vu :\n{db.stdout.strip()}"
+    assert "web1.lab" not in db.stdout and "web2.lab" not in db.stdout, message(
+        en="No webserver must be reached by `dbservers`.\n"
+        f"Seen:\n{db.stdout.strip()}",
+        fr="Aucun webserver ne doit être joint par `dbservers`.\n"
+        f"Vu :\n{db.stdout.strip()}",
     )
 
     dc = _ping("datacenter")
-    assert dc.returncode == 0, (
-        f"Le ping du groupe parent `datacenter` a échoué :\n{dc.stdout.strip()}\n"
-        f"{dc.stderr.strip()}"
+    assert dc.returncode == 0, message(
+        en=f"Pinging the parent group `datacenter` failed:\n{dc.stdout.strip()}\n"
+        f"{dc.stderr.strip()}",
+        fr=f"Le ping du groupe parent `datacenter` a échoué :\n{dc.stdout.strip()}\n"
+        f"{dc.stderr.strip()}",
     )
-    assert _pongs(dc) == 3, (
-        "Le groupe parent `datacenter` doit joindre les 3 hôtes de ses groupes "
+    assert _pongs(dc) == 3, message(
+        en="The parent group `datacenter` must reach the 3 hosts of its child "
+        f"groups (3 « pong » expected), seen {_pongs(dc)}.\n"
+        "A parent that does not aggregate its children properly reaches fewer.\n"
+        f"{dc.stdout.strip()}",
+        fr="Le groupe parent `datacenter` doit joindre les 3 hôtes de ses groupes "
         f"enfants (3 « pong » attendus), vu {_pongs(dc)}.\n"
         "Un parent qui n'agrège pas correctement ses enfants en joint moins.\n"
-        f"{dc.stdout.strip()}"
+        f"{dc.stdout.strip()}",
     )
     for hote in ("web1.lab", "web2.lab", "db1.lab"):
-        assert f"{hote} | SUCCESS" in dc.stdout, (
-            f"{hote} doit être joint via le groupe parent `datacenter`.\n"
-            f"Vu :\n{dc.stdout.strip()}"
+        assert f"{hote} | SUCCESS" in dc.stdout, message(
+            en=f"{hote} must be reached through the parent group `datacenter`.\n"
+            f"Seen:\n{dc.stdout.strip()}",
+            fr=f"{hote} doit être joint via le groupe parent `datacenter`.\n"
+            f"Vu :\n{dc.stdout.strip()}",
         )
 
 
@@ -211,32 +252,47 @@ def test_les_variables_de_groupe_sont_resolues_et_cloisonnees():
     mais raterait la démonstration : l'objectif est de les porter par le GROUPE.
     """
     web1 = _inventory_host("web1.lab")
-    assert web1.get("web_role") == "frontend", (
-        "La variable de groupe `web_role` (portée par webservers) doit être "
+    assert web1.get("web_role") == "frontend", message(
+        en="The group variable `web_role` (carried by webservers) must resolve on "
+        f"web1.lab with the value « frontend », seen: "
+        f"{web1.get('web_role')!r}.",
+        fr="La variable de groupe `web_role` (portée par webservers) doit être "
         f"résolue sur web1.lab avec la valeur « frontend », vu : "
-        f"{web1.get('web_role')!r}."
+        f"{web1.get('web_role')!r}.",
     )
-    assert web1.get("site") == "paris", (
-        "web1.lab doit hériter de `site` (portée par le parent datacenter), vu : "
-        f"{web1.get('site')!r}."
+    assert web1.get("site") == "paris", message(
+        en="web1.lab must inherit `site`, carried by the datacenter parent, seen: "
+        f"{web1.get('site')!r}.",
+        fr="web1.lab doit hériter de `site` (portée par le parent datacenter), vu : "
+        f"{web1.get('site')!r}.",
     )
-    assert "db_role" not in web1, (
-        "`db_role` est une variable du groupe dbservers : elle ne doit PAS "
-        f"fuiter sur web1.lab (vu : {web1.get('db_role')!r})."
+    assert "db_role" not in web1, message(
+        en="`db_role` is a variable of the dbservers group: it must NOT leak onto "
+        f"web1.lab (seen: {web1.get('db_role')!r}).",
+        fr="`db_role` est une variable du groupe dbservers : elle ne doit PAS "
+        f"fuiter sur web1.lab (vu : {web1.get('db_role')!r}).",
     )
 
     db1 = _inventory_host("db1.lab")
-    assert db1.get("db_role") == "database", (
-        "La variable de groupe `db_role` (portée par dbservers) doit être "
+    assert db1.get("db_role") == "database", message(
+        en="The group variable `db_role` (carried by dbservers) must resolve on "
+        f"db1.lab with the value « database », seen: "
+        f"{db1.get('db_role')!r}.",
+        fr="La variable de groupe `db_role` (portée par dbservers) doit être "
         f"résolue sur db1.lab avec la valeur « database », vu : "
-        f"{db1.get('db_role')!r}."
+        f"{db1.get('db_role')!r}.",
     )
-    assert db1.get("site") == "paris", (
-        "db1.lab doit hériter de `site` via le parent datacenter, vu : "
+    assert db1.get("site") == "paris", message(
+        en="db1.lab must inherit `site` through the datacenter parent, seen: "
+        f"{db1.get('site')!r}. A missing inheritance means the parent does not "
+        "really aggregate its children.",
+        fr="db1.lab doit hériter de `site` via le parent datacenter, vu : "
         f"{db1.get('site')!r}. Si l'héritage manque, le parent n'agrège pas "
-        "réellement ses enfants."
+        "réellement ses enfants.",
     )
-    assert "web_role" not in db1, (
-        "`web_role` est une variable du groupe webservers : elle ne doit PAS "
-        f"fuiter sur db1.lab (vu : {db1.get('web_role')!r})."
+    assert "web_role" not in db1, message(
+        en="`web_role` is a variable of the webservers group: it must NOT leak onto "
+        f"db1.lab (seen: {db1.get('web_role')!r}).",
+        fr="`web_role` est une variable du groupe webservers : elle ne doit PAS "
+        f"fuiter sur db1.lab (vu : {db1.get('web_role')!r}).",
     )

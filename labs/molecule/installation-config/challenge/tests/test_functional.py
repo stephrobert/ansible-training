@@ -14,6 +14,8 @@ from pathlib import Path
 
 import yaml
 
+from conftest import message
+
 LAB_ROOT = Path(__file__).resolve().parents[2]
 MOLECULE_DIR = LAB_ROOT / "molecule" / "default"
 
@@ -24,30 +26,43 @@ def _molecule_config():
 
 def test_requirements_yml_written():
     f = MOLECULE_DIR / "requirements.yml"
-    assert f.exists(), (
-        "molecule/default/requirements.yml manquant : déclarez les "
-        "collections dont le scénario dépend"
+    assert f.exists(), message(
+        en="molecule/default/requirements.yml missing: declare the collections "
+        "your scenario depends on",
+        fr="molecule/default/requirements.yml manquant : déclarez les "
+        "collections dont le scénario dépend",
     )
     data = yaml.safe_load(f.read_text())
     collections = data.get("collections") or []
-    assert collections, "requirements.yml doit déclarer au moins une collection"
+    assert collections, message(
+        en="requirements.yml must declare at least one collection",
+        fr="requirements.yml doit déclarer au moins une collection",
+    )
     for c in collections:
-        assert isinstance(c, dict) and "version" in c, (
-            "Chaque collection doit porter une contrainte de version "
-            "(reproductibilité du scénario)"
+        assert isinstance(c, dict) and "version" in c, message(
+            en="Every collection must carry a version constraint (so the scenario "
+            "stays reproducible)",
+            fr="Chaque collection doit porter une contrainte de version "
+            "(reproductibilité du scénario)",
         )
 
 
 def test_prepare_yml_written():
     f = MOLECULE_DIR / "prepare.yml"
-    assert f.exists(), (
-        "molecule/default/prepare.yml manquant : écrivez le play de "
-        "préparation de l'instance (prérequis hors du périmètre du rôle)"
+    assert f.exists(), message(
+        en="molecule/default/prepare.yml missing: write the play that prepares "
+        "the instance (prerequisites outside the role's scope)",
+        fr="molecule/default/prepare.yml manquant : écrivez le play de "
+        "préparation de l'instance (prérequis hors du périmètre du rôle)",
     )
     plays = yaml.safe_load(f.read_text())
-    assert isinstance(plays, list) and plays, "prepare.yml doit contenir un play"
-    assert plays[0].get("tasks"), (
-        "prepare.yml doit contenir au moins une tâche (paquets de diagnostic...)"
+    assert isinstance(plays, list) and plays, message(
+        en="prepare.yml must contain a play",
+        fr="prepare.yml doit contenir un play",
+    )
+    assert plays[0].get("tasks"), message(
+        en="prepare.yml must contain at least one task (diagnostic packages...)",
+        fr="prepare.yml doit contenir au moins une tâche (paquets de diagnostic...)",
     )
 
 
@@ -55,9 +70,11 @@ def test_dependency_uses_requirements_file():
     config = _molecule_config()
     options = config.get("dependency", {}).get("options", {})
     joined = " ".join(str(v) for v in options.values())
-    assert "requirements" in joined, (
-        "dependency galaxy doit pointer votre requirements.yml "
-        "(options.requirements-file)"
+    assert "requirements" in joined, message(
+        en="dependency galaxy must point at your requirements.yml "
+        "(options.requirements-file)",
+        fr="dependency galaxy doit pointer votre requirements.yml "
+        "(options.requirements-file)",
     )
 
 
@@ -65,14 +82,18 @@ def test_molecule_yml_has_inventory_host_vars():
     """host_vars surcharge les variables du rôle pour l'instance."""
     config = _molecule_config()
     host_vars = config.get("provisioner", {}).get("inventory", {}).get("host_vars", {})
-    assert host_vars, (
-        "provisioner.inventory.host_vars manquant : surchargez "
-        "webserver_listen_port pour l'instance"
+    assert host_vars, message(
+        en="provisioner.inventory.host_vars missing: override "
+        "webserver_listen_port for the instance",
+        fr="provisioner.inventory.host_vars manquant : surchargez "
+        "webserver_listen_port pour l'instance",
     )
     ports = [v.get("webserver_listen_port") for v in host_vars.values() if isinstance(v, dict)]
-    assert 8080 in ports, (
-        "webserver_listen_port doit valoir 8080 via host_vars : c'est le "
-        "port que verify.yml (livré) contrôle réellement"
+    assert 8080 in ports, message(
+        en="webserver_listen_port must be 8080 through host_vars: that is the "
+        "port verify.yml (provided) actually checks",
+        fr="webserver_listen_port doit valoir 8080 via host_vars : c'est le "
+        "port que verify.yml (livré) contrôle réellement",
     )
 
 
@@ -80,11 +101,16 @@ def test_molecule_yml_has_test_sequence():
     """test_sequence personnalisée déclarée dans molecule.yml."""
     config = _molecule_config()
     seq = config.get("scenario", {}).get("test_sequence", [])
-    assert seq, "Déclarez scenario.test_sequence (séquence personnalisée)"
+    assert seq, message(
+        en="Declare scenario.test_sequence (a custom sequence)",
+        fr="Déclarez scenario.test_sequence (séquence personnalisée)",
+    )
     for step in ("prepare", "converge", "idempotence", "verify"):
-        assert step in seq, (
-            f"L'étape '{step}' doit figurer dans test_sequence : "
-            "l'idempotence notamment est le filet de sécurité du rôle"
+        assert step in seq, message(
+            en=f"The '{step}' step must appear in test_sequence: idempotence in "
+            "particular is the role's safety net",
+            fr=f"L'étape '{step}' doit figurer dans test_sequence : "
+            "l'idempotence notamment est le filet de sécurité du rôle",
         )
 
 
@@ -100,18 +126,25 @@ def test_molecule_yml_has_callback_options():
     callbacks = str(
         defaults.get("callbacks_enabled") or defaults.get("callback_enabled", "")
     )
-    assert "profile_tasks" in callbacks, (
-        "Activez le callback profile_tasks (temps par tâche) via "
-        "provisioner.config_options.defaults.callbacks_enabled"
+    assert "profile_tasks" in callbacks, message(
+        en="Enable the profile_tasks callback (time per task) through "
+        "provisioner.config_options.defaults.callbacks_enabled",
+        fr="Activez le callback profile_tasks (temps par tâche) via "
+        "provisioner.config_options.defaults.callbacks_enabled",
     )
-    assert "timer" in callbacks, "Activez aussi le callback timer (durée totale)"
+    assert "timer" in callbacks, message(
+        en="Enable the timer callback too (total duration)",
+        fr="Activez aussi le callback timer (durée totale)",
+    )
 
 
 def test_molecule_syntax_passes():
     """Exécute réellement `molecule syntax` sur la configuration enrichie."""
-    assert shutil.which("molecule"), (
-        "molecule est introuvable sur le poste : installez-le "
-        "(pipx install molecule), c'est l'outil enseigné par ce lab"
+    assert shutil.which("molecule"), message(
+        en="molecule is not on this machine: install it (pipx install molecule), "
+        "it is the tool this lab teaches",
+        fr="molecule est introuvable sur le poste : installez-le "
+        "(pipx install molecule), c'est l'outil enseigné par ce lab",
     )
     env = dict(os.environ, ANSIBLE_ROLES_PATH=str(LAB_ROOT / "roles"))
     result = subprocess.run(
@@ -123,6 +156,7 @@ def test_molecule_syntax_passes():
         timeout=300,
         check=False,
     )
-    assert result.returncode == 0, (
-        f"`molecule syntax` échoue sur votre configuration :\n{result.stdout}{result.stderr}"
+    assert result.returncode == 0, message(
+        en=f"`molecule syntax` fails on your configuration:\n{result.stdout}{result.stderr}",
+        fr=f"`molecule syntax` échoue sur votre configuration :\n{result.stdout}{result.stderr}",
     )

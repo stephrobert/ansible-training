@@ -19,7 +19,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import assert_idempotent, lab_solution_text
+from conftest import assert_idempotent, lab_solution_text, message
 
 LAB_ROOT = Path(__file__).resolve().parents[2]
 SOLUTION = LAB_ROOT / "challenge" / "solution.yml"
@@ -106,9 +106,14 @@ try:
     PROOF.unlink(missing_ok=True)
 except PermissionError:
     pytest.fail(
-        f"{PROOF} appartient à root : un run précédent a tourné avec become. "
+        message(
+        en=f"{PROOF} belongs to root: an earlier run used become. "
+        "The play must declare become: false (ansible.cfg enables it "
+        f"globally). Delete the file: sudo rm {PROOF}",
+        fr=f"{PROOF} appartient à root : un run précédent a tourné avec become. "
         "Le play doit déclarer become: false (ansible.cfg l'active "
         f"globalement). Supprimez le fichier : sudo rm {PROOF}",
+    ),
         pytrace=False,
     )
 
@@ -133,16 +138,21 @@ def _fetch_secrets() -> dict:
 
 def test_preuve_deposee_et_protegee():
     """Le playbook a déposé la preuve, en 0600."""
-    assert PROOF.exists(), (
-        f"{PROOF} absent : le playbook n'a pas déposé la preuve de lookup."
+    assert PROOF.exists(), message(
+        en=f"{PROOF} missing: the playbook did not write the lookup's proof.",
+        fr=f"{PROOF} absent : le playbook n'a pas déposé la preuve de lookup.",
     )
-    assert PROOF.stat().st_uid == os.getuid(), (
-        f"{PROOF} n'appartient pas à l'utilisateur courant : le play a "
-        "tourné avec become alors qu'il doit déclarer become: false."
+    assert PROOF.stat().st_uid == os.getuid(), message(
+        en=f"{PROOF} does not belong to the current user: the play ran with "
+        "become while it must declare become: false.",
+        fr=f"{PROOF} n'appartient pas à l'utilisateur courant : le play a "
+        "tourné avec become alors qu'il doit déclarer become: false.",
     )
-    assert (PROOF.stat().st_mode & 0o777) == 0o600, (
-        f"{PROOF} doit être en 0600 : un fichier dérivé d'un secret ne se "
-        "pose jamais en lecture pour tous."
+    assert (PROOF.stat().st_mode & 0o777) == 0o600, message(
+        en=f"{PROOF} must be mode 0600: a file derived from a secret is never "
+        "left world-readable.",
+        fr=f"{PROOF} doit être en 0600 : un fichier dérivé d'un secret ne se "
+        "pose jamais en lecture pour tous.",
     )
 
 
@@ -155,13 +165,17 @@ def test_longueurs_correspondent_aux_secrets_de_vault():
     """
     secrets = _fetch_secrets()
     content = PROOF.read_text()
-    assert f"db_password length: {len(secrets['db_password'])}" in content, (
-        "La ligne 'db_password length: <n>' ne correspond pas à la longueur "
-        "réelle du secret stocké dans Vault."
+    assert f"db_password length: {len(secrets['db_password'])}" in content, message(
+        en="The 'db_password length: <n>' line does not match the real length of "
+        "the secret stored in Vault.",
+        fr="La ligne 'db_password length: <n>' ne correspond pas à la longueur "
+        "réelle du secret stocké dans Vault.",
     )
-    assert f"api_key length: {len(secrets['api_key'])}" in content, (
-        "La ligne 'api_key length: <n>' ne correspond pas à la longueur "
-        "réelle du secret stocké dans Vault."
+    assert f"api_key length: {len(secrets['api_key'])}" in content, message(
+        en="The 'api_key length: <n>' line does not match the real length of the "
+        "secret stored in Vault.",
+        fr="La ligne 'api_key length: <n>' ne correspond pas à la longueur "
+        "réelle du secret stocké dans Vault.",
     )
 
 
@@ -174,14 +188,19 @@ def test_aucun_secret_en_clair():
     # test infaisable en mode formateur, où ce fichier n'existe pas.
     solution_content = lab_solution_text(__file__)
     for name, value in secrets.items():
-        assert value not in proof_content, (
-            f"La valeur du secret '{name}' apparaît en clair dans {PROOF} : "
-            "la preuve ne doit contenir que des longueurs."
+        assert value not in proof_content, message(
+            en=f"The value of the '{name}' secret appears in clear in {PROOF}: the "
+            "proof must carry lengths and nothing else.",
+            fr=f"La valeur du secret '{name}' apparaît en clair dans {PROOF} : "
+            "la preuve ne doit contenir que des longueurs.",
         )
-        assert value not in solution_content, (
-            f"La valeur du secret '{name}' est écrite en dur dans "
+        assert value not in solution_content, message(
+            en=f"The value of the '{name}' secret is hardcoded in solution.yml: the "
+            "whole point of the lookup is never to put the secret in the "
+            "YAML.",
+            fr=f"La valeur du secret '{name}' est écrite en dur dans "
             "solution.yml : tout l'intérêt de la lookup est de ne jamais "
-            "poser le secret dans le YAML."
+            "poser le secret dans le YAML.",
         )
 
 

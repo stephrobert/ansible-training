@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import lab_script
+from conftest import lab_script, message
 
 CHALLENGE_DIR = Path(__file__).resolve().parent.parent  # .../challenge
 WORK = CHALLENGE_DIR / "work"
@@ -61,36 +61,48 @@ def run_solution() -> subprocess.CompletedProcess:
 
 def test_script_reussit(run_solution):
     """Le script se termine proprement (exit 0)."""
-    assert run_solution.returncode == 0, (
-        f"solution.sh a échoué (exit {run_solution.returncode}).\n"
+    assert run_solution.returncode == 0, message(
+        en=f"solution.sh failed (exit {run_solution.returncode}).\n"
+        f"stdout: {run_solution.stdout}\n"
+        f"stderr: {run_solution.stderr}",
+        fr=f"solution.sh a échoué (exit {run_solution.returncode}).\n"
         f"stdout : {run_solution.stdout}\n"
-        f"stderr : {run_solution.stderr}"
+        f"stderr : {run_solution.stderr}",
     )
 
 
 def test_depot_initialise(run_solution):
     """Un dépôt Git est réellement initialisé dans le workdir."""
-    assert (REPO / ".git").is_dir(), (
-        f"Aucun dépôt Git dans {REPO}. Le script doit faire `git init`."
+    assert (REPO / ".git").is_dir(), message(
+        en=f"No Git repository in {REPO}. The script must run `git init`.",
+        fr=f"Aucun dépôt Git dans {REPO}. Le script doit faire `git init`.",
     )
     res = _git(REPO, "rev-parse", "--is-inside-work-tree")
-    assert res.returncode == 0 and res.stdout.strip() == "true", (
-        "`git rev-parse --is-inside-work-tree` ne confirme pas un dépôt valide : "
-        f"{res.stdout}{res.stderr}"
+    assert res.returncode == 0 and res.stdout.strip() == "true", message(
+        en="`git rev-parse --is-inside-work-tree` does not confirm a valid "
+        f"repository: {res.stdout}{res.stderr}",
+        fr="`git rev-parse --is-inside-work-tree` ne confirme pas un dépôt valide : "
+        f"{res.stdout}{res.stderr}",
     )
 
 
 def test_playbooks_suivis(run_solution):
     """Des playbooks sont réellement SUIVIS (indexés), pas juste posés sur le disque."""
     res = _git(REPO, "ls-files")
-    assert res.returncode == 0, res.stderr
-    tracked = [f for f in res.stdout.splitlines() if f.strip()]
-    assert tracked, (
-        "`git ls-files` est vide : des fichiers ont peut-être été créés, mais "
-        "aucun n'a été `git add`. Suivre les playbooks est le cœur du lab."
+    assert res.returncode == 0, message(
+        en=res.stderr,
+        fr=res.stderr,
     )
-    assert any(f.endswith((".yml", ".yaml")) for f in tracked), (
-        f"Aucun playbook (.yml/.yaml) suivi. Fichiers suivis : {tracked}"
+    tracked = [f for f in res.stdout.splitlines() if f.strip()]
+    assert tracked, message(
+        en="`git ls-files` is empty: files may have been created, but none was "
+        "`git add`ed. Tracking the playbooks is the heart of this lab.",
+        fr="`git ls-files` est vide : des fichiers ont peut-être été créés, mais "
+        "aucun n'a été `git add`. Suivre les playbooks est le cœur du lab.",
+    )
+    assert any(f.endswith((".yml", ".yaml")) for f in tracked), message(
+        en=f"No playbook (.yml/.yaml) tracked. Tracked files: {tracked}",
+        fr=f"Aucun playbook (.yml/.yaml) suivi. Fichiers suivis : {tracked}",
     )
 
 
@@ -104,14 +116,18 @@ def test_historique_a_deux_commits(run_solution):
     webserver séparément.
     """
     res = _git(REPO, "log", "--oneline")
-    assert res.returncode == 0, (
-        "`git log` échoue : aucun commit n'existe. Des fichiers `git add`és mais "
-        f"jamais committés laissent un dépôt sans historique.\n{res.stderr}"
+    assert res.returncode == 0, message(
+        en="`git log` fails: there is no commit. Files that are `git add`ed but "
+        f"never committed leave a repository with no history.\n{res.stderr}",
+        fr="`git log` échoue : aucun commit n'existe. Des fichiers `git add`és mais "
+        f"jamais committés laissent un dépôt sans historique.\n{res.stderr}",
     )
     commits = [line for line in res.stdout.splitlines() if line.strip()]
-    assert len(commits) >= 2, (
-        "L'historique doit contenir au moins deux commits (un premier commit, "
-        f"puis un second pour construire l'historique). Commits trouvés : {len(commits)}."
+    assert len(commits) >= 2, message(
+        en="The history must hold at least two commits (a first one, then a "
+        f"second to build a history). Commits found: {len(commits)}.",
+        fr="L'historique doit contenir au moins deux commits (un premier commit, "
+        f"puis un second pour construire l'historique). Commits trouvés : {len(commits)}.",
     )
 
 
@@ -123,16 +139,21 @@ def test_branche_main(run_solution):
     On lit la branche courante depuis la ref symbolique HEAD du dépôt de preuve.
     """
     branch = _git(REPO, "branch", "--show-current").stdout.strip()
-    assert branch == "main", (
-        f"La branche courante est « {branch or '(détachée)'} », attendu « main ». "
-        "Initialisez le dépôt avec `git init -b main`."
+    assert branch == "main", message(
+        en=f"The current branch is « {branch or '(detached)'} », expected « main ». "
+        "Initialise the repository with `git init -b main`.",
+        fr=f"La branche courante est « {branch or '(détachée)'} », attendu « main ». "
+        "Initialisez le dépôt avec `git init -b main`.",
     )
 
 
 def test_message_de_commit_non_vide(run_solution):
     """Le dernier commit porte un message non vide (pas un commit fantôme)."""
     subject = _git(REPO, "log", "-1", "--pretty=%s").stdout.strip()
-    assert subject, "Le dernier commit n'a pas de message : `git commit -m \"...\"`."
+    assert subject, message(
+        en="The last commit has no message: `git commit -m \"...\"`.",
+        fr="Le dernier commit n'a pas de message : `git commit -m \"...\"`.",
+    )
 
 
 def test_identite_auteur_locale(run_solution):
@@ -144,8 +165,14 @@ def test_identite_auteur_locale(run_solution):
     """
     name = _git(REPO, "config", "--local", "user.name").stdout.strip()
     email = _git(REPO, "config", "--local", "user.email").stdout.strip()
-    assert name, "Aucun user.name local : `git config user.name \"...\"`."
-    assert email, "Aucun user.email local : `git config user.email \"...\"`."
+    assert name, message(
+        en="No local user.name: `git config user.name \"...\"`.",
+        fr="Aucun user.name local : `git config user.name \"...\"`.",
+    )
+    assert email, message(
+        en="No local user.email: `git config user.email \"...\"`.",
+        fr="Aucun user.email local : `git config user.email \"...\"`.",
+    )
 
 
 def test_arbre_de_travail_propre(run_solution):
@@ -156,10 +183,15 @@ def test_arbre_de_travail_propre(run_solution):
     menés jusqu'au bout.
     """
     res = _git(REPO, "status", "--porcelain")
-    assert res.returncode == 0, res.stderr
-    assert res.stdout.strip() == "", (
-        "L'arbre de travail n'est pas propre : des changements ne sont ni "
-        f"committés ni ignorés.\n{res.stdout}"
+    assert res.returncode == 0, message(
+        en=res.stderr,
+        fr=res.stderr,
+    )
+    assert res.stdout.strip() == "", message(
+        en="The working tree is not clean: some changes are neither committed "
+        f"nor ignored.\n{res.stdout}",
+        fr="L'arbre de travail n'est pas propre : des changements ne sont ni "
+        f"committés ni ignorés.\n{res.stdout}",
     )
 
 
@@ -171,26 +203,36 @@ def test_push_recu_par_le_bare(run_solution):
     script qui prétendrait pousser sans le faire laisserait un bare sans
     branche, et cette comparaison échouerait.
     """
-    assert (BARE / "HEAD").is_file(), (
-        f"Aucun dépôt bare dans {BARE}. Le script doit `git init --bare` la "
-        "cible du push."
+    assert (BARE / "HEAD").is_file(), message(
+        en=f"No bare repository in {BARE}. The script must `git init --bare` the "
+        "target of the push.",
+        fr=f"Aucun dépôt bare dans {BARE}. Le script doit `git init --bare` la "
+        "cible du push.",
     )
     local_head = _git(REPO, "rev-parse", "HEAD").stdout.strip()
-    assert local_head, "HEAD local introuvable."
+    assert local_head, message(
+        en="Local HEAD not found.",
+        fr="HEAD local introuvable.",
+    )
 
     res = _git(REPO, "ls-remote", str(BARE))
-    assert res.returncode == 0, (
-        f"`git ls-remote` sur le bare échoue : {res.stderr}"
+    assert res.returncode == 0, message(
+        en=f"`git ls-remote` on the bare repository fails: {res.stderr}",
+        fr=f"`git ls-remote` sur le bare échoue : {res.stderr}",
     )
     heads = {
         parts[1]: parts[0]
         for line in res.stdout.splitlines()
         if (parts := line.split()) and len(parts) >= 2 and parts[1].startswith("refs/heads/")
     }
-    assert heads, (
-        "Le bare n'a aucune branche : rien n'a été poussé. `git push origin main`."
+    assert heads, message(
+        en="The bare repository has no branch: nothing was pushed. "
+        "`git push origin main`.",
+        fr="Le bare n'a aucune branche : rien n'a été poussé. `git push origin main`.",
     )
-    assert local_head in heads.values(), (
-        f"Le HEAD local ({local_head[:8]}) n'a pas été poussé vers le bare. "
-        f"Branches côté bare : {heads}"
+    assert local_head in heads.values(), message(
+        en=f"The local HEAD ({local_head[:8]}) was not pushed to the bare "
+        f"repository. Branches on the bare side: {heads}",
+        fr=f"Le HEAD local ({local_head[:8]}) n'a pas été poussé vers le bare. "
+        f"Branches côté bare : {heads}",
     )

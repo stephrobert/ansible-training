@@ -1,4 +1,10 @@
-"""Tests pytest+testinfra pour le challenge argument_specs."""
+"""Tests pytest+testinfra pour le challenge argument_specs.
+
+Chaque assertion porte un message, et dans les deux langues : c'est le seul
+texte que `dsoxlab check` affiche quand un test échoue. Le fichier ne pouvant
+pas exister en deux versions, son nom étant imposé par le contrat, il suit le
+modèle de `hints.yaml` et porte ses deux langues avec `message(en=, fr=)`.
+"""
 
 import os
 import subprocess
@@ -6,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import REPO_ROOT, assert_idempotent, lab_host, lab_playbook
+from conftest import REPO_ROOT, assert_idempotent, lab_host, lab_playbook, message
 
 LAB_ROOT = Path(__file__).resolve().parents[2]
 TARGET_HOST = "db1.lab"
@@ -18,7 +24,14 @@ def host():
 
 
 def test_nginx_installed(host):
-    assert host.package("nginx").is_installed
+    assert host.package("nginx").is_installed, message(
+        en="nginx is not installed: the role did not get as far as its "
+           "install task, most likely because argument_specs rejected a "
+           "parameter before anything ran.",
+        fr="nginx n'est pas installé : le rôle n'est pas allé jusqu'à sa "
+           "tâche d'installation, le plus souvent parce qu'argument_specs a "
+           "refusé un paramètre avant que rien ne tourne.",
+    )
 
 
 def test_nginx_ecoute_reellement_sur_8090(host):
@@ -32,31 +45,63 @@ def test_nginx_ecoute_reellement_sur_8090(host):
     C'est donc l'écoute effective qu'on vérifie, pas la configuration.
     """
     svc = host.service("nginx")
-    assert svc.is_running, (
-        "nginx n'est pas démarré. Cause la plus probable : le port d'écoute "
-        "n'est pas étiqueté côté SELinux (le rôle doit poser seport avec "
-        "setype http_port_t AVANT de démarrer le service)."
+    assert svc.is_running, message(
+        en="nginx is not running. Most likely cause: the listening port is "
+           "not labelled on the SELinux side (the role must set seport with "
+           "setype http_port_t BEFORE starting the service).",
+        fr="nginx n'est pas démarré. Cause la plus probable : le port "
+           "d'écoute n'est pas étiqueté côté SELinux (le rôle doit poser "
+           "seport avec setype http_port_t AVANT de démarrer le service).",
     )
-    assert host.socket("tcp://0.0.0.0:8090").is_listening, (
-        "nginx ne répond sur aucun socket 0.0.0.0:8090 : soit "
-        "webserver_listen_port=8090 n'a pas été injecté dans le template, "
-        "soit SELinux a refusé le bind sur ce port."
+    assert host.socket("tcp://0.0.0.0:8090").is_listening, message(
+        en="nginx answers on no 0.0.0.0:8090 socket: either "
+           "webserver_listen_port=8090 never reached the template, or "
+           "SELinux refused the bind on that port.",
+        fr="nginx ne répond sur aucun socket 0.0.0.0:8090 : soit "
+           "webserver_listen_port=8090 n'a pas été injecté dans le template, "
+           "soit SELinux a refusé le bind sur ce port.",
     )
 
 
 def test_index_contains_validation_message(host):
     f = host.file("/usr/share/nginx/html/index.html")
-    assert f.exists
-    assert "argument_specs validés" in f.content_string
+    assert f.exists, message(
+        en="/usr/share/nginx/html/index.html does not exist: the role did "
+           "not deploy its page.",
+        fr="/usr/share/nginx/html/index.html n'existe pas : le rôle n'a pas "
+           "déposé sa page.",
+    )
+    assert "argument_specs validés" in f.content_string, message(
+        en="The page does not carry « argument_specs validés »: the custom "
+           "content did not reach the role.",
+        fr="La page ne porte pas « argument_specs validés » : le contenu "
+           "personnalisé n'a pas atteint le rôle.",
+    )
 
 
 def test_argument_specs_file_present():
     """meta/argument_specs.yml existe dans le rôle (mandatory pour validation auto)."""
     spec_path = LAB_ROOT / "roles/webserver/meta/argument_specs.yml"
-    assert spec_path.exists(), f"Fichier {spec_path} manquant"
+    assert spec_path.exists(), message(
+        en=f"{spec_path} is missing. Its name and location are imposed: "
+           f"Ansible validates automatically only if the file is exactly "
+           f"meta/argument_specs.yml inside the role.",
+        fr=f"{spec_path} manque. Son nom et son emplacement sont imposés : "
+           f"Ansible ne valide automatiquement que si le fichier est "
+           f"exactement meta/argument_specs.yml dans le rôle.",
+    )
     content = spec_path.read_text()
-    assert "argument_specs:" in content
-    assert "main:" in content
+    assert "argument_specs:" in content, message(
+        en="The file does not carry the argument_specs: root key.",
+        fr="Le fichier ne porte pas la clé racine argument_specs:.",
+    )
+    assert "main:" in content, message(
+        en="The file declares no main: entry point. The name matches the "
+           "role's tasks file: main: validates tasks/main.yml.",
+        fr="Le fichier ne déclare aucun point d'entrée main:. Le nom "
+           "correspond au fichier de tâches du rôle : main: valide "
+           "tasks/main.yml.",
+    )
 
 
 def test_invalid_choice_makes_play_fail():
@@ -88,11 +133,26 @@ def test_invalid_choice_makes_play_fail():
         check=False,
     )
     # On attend un échec (rc != 0) avec le message de validation
-    assert result.returncode != 0, "argument_specs aurait dû rejeter la valeur invalide"
+    assert result.returncode != 0, message(
+        en="argument_specs should have rejected the invalid value and failed "
+           "the play. A role that accepts anything validates nothing: the "
+           "choices: list is what refuses.",
+        fr="argument_specs aurait dû refuser la valeur invalide et faire "
+           "échouer le play. Un rôle qui accepte tout ne valide rien : c'est "
+           "la liste choices: qui refuse.",
+    )
     combined = result.stdout + result.stderr
-    assert "valeur_invalide" in combined or "argument_errors" in combined or "must be one of" in combined, (
-        f"Message de validation argument_specs absent.\n"
-        f"stdout: {result.stdout[-500:]}\nstderr: {result.stderr[-500:]}"
+    assert (
+        "valeur_invalide" in combined
+        or "argument_errors" in combined
+        or "must be one of" in combined
+    ), message(
+        en=f"The play failed, but not on argument_specs validation: the "
+           f"rejection must name the offending value.\n"
+           f"stdout: {result.stdout[-500:]}\nstderr: {result.stderr[-500:]}",
+        fr=f"Le play a échoué, mais pas sur la validation d'argument_specs : "
+           f"le refus doit nommer la valeur fautive.\n"
+           f"stdout : {result.stdout[-500:]}\nstderr : {result.stderr[-500:]}",
     )
 
 

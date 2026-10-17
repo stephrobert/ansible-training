@@ -1,10 +1,16 @@
-"""Tests pytest+testinfra pour le challenge inventaire dynamique KVM."""
+"""Tests pytest+testinfra pour le challenge inventaire dynamique KVM.
+
+Chaque assertion porte un message, et dans les deux langues : c'est le seul
+texte que `dsoxlab check` affiche quand un test échoue. Le fichier ne pouvant
+pas exister en deux versions, son nom étant imposé par le contrat, il suit le
+modèle de `hints.yaml` et porte ses deux langues avec `message(en=, fr=)`.
+"""
 
 import subprocess
 
 import pytest
 
-from conftest import REPO_ROOT, assert_idempotent, lab_host
+from conftest import REPO_ROOT, assert_idempotent, lab_host, message
 
 # Les 4 VMs du lab, nommées comme le domaine libvirt (`virsh list --all`).
 # C'est aussi le nom que remonte `inventory_hostname: name`, et celui du bloc
@@ -29,8 +35,16 @@ def test_marker_exists(vm):
     name, host = vm
     marker = f"/tmp/lab57-mark-{name}.txt"
     f = host.file(marker)
-    assert f.exists, f"Marqueur manquant sur {name}: {marker}"
-    assert f.mode == 0o644
+    assert f.exists, message(
+        en=f"Marker missing on {name}: {marker}. The dynamic inventory did "
+           f"not reach this VM, or the pattern excludes it.",
+        fr=f"Marqueur manquant sur {name} : {marker}. L'inventaire dynamique "
+           f"n'a pas atteint cette VM, ou le pattern l'exclut.",
+    )
+    assert f.mode == 0o644, message(
+        en=f"The marker on {name} is {oct(f.mode)}, expected 0644.",
+        fr=f"Le marqueur de {name} est en {oct(f.mode)}, attendu 0644.",
+    )
 
 
 def test_marker_content(vm):
@@ -38,9 +52,24 @@ def test_marker_content(vm):
     name, host = vm
     marker = f"/tmp/lab57-mark-{name}.txt"
     content = host.file(marker).content_string
-    assert name in content
-    assert "running" in content
-    assert "inventaire dynamique libvirt OK" in content
+    assert name in content, message(
+        en=f"The marker does not carry {name}: the name must come from "
+           f"inventory_hostname, which the libvirt plugin fills with the "
+           f"domain's name.",
+        fr=f"Le marqueur ne porte pas {name} : le nom doit venir "
+           f"d'inventory_hostname, que le plugin libvirt remplit avec le nom "
+           f"du domaine.",
+    )
+    assert "running" in content, message(
+        en="The marker does not carry « running »: that state comes from the "
+           "plugin, which is exactly what a static inventory could not know.",
+        fr="Le marqueur ne porte pas « running » : cet état vient du plugin, "
+           "et c'est précisément ce qu'un inventaire statique ne saurait pas.",
+    )
+    assert "inventaire dynamique libvirt OK" in content, message(
+        en="The marker does not carry the expected sentence.",
+        fr="Le marqueur ne porte pas la phrase attendue.",
+    )
 
 
 def test_pattern_ne_cible_que_les_vms_du_lab():
@@ -59,20 +88,25 @@ def test_pattern_ne_cible_que_les_vms_du_lab():
         text=True,
         check=False,
     )
-    assert res.returncode == 0, (
-        f"`ansible {PATTERN} --list-hosts` a échoué :\n{res.stderr}"
+    assert res.returncode == 0, message(
+        en=f"`ansible {PATTERN} --list-hosts` failed:\n{res.stderr}",
+        fr=f"`ansible {PATTERN} --list-hosts` a échoué :\n{res.stderr}",
     )
     resolved = {
         line.strip()
         for line in res.stdout.splitlines()
         if line.strip() and not line.strip().startswith("hosts (")
     }
-    assert resolved == set(LAB_VMS), (
-        f"Le pattern {PATTERN} résout {sorted(resolved)}, "
-        f"attendu {sorted(LAB_VMS)}.\n"
-        "Un hôte en trop = le lab écrit sur une VM qui n'est pas la sienne ; "
-        "un hôte en moins = le filtre du groupe lab_vms ne matche plus les "
-        "noms de domaines libvirt réels."
+    assert resolved == set(LAB_VMS), message(
+        en=f"The {PATTERN} pattern resolves to {sorted(resolved)}, expected "
+           f"{sorted(LAB_VMS)}.\nOne host too many means the lab writes on a "
+           f"VM that is not its own; one host short means the lab_vms group "
+           f"filter no longer matches the real libvirt domain names.",
+        fr=f"Le pattern {PATTERN} résout {sorted(resolved)}, attendu "
+           f"{sorted(LAB_VMS)}.\nUn hôte en trop, et le lab écrit sur une VM "
+           f"qui n'est pas la sienne ; un hôte en moins, et le filtre du "
+           f"groupe lab_vms ne correspond plus aux noms de domaines libvirt "
+           f"réels.",
     )
 
 

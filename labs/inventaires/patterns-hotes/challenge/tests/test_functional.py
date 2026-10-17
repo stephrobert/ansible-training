@@ -14,6 +14,7 @@ from conftest import (
     assert_idempotent,
     lab_host,
     lab_playbook,
+    message,
     replay_solution,
 )
 
@@ -95,12 +96,22 @@ def test_intersection_webservers_staging(web1, web2, db1):
     _cleanup_markers()
     _run_playbook("webservers:&staging")
 
-    assert web1.file(_marker("web1.lab")).exists, "web1.lab doit avoir le marqueur"
-    assert web1.file(_marker("web1.lab")).content_string.strip() == "pattern OK on web1.lab", (
-        "le marqueur doit contenir 'pattern OK on <inventory_hostname>' (contenu exact de l'énoncé)"
+    assert web1.file(_marker("web1.lab")).exists, message(
+        en="web1.lab must have the marker",
+        fr="web1.lab doit avoir le marqueur",
     )
-    assert not web2.file(_marker("web2.lab")).exists, "web2.lab ne doit PAS avoir le marqueur (pas dans staging)"
-    assert not db1.file(_marker("db1.lab")).exists, "db1.lab ne doit PAS avoir le marqueur (pas un webserver)"
+    assert web1.file(_marker("web1.lab")).content_string.strip() == "pattern OK on web1.lab", message(
+        en="the marker must contain 'pattern OK on <inventory_hostname>' (the exact wording of the brief)",
+        fr="le marqueur doit contenir 'pattern OK on <inventory_hostname>' (contenu exact de l'énoncé)",
+    )
+    assert not web2.file(_marker("web2.lab")).exists, message(
+        en="web2.lab must NOT have the marker (it is not in staging)",
+        fr="web2.lab ne doit PAS avoir le marqueur (pas dans staging)",
+    )
+    assert not db1.file(_marker("db1.lab")).exists, message(
+        en="db1.lab must NOT have the marker (it is not a webserver)",
+        fr="db1.lab ne doit PAS avoir le marqueur (pas un webserver)",
+    )
 
 
 def test_exclusion_webservers_minus_web1(web1, web2, db1):
@@ -108,9 +119,18 @@ def test_exclusion_webservers_minus_web1(web1, web2, db1):
     _cleanup_markers()
     _run_playbook("webservers:!web1.lab")
 
-    assert not web1.file(_marker("web1.lab")).exists, "web1.lab doit être exclu"
-    assert web2.file(_marker("web2.lab")).exists, "web2.lab doit avoir le marqueur"
-    assert not db1.file(_marker("db1.lab")).exists, "db1.lab ne doit PAS avoir le marqueur (pas un webserver)"
+    assert not web1.file(_marker("web1.lab")).exists, message(
+        en="web1.lab must be excluded",
+        fr="web1.lab doit être exclu",
+    )
+    assert web2.file(_marker("web2.lab")).exists, message(
+        en="web2.lab must have the marker",
+        fr="web2.lab doit avoir le marqueur",
+    )
+    assert not db1.file(_marker("db1.lab")).exists, message(
+        en="db1.lab must NOT have the marker (it is not a webserver)",
+        fr="db1.lab ne doit PAS avoir le marqueur (pas un webserver)",
+    )
 
 
 def test_all_minus_staging(web1, web2, db1):
@@ -118,17 +138,32 @@ def test_all_minus_staging(web1, web2, db1):
     _cleanup_markers()
     _run_playbook("all:!staging")
 
-    assert not web1.file(_marker("web1.lab")).exists, "web1.lab doit être exclu (dans staging)"
-    assert web2.file(_marker("web2.lab")).exists, "web2.lab doit avoir le marqueur"
-    assert db1.file(_marker("db1.lab")).exists, "db1.lab doit avoir le marqueur"
+    assert not web1.file(_marker("web1.lab")).exists, message(
+        en="web1.lab must be excluded (it is in staging)",
+        fr="web1.lab doit être exclu (dans staging)",
+    )
+    assert web2.file(_marker("web2.lab")).exists, message(
+        en="web2.lab must have the marker",
+        fr="web2.lab doit avoir le marqueur",
+    )
+    assert db1.file(_marker("db1.lab")).exists, message(
+        en="db1.lab must have the marker",
+        fr="db1.lab doit avoir le marqueur",
+    )
 
 
 def test_cleanup_after(web1, web2, db1):
     """Cleanup final après les tests pour ne pas polluer."""
     _cleanup_markers()
-    assert not web1.file(_marker("web1.lab")).exists
-    assert not web2.file(_marker("web2.lab")).exists
-    assert not db1.file(_marker("db1.lab")).exists
+    for hote, nom in ((web1, "web1.lab"), (web2, "web2.lab"), (db1, "db1.lab")):
+        assert not hote.file(_marker(nom)).exists, message(
+            en=f"The marker is still on {nom} after the cleanup: the tests "
+               f"must leave the lab as they found it, otherwise the next run "
+               f"measures the previous one.",
+            fr=f"Le marqueur est encore sur {nom} après le nettoyage : les "
+               f"tests doivent rendre le lab tel qu'ils l'ont trouvé, sinon "
+               f"le passage suivant mesure le précédent.",
+        )
 
 
 def test_solution_idempotente():

@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from conftest import assert_idempotent, lab_host
+from conftest import assert_idempotent, lab_host, message
 
 LAB_DIR = Path(__file__).resolve().parents[2]
 CHALLENGE_DIR = LAB_DIR / "challenge"
@@ -28,9 +28,11 @@ def host():
 
 
 def test_collection_initialized():
-    assert COLL_ROOT.is_dir(), (
-        f"{COLL_ROOT} absent — exécutez "
-        "`ansible-galaxy collection init student.lab97_migrated --init-path ansible_collections/`."
+    assert COLL_ROOT.is_dir(), message(
+        en=f"{COLL_ROOT} missing: run "
+        "`ansible-galaxy collection init student.lab97_migrated --init-path ansible_collections/`.",
+        fr=f"{COLL_ROOT} absent — exécutez "
+        "`ansible-galaxy collection init student.lab97_migrated --init-path ansible_collections/`.",
     )
 
 
@@ -46,17 +48,24 @@ def test_runtime_yml_has_redirect():
     rendait le lab impossible à résoudre, quelle que soit la solution écrite.
     """
     f = COLL_ROOT / "meta" / "runtime.yml"
-    assert f.is_file(), "meta/runtime.yml absent"
+    assert f.is_file(), message(
+        en="meta/runtime.yml missing",
+        fr="meta/runtime.yml absent",
+    )
     data = yaml.safe_load(f.read_text())
     routing = data.get("plugin_routing", {}).get("modules", {})
-    assert LEGACY_MODULE in routing, (
-        f"plugin_routing.modules.{LEGACY_MODULE} absent de meta/runtime.yml : "
-        "c'est l'ancien nom qu'il faut router, pas le nouveau."
+    assert LEGACY_MODULE in routing, message(
+        en=f"plugin_routing.modules.{LEGACY_MODULE} absent from meta/runtime.yml: "
+        "it is the OLD name that must be routed, not the new one.",
+        fr=f"plugin_routing.modules.{LEGACY_MODULE} absent de meta/runtime.yml : "
+        "c'est l'ancien nom qu'il faut router, pas le nouveau.",
     )
     redirect = routing[LEGACY_MODULE].get("redirect", "")
-    assert redirect == f"student.lab97_migrated.{NEW_MODULE}", (
-        f"redirect doit pointer vers student.lab97_migrated.{NEW_MODULE}, "
-        f"vu : {redirect!r}"
+    assert redirect == f"student.lab97_migrated.{NEW_MODULE}", message(
+        en=f"redirect must point at student.lab97_migrated.{NEW_MODULE}, "
+        f"seen: {redirect!r}",
+        fr=f"redirect doit pointer vers student.lab97_migrated.{NEW_MODULE}, "
+        f"vu : {redirect!r}",
     )
 
 
@@ -68,50 +77,67 @@ def test_legacy_module_n_existe_que_par_la_redirection():
     et la migration ne prouverait plus rien.
     """
     orphelin = COLL_ROOT / "plugins" / "modules" / f"{LEGACY_MODULE}.py"
-    assert not orphelin.exists(), (
-        f"{orphelin} ne doit PAS exister : l'ancien nom doit être servi par "
-        "plugin_routing.redirect, pas par une copie du module."
+    assert not orphelin.exists(), message(
+        en=f"{orphelin} must NOT exist: the old name must be served by "
+        "plugin_routing.redirect, not by a copy of the module.",
+        fr=f"{orphelin} ne doit PAS exister : l'ancien nom doit être servi par "
+        "plugin_routing.redirect, pas par une copie du module.",
     )
 
 
 def test_runtime_yml_has_deprecation():
     data = yaml.safe_load((COLL_ROOT / "meta" / "runtime.yml").read_text())
     routing = data["plugin_routing"]["modules"][LEGACY_MODULE]
-    assert "deprecation" in routing, "deprecation: absent"
-    assert "removal_version" in routing["deprecation"], (
-        "removal_version absent dans deprecation"
+    assert "deprecation" in routing, message(
+        en="deprecation: missing",
+        fr="deprecation: absent",
+    )
+    assert "removal_version" in routing["deprecation"], message(
+        en="removal_version missing from deprecation",
+        fr="removal_version absent dans deprecation",
     )
 
 
 def test_module_python_migrated():
     f = COLL_ROOT / "plugins" / "modules" / "lab97_check.py"
-    assert f.is_file(), (
-        f"{f} absent — déplacez/créez le module dans plugins/modules/."
+    assert f.is_file(), message(
+        en=f"{f} missing: move or create the module in plugins/modules/.",
+        fr=f"{f} absent — déplacez/créez le module dans plugins/modules/.",
     )
     content = f.read_text()
     for section in ("DOCUMENTATION", "EXAMPLES", "RETURN"):
-        assert section in content, f"Section {section} absente du module"
+        assert section in content, message(
+            en=f"Section {section} missing from the module",
+            fr=f"Section {section} absente du module",
+        )
 
 
 def test_proof_file_exists(host):
     f = host.file(RESULT_FILE)
-    assert f.exists, (
-        f"{RESULT_FILE} absent — solution.yml a-t-elle tourné avec "
-        "ANSIBLE_COLLECTIONS_PATH=challenge/ansible_collections ?"
+    assert f.exists, message(
+        en=f"{RESULT_FILE} missing: did solution.yml run with "
+        "ANSIBLE_COLLECTIONS_PATH=challenge/ansible_collections?",
+        fr=f"{RESULT_FILE} absent — solution.yml a-t-elle tourné avec "
+        "ANSIBLE_COLLECTIONS_PATH=challenge/ansible_collections ?",
     )
 
 
 def test_proof_file_mode(host):
     f = host.file(RESULT_FILE)
-    assert f.mode == 0o644
+    assert f.mode == 0o644, message(
+        en=f"The proof file is {oct(f.mode)}, expected 0644.",
+        fr=f"Le fichier de preuve est en {oct(f.mode)}, attendu 0644.",
+    )
 
 
 def test_proof_file_contains_new_fqcn_result(host):
     """Le fichier doit prouver que le module a tourné via le nouveau FQCN."""
     content = host.file(RESULT_FILE).content_string
-    assert re.search(r"^new:\s*lab97-migrated-OK\s*$", content, re.MULTILINE), (
-        "Le fichier doit porter une ligne `new: lab97-migrated-OK`, sortie du "
-        f"module appelé par son FQCN complet. Vu : {content[:200]!r}"
+    assert re.search(r"^new:\s*lab97-migrated-OK\s*$", content, re.MULTILINE), message(
+        en="The file must carry a `new: lab97-migrated-OK` line, the output of "
+        f"the module called by its full FQCN. Seen: {content[:200]!r}",
+        fr="Le fichier doit porter une ligne `new: lab97-migrated-OK`, sortie du "
+        f"module appelé par son FQCN complet. Vu : {content[:200]!r}",
     )
 
 
@@ -125,10 +151,13 @@ def test_proof_file_prouve_que_l_ancien_nom_marche(host):
     « couldn't resolve module/action » et ce fichier n'existerait pas.
     """
     content = host.file(RESULT_FILE).content_string
-    assert re.search(r"^legacy:\s*lab97-migrated-OK\s*$", content, re.MULTILINE), (
-        "Le fichier doit porter une ligne `legacy: lab97-migrated-OK` : la "
+    assert re.search(r"^legacy:\s*lab97-migrated-OK\s*$", content, re.MULTILINE), message(
+        en="The file must carry a `legacy: lab97-migrated-OK` line: the proof "
+        "that a call to the OLD name was indeed served by the redirection. "
+        f"Seen: {content[:200]!r}",
+        fr="Le fichier doit porter une ligne `legacy: lab97-migrated-OK` : la "
         "preuve qu'un appel à l'ANCIEN nom a bien été servi par la "
-        f"redirection. Vu : {content[:200]!r}"
+        f"redirection. Vu : {content[:200]!r}",
     )
 
 

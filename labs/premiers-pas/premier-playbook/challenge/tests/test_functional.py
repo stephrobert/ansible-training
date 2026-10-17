@@ -10,7 +10,7 @@ Lancement (depuis la racine du repo) :
 
 import pytest
 
-from conftest import assert_idempotent, lab_host
+from conftest import assert_idempotent, lab_host, message
 
 TARGET_HOST = "db1.lab"
 HTTP_PORT = 8888
@@ -26,24 +26,36 @@ def host():
 def test_nginx_package_installed(host):
     """Le paquet nginx doit être installé sur db1.lab."""
     pkg = host.package("nginx")
-    assert pkg.is_installed, "nginx n'est pas installé sur db1.lab"
+    assert pkg.is_installed, message(
+        en="nginx is not installed on db1.lab",
+        fr="nginx n'est pas installé sur db1.lab",
+    )
 
 
 def test_nginx_service_running_and_enabled(host):
     """Le service nginx doit être actif et activé au boot."""
     svc = host.service("nginx")
-    assert svc.is_running, "nginx n'est pas démarré sur db1.lab"
-    assert svc.is_enabled, "nginx n'est pas activé au boot sur db1.lab"
+    assert svc.is_running, message(
+        en="nginx is not started on db1.lab",
+        fr="nginx n'est pas démarré sur db1.lab",
+    )
+    assert svc.is_enabled, message(
+        en="nginx is not enabled at boot on db1.lab",
+        fr="nginx n'est pas activé au boot sur db1.lab",
+    )
 
 
 def test_port_8888_listening(host):
     """Le port 8888 doit être en listening."""
     sockets = host.socket.get_listening_sockets()
     listening = [s for s in sockets if f":{HTTP_PORT}" in s]
-    assert listening, (
-        f"Aucun service n'écoute sur le port {HTTP_PORT}. "
+    assert listening, message(
+        en=f"No service listens on port {HTTP_PORT}. "
+        f"Check 'listen {HTTP_PORT};' in /etc/nginx/nginx.conf "
+        f"and the seport setting for SELinux.",
+        fr=f"Aucun service n'écoute sur le port {HTTP_PORT}. "
         f"Vérifie 'listen {HTTP_PORT};' dans /etc/nginx/nginx.conf "
-        f"et le paramètre seport pour SELinux."
+        f"et le paramètre seport pour SELinux.",
     )
 
 
@@ -60,42 +72,63 @@ def test_selinux_port_8888_labelled(host):
     aurait oublié la tâche seport.
     """
     cmd = host.run("semanage port -l | grep '^http_port_t'")
-    assert cmd.rc == 0, "Impossible de lire les ports http_port_t (semanage)."
-    assert str(HTTP_PORT) in cmd.stdout, (
-        f"Le port {HTTP_PORT} n'est pas étiqueté http_port_t.\n"
+    assert cmd.rc == 0, message(
+        en="Could not read the http_port_t ports (semanage).",
+        fr="Impossible de lire les ports http_port_t (semanage).",
+    )
+    assert str(HTTP_PORT) in cmd.stdout, message(
+        en=f"Port {HTTP_PORT} is not labelled http_port_t.\n"
+        f"Seen: {cmd.stdout.strip()}\n"
+        "With SELinux in Enforcing, nginx cannot bind to a port the HTTP "
+        "policy does not cover: use community.general.seport.",
+        fr=f"Le port {HTTP_PORT} n'est pas étiqueté http_port_t.\n"
         f"Vu : {cmd.stdout.strip()}\n"
         "SELinux étant en Enforcing, nginx ne peut pas se lier à un port qui "
         "n'est pas couvert par la politique HTTP : utilisez "
-        "community.general.seport."
+        "community.general.seport.",
     )
 
 
 def test_firewalld_port_8888_open(host):
     """Le port 8888 doit être autorisé dans firewalld (zone publique)."""
     cmd = host.run("firewall-cmd --list-ports --zone=public")
-    assert cmd.rc == 0, f"firewall-cmd a échoué: {cmd.stderr}"
-    assert f"{HTTP_PORT}/tcp" in cmd.stdout, (
-        f"Le port {HTTP_PORT} n'est pas ouvert dans firewalld. "
-        f"Ports listés : {cmd.stdout.strip()}."
+    assert cmd.rc == 0, message(
+        en=f"firewall-cmd failed: {cmd.stderr}",
+        fr=f"firewall-cmd a échoué: {cmd.stderr}",
+    )
+    assert f"{HTTP_PORT}/tcp" in cmd.stdout, message(
+        en=f"Port {HTTP_PORT} is not open in firewalld. "
+        f"Ports listed: {cmd.stdout.strip()}.",
+        fr=f"Le port {HTTP_PORT} n'est pas ouvert dans firewalld. "
+        f"Ports listés : {cmd.stdout.strip()}.",
     )
 
 
 def test_http_response_code_200(host):
     """La requête HTTP sur localhost:8888 doit retourner 200."""
     cmd = host.run(f"curl -sI http://localhost:{HTTP_PORT}")
-    assert cmd.rc == 0, f"curl a échoué : {cmd.stderr}"
-    assert "200" in cmd.stdout.split("\n")[0], (
-        f"Le code HTTP retourné n'est pas 200 : {cmd.stdout.split(chr(10))[0]}"
+    assert cmd.rc == 0, message(
+        en=f"curl failed: {cmd.stderr}",
+        fr=f"curl a échoué : {cmd.stderr}",
+    )
+    assert "200" in cmd.stdout.split("\n")[0], message(
+        en=f"The HTTP code returned is not 200: {cmd.stdout.split(chr(10))[0]}",
+        fr=f"Le code HTTP retourné n'est pas 200 : {cmd.stdout.split(chr(10))[0]}",
     )
 
 
 def test_homepage_content(host):
     """Le contenu de la page d'accueil doit correspondre exactement."""
     cmd = host.run(f"curl -s http://localhost:{HTTP_PORT}")
-    assert cmd.rc == 0, f"curl a échoué : {cmd.stderr}"
-    assert EXPECTED_CONTENT in cmd.stdout, (
-        f"Le contenu de la page ne contient pas '{EXPECTED_CONTENT}'. "
-        f"Contenu reçu : {cmd.stdout[:200]}"
+    assert cmd.rc == 0, message(
+        en=f"curl failed: {cmd.stderr}",
+        fr=f"curl a échoué : {cmd.stderr}",
+    )
+    assert EXPECTED_CONTENT in cmd.stdout, message(
+        en=f"The page's content does not contain '{EXPECTED_CONTENT}'. "
+        f"Content received: {cmd.stdout[:200]}",
+        fr=f"Le contenu de la page ne contient pas '{EXPECTED_CONTENT}'. "
+        f"Contenu reçu : {cmd.stdout[:200]}",
     )
 
 

@@ -2,7 +2,7 @@
 
 import pytest
 
-from conftest import assert_idempotent, lab_host
+from conftest import assert_idempotent, lab_host, message
 
 TARGET_HOST = "db1.lab"
 
@@ -41,25 +41,31 @@ def _sshd_config(host) -> str:
 
 def test_permit_root_login_disabled(host):
     content = _sshd_config(host)
-    assert "PermitRootLogin no" in content, (
-        "sshd_config doit contenir 'PermitRootLogin no' (lineinfile + regexp + validate)."
+    assert "PermitRootLogin no" in content, message(
+        en="sshd_config must contain 'PermitRootLogin no' (lineinfile + regexp + validate).",
+        fr="sshd_config doit contenir 'PermitRootLogin no' (lineinfile + regexp + validate).",
     )
     # La ligne commentée d'origine ne doit plus être active
     for line in content.splitlines():
         stripped = line.strip()
         if stripped.startswith("PermitRootLogin"):
-            assert stripped == "PermitRootLogin no", (
-                f"Une seule ligne PermitRootLogin attendue, trouvé : {stripped}"
+            assert stripped == "PermitRootLogin no", message(
+                en=f"Exactly one PermitRootLogin line expected, found: {stripped}",
+                fr=f"Une seule ligne PermitRootLogin attendue, trouvé : {stripped}",
             )
 
 
 def test_max_auth_tries_3(host):
     """MaxAuthTries doit valoir 3 dans la config EFFECTIVE, pas dans un commentaire."""
     conf = _sshd_effectif(host)
-    assert conf.get("maxauthtries") == ["3"], (
-        "sshd doit charger « MaxAuthTries 3 ». Vu dans `sshd -T` : "
+    assert conf.get("maxauthtries") == ["3"], message(
+        en="sshd must load « MaxAuthTries 3 ». Seen in `sshd -T`: "
+        f"{conf.get('maxauthtries', 'directive absent')}.\n"
+        "A commented line does not count: the loaded configuration is what "
+        "matters.",
+        fr="sshd doit charger « MaxAuthTries 3 ». Vu dans `sshd -T` : "
         f"{conf.get('maxauthtries', 'directive absente')}.\n"
-        "Une ligne commentée ne compte pas : c'est la config chargée qui fait foi."
+        "Une ligne commentée ne compte pas : c'est la config chargée qui fait foi.",
     )
 
 
@@ -67,27 +73,38 @@ def test_allow_users_ansible(host):
     """AllowUsers doit être EFFECTIF et porter le compte du lab."""
     conf = _sshd_effectif(host)
     autorises = " ".join(conf.get("allowusers", [])).split()
-    assert autorises == ["ansible"], (
-        "sshd doit charger « AllowUsers ansible » : le compte de service par "
+    assert autorises == ["ansible"], message(
+        en="sshd must load « AllowUsers ansible »: the service account the "
+        f"automation connects through. Seen in `sshd -T`: "
+        f"{autorises or 'directive absent'}.\n"
+        "Careful: restricting to another account (« student » for instance) "
+        "LOCKS OUT the Ansible connection, and nobody can drive the VM any "
+        "more.",
+        fr="sshd doit charger « AllowUsers ansible » : le compte de service par "
         f"lequel l'automatisation se connecte. Vu dans `sshd -T` : "
         f"{autorises or 'directive absente'}.\n"
         "Attention : restreindre à un autre compte (p. ex. « student ») VERROUILLE "
-        "la connexion Ansible, plus personne ne peut piloter la VM."
+        "la connexion Ansible, plus personne ne peut piloter la VM.",
     )
 
 
 def test_sshd_config_valide(host):
     """sshd -t doit retourner 0 (config syntactiquement valide)."""
     cmd = host.run("sudo sshd -t")
-    assert cmd.rc == 0, (
-        f"sshd_config invalide après modifs : {cmd.stderr}. "
-        f"Ajoutez `validate: 'sshd -t -f %s'` à chaque tâche lineinfile."
+    assert cmd.rc == 0, message(
+        en=f"sshd_config is invalid after the changes: {cmd.stderr}. "
+        f"Add `validate: 'sshd -t -f %s'` to every lineinfile task.",
+        fr=f"sshd_config invalide après modifs : {cmd.stderr}. "
+        f"Ajoutez `validate: 'sshd -t -f %s'` à chaque tâche lineinfile.",
     )
 
 
 def test_sshd_running(host):
     svc = host.service("sshd")
-    assert svc.is_running, "Le service sshd doit être actif après les modifs."
+    assert svc.is_running, message(
+        en="The sshd service must still be active after the changes.",
+        fr="Le service sshd doit être actif après les modifs.",
+    )
 
 
 def test_solution_idempotente():

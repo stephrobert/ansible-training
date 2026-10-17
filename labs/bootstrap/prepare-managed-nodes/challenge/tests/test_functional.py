@@ -16,7 +16,7 @@ import re
 
 import pytest
 
-from conftest import assert_idempotent, lab_host
+from conftest import assert_idempotent, lab_host, message
 
 # Hôtes managés (correspondent au groupe `rhce_lab` de l'inventaire)
 MANAGED_NODES = ["web1.lab", "web2.lab", "db1.lab"]
@@ -38,7 +38,10 @@ def _adresse_reelle(node):
     """
     sortie = lab_host(node).check_output("ip -4 -o addr show scope global")
     m = re.search(r"\binet (\d+\.\d+\.\d+\.\d+)/", sortie)
-    assert m, f"Aucune IPv4 globale trouvée sur {node} : {sortie!r}"
+    assert m, message(
+        en=f"No global IPv4 found on {node}: {sortie!r}",
+        fr=f"Aucune IPv4 globale trouvée sur {node} : {sortie!r}",
+    )
     return m.group(1)
 
 
@@ -56,29 +59,57 @@ def host(request):
 
 def test_chrony_installed_and_running(host):
     """chrony doit être installé et le service chronyd actif."""
-    assert host.package("chrony").is_installed
+    assert host.package("chrony").is_installed, message(
+        en="chrony is not installed. Without time synchronisation, the facts "
+           "of the different nodes disagree, and some labs become "
+           "unpredictable.",
+        fr="chrony n'est pas installé. Sans synchronisation de l'heure, les "
+           "facts des différents nœuds divergent, et certains labs en "
+           "deviennent imprévisibles.",
+    )
     chronyd = host.service("chronyd")
-    assert chronyd.is_enabled
-    assert chronyd.is_running
+    assert chronyd.is_enabled, message(
+        en="chronyd is not enabled at boot: enabled: true, which is a "
+           "different option from state: started.",
+        fr="chronyd n'est pas activé au démarrage : enabled: true, qui est "
+           "une option différente de state: started.",
+    )
+    assert chronyd.is_running, message(
+        en="chronyd is not running: state: started.",
+        fr="chronyd ne tourne pas : state: started.",
+    )
 
 
 def test_required_packages_installed(host):
     """Les paquets nécessaires à Ansible doivent être présents."""
     for pkg in ["python3-libselinux", "python3-firewall", "tar", "rsync"]:
-        assert host.package(pkg).is_installed, f"{pkg} manquant"
+        assert host.package(pkg).is_installed, message(
+            en=f"{pkg} is missing. These four packages are what the Ansible "
+               f"modules of the training need on a managed node: without "
+               f"them, later labs fail on a Python import nobody expected.",
+            fr=f"{pkg} manque. Ces quatre paquets sont ce dont les modules "
+               f"Ansible de la formation ont besoin sur un managed node : "
+               f"sans eux, des labs ultérieurs échouent sur un import Python "
+               f"que personne n'attendait.",
+        )
 
 
 def test_etc_hosts_contains_all_lab_nodes(host, adresses_reelles):
     """/etc/hosts doit mapper les 4 hôtes du lab sur leurs VRAIES adresses."""
     hosts_file = host.file("/etc/hosts")
-    assert hosts_file.exists
+    assert hosts_file.exists, message(
+        en="/etc/hosts does not exist on this node.",
+        fr="/etc/hosts n'existe pas sur ce nœud.",
+    )
     contenu = hosts_file.content_string
     for node, ip in adresses_reelles.items():
         court = node.split(".")[0]
         attendu = rf"^{re.escape(ip)}\s+.*\b{re.escape(court)}\b"
-        assert re.search(attendu, contenu, re.MULTILINE), (
-            f"/etc/hosts de {host.backend.hostname} ne mappe pas {node} sur son "
-            f"adresse réelle {ip}.\nContenu :\n{contenu}"
+        assert re.search(attendu, contenu, re.MULTILINE), message(
+            en=f"/etc/hosts on {host.backend.hostname} does not map {node} to "
+               f"its real address {ip}.\nContents:\n{contenu}",
+            fr=f"/etc/hosts de {host.backend.hostname} ne mappe pas {node} "
+               f"sur son adresse réelle {ip}.\nContenu :\n{contenu}",
         )
 
 
@@ -99,28 +130,44 @@ def test_resolution_croisee_des_noeuds(host, adresses_reelles):
         if node == moi:
             continue
         resolu = host.run(f"getent hosts {node}")
-        assert resolu.rc == 0, (
-            f"{moi} ne résout pas du tout {node} : « getent hosts {node} » "
-            f"sort en rc={resolu.rc}."
+        assert resolu.rc == 0, message(
+            en=f"{moi} does not resolve {node} at all: « getent hosts {node} » "
+               f"exits with rc={resolu.rc}.",
+            fr=f"{moi} ne résout pas du tout {node} : « getent hosts {node} » "
+               f"sort en rc={resolu.rc}.",
         )
-        assert resolu.stdout.split()[0] == ip, (
-            f"{moi} résout {node} sur {resolu.stdout.split()[0]}, alors que "
-            f"{node} porte réellement {ip}. Une entrée /etc/hosts figée sur une "
-            "adresse morte donne exactement ce résultat."
+        assert resolu.stdout.split()[0] == ip, message(
+            en=f"{moi} resolves {node} to {resolu.stdout.split()[0]}, while "
+               f"{node} really carries {ip}. An /etc/hosts entry frozen on a "
+               f"dead address gives exactly this result.",
+            fr=f"{moi} résout {node} sur {resolu.stdout.split()[0]}, alors "
+               f"que {node} porte réellement {ip}. Une entrée /etc/hosts "
+               f"figée sur une adresse morte donne exactement ce résultat.",
         )
 
 
 def test_selinux_enforcing(host):
     """SELinux doit être en mode enforcing avec la policy targeted."""
     selinux = host.run("getenforce")
-    assert selinux.stdout.strip() == "Enforcing", \
-        f"SELinux n'est pas Enforcing : {selinux.stdout!r}"
+    assert selinux.stdout.strip() == "Enforcing", message(
+        en=f"SELinux is not Enforcing: {selinux.stdout!r}. The whole training "
+           f"assumes it is: a lab that works with SELinux off proves nothing.",
+        fr=f"SELinux n'est pas Enforcing : {selinux.stdout!r}. Toute la "
+           f"formation le suppose : un lab qui marche SELinux désactivé ne "
+           f"prouve rien.",
+    )
 
 
 def test_timezone_paris(host):
     """La timezone doit être Europe/Paris."""
     tz = host.run("timedatectl show --value -p Timezone")
-    assert tz.stdout.strip() == "Europe/Paris"
+    assert tz.stdout.strip() == "Europe/Paris", message(
+        en=f"The timezone is {tz.stdout.strip()}, expected Europe/Paris. The "
+           f"nodes must agree, otherwise their logs cannot be compared.",
+        fr=f"La timezone est {tz.stdout.strip()}, attendu Europe/Paris. Les "
+           f"nœuds doivent s'accorder, sinon leurs journaux ne se comparent "
+           f"plus.",
+    )
 
 
 def test_solution_idempotente():

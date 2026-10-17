@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import REPO_ROOT, lab_host, lab_script
+from conftest import REPO_ROOT, lab_host, lab_script, message
 
 LAB_ROOT = Path(__file__).resolve().parents[2]
 REPO_PULL = LAB_ROOT / "repo-pull"
@@ -73,13 +73,17 @@ def _run_solution():
 
 def test_repo_pull_est_un_depot_git():
     """Le dépôt source existe côté control node et est un vrai dépôt Git."""
-    assert (REPO_PULL / "pull-playbook.yml").is_file(), (
-        f"{REPO_PULL}/pull-playbook.yml absent : créez le dépôt en suivant "
-        "challenge/README.md."
+    assert (REPO_PULL / "pull-playbook.yml").is_file(), message(
+        en=f"{REPO_PULL}/pull-playbook.yml missing: create the repository by "
+        "following challenge/README.md.",
+        fr=f"{REPO_PULL}/pull-playbook.yml absent : créez le dépôt en suivant "
+        "challenge/README.md.",
     )
-    assert (REPO_PULL / ".git").is_dir(), (
-        f"{REPO_PULL} n'est pas un dépôt Git (pas de .git/) : ansible-pull "
-        "ne peut cloner qu'un dépôt initialisé et commité."
+    assert (REPO_PULL / ".git").is_dir(), message(
+        en=f"{REPO_PULL} is not a Git repository (no .git/): ansible-pull can "
+        "only clone an initialised and committed repository.",
+        fr=f"{REPO_PULL} n'est pas un dépôt Git (pas de .git/) : ansible-pull "
+        "ne peut cloner qu'un dépôt initialisé et commité.",
     )
 
 
@@ -90,40 +94,58 @@ def test_ansible_pull_a_clone_le_depot(db1):
     n'existerait pas : c'est lui qui prouve le passage en mode pull.
     """
     clone = db1.file("/var/lib/ansible-pull")
-    assert clone.is_directory, (
-        "/var/lib/ansible-pull absent sur db1 : ansible-pull n'a pas tourné "
-        "(ou sans -d /var/lib/ansible-pull)."
+    assert clone.is_directory, message(
+        en="/var/lib/ansible-pull missing on db1: ansible-pull did not run (or "
+        "ran without -d /var/lib/ansible-pull).",
+        fr="/var/lib/ansible-pull absent sur db1 : ansible-pull n'a pas tourné "
+        "(ou sans -d /var/lib/ansible-pull).",
     )
-    assert db1.file("/var/lib/ansible-pull/.git").is_directory, (
-        "/var/lib/ansible-pull n'est pas un clone Git : ansible-pull clone "
-        "le dépôt passé en -U, il ne copie pas des fichiers."
+    assert db1.file("/var/lib/ansible-pull/.git").is_directory, message(
+        en="/var/lib/ansible-pull is not a Git clone: ansible-pull clones the "
+        "repository given to -U, it does not copy files.",
+        fr="/var/lib/ansible-pull n'est pas un clone Git : ansible-pull clone "
+        "le dépôt passé en -U, il ne copie pas des fichiers.",
     )
-    assert db1.file("/var/lib/ansible-pull/pull-playbook.yml").is_file, (
-        "pull-playbook.yml absent du clone : le dépôt commité ne contient "
-        "pas le playbook (git add + git commit oubliés ?)."
+    assert db1.file("/var/lib/ansible-pull/pull-playbook.yml").is_file, message(
+        en="pull-playbook.yml is absent from the clone: the committed repository "
+        "does not contain the playbook (git add and git commit forgotten?).",
+        fr="pull-playbook.yml absent du clone : le dépôt commité ne contient "
+        "pas le playbook (git add + git commit oubliés ?).",
     )
 
 
 def test_marqueur_pose_par_le_pull(db1):
     """Le playbook tiré a posé son marqueur, en root, sur db1 lui-même."""
     marker = db1.file("/tmp/lab98-pull-marker.txt")
-    assert marker.exists, (
-        "/tmp/lab98-pull-marker.txt absent sur db1 : le playbook tiré n'a "
-        "pas été exécuté (nom de playbook erroné pour ansible-pull ?)."
+    assert marker.exists, message(
+        en="/tmp/lab98-pull-marker.txt missing on db1: the pulled playbook was "
+        "not executed (wrong playbook name for ansible-pull?).",
+        fr="/tmp/lab98-pull-marker.txt absent sur db1 : le playbook tiré n'a "
+        "pas été exécuté (nom de playbook erroné pour ansible-pull ?).",
     )
-    assert marker.user == "root", (
-        "Le marqueur doit appartenir à root : lancez ansible-pull avec "
-        "élévation (become) pour que le play s'applique en root."
+    assert marker.user == "root", message(
+        en="The marker must belong to root: run ansible-pull with privilege "
+        "escalation (become) so the play applies as root.",
+        fr="Le marqueur doit appartenir à root : lancez ansible-pull avec "
+        "élévation (become) pour que le play s'applique en root.",
     )
-    assert marker.mode == 0o644
+    assert marker.mode == 0o644, message(
+        en=f"The marker is {oct(marker.mode)}, expected 0644.",
+        fr=f"Le marqueur est en {oct(marker.mode)}, attendu 0644.",
+    )
 
     content = marker.content_string
-    assert "ansible-pull executed" in content, (
-        "Le marqueur doit contenir 'ansible-pull executed' (cf. contrat du "
-        "challenge)."
+    assert "ansible-pull executed" in content, message(
+        en="The marker must contain 'ansible-pull executed' (see the "
+        "challenge's contract).",
+        fr="Le marqueur doit contenir 'ansible-pull executed' (cf. contrat du "
+        "challenge).",
     )
-    assert "db1" in content, (
-        "Le marqueur doit contenir le hostname de la machine qui a exécuté "
+    assert "db1" in content, message(
+        en="The marker must contain the hostname of the machine that ran the "
+        "play ({{ ansible_hostname }}): that is the proof db1 configured "
+        "itself, rather than the control node doing it.",
+        fr="Le marqueur doit contenir le hostname de la machine qui a exécuté "
         "le play ({{ ansible_hostname }}) : c'est la preuve que db1 s'est "
-        "configuré lui-même, et non le control node."
+        "configuré lui-même, et non le control node.",
     )

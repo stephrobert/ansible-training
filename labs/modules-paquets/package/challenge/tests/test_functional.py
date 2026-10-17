@@ -2,7 +2,7 @@
 
 import pytest
 
-from conftest import assert_idempotent, lab_host
+from conftest import assert_idempotent, lab_host, message
 
 TARGET_HOST = "web1.lab"
 
@@ -14,16 +14,27 @@ def host():
 
 @pytest.mark.parametrize("pkg", ["vim-enhanced", "bash-completion", "tree"])
 def test_package_installed(host, pkg):
-    assert host.package(pkg).is_installed, f"{pkg} doit etre installe"
+    assert host.package(pkg).is_installed, message(
+        en=f"{pkg} must be installed",
+        fr=f"{pkg} doit etre installe",
+    )
 
 
 def test_telnet_absent(host):
-    assert not host.package("telnet").is_installed
+    assert not host.package("telnet").is_installed, message(
+        en="telnet is still installed: state: absent removes a package, and "
+           "does not fail when it was not there in the first place.",
+        fr="telnet est encore installé : state: absent retire un paquet, et "
+           "ne lève pas s'il n'y était pas.",
+    )
 
 
 def test_vim_binary_in_path(host):
     cmd = host.run("which vim")
-    assert cmd.rc == 0, "vim doit etre dans le PATH (fourni par vim-enhanced)"
+    assert cmd.rc == 0, message(
+        en="vim must be in the PATH (provided by vim-enhanced)",
+        fr="vim doit etre dans le PATH (fourni par vim-enhanced)",
+    )
 
 
 def test_solution_idempotente():

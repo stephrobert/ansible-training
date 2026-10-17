@@ -15,6 +15,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from conftest import message
+
 LAB_DIR = Path(__file__).resolve().parents[2]
 CHALLENGE = LAB_DIR / "challenge"
 
@@ -26,33 +28,42 @@ def test_buggy_files_present_for_diagnosis():
         "requirements-buggy.yml",
         "requirements-buggy.txt",
     ):
-        assert (LAB_DIR / name).is_file(), (
-            f"{name} manquant : les fichiers buggy sont les pièces du "
-            "diagnostic, ne les supprimez pas (dsoxlab clean les restaure)"
+        assert (LAB_DIR / name).is_file(), message(
+            en=f"{name} missing: the buggy files are the pieces of the diagnosis, "
+            "do not delete them (dsoxlab clean restores them)",
+            fr=f"{name} manquant : les fichiers buggy sont les pièces du "
+            "diagnostic, ne les supprimez pas (dsoxlab clean les restaure)",
         )
 
 
 def test_buggy_yaml_still_broken():
     """Le fichier buggy n'est pas corrigé en place (bug volontaire conservé)."""
     data = yaml.safe_load((LAB_DIR / "execution-environment-buggy.yml").read_text())
-    assert "version" not in data, (
-        "Ne corrigez pas les fichiers buggy : déposez votre version corrigée "
-        "dans challenge/ (le buggy sert de référence au diagnostic)"
+    assert "version" not in data, message(
+        en="Do not fix the buggy files: put your corrected version in "
+        "challenge/ (the buggy one is the reference for the diagnosis)",
+        fr="Ne corrigez pas les fichiers buggy : déposez votre version corrigée "
+        "dans challenge/ (le buggy sert de référence au diagnostic)",
     )
 
 
 def test_corrected_yaml_has_version_3():
     """Défaut n°1 : le schéma du fichier corrigé doit être explicite."""
     f = CHALLENGE / "execution-environment.yml"
-    assert f.is_file(), (
-        "challenge/execution-environment.yml manquant : écrivez votre "
-        "version corrigée de la définition d'EE"
+    assert f.is_file(), message(
+        en="challenge/execution-environment.yml missing: write your corrected "
+        "version of the EE definition",
+        fr="challenge/execution-environment.yml manquant : écrivez votre "
+        "version corrigée de la définition d'EE",
     )
     data = yaml.safe_load(f.read_text())
-    assert data.get("version") == 3, (
-        "Sans déclaration de schéma explicite, ansible-builder retombe sur "
+    assert data.get("version") == 3, message(
+        en="Without an explicit schema declaration, ansible-builder falls back "
+        "to a legacy mode that silently ignores your dependencies: read the "
+        "build's first warning again",
+        fr="Sans déclaration de schéma explicite, ansible-builder retombe sur "
         "un mode hérité qui ignore silencieusement vos dépendances : "
-        "relisez le premier warning du build"
+        "relisez le premier warning du build",
     )
 
 
@@ -61,55 +72,78 @@ def test_corrected_yaml_declares_all_dependency_kinds():
     data = yaml.safe_load((CHALLENGE / "execution-environment.yml").read_text())
     deps = data.get("dependencies", {})
     for kind in ("galaxy", "python", "system"):
-        assert kind in deps, (
-            f"dependencies.{kind} absent : l'EE corrigé doit déclarer ses "
+        assert kind in deps, message(
+            en=f"dependencies.{kind} absent: the corrected EE must declare its "
+            "collections (galaxy), its Python packages (python) and its "
+            "system packages (system, through bindep.txt)",
+            fr=f"dependencies.{kind} absent : l'EE corrigé doit déclarer ses "
             "collections (galaxy), ses paquets Python (python) et ses "
-            "paquets système (system, via bindep.txt)"
+            "paquets système (system, via bindep.txt)",
         )
 
 
 def test_corrected_requirements_uses_valid_collection():
     """Défaut n°2 : plus de collection introuvable sur Galaxy."""
     f = CHALLENGE / "requirements.yml"
-    assert f.is_file(), "challenge/requirements.yml manquant"
+    assert f.is_file(), message(
+        en="challenge/requirements.yml missing",
+        fr="challenge/requirements.yml manquant",
+    )
     data = yaml.safe_load(f.read_text())
     names = [c["name"] for c in data.get("collections", [])]
-    assert names, "Au moins une collection doit rester déclarée dans l'EE corrigé"
-    assert "community.does-not-exist" not in names, (
-        "Une collection déclarée n'existe pas sur Galaxy : vérifiez chaque "
-        "entrée avec ansible-galaxy collection install <nom>:<version>"
+    assert names, message(
+        en="At least one collection must remain declared in the corrected EE",
+        fr="Au moins une collection doit rester déclarée dans l'EE corrigé",
     )
-    assert all("." in name for name in names), (
-        "Toutes les collections doivent être en FQCN (namespace.collection)"
+    assert "community.does-not-exist" not in names, message(
+        en="One declared collection does not exist on Galaxy: check each entry "
+        "with ansible-galaxy collection install <name>:<version>",
+        fr="Une collection déclarée n'existe pas sur Galaxy : vérifiez chaque "
+        "entrée avec ansible-galaxy collection install <nom>:<version>",
+    )
+    assert all("." in name for name in names), message(
+        en="Every collection must use its FQCN (namespace.collection)",
+        fr="Toutes les collections doivent être en FQCN (namespace.collection)",
     )
 
 
 def test_corrected_python_deps_use_real_version():
     """Défaut n°3 : plus de version PyPI introuvable."""
     f = CHALLENGE / "requirements.txt"
-    assert f.is_file(), "challenge/requirements.txt manquant"
+    assert f.is_file(), message(
+        en="challenge/requirements.txt missing",
+        fr="challenge/requirements.txt manquant",
+    )
     content = f.read_text()
-    assert "9999.0.0" not in content, (
-        "Une version Python déclarée n'existe pas sur PyPI : vérifiez avec "
-        "pip index versions <paquet>"
+    assert "9999.0.0" not in content, message(
+        en="One declared Python version does not exist on PyPI: check with "
+        "pip index versions <package>",
+        fr="Une version Python déclarée n'existe pas sur PyPI : vérifiez avec "
+        "pip index versions <paquet>",
     )
     pinned = [
         line.strip()
         for line in content.splitlines()
         if line.strip() and not line.strip().startswith("#")
     ]
-    assert pinned, "requirements.txt corrigé ne doit pas être vide"
+    assert pinned, message(
+        en="The corrected requirements.txt must not be empty",
+        fr="requirements.txt corrigé ne doit pas être vide",
+    )
 
 
 def test_corrected_has_bindep():
     """Défaut n°4 : les dépendances système doivent exister."""
     f = CHALLENGE / "bindep.txt"
-    assert f.is_file(), (
-        "challenge/bindep.txt manquant : les collections ont besoin de "
-        "paquets système (git, clients ssh...) déclarés au format bindep"
+    assert f.is_file(), message(
+        en="challenge/bindep.txt missing: the collections need system packages "
+        "(git, ssh clients...) declared in the bindep format",
+        fr="challenge/bindep.txt manquant : les collections ont besoin de "
+        "paquets système (git, clients ssh...) déclarés au format bindep",
     )
-    assert "[platform:rpm]" in f.read_text(), (
-        "bindep.txt doit cibler le profil [platform:rpm] (base UBI/RHEL)"
+    assert "[platform:rpm]" in f.read_text(), message(
+        en="bindep.txt must target the [platform:rpm] profile (UBI/RHEL base)",
+        fr="bindep.txt doit cibler le profil [platform:rpm] (base UBI/RHEL)",
     )
 
 
@@ -139,9 +173,11 @@ def test_corrected_definition_accepted_by_ansible_builder(tmp_path):
         text=True,
         check=False,
     )
-    assert result.returncode == 0, (
-        f"ansible-builder refuse la définition corrigée :\n{result.stdout}{result.stderr}"
+    assert result.returncode == 0, message(
+        en=f"ansible-builder refuses the corrected definition:\n{result.stdout}{result.stderr}",
+        fr=f"ansible-builder refuse la définition corrigée :\n{result.stdout}{result.stderr}",
     )
-    assert (tmp_path / "context" / "Containerfile").is_file(), (
-        "Le Containerfile n'a pas été généré : la définition n'est pas exploitable"
+    assert (tmp_path / "context" / "Containerfile").is_file(), message(
+        en="The Containerfile was not generated: the definition cannot be used",
+        fr="Le Containerfile n'a pas été généré : la définition n'est pas exploitable",
     )

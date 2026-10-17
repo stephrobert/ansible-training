@@ -11,6 +11,7 @@ from conftest import (
     lab_host,
     lab_playbook,
     lab_solution_text,
+    message,
 )
 
 TARGET_HOST = "db1.lab"
@@ -38,19 +39,26 @@ def host():
 
 def test_file_exists(host):
     f = host.file(RESULT_FILE)
-    assert f.exists, (
-        f"{RESULT_FILE} absent — solution.yml a-t-elle installé puis déposé ?"
+    assert f.exists, message(
+        en=f"{RESULT_FILE} missing: did solution.yml install and then drop it?",
+        fr=f"{RESULT_FILE} absent — solution.yml a-t-elle installé puis déposé ?",
     )
 
 
 def test_file_mode_0644(host):
     f = host.file(RESULT_FILE)
-    assert f.mode == 0o644
+    assert f.mode == 0o644, message(
+        en=f"The file is {oct(f.mode)}, expected 0644.",
+        fr=f"Le fichier est en {oct(f.mode)}, attendu 0644.",
+    )
 
 
 def test_file_owned_by_root(host):
     f = host.file(RESULT_FILE)
-    assert f.user == "root"
+    assert f.user == "root", message(
+        en=f"The file belongs to {f.user}, expected root.",
+        fr=f"Le fichier appartient à {f.user}, attendu root.",
+    )
 
 
 def test_file_lists_at_least_three_collections(host):
@@ -63,9 +71,11 @@ def test_file_lists_at_least_three_collections(host):
         and "." in line.split()[0]
         and not line.startswith(("#", "Collection", "---", "Path"))
     ]
-    assert len(fqcn_lines) >= 3, (
-        f"{RESULT_FILE} doit lister au moins 3 collections au format FQCN, "
-        f"vu : {len(fqcn_lines)}.\nContenu : {content[:300]}"
+    assert len(fqcn_lines) >= 3, message(
+        en=f"{RESULT_FILE} must list at least 3 collections in FQCN form, "
+        f"seen: {len(fqcn_lines)}.\nContents: {content[:300]}",
+        fr=f"{RESULT_FILE} doit lister au moins 3 collections au format FQCN, "
+        f"vu : {len(fqcn_lines)}.\nContenu : {content[:300]}",
     )
 
 
@@ -90,13 +100,17 @@ def test_requirements_mixes_galaxy_and_git_sources():
             git.append(name)
         elif "://" not in name and FQCN_RE.match(name):
             galaxy.append(name)
-    assert galaxy, (
-        "requirements.yml doit déclarer au moins une source Galaxy "
-        f"(FQCN nu namespace.name). Collections vues : {collections}"
+    assert galaxy, message(
+        en="requirements.yml must declare at least one Galaxy source (a bare "
+        f"namespace.name FQCN). Collections seen: {collections}",
+        fr="requirements.yml doit déclarer au moins une source Galaxy "
+        f"(FQCN nu namespace.name). Collections vues : {collections}",
     )
-    assert git, (
-        "requirements.yml doit déclarer au moins une source Git (type: git, "
-        f"git+... ou URL .git) EN PLUS de Galaxy. Collections vues : {collections}"
+    assert git, message(
+        en="requirements.yml must declare at least one Git source (type: git, "
+        f"git+... or a .git URL) IN ADDITION to Galaxy. Collections seen: {collections}",
+        fr="requirements.yml doit déclarer au moins une source Git (type: git, "
+        f"git+... ou URL .git) EN PLUS de Galaxy. Collections vues : {collections}",
     )
 
 
@@ -117,9 +131,11 @@ def test_requirements_pins_a_strict_version():
         version = str(version).strip()
         if version and not any(op in version for op in (">", "<", "*", ",", " ")):
             pinned.append((entry.get("name"), version))
-    assert pinned, (
-        "requirements.yml doit épingler au moins une version stricte "
-        f'(version: "X.Y.Z" ou tag Git). Collections vues : {collections}'
+    assert pinned, message(
+        en="requirements.yml must pin at least one strict version "
+        f'(version: "X.Y.Z" or a Git tag). Collections seen: {collections}' ,
+        fr="requirements.yml doit épingler au moins une version stricte "
+        f'(version: "X.Y.Z" ou tag Git). Collections vues : {collections}',
     )
 
 
@@ -141,11 +157,15 @@ def test_les_collections_sont_reellement_installees():
     playbook, _ = lab_playbook(__file__)
     racine = Path(playbook).parent.parent / "local_collections" / "ansible_collections"
 
-    assert racine.is_dir(), (
-        f"{racine} est introuvable : les collections n'ont pas été installées. "
+    assert racine.is_dir(), message(
+        en=f"{racine} does not exist: the collections were not installed. The "
+        "file dropped on db1 is not enough, the brief asks you to install "
+        "them with `ansible-galaxy collection install -r requirements.yml "
+        "-p <...>/local_collections`.",
+        fr=f"{racine} est introuvable : les collections n'ont pas été installées. "
         "Le fichier déposé sur db1 ne suffit pas, l'énoncé demande de les "
         "installer avec `ansible-galaxy collection install -r requirements.yml "
-        "-p <...>/local_collections`."
+        "-p <...>/local_collections`.",
     )
 
     # Une collection installée, c'est <namespace>/<nom>/ : on compte les feuilles.
@@ -157,10 +177,13 @@ def test_les_collections_sont_reellement_installees():
         if col.is_dir()
     )
 
-    assert len(installees) >= 3, (
-        f"{len(installees)} collection(s) installée(s) dans {racine} "
+    assert len(installees) >= 3, message(
+        en=f"{len(installees)} collection(s) installed in {racine} "
+        f"({', '.join(installees) or 'none'}), while the brief asks for at "
+        "least 3, from 3 different sources.",
+        fr=f"{len(installees)} collection(s) installée(s) dans {racine} "
         f"({', '.join(installees) or 'aucune'}), alors que l'énoncé en demande "
-        "au moins 3, depuis 3 sources différentes."
+        "au moins 3, depuis 3 sources différentes.",
     )
 
 

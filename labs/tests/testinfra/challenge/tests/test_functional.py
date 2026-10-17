@@ -16,7 +16,7 @@ from pathlib import Path
 
 import yaml
 
-from conftest import lab_solution_text
+from conftest import lab_solution_text, message
 
 LAB_ROOT = Path(__file__).resolve().parents[2]
 MOLECULE_DIR = LAB_ROOT / "molecule" / "default"
@@ -37,28 +37,38 @@ def _test_functions():
 def test_molecule_yml_uses_testinfra_verifier():
     config = yaml.safe_load((MOLECULE_DIR / "molecule.yml").read_text())
     verifier = config.get("verifier", {}).get("name")
-    assert verifier == "testinfra", (
-        f"verifier.name doit valoir 'testinfra' (vu : {verifier!r}) : c'est "
-        "tout l'objet du lab, remplacer verify.yml par des tests Python"
+    assert verifier == "testinfra", message(
+        en=f"verifier.name must be 'testinfra' (seen: {verifier!r}): that is the "
+        "whole point of this lab, replacing verify.yml with Python tests",
+        fr=f"verifier.name doit valoir 'testinfra' (vu : {verifier!r}) : c'est "
+        "tout l'objet du lab, remplacer verify.yml par des tests Python",
     )
 
 
 def test_at_least_4_test_functions():
     functions = _test_functions()
-    assert len(functions) >= 4, (
-        f"Au moins 4 fonctions test_* attendues dans molecule/default/tests/, "
-        f"vu : {len(functions)}. Prouvez : paquet, service, socket 8080, nginx -t"
+    assert len(functions) >= 4, message(
+        en=f"At least 4 test_* functions expected in molecule/default/tests/, "
+        f"seen: {len(functions)}. Prove: the package, the service, the 8080 "
+        f"socket, nginx -t",
+        fr=f"Au moins 4 fonctions test_* attendues dans molecule/default/tests/, "
+        f"vu : {len(functions)}. Prouvez : paquet, service, socket 8080, nginx -t",
     )
 
 
 def test_all_test_functions_use_host_fixture():
     functions = _test_functions()
-    assert functions, "Aucune fonction test_* trouvée dans molecule/default/tests/"
+    assert functions, message(
+        en="No test_* function found in molecule/default/tests/",
+        fr="Aucune fonction test_* trouvée dans molecule/default/tests/",
+    )
     for fn in functions:
         args = [a.arg for a in fn.args.args]
-        assert "host" in args, (
-            f"{fn.name} ne reçoit pas la fixture 'host' : sans elle, le test "
-            "ne s'exécute pas contre l'instance Molecule"
+        assert "host" in args, message(
+            en=f"{fn.name} does not take the 'host' fixture: without it, the test "
+            "does not run against the Molecule instance",
+            fr=f"{fn.name} ne reçoit pas la fixture 'host' : sans elle, le test "
+            "ne s'exécute pas contre l'instance Molecule",
         )
 
 
@@ -69,9 +79,11 @@ def test_test_functions_contain_assertions():
         has_todo = any(
             isinstance(n, ast.Raise) for n in ast.walk(fn)
         )
-        assert has_assert and not has_todo, (
-            f"{fn.name} doit contenir de vraies assertions (assert ...) et "
-            "ne plus lever NotImplementedError : le squelette est à remplacer"
+        assert has_assert and not has_todo, message(
+            en=f"{fn.name} must contain real assertions (assert ...) and stop "
+            "raising NotImplementedError: the skeleton is there to be replaced",
+            fr=f"{fn.name} doit contenir de vraies assertions (assert ...) et "
+            "ne plus lever NotImplementedError : le squelette est à remplacer",
         )
 
 
@@ -86,19 +98,25 @@ def test_named_state_checks_present():
     challenge/, sinon la référence déchiffrée).
     """
     content = lab_solution_text(__file__, name="files/test_webserver.py")
-    assert "is_installed" in content, (
-        "contrôle 'paquet nginx installé' (host.package(...).is_installed) absent"
+    assert "is_installed" in content, message(
+        en="the 'nginx package installed' check (host.package(...).is_installed) is missing",
+        fr="contrôle 'paquet nginx installé' (host.package(...).is_installed) absent",
     )
-    assert "is_running" in content and "is_enabled" in content, (
-        "contrôle 'service démarré ET activé au boot' incomplet "
-        "(is_running / is_enabled attendus tous les deux)"
+    assert "is_running" in content and "is_enabled" in content, message(
+        en="the 'service started AND enabled at boot' check is incomplete "
+        "(both is_running and is_enabled expected)",
+        fr="contrôle 'service démarré ET activé au boot' incomplet "
+        "(is_running / is_enabled attendus tous les deux)",
     )
-    assert "8080" in content and "is_listening" in content, (
-        "contrôle 'socket en écoute sur 8080' absent "
-        "(host.socket('tcp://...:8080').is_listening attendu)"
+    assert "8080" in content and "is_listening" in content, message(
+        en="the 'socket listening on 8080' check is missing "
+        "(host.socket('tcp://...:8080').is_listening expected)",
+        fr="contrôle 'socket en écoute sur 8080' absent "
+        "(host.socket('tcp://...:8080').is_listening attendu)",
     )
-    assert "nginx -t" in content, (
-        "contrôle 'nginx -t (configuration valide)' absent"
+    assert "nginx -t" in content, message(
+        en="the 'nginx -t (valid configuration)' check is missing",
+        fr="contrôle 'nginx -t (configuration valide)' absent",
     )
 
 
@@ -124,7 +142,9 @@ def test_pytest_collects_testinfra_file():
         check=False,
         cwd=TESTS_DIR,
     )
-    assert result.returncode == 0, (
-        f"pytest n'arrive pas à collecter vos tests testinfra :\n"
-        f"{result.stdout}{result.stderr}"
+    assert result.returncode == 0, message(
+        en=f"pytest cannot collect your testinfra tests:\n"
+        f"{result.stdout}{result.stderr}",
+        fr=f"pytest n'arrive pas à collecter vos tests testinfra :\n"
+        f"{result.stdout}{result.stderr}",
     )

@@ -13,7 +13,7 @@ import pytest
 
 # REPO_ROOT vient de conftest : le compter en parents[] depuis ce fichier donnait
 # labs/ (un cran trop bas), donc un cwd sans ansible.cfg (ni inventaire, ni clé).
-from conftest import REPO_ROOT, assert_idempotent, lab_host, lab_playbook
+from conftest import REPO_ROOT, assert_idempotent, lab_host, lab_playbook, message
 
 # Ce module orchestre lui-même ses runs : le marqueur désactive le replay
 # POUR CE MODULE. Poser os.environ["LAB_NO_REPLAY"] ici le désactivait pour
@@ -76,27 +76,37 @@ def test_incident_arrete_le_play_partout(web1, web2):
     _reset_markers()
     result = _run_solution(["-e", "fail_host=web1.lab"])
 
-    assert result.returncode != 0, (
-        "Le run incident (-e fail_host=web1.lab) doit sortir en erreur : le "
+    assert result.returncode != 0, message(
+        en="The incident run (-e fail_host=web1.lab) must exit in error: the "
+        "health check is meant to fail on web1. If it succeeds, the command "
+        "/bin/false task or its when: is missing.\n"
+        f"stdout: {result.stdout[-1500:]}",
+        fr="Le run incident (-e fail_host=web1.lab) doit sortir en erreur : le "
         "contrôle de santé est censé échouer sur web1. S'il réussit, la tâche "
         "command /bin/false ou son when: manque.\n"
-        f"stdout: {result.stdout[-1500:]}"
+        f"stdout: {result.stdout[-1500:]}",
     )
 
-    assert web1.file(_step1("web1.lab")).exists, (
-        "L'étape 1 doit être posée sur web1 AVANT le contrôle de santé."
+    assert web1.file(_step1("web1.lab")).exists, message(
+        en="Step 1 must be laid down on web1 BEFORE the health check.",
+        fr="L'étape 1 doit être posée sur web1 AVANT le contrôle de santé.",
     )
-    assert web2.file(_step1("web2.lab")).exists, (
-        "L'étape 1 doit être posée sur web2 AVANT le contrôle de santé."
+    assert web2.file(_step1("web2.lab")).exists, message(
+        en="Step 1 must be laid down on web2 BEFORE the health check.",
+        fr="L'étape 1 doit être posée sur web2 AVANT le contrôle de santé.",
     )
 
-    assert not web1.file(_release("web1.lab")).exists, (
-        "web1 a échoué au contrôle de santé : il ne doit PAS avoir activé la release."
+    assert not web1.file(_release("web1.lab")).exists, message(
+        en="web1 failed the health check: it must NOT have activated the release.",
+        fr="web1 a échoué au contrôle de santé : il ne doit PAS avoir activé la release.",
     )
-    assert not web2.file(_release("web2.lab")).exists, (
-        "web2 a posé sa release alors que web1 a échoué : le play a continué "
+    assert not web2.file(_release("web2.lab")).exists, message(
+        en="web2 laid down its release although web1 failed: the play carried on "
+        "instead of stopping everywhere. That is Ansible's default behaviour: "
+        "any_errors_fatal: true is missing at play level.",
+        fr="web2 a posé sa release alors que web1 a échoué : le play a continué "
         "au lieu de s'arrêter partout. C'est le comportement par défaut "
-        "d'Ansible : il manque any_errors_fatal: true au niveau du play."
+        "d'Ansible : il manque any_errors_fatal: true au niveau du play.",
     )
 
 
@@ -105,25 +115,50 @@ def test_run_nominal_converge(web1, web2):
     _reset_markers()
     result = _run_solution()
 
-    assert result.returncode == 0, (
-        "Le run nominal (sans -e) doit réussir : fail_host vaut 'none' par "
+    assert result.returncode == 0, message(
+        en="The nominal run (without -e) must succeed: fail_host is 'none' by "
+        "default and must match no host.\n"
+        f"stdout: {result.stdout[-1500:]}\nstderr: {result.stderr[-500:]}",
+        fr="Le run nominal (sans -e) doit réussir : fail_host vaut 'none' par "
         "défaut et ne doit matcher aucun hôte.\n"
-        f"stdout: {result.stdout[-1500:]}\nstderr: {result.stderr[-500:]}"
+        f"stdout: {result.stdout[-1500:]}\nstderr: {result.stderr[-500:]}",
     )
 
     for host, target in (("web1.lab", web1), ("web2.lab", web2)):
         step1 = target.file(_step1(host))
-        assert step1.exists, f"{_step1(host)} absent sur {host}"
-        assert f"step1 OK on {host}" in step1.content_string
-        assert step1.mode == 0o644, (
-            f"L'étape 1 doit être posée en mode 0644 sur {host} "
-            f"(mode actuel : {oct(step1.mode)})."
+        assert step1.exists, message(
+            en=f"{_step1(host)} missing on {host}",
+            fr=f"{_step1(host)} absent sur {host}",
+        )
+        assert f"step1 OK on {host}" in step1.content_string, message(
+            en=f"The step 1 marker of {host} does not carry its host name: "
+               f"the content must be rendered per host.",
+            fr=f"Le marqueur d'étape 1 de {host} ne porte pas son nom "
+               f"d'hôte : le contenu doit être rendu par hôte.",
+        )
+        assert step1.mode == 0o644, message(
+            en=f"Step 1 must be laid down with mode 0644 on {host} "
+            f"(current mode: {oct(step1.mode)}).",
+            fr=f"L'étape 1 doit être posée en mode 0644 sur {host} "
+            f"(mode actuel : {oct(step1.mode)}).",
         )
 
         release = target.file(_release(host))
-        assert release.exists, f"{_release(host)} absent sur {host}"
-        assert f"release OK on {host}" in release.content_string
-        assert release.mode == 0o644
+        assert release.exists, message(
+            en=f"{_release(host)} missing on {host}",
+            fr=f"{_release(host)} absent sur {host}",
+        )
+        assert f"release OK on {host}" in release.content_string, message(
+            en=f"The release marker of {host} does not carry its host name.",
+            fr=f"Le marqueur de release de {host} ne porte pas son nom "
+               f"d'hôte.",
+        )
+        assert release.mode == 0o644, message(
+            en=f"The release marker of {host} is {oct(release.mode)}, "
+               f"expected 0644.",
+            fr=f"Le marqueur de release de {host} est en "
+               f"{oct(release.mode)}, attendu 0644.",
+        )
 
 
 def test_solution_idempotente():
