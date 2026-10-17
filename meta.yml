@@ -8,7 +8,7 @@
 repo:
   id: ansible-training
   category: ansible             # 'ansible' | 'kubernetes' | 'linux' | 'terraform' | …
-  title: "Ansible Training — RHCE EX294 2026"
+  title: "Ansible Training: RHCE EX294 2026"
   blog_url: "https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/"
   # Où `dsoxlab support --issue` dépose le rapport d'un apprenant.
   #
@@ -17,9 +17,10 @@ repo:
   # hébergeur dont les issues vivent sous `<dépôt>/issues`. Le déclarer lève
   # la supposition.
   issues_url: "https://github.com/stephrobert/ansible-training/issues"
-  description: |
-    Lab pédagogique public de la formation Ansible RHCE EX294 2026.
-    Chaque lab est autonome : tutoriel guidé + challenge testé par pytest+testinfra.
+  description: >-
+    The public teaching lab of the blog's Ansible RHCE EX294 2026 course.
+    Every lab stands on its own: a guided tutorial, then a challenge graded
+    by pytest and testinfra.
 
 # Topologie consommée par `dsoxlab provision`. Terraform et les templates
 # cloud-init sont packagés DANS dsoxlab : ce dépôt ne déclare que la cible.
@@ -65,7 +66,8 @@ infra:
 sections:
   - id: bootstrap
     title: "Bootstrap"
-    description: "Préparation système des managed nodes (jouée par `dsoxlab provision`)."
+    description: >-
+      System preparation of the managed nodes, played by `dsoxlab provision`.
     # Le champ `auto_run: true` a été retiré ici : dsoxlab 0.1.6 ne le lit pas
     # (SectionDefinition n'expose que id/title/description/labs), c'était donc
     # un no-op silencieux. Conséquence assumée : `dsoxlab next` proposera ce lab
@@ -74,8 +76,10 @@ sections:
       - bootstrap/prepare-managed-nodes
 
   - id: decouvrir
-    title: "Découvrir Ansible"
-    description: "Premiers contacts : déclaratif vs impératif, installation, CLI, configuration."
+    title: "Discover Ansible"
+    description: >-
+      First contact: declarative versus imperative, installation, the CLI,
+      configuration.
     labs:
       - decouvrir/declaratif-vs-imperatif
       - decouvrir/installation-ansible
@@ -83,15 +87,17 @@ sections:
       - decouvrir/prise-en-main-cli
 
   - id: premiers-pas
-    title: "Premiers pas"
-    description: "Premier playbook, premiers secrets vault."
+    title: "First steps"
+    description: "A first playbook, and first vault secrets."
     labs:
       - premiers-pas/premier-playbook
       - premiers-pas/ansible-vault
 
   - id: ecrire-code
-    title: "Écrire du code Ansible"
-    description: "Structure d'un play, contrôle d'exécution, variables, Jinja2, conditions, boucles, gestion d'erreurs."
+    title: "Write Ansible code"
+    description: >-
+      The anatomy of a play, execution control, variables, Jinja2,
+      conditionals, loops, error handling.
     labs:
       - ecrire-code/plays-et-tasks
       - ecrire-code/handlers
@@ -123,8 +129,10 @@ sections:
       - ecrire-code/import-include
 
   - id: modules-fichiers
-    title: "Modules fichiers"
-    description: "Manipulation de fichiers : copy, file, blockinfile, lineinfile, replace, fetch, archive."
+    title: "File modules"
+    description: >-
+      Handling files: copy, file, blockinfile, lineinfile, replace, fetch,
+      archive.
     labs:
       - modules-fichiers/copy
       - modules-fichiers/file
@@ -135,23 +143,25 @@ sections:
       - modules-fichiers/archive-unarchive
 
   - id: modules-paquets
-    title: "Modules paquets"
-    description: "Gestion paquets agnostique (package), options dnf, dépôts RPM."
+    title: "Package modules"
+    description: >-
+      Distribution-agnostic package management (package), dnf options, RPM
+      repositories.
     labs:
       - modules-paquets/package
       - modules-paquets/dnf-options
       - modules-paquets/yum-repository
 
   - id: modules-services
-    title: "Modules services"
-    description: "Gestion services systemd et tâches planifiées cron."
+    title: "Service modules"
+    description: "Managing systemd services and cron jobs."
     labs:
       - modules-services/systemd
       - modules-services/cron
 
   - id: modules-utilisateurs
-    title: "Modules utilisateurs"
-    description: "Gestion users, groups, clés SSH, sudoers."
+    title: "User modules"
+    description: "Managing users, groups, SSH keys and sudoers."
     labs:
       - modules-utilisateurs/user
       - modules-utilisateurs/group
@@ -159,8 +169,10 @@ sections:
       - modules-utilisateurs/sudoers
 
   - id: modules-rhel
-    title: "Modules RHEL"
-    description: "Spécificités RHEL : firewalld, SELinux, sysctl, mount, parted, filesystem, LVM."
+    title: "RHEL modules"
+    description: >-
+      RHEL specifics: firewalld, SELinux, sysctl, mount, parted, filesystem,
+      LVM.
     labs:
       - modules-rhel/firewalld
       - modules-rhel/sysctl
@@ -171,15 +183,16 @@ sections:
       - modules-rhel/lvm-storage
 
   - id: modules-reseau
-    title: "Modules réseau"
-    description: "Téléchargement et appels HTTP : get_url, uri."
+    title: "Network modules"
+    description: "Downloads and HTTP calls: get_url, uri."
     labs:
       - modules-reseau/get-url
       - modules-reseau/uri
 
   - id: modules-diagnostic
-    title: "Modules diagnostic"
-    description: "Inspection et synchronisation : stat, find, assert/fail, wait_for/pause."
+    title: "Diagnostic modules"
+    description: >-
+      Inspection and synchronisation: stat, find, assert/fail, wait_for/pause.
     labs:
       - modules-diagnostic/stat
       - modules-diagnostic/find
@@ -187,8 +200,9 @@ sections:
       - modules-diagnostic/wait-for-pause
 
   - id: inventaires
-    title: "Inventaires"
-    description: "group_vars/host_vars, patterns d'hôtes, inventaire dynamique libvirt."
+    title: "Inventories"
+    description: >-
+      group_vars and host_vars, host patterns, the dynamic libvirt inventory.
     labs:
       # Fondement de la section : on écrit un inventaire statique de zéro avant
       # d'apprendre à cibler avec des patterns ou à le générer dynamiquement.
@@ -198,8 +212,10 @@ sections:
       - inventaires/dynamique-kvm
 
   - id: roles
-    title: "Rôles"
-    description: "Anatomie d'un rôle, variables, handlers, argument_specs, consommation, dépendances, rôles système RHEL."
+    title: "Roles"
+    description: >-
+      The anatomy of a role, variables, handlers, argument_specs, consuming a
+      role, dependencies, RHEL system roles.
     labs:
       - roles/creer-premier-role
       - roles/variables-defaults-vars
@@ -213,8 +229,8 @@ sections:
       - roles/system-roles
 
   - id: molecule
-    title: "Tests Molecule"
-    description: "Cycle TDD avec Molecule, scénarios multi-distro."
+    title: "Molecule tests"
+    description: "The TDD cycle with Molecule, multi-distribution scenarios."
     labs:
       - molecule/introduction
       - molecule/installation-config
@@ -222,8 +238,9 @@ sections:
       - molecule/scenarios-multi-distro
 
   - id: tests
-    title: "Tests Python & lint"
-    description: "testinfra, tox multi-version, ansible-lint profil production."
+    title: "Python tests and lint"
+    description: >-
+      testinfra, tox across versions, ansible-lint on the production profile.
     labs:
       - tests/testinfra
       - tests/tox-multiversion
@@ -231,14 +248,17 @@ sections:
 
   - id: ci
     title: "CI/CD"
-    description: "Pipelines GitHub Actions et GitLab CI pour rôles et collections."
+    description: >-
+      GitHub Actions and GitLab CI pipelines for roles and collections.
     labs:
       - ci/github-actions
       - ci/gitlab
 
   - id: galaxy
-    title: "Galaxy & publication"
-    description: "ansible-galaxy CLI, requirements.yml, audit de rôles tiers, versioning et publication."
+    title: "Galaxy and publishing"
+    description: >-
+      The ansible-galaxy CLI, requirements.yml, auditing third-party roles,
+      versioning and publishing.
     labs:
       - galaxy/ansible-galaxy-cli
       - galaxy/installer-roles
@@ -247,7 +267,9 @@ sections:
 
   - id: vault
     title: "Ansible Vault"
-    description: "Vault complet : encrypt_string, vault-id multiples, mixtes, dans rôles, intégration HashiCorp/Passbolt."
+    description: >-
+      Vault in full: encrypt_string, multiple vault-ids, mixed files, vault
+      inside roles, integration with HashiCorp and Passbolt.
     labs:
       - vault/introduction
       - vault/chiffrer-fichier-variable
@@ -259,7 +281,9 @@ sections:
 
   - id: ee
     title: "Execution Environments"
-    description: "ansible-navigator, ansible-builder, EE custom, pipeline CI, debug."
+    description: >-
+      ansible-navigator, ansible-builder, a custom EE, the CI pipeline,
+      debugging.
     labs:
       - ee/hello
       - ee/inspection
@@ -269,7 +293,8 @@ sections:
 
   - id: troubleshooting
     title: "Troubleshooting"
-    description: "Verbosité, debugger interactif, idempotence et performance."
+    description: >-
+      Verbosity, the interactive debugger, idempotence and performance.
     labs:
       - troubleshooting/verbosite
       - troubleshooting/debugger
@@ -277,7 +302,8 @@ sections:
 
   - id: collections
     title: "Collections"
-    description: "Découverte, requirements, création, CI tests, migration depuis un rôle."
+    description: >-
+      Discovery, requirements, authoring, CI tests, migrating from a role.
     labs:
       - collections/decouvrir
       - collections/navigator
@@ -287,15 +313,16 @@ sections:
       - collections/migration-role
 
   - id: pratiques
-    title: "Pratiques avancées"
-    description: "Versionner ses playbooks avec Git, ansible-pull mode GitOps."
+    title: "Advanced practices"
+    description: >-
+      Versioning your playbooks with Git, ansible-pull in GitOps mode.
     labs:
       - pratiques/versionner-git
       - pratiques/ansible-pull-gitops
 
   - id: rhce
-    title: "Examen RHCE EX294"
-    description: "Mocks examen complets 4h, 19 tâches chacun, validées par pytest."
+    title: "RHCE EX294 exam"
+    description: "Full four-hour exam mocks, 19 tasks each, graded by pytest."
     labs:
       - rhce/mock-ex294
       - rhce/mock-ex294-2
