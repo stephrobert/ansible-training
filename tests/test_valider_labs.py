@@ -31,6 +31,10 @@ from pathlib import Path
 import pytest
 
 RACINE = Path(__file__).resolve().parent.parent
+# Le module partagé, identique dans les douze catalogues.
+sys.path.insert(0, str(RACINE / "scripts"))
+import verdict_check
+
 SCRIPT = RACINE / "scripts" / "valider-labs.py"
 
 
@@ -76,8 +80,28 @@ def vl(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     return m
 
 
-def _sortie(score: int, reussis: int, total: int) -> str:
-    return f"Tests : {reussis}/{total}\nScore : {score} / 100 pts\n"
+def _sortie(score: int, reussis: int, total: int, skippes: int = 0) -> str:
+    """Le document de `dsoxlab check --json`, tel que le moteur le rend.
+
+    C'est `status` que le script lit, et non `ok` ni `score` : une suite
+    entièrement skippée rend `ok: true` et `score: 0`, qui se contredisent.
+    """
+    mesure = total > skippes
+    return json.dumps({
+        "schema": 1,
+        "check": {
+            "ok": reussis == total - skippes,
+            "passed": reussis,
+            "total": total,
+            "skipped": skippes,
+            "score": score,
+            "max_score": 100,
+            "recorded": mesure,
+            "status": ("not_measured" if not mesure
+                       else "passed" if reussis == total else "failed"),
+            "output": f"{reussis} passed, {total - reussis - skippes} failed",
+        },
+    })
 
 
 class FausseCLI:
@@ -170,10 +194,20 @@ def test_un_run_en_echec_rend_le_lab_rouge(vl, monkeypatch) -> None:
     assert "`run` a échoué" in v.pourquoi
 
 
-def test_un_lab_sans_score_qui_skippe_est_skip(vl, monkeypatch) -> None:
-    monkeypatch.setattr(vl, "_dsoxlab", FausseCLI(vl, ["3 skipped\n"]))
+def test_une_suite_entierement_skippee_est_skip(vl, monkeypatch) -> None:
+    """Trois tests collectés, aucun joué : rien n'a été mesuré.
 
-    assert vl.valider("vault-introduction", vl.LAB).verdict == "SKIP"
+    Le moteur rend alors `ok: true` et `score: 0`, qui se contredisent. Lire
+    l'un ou l'autre concluait au succès ou à l'échec là où le lab n'avait pas
+    tourné : c'est le poste qui n'était pas prêt, pas le lab.
+    """
+    monkeypatch.setattr(vl, "_dsoxlab",
+                        FausseCLI(vl, [_sortie(0, 0, 3, skippes=3)]))
+
+    v = vl.valider("vault-introduction", vl.LAB)
+
+    assert v.verdict == "SKIP"
+    assert "tous skippé" in v.pourquoi, v.pourquoi
 
 
 def test_le_premier_check_se_joue_sans_vault_et_le_second_avec(vl, monkeypatch) -> None:
@@ -326,7 +360,12 @@ def test_chaque_verdict_porte_la_date_de_son_rejeu(vl, monkeypatch) -> None:
     [
         ({}, 1),
         ({"a": {"verdict": "VALIDE"}, "b": {"verdict": "ROUGE"}}, 1),
-        ({"a": {"verdict": "VALIDE"}, "b": {"verdict": "SKIP"}}, 0),
+        # Un SKIP a son propre code : il ne se répare pas, il se remesure. Le
+        # rendre en 0 faisait passer pour vert un catalogue dont la moitié
+        # n'avait pas pu être jouée.
+        ({"a": {"verdict": "VALIDE"}, "b": {"verdict": "SKIP"}}, 10),
+        ({"a": {"verdict": "SKIP"}, "b": {"verdict": "ROUGE"}}, 1),
+        ({"a": {"verdict": "VALIDE"}}, 0),
     ],
 )
 def test_le_mode_check(vl, labs: dict, attendu: int) -> None:
@@ -335,12 +374,41 @@ def test_le_mode_check(vl, labs: dict, attendu: int) -> None:
     assert vl.main(["--check"]) == attendu
 
 
-def test_le_score_et_les_tests_se_lisent_dans_la_sortie_de_dsoxlab(vl) -> None:
-    sortie = "Tests : ✔ 7/8\nScore : 87 / 100 pts\n"
+def test_le_verdict_se_lit_dans_le_contrat_et_pas_dans_lencadre(vl) -> None:
+    """`status` tranche là où `ok` et `score` se contredisent.
 
-    assert vl._score(sortie) == 87
-    assert vl._tests(sortie) == "7/8"
-    assert vl._score("rien") is None
+    L'encadré que `dsoxlab check` affiche est de l'interface : il a changé en
+    0.4.0 et la regex qui le lisait a cessé de trouver quoi que ce soit. Le
+    document `--json` porte un `schema`, c'est un contrat.
+    """
+    c = verdict_check.lire(_sortie(87, 7, 8))
+
+    assert (c["passed"], c["total"], c["score"]) == (7, 8, 87)
+    assert c["status"] == "failed"
+    assert verdict_check.a_mesure(c)
+
+    skippe = verdict_check.lire(_sortie(0, 0, 5, skippes=5))
+
+    assert skippe["status"] == "not_measured"
+    assert not verdict_check.a_mesure(skippe)
+    # La note n'est pas lue quand le moteur ne l'a pas inscrite : un 0 sur une
+    # exécution non mesurée n'est pas une note, c'est une absence.
+    assert skippe["score"] is None
+
+
+def test_un_dsoxlab_trop_ancien_arrete_la_campagne(vl) -> None:
+    """Un document sans `status` vient d'un outil antérieur à la 0.4.1.
+
+    Se taire ferait reprendre exactement le défaut qu'on corrige, et marquer
+    400 labs rouges accuserait les labs d'un défaut d'outil. On s'arrête en
+    nommant le geste.
+    """
+    ancien = json.dumps({"schema": 1, "check": {
+        "ok": True, "passed": 0, "total": 5, "score": 0,
+    }})
+
+    with pytest.raises(verdict_check.JsonIllisible, match="0.4.1"):
+        verdict_check.lire(ancien)
 
 
 def test_le_reattesteur_du_site_reconnait_le_check() -> None:
