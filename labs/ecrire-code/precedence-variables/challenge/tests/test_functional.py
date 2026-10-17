@@ -15,7 +15,7 @@ Deux duels sont vérifiés ici, et il faut les deux :
 
 import pytest
 
-from conftest import assert_idempotent, lab_host
+from conftest import assert_idempotent, lab_host, message
 
 TARGET_HOST = "db1.lab"
 RESULT_FILE = "/tmp/precedence-result.txt"
@@ -35,9 +35,11 @@ def resultat(host):
     ne distingue pas une variable absente d'une variable fausse.
     """
     fichier = host.file(RESULT_FILE)
-    assert fichier.exists, (
-        f"{RESULT_FILE} est absent de {TARGET_HOST}. Votre solution.yml doit le "
-        "poser avec les valeurs résolues de `winner` et `duel`."
+    assert fichier.exists, message(
+        en=f"{RESULT_FILE} is absent from {TARGET_HOST}. Your solution.yml must "
+        "write it with the resolved values of `winner` and `duel`.",
+        fr=f"{RESULT_FILE} est absent de {TARGET_HOST}. Votre solution.yml doit le "
+        "poser avec les valeurs résolues de `winner` et `duel`.",
     )
     valeurs = {}
     for ligne in fichier.content_string.splitlines():
@@ -49,9 +51,11 @@ def resultat(host):
 
 def test_extra_vars_wins(resultat):
     """--extra-vars (niveau 22) écrase tous les autres niveaux."""
-    assert resultat.get("winner") == "extra_vars_wins", (
-        "--extra-vars (niveau 22) doit gagner sur les `vars:` du play (12) et "
-        f"sur le `vars_files:` (14). Reçu : winner={resultat.get('winner')!r}"
+    assert resultat.get("winner") == "extra_vars_wins", message(
+        en="--extra-vars (level 22) must beat the play's `vars:` (12) and the "
+        f"`vars_files:` (14). Received: winner={resultat.get('winner')!r}",
+        fr="--extra-vars (niveau 22) doit gagner sur les `vars:` du play (12) et "
+        f"sur le `vars_files:` (14). Reçu : winner={resultat.get('winner')!r}",
     )
 
 
@@ -62,35 +66,48 @@ def test_vars_files_bat_play_vars(resultat):
     l'emporte sur un fichier chargé à côté. C'est l'inverse, et c'est ce que
     l'EX294 vérifie.
     """
-    assert "duel" in resultat, (
-        f"La variable `duel` est absente de {RESULT_FILE}. Elle doit être "
+    assert "duel" in resultat, message(
+        en=f"The `duel` variable is absent from {RESULT_FILE}. It must be "
+        "declared BOTH in the play's `vars:` and in `vars/loader.yml`, then "
+        "written into the result file: it is what demonstrates the "
+        "`vars_files:` > `vars:` order.",
+        fr=f"La variable `duel` est absente de {RESULT_FILE}. Elle doit être "
         "déclarée À LA FOIS dans les `vars:` du play et dans "
         "`vars/loader.yml`, puis écrite dans le fichier de résultat : c'est "
-        "elle qui démontre l'ordre `vars_files:` > `vars:`."
+        "elle qui démontre l'ordre `vars_files:` > `vars:`.",
     )
-    assert resultat["duel"] == "vars_files", (
-        "`vars_files:` (niveau 14) doit gagner sur les `vars:` du play "
+    assert resultat["duel"] == "vars_files", message(
+        en="`vars_files:` (level 14) must beat the play's `vars:` (level 12). "
+        f"Received: duel={resultat['duel']!r}.\n"
+        "If you got 'play_vars', check that `duel` really is defined in "
+        "vars/loader.yml AND that the file is loaded by `vars_files:`.",
+        fr="`vars_files:` (niveau 14) doit gagner sur les `vars:` du play "
         f"(niveau 12). Reçu : duel={resultat['duel']!r}.\n"
         "Si vous avez obtenu 'play_vars', vérifiez que `duel` est bien défini "
-        "dans vars/loader.yml ET que ce fichier est chargé par `vars_files:`."
+        "dans vars/loader.yml ET que ce fichier est chargé par `vars_files:`.",
     )
 
 
 def test_play_vars_does_not_win(resultat):
     """Les `vars:` du play (12) ne gagnent aucun des deux duels."""
     perdants = {c: v for c, v in resultat.items() if v == "play_vars"}
-    assert not perdants, (
-        "Les `vars:` du play (niveau 12) sont le niveau le plus FAIBLE des "
+    assert not perdants, message(
+        en="The play's `vars:` (level 12) are the WEAKEST of the three at play "
+        "here: they lose to `vars_files:` (14) as well as to `--extra-vars` "
+        f"(22). Yet they win for: {sorted(perdants)}.",
+        fr="Les `vars:` du play (niveau 12) sont le niveau le plus FAIBLE des "
         "trois en jeu ici : ils perdent contre `vars_files:` (14) comme contre "
-        f"`--extra-vars` (22). Or ils gagnent pour : {sorted(perdants)}."
+        f"`--extra-vars` (22). Or ils gagnent pour : {sorted(perdants)}.",
     )
 
 
 def test_vars_files_ne_bat_pas_extra_vars(resultat):
     """vars_files: (14) gagne sur le play, mais jamais sur --extra-vars (22)."""
-    assert resultat.get("winner") != "vars_files", (
-        "`vars_files:` ne doit PAS gagner sur `--extra-vars` : le niveau 22 "
-        "gagne sur tout, sans exception."
+    assert resultat.get("winner") != "vars_files", message(
+        en="`vars_files:` must NOT beat `--extra-vars`: level 22 beats "
+        "everything, with no exception.",
+        fr="`vars_files:` ne doit PAS gagner sur `--extra-vars` : le niveau 22 "
+        "gagne sur tout, sans exception.",
     )
 
 

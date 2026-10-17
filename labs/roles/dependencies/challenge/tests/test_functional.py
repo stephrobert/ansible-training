@@ -22,6 +22,7 @@ from conftest import (
     lab_host,
     lab_playbook,
     lab_solution_text,
+    message,
 )
 
 # Ne JAMAIS poser LAB_NO_REPLAY ici : `os.environ[...]` au niveau module
@@ -123,32 +124,47 @@ def test_ordre_dependances_puis_role(db1):
     ne sont pas déclarées. Si l'ordre diffère, la déclaration est inversée.
     """
     trace = db1.file("/tmp/deps-order.txt")
-    assert trace.exists, (
-        "/tmp/deps-order.txt absent : aucun rôle n'a tourné sur db1."
+    assert trace.exists, message(
+        en="/tmp/deps-order.txt missing: no role ran on db1.",
+        fr="/tmp/deps-order.txt absent : aucun rôle n'a tourné sur db1.",
     )
     lines = trace.content_string.split()
-    assert lines == ["selinux_setup", "firewall_setup", "webserver"], (
-        f"Ordre d'exécution constaté : {lines}. Attendu : selinux_setup, "
+    assert lines == ["selinux_setup", "firewall_setup", "webserver"], message(
+        en=f"Execution order observed: {lines}. Expected: selinux_setup, "
+        "firewall_setup, webserver. The dependencies declared in "
+        "meta/main.yml run BEFORE the role, in the order they are declared.",
+        fr=f"Ordre d'exécution constaté : {lines}. Attendu : selinux_setup, "
         "firewall_setup, webserver. Les dépendances déclarées dans "
-        "meta/main.yml s'exécutent AVANT le rôle, dans l'ordre de déclaration."
+        "meta/main.yml s'exécutent AVANT le rôle, dans l'ordre de déclaration.",
     )
 
 
 def test_selinux_enforcing(db1):
     """La dépendance selinux_setup a reçu et appliqué selinux_state."""
-    assert db1.run("getenforce").stdout.strip() == "Enforcing", (
-        "SELinux n'est pas en Enforcing : la dépendance selinux_setup n'a "
-        "pas tourné ou n'a pas reçu selinux_setup_state=enforcing."
+    assert db1.run("getenforce").stdout.strip() == "Enforcing", message(
+        en="SELinux is not Enforcing: the selinux_setup dependency did not run, "
+        "or did not receive selinux_setup_state=enforcing.",
+        fr="SELinux n'est pas en Enforcing : la dépendance selinux_setup n'a "
+        "pas tourné ou n'a pas reçu selinux_setup_state=enforcing.",
     )
 
 
 def test_firewalld_demarre_et_active(db1):
     svc = db1.service("firewalld")
-    assert svc.is_running, (
-        "firewalld doit être démarré : c'est le travail de firewall_setup, "
-        "déclenché par la dépendance."
+    assert svc.is_running, message(
+        en="firewalld must be started: that is firewall_setup's job, triggered "
+        "by the dependency.",
+        fr="firewalld doit être démarré : c'est le travail de firewall_setup, "
+        "déclenché par la dépendance.",
     )
-    assert svc.is_enabled
+    assert svc.is_enabled, message(
+        en="firewalld runs but is not enabled at boot: the dependency must "
+           "set enabled: true as well, otherwise the firewall is gone after "
+           "a restart.",
+        fr="firewalld tourne mais n'est pas activé au démarrage : la "
+           "dépendance doit aussi poser enabled: true, faute de quoi le "
+           "pare-feu disparaît après un redémarrage.",
+    )
 
 
 def test_port_443_ouvert_par_la_dependance(db1):
@@ -158,37 +174,68 @@ def test_port_443_ouvert_par_la_dependance(db1):
     (firewall_open_ports dans la déclaration).
     """
     ports = db1.run("firewall-cmd --list-ports").stdout
-    assert "443/tcp" in ports, (
-        f"Ports ouverts : {ports.strip() or '(aucun)'}. 443/tcp manque : la "
+    assert "443/tcp" in ports, message(
+        en=f"Open ports: {ports.strip() or '(none)'}. 443/tcp is missing: the "
+        "firewall_setup dependency did not receive "
+        "firewall_setup_open_ports=['443/tcp'].",
+        fr=f"Ports ouverts : {ports.strip() or '(aucun)'}. 443/tcp manque : la "
         "dépendance firewall_setup n'a pas reçu "
-        "firewall_setup_open_ports=['443/tcp']."
+        "firewall_setup_open_ports=['443/tcp'].",
     )
 
 
 def test_nginx_deploye_par_le_role_parent(db1):
-    assert db1.package("nginx").is_installed
+    assert db1.package("nginx").is_installed, message(
+        en="nginx is not installed: the parent webserver role did not run. "
+           "Its dependencies run first, so a failure in one of them stops it "
+           "before it begins.",
+        fr="nginx n'est pas installé : le rôle parent webserver n'a pas "
+           "tourné. Ses dépendances passent avant lui, donc un échec de "
+           "l'une d'elles l'arrête avant qu'il ne commence.",
+    )
     svc = db1.service("nginx")
-    assert svc.is_running, "nginx doit être démarré par le rôle webserver."
-    assert svc.is_enabled
-    assert db1.socket("tcp://0.0.0.0:8081").is_listening, (
-        "nginx n'écoute pas sur 8081 : webserver_listen_port n'a pas été "
-        "passé au rôle dans solution.yml."
+    assert svc.is_running, message(
+        en="nginx must be started by the webserver role.",
+        fr="nginx doit être démarré par le rôle webserver.",
+    )
+    assert svc.is_enabled, message(
+        en="nginx runs but is not enabled at boot.",
+        fr="nginx tourne mais n'est pas activé au démarrage.",
+    )
+    assert db1.socket("tcp://0.0.0.0:8081").is_listening, message(
+        en="nginx does not listen on 8081: webserver_listen_port was not passed "
+        "to the role in solution.yml.",
+        fr="nginx n'écoute pas sur 8081 : webserver_listen_port n'a pas été "
+        "passé au rôle dans solution.yml.",
     )
 
 
 def test_port_8081_ouvert_par_le_role(db1):
     ports = db1.run("firewall-cmd --list-ports").stdout
-    assert "8081/tcp" in ports, (
-        "8081/tcp fermé : le rôle webserver ouvre lui-même son port "
+    assert "8081/tcp" in ports, message(
+        en="8081/tcp is closed: the webserver role opens its own listening port, "
+        "but it needs firewalld already started, which the firewall_setup "
+        "dependency guarantees.",
+        fr="8081/tcp fermé : le rôle webserver ouvre lui-même son port "
         "d'écoute, mais il lui faut firewalld déjà démarré, ce que garantit "
-        "la dépendance firewall_setup."
+        "la dépendance firewall_setup.",
     )
 
 
 def test_page_accueil(db1):
     index = db1.file("/usr/share/nginx/html/index.html")
-    assert index.exists
-    assert "Hello from db1.lab" in index.content_string
+    assert index.exists, message(
+        en="/usr/share/nginx/html/index.html does not exist: the webserver "
+           "role did not deploy its page.",
+        fr="/usr/share/nginx/html/index.html n'existe pas : le rôle "
+           "webserver n'a pas déposé sa page.",
+    )
+    assert "Hello from db1.lab" in index.content_string, message(
+        en="The page does not carry « Hello from db1.lab »: the role's "
+           "template renders the host name, it is not written by hand.",
+        fr="La page ne porte pas « Hello from db1.lab » : le template du "
+           "rôle rend le nom d'hôte, il ne s'écrit pas à la main.",
+    )
 
 
 def test_solution_idempotente():

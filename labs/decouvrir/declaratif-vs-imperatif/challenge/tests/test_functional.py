@@ -19,7 +19,7 @@ Lancement depuis la racine du repo :
 
 import pytest
 
-from conftest import assert_idempotent, lab_host
+from conftest import assert_idempotent, lab_host, message
 
 TARGET_HOST = "web1.lab"
 
@@ -31,28 +31,38 @@ def host():
 
 def test_nginx_installed(host):
     """Le paquet nginx doit être installé (état, pas trace d'une commande dnf)."""
-    assert host.package("nginx").is_installed, (
-        "nginx n'est pas installé sur web1.lab. La tâche déclarative attendue : "
-        "ansible.builtin.dnf avec state: present."
+    assert host.package("nginx").is_installed, message(
+        en="nginx is not installed on web1.lab. The declarative task expected: "
+        "ansible.builtin.dnf with state: present.",
+        fr="nginx n'est pas installé sur web1.lab. La tâche déclarative attendue : "
+        "ansible.builtin.dnf avec state: present.",
     )
 
 
 def test_nginx_enabled_and_running(host):
     """Le service doit être actif ET activé au boot (persistance du service)."""
     nginx = host.service("nginx")
-    assert nginx.is_running, "Le service nginx n'est pas démarré (state: started)."
-    assert nginx.is_enabled, (
-        "Le service nginx n'est pas activé au boot (enabled: true) : il ne "
-        "redémarrerait pas après reboot."
+    assert nginx.is_running, message(
+        en="The nginx service is not started (state: started).",
+        fr="Le service nginx n'est pas démarré (state: started).",
+    )
+    assert nginx.is_enabled, message(
+        en="The nginx service is not enabled at boot (enabled: true): it would "
+        "not come back after a reboot.",
+        fr="Le service nginx n'est pas activé au boot (enabled: true) : il ne "
+        "redémarrerait pas après reboot.",
     )
 
 
 def test_firewalld_http_open_runtime(host):
     """Le service http doit être ouvert dans la zone active (effet immédiat)."""
     services = host.run("firewall-cmd --list-services").stdout
-    assert "http" in services.split(), (
-        f"http n'est pas ouvert dans firewalld (runtime). Services vus : {services!r}. "
-        "La tâche attendue : ansible.posix.firewalld service=http state=enabled immediate=true."
+    assert "http" in services.split(), message(
+        en=f"http is not open in firewalld (runtime). Services seen: {services!r}. "
+        "The task expected: ansible.posix.firewalld service=http "
+        "state=enabled immediate=true.",
+        fr=f"http n'est pas ouvert dans firewalld (runtime). Services vus : {services!r}. "
+        "La tâche attendue : ansible.posix.firewalld service=http state=enabled immediate=true.",
     )
 
 
@@ -64,9 +74,11 @@ def test_firewalld_http_open_permanent(host):
     ici sans redémarrer la VM.
     """
     services = host.run("firewall-cmd --permanent --list-services").stdout
-    assert "http" in services.split(), (
-        f"http n'est pas ouvert de façon PERMANENTE. Permanent : {services!r}. "
-        "Ajoutez permanent: true à la tâche firewalld."
+    assert "http" in services.split(), message(
+        en=f"http is not open PERMANENTLY. Permanent: {services!r}. "
+        "Add permanent: true to the firewalld task.",
+        fr=f"http n'est pas ouvert de façon PERMANENTE. Permanent : {services!r}. "
+        "Ajoutez permanent: true à la tâche firewalld.",
     )
 
 
@@ -79,10 +91,13 @@ def test_index_contains_exactly_one_servi_par_line(host):
     """
     page = host.file("/usr/share/nginx/html/index.html").content_string
     occurrences = page.count("Servi par")
-    assert occurrences == 1, (
-        f"index.html doit contenir EXACTEMENT 1 ligne « Servi par » "
+    assert occurrences == 1, message(
+        en=f"index.html must contain EXACTLY 1 « Servi par » line (the proof "
+        f"that the state is idempotent), found: {occurrences}. "
+        f"A non-idempotent append (echo >> / tee -a) would add one per run.",
+        fr=f"index.html doit contenir EXACTEMENT 1 ligne « Servi par » "
         f"(preuve d'idempotence de l'état), trouvé : {occurrences}. "
-        f"Un append non idempotent (echo >> / tee -a) en accumulerait une par run."
+        f"Un append non idempotent (echo >> / tee -a) en accumulerait une par run.",
     )
 
 
@@ -95,19 +110,25 @@ def test_servi_par_line_is_a_paragraph(host):
     """
     page = host.file("/usr/share/nginx/html/index.html").content_string
     servi = [line for line in page.splitlines() if "Servi par" in line]
-    assert servi, "Aucune ligne « Servi par » dans index.html."
+    assert servi, message(
+        en="No « Servi par » line in index.html.",
+        fr="Aucune ligne « Servi par » dans index.html.",
+    )
     line = servi[0].strip()
-    assert line.startswith("<p>Servi par ") and line.endswith("</p>"), (
-        f"La ligne attendue est un paragraphe <p>Servi par ...</p>, vu : {line!r}."
+    assert line.startswith("<p>Servi par ") and line.endswith("</p>"), message(
+        en=f"The expected line is a <p>Servi par ...</p> paragraph, seen: {line!r}.",
+        fr=f"La ligne attendue est un paragraphe <p>Servi par ...</p>, vu : {line!r}.",
     )
 
 
 def test_page_served_over_http(host):
     """nginx sert bien la page personnalisée : preuve bout-en-bout que le service tourne."""
     served = host.run("curl -s http://localhost/").stdout
-    assert "Servi par" in served, (
-        "La page servie par nginx ne contient pas « Servi par » : le service "
-        "sert-il bien /usr/share/nginx/html/index.html ?"
+    assert "Servi par" in served, message(
+        en="The page served by nginx does not contain « Servi par »: is the "
+        "service really serving /usr/share/nginx/html/index.html?",
+        fr="La page servie par nginx ne contient pas « Servi par » : le service "
+        "sert-il bien /usr/share/nginx/html/index.html ?",
     )
 
 

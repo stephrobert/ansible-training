@@ -2,7 +2,7 @@
 
 import pytest
 
-from conftest import assert_idempotent, lab_host
+from conftest import assert_idempotent, lab_host, message
 
 TARGET_HOST = "db1.lab"
 
@@ -14,19 +14,30 @@ def host():
 
 def test_dossier_existe(host):
     f = host.file("/tmp/lab-find-cleanup")
-    assert f.is_directory
+    assert f.is_directory, message(
+        en="The directory to scan does not exist: it is laid down by the "
+           "lab's setup, replay it through dsoxlab if needed.",
+        fr="Le répertoire à parcourir n'existe pas : il est posé par le "
+           "setup du lab, relance-le via dsoxlab si besoin.",
+    )
 
 
 @pytest.mark.parametrize("name", ["small1.log", "small2.log"])
 def test_petits_logs_conserves(host, name):
     f = host.file(f"/tmp/lab-find-cleanup/{name}")
-    assert f.exists, f"{name} doit etre conserve (taille < 5Mo)"
+    assert f.exists, message(
+        en=f"{name} must be kept (size below 5 MB)",
+        fr=f"{name} doit etre conserve (taille < 5Mo)",
+    )
 
 
 @pytest.mark.parametrize("name", ["big1.log", "big2.log", "big3.log"])
 def test_gros_logs_supprimes(host, name):
     f = host.file(f"/tmp/lab-find-cleanup/{name}")
-    assert not f.exists, f"{name} doit etre supprime (taille > 5Mo)"
+    assert not f.exists, message(
+        en=f"{name} must be deleted (size above 5 MB)",
+        fr=f"{name} doit etre supprime (taille > 5Mo)",
+    )
 
 
 def test_solution_idempotente():

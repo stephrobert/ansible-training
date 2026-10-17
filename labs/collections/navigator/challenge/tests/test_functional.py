@@ -13,7 +13,7 @@ On prouve l'ÉTAT, pas la frappe :
 
 import pytest
 
-from conftest import assert_idempotent, lab_host
+from conftest import assert_idempotent, lab_host, message
 
 TARGET_HOST = "db1.lab"
 DOC_PROOF = "/tmp/lab-navigator-doc.txt"
@@ -29,16 +29,24 @@ def host():
 
 def test_doc_proof_exists(host):
     f = host.file(DOC_PROOF)
-    assert f.exists, (
-        f"{DOC_PROOF} absent sur {TARGET_HOST} : la solution a-t-elle capturé la "
-        "sortie de `ansible-navigator doc` et l'a-t-elle déposée ?"
+    assert f.exists, message(
+        en=f"{DOC_PROOF} missing on {TARGET_HOST}: did the solution capture the "
+        "output of `ansible-navigator doc` and drop it there?",
+        fr=f"{DOC_PROOF} absent sur {TARGET_HOST} : la solution a-t-elle capturé la "
+        "sortie de `ansible-navigator doc` et l'a-t-elle déposée ?",
     )
 
 
 def test_doc_proof_mode_and_owner(host):
     f = host.file(DOC_PROOF)
-    assert f.mode == 0o644, f"Mode attendu 0644, vu : {oct(f.mode)}"
-    assert f.user == "root", f"Owner attendu root, vu : {f.user}"
+    assert f.mode == 0o644, message(
+        en=f"Expected mode 0644, seen: {oct(f.mode)}",
+        fr=f"Mode attendu 0644, vu : {oct(f.mode)}",
+    )
+    assert f.user == "root", message(
+        en=f"Expected owner root, seen: {f.user}",
+        fr=f"Owner attendu root, vu : {f.user}",
+    )
 
 
 def test_doc_proof_contains_expected_fqcn(host):
@@ -49,32 +57,40 @@ def test_doc_proof_contains_expected_fqcn(host):
     contient l'en-tête `> MODULE ansible.posix.sysctl (...)`.
     """
     content = host.file(DOC_PROOF).content_string
-    assert EXPECTED_FQCN in content, (
-        f"{DOC_PROOF} ne cite pas {EXPECTED_FQCN} : la preuve doit être la sortie "
+    assert EXPECTED_FQCN in content, message(
+        en=f"{DOC_PROOF} does not quote {EXPECTED_FQCN}: the proof must be the "
+        f"output of `ansible-navigator doc {EXPECTED_FQCN} --mode stdout`.\n"
+        f"Contents (200 chars): {content[:200]}",
+        fr=f"{DOC_PROOF} ne cite pas {EXPECTED_FQCN} : la preuve doit être la sortie "
         f"de `ansible-navigator doc {EXPECTED_FQCN} --mode stdout`.\n"
-        f"Contenu (200 c.) : {content[:200]}"
+        f"Contenu (200 c.) : {content[:200]}",
     )
 
 
 def test_sysctl_value_applied_live(host):
     """Le module découvert a bien changé la valeur kernel LIVE de db1.lab."""
     value = host.sysctl("vm.swappiness")
-    assert value == 42, (
-        "vm.swappiness doit valoir 42 sur db1.lab (posé par le module découvert "
-        f"ansible.posix.sysctl), vu : {value}"
+    assert value == 42, message(
+        en="vm.swappiness must be 42 on db1.lab (set by the discovered module "
+        f"ansible.posix.sysctl), seen: {value}",
+        fr="vm.swappiness doit valoir 42 sur db1.lab (posé par le module découvert "
+        f"ansible.posix.sysctl), vu : {value}",
     )
 
 
 def test_sysctl_file_persistent(host):
     """La valeur doit être écrite dans un fichier /etc/sysctl.d/ (persistance)."""
     f = host.file(SYSCTL_FILE)
-    assert f.exists, (
-        f"{SYSCTL_FILE} absent : le module doit écrire le paramètre dans "
-        "/etc/sysctl.d/ (sinon la valeur ne survit pas au reboot)."
+    assert f.exists, message(
+        en=f"{SYSCTL_FILE} missing: the module must write the parameter into "
+        "/etc/sysctl.d/ (otherwise the value does not survive a reboot).",
+        fr=f"{SYSCTL_FILE} absent : le module doit écrire le paramètre dans "
+        "/etc/sysctl.d/ (sinon la valeur ne survit pas au reboot).",
     )
     content = f.content_string
-    assert "vm.swappiness" in content and "42" in content, (
-        f"{SYSCTL_FILE} doit contenir `vm.swappiness = 42`.\nContenu : {content!r}"
+    assert "vm.swappiness" in content and "42" in content, message(
+        en=f"{SYSCTL_FILE} must contain `vm.swappiness = 42`.\nContents: {content!r}",
+        fr=f"{SYSCTL_FILE} doit contenir `vm.swappiness = 42`.\nContenu : {content!r}",
     )
 
 
@@ -86,18 +102,25 @@ def test_inventory_proof_resolves_host_and_group(host):
     ne montrerait ni l'un ni l'autre.
     """
     f = host.file(INV_PROOF)
-    assert f.exists, (
-        f"{INV_PROOF} absent : la solution a-t-elle validé un inventaire avec "
-        "`ansible-navigator inventory --list` et déposé sa sortie ?"
+    assert f.exists, message(
+        en=f"{INV_PROOF} missing: did the solution validate an inventory with "
+        "`ansible-navigator inventory --list` and drop its output?",
+        fr=f"{INV_PROOF} absent : la solution a-t-elle validé un inventaire avec "
+        "`ansible-navigator inventory --list` et déposé sa sortie ?",
     )
     content = f.content_string
-    assert "db1.lab" in content, (
-        f"{INV_PROOF} ne mentionne pas db1.lab : l'inventaire validé doit le "
-        f"contenir.\nContenu (200 c.) : {content[:200]}"
+    assert "db1.lab" in content, message(
+        en=f"{INV_PROOF} does not mention db1.lab: the validated inventory must "
+        f"contain it.\nContents (200 chars): {content[:200]}",
+        fr=f"{INV_PROOF} ne mentionne pas db1.lab : l'inventaire validé doit le "
+        f"contenir.\nContenu (200 c.) : {content[:200]}",
     )
-    assert "webservers" in content, (
-        f"{INV_PROOF} ne mentionne pas le groupe webservers : preuve que "
-        "`ansible-navigator inventory` a bien parsé VOTRE inventaire structuré."
+    assert "webservers" in content, message(
+        en=f"{INV_PROOF} does not mention the webservers group: that is the "
+        "proof `ansible-navigator inventory` really parsed YOUR structured "
+        "inventory.",
+        fr=f"{INV_PROOF} ne mentionne pas le groupe webservers : preuve que "
+        "`ansible-navigator inventory` a bien parsé VOTRE inventaire structuré.",
     )
 
 

@@ -19,25 +19,37 @@ from pathlib import Path
 import pytest
 import yaml
 
+from conftest import message
+
 LAB_DIR = Path(__file__).resolve().parents[2]
 
 
 def test_setup_script_completed():
     script = LAB_DIR / "setup-ee.sh"
-    assert script.is_file(), "setup-ee.sh manquant"
-    assert script.stat().st_mode & 0o111, (
-        "setup-ee.sh doit être exécutable (chmod +x)"
+    assert script.is_file(), message(
+        en="setup-ee.sh missing",
+        fr="setup-ee.sh manquant",
+    )
+    assert script.stat().st_mode & 0o111, message(
+        en="setup-ee.sh must be executable (chmod +x)",
+        fr="setup-ee.sh doit être exécutable (chmod +x)",
     )
     content = script.read_text()
-    assert "???" not in content, (
-        "setup-ee.sh contient encore des ??? : complétez le squelette"
+    assert "???" not in content, message(
+        en="setup-ee.sh still contains ???: complete the skeleton",
+        fr="setup-ee.sh contient encore des ??? : complétez le squelette",
     )
-    assert "podman" in content, "Le script doit vérifier/installer podman"
-    assert "ansible-navigator" in content, (
-        "Le script doit vérifier/installer ansible-navigator"
+    assert "podman" in content, message(
+        en="The script must check for or install podman",
+        fr="Le script doit vérifier/installer podman",
     )
-    assert "community-ansible-dev-tools" in content, (
-        "Le script doit pré-tirer l'image community-ansible-dev-tools (podman pull)"
+    assert "ansible-navigator" in content, message(
+        en="The script must check for or install ansible-navigator",
+        fr="Le script doit vérifier/installer ansible-navigator",
+    )
+    assert "community-ansible-dev-tools" in content, message(
+        en="The script must pre-pull the community-ansible-dev-tools image (podman pull)",
+        fr="Le script doit pré-tirer l'image community-ansible-dev-tools (podman pull)",
     )
 
 
@@ -50,8 +62,9 @@ def test_setup_script_valid_bash():
         timeout=30,
         check=False,
     )
-    assert result.returncode == 0, (
-        f"bash -n rejette setup-ee.sh :\n{result.stderr}"
+    assert result.returncode == 0, message(
+        en=f"bash -n rejects setup-ee.sh:\n{result.stderr}",
+        fr=f"bash -n rejette setup-ee.sh :\n{result.stderr}",
     )
 
 
@@ -65,30 +78,36 @@ def test_inventory_resolves_with_ansible_inventory():
         check=False,
         cwd=LAB_DIR,
     )
-    assert result.returncode == 0, (
-        f"ansible-inventory rejette inventory.yml :\n{result.stderr}"
+    assert result.returncode == 0, message(
+        en=f"ansible-inventory rejects inventory.yml:\n{result.stderr}",
+        fr=f"ansible-inventory rejette inventory.yml :\n{result.stderr}",
     )
     data = json.loads(result.stdout)
     hosts = data.get("_meta", {}).get("hostvars", {})
     for expected in ("web1.lab", "db1.lab"):
-        assert expected in hosts, (
-            f"{expected} absent de l'inventaire résolu : déclarez-le sous "
-            "all.hosts avec son ansible_host"
+        assert expected in hosts, message(
+            en=f"{expected} absent from the resolved inventory: declare it under "
+            "all.hosts with its ansible_host",
+            fr=f"{expected} absent de l'inventaire résolu : déclarez-le sous "
+            "all.hosts avec son ansible_host",
         )
-    assert hosts["web1.lab"].get("ansible_host"), (
-        "web1.lab doit déclarer ansible_host (IP joignable depuis l'EE)"
+    assert hosts["web1.lab"].get("ansible_host"), message(
+        en="web1.lab must declare ansible_host (an IP reachable from the EE)",
+        fr="web1.lab doit déclarer ansible_host (IP joignable depuis l'EE)",
     )
 
 
 def test_ping_playbook_syntax_and_fqcn():
     """Exécute réellement ansible-playbook --syntax-check sur ping.yml."""
     content = (LAB_DIR / "ping.yml").read_text()
-    assert "ansible.builtin.ping" in content, (
-        "Le play doit utiliser le module ping en FQCN (ansible.builtin.ping)"
+    assert "ansible.builtin.ping" in content, message(
+        en="The play must use the ping module by FQCN (ansible.builtin.ping)",
+        fr="Le play doit utiliser le module ping en FQCN (ansible.builtin.ping)",
     )
     plays = yaml.safe_load(content)
-    assert plays and plays[0].get("gather_facts") is False, (
-        "gather_facts: false attendu : un ping n'a pas besoin des facts"
+    assert plays and plays[0].get("gather_facts") is False, message(
+        en="gather_facts: false expected: a ping does not need the facts",
+        fr="gather_facts: false attendu : un ping n'a pas besoin des facts",
     )
     result = subprocess.run(
         [
@@ -104,8 +123,9 @@ def test_ping_playbook_syntax_and_fqcn():
         check=False,
         cwd=LAB_DIR,
     )
-    assert result.returncode == 0, (
-        f"ansible-playbook --syntax-check rejette ping.yml :\n{result.stderr}{result.stdout}"
+    assert result.returncode == 0, message(
+        en=f"ansible-playbook --syntax-check rejects ping.yml:\n{result.stderr}{result.stdout}",
+        fr=f"ansible-playbook --syntax-check rejette ping.yml :\n{result.stderr}{result.stdout}",
     )
 
 
@@ -113,17 +133,21 @@ def test_navigator_config_semantics():
     cfg = yaml.safe_load((LAB_DIR / "ansible-navigator.yml").read_text())
     nav = cfg.get("ansible-navigator", {})
     ee = nav.get("execution-environment", {})
-    assert "community-ansible-dev-tools" in str(ee.get("image", "")), (
-        f"Image attendue : community-ansible-dev-tools (registre officiel), vu : {ee.get('image')!r}"
+    assert "community-ansible-dev-tools" in str(ee.get("image", "")), message(
+        en=f"Expected image: community-ansible-dev-tools (official registry), seen: {ee.get('image')!r}",
+        fr=f"Image attendue : community-ansible-dev-tools (registre officiel), vu : {ee.get('image')!r}",
     )
-    assert ee.get("container-engine") == "podman", (
-        "container-engine: podman attendu (préconisation Red Hat, rootless)"
+    assert ee.get("container-engine") == "podman", message(
+        en="container-engine: podman expected (Red Hat's recommendation, rootless)",
+        fr="container-engine: podman attendu (préconisation Red Hat, rootless)",
     )
-    assert ee.get("pull", {}).get("policy") == "missing", (
-        "pull.policy: missing attendu : tirer seulement si l'image est absente"
+    assert ee.get("pull", {}).get("policy") == "missing", message(
+        en="pull.policy: missing expected: pull only when the image is absent",
+        fr="pull.policy: missing attendu : tirer seulement si l'image est absente",
     )
-    assert nav.get("mode") == "stdout", (
-        "mode: stdout attendu : le mode interactive (TUI) bloque scripts et CI"
+    assert nav.get("mode") == "stdout", message(
+        en="mode: stdout expected: interactive mode (the TUI) blocks scripts and CI",
+        fr="mode: stdout attendu : le mode interactive (TUI) bloque scripts et CI",
     )
 
 
@@ -141,6 +165,7 @@ def test_ansible_navigator_available():
         timeout=60,
         check=False,
     )
-    assert result.returncode == 0, (
-        f"ansible-navigator --version échoue :\n{result.stderr}"
+    assert result.returncode == 0, message(
+        en=f"ansible-navigator --version fails:\n{result.stderr}",
+        fr=f"ansible-navigator --version échoue :\n{result.stderr}",
     )
