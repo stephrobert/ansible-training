@@ -1,0 +1,140 @@
+# Surcharge française du catalogue, lue par dsoxlab (0.1.54) et par
+# scripts/render-readme.py. Elle ne porte QUE `repo.title`,
+# `repo.description` et les `title` / `description` des sections,
+# appariés par `id` et jamais par position : une section insérée au
+# milieu ne décale donc rien.
+#
+# La langue par défaut de l'outil est l'anglais : `meta.yml` porte
+# l'anglais, ce fichier le français. Jusqu'au 2026-10-17, ce dépôt n'avait
+# pas de surcharge et son `meta.yml` portait le français : les 23 titres
+# de sections s'affichaient donc en français dans le README anglais.
+
+repo:
+  title: "Ansible Training — RHCE EX294 2026"
+  description: >-
+    Lab pédagogique public de la formation Ansible RHCE EX294 2026. Chaque
+    lab est autonome : tutoriel guidé + challenge testé par
+    pytest+testinfra.
+
+sections:
+  - id: bootstrap
+    title: "Bootstrap"
+    description: >-
+      Préparation système des managed nodes (jouée par `dsoxlab provision`).
+
+  - id: decouvrir
+    title: "Découvrir Ansible"
+    description: >-
+      Premiers contacts : déclaratif vs impératif, installation, CLI,
+      configuration.
+
+  - id: premiers-pas
+    title: "Premiers pas"
+    description: >-
+      Premier playbook, premiers secrets vault.
+
+  - id: ecrire-code
+    title: "Écrire du code Ansible"
+    description: >-
+      Structure d'un play, contrôle d'exécution, variables, Jinja2,
+      conditions, boucles, gestion d'erreurs.
+
+  - id: modules-fichiers
+    title: "Modules fichiers"
+    description: >-
+      Manipulation de fichiers : copy, file, blockinfile, lineinfile, replace,
+      fetch, archive.
+
+  - id: modules-paquets
+    title: "Modules paquets"
+    description: >-
+      Gestion paquets agnostique (package), options dnf, dépôts RPM.
+
+  - id: modules-services
+    title: "Modules services"
+    description: >-
+      Gestion services systemd et tâches planifiées cron.
+
+  - id: modules-utilisateurs
+    title: "Modules utilisateurs"
+    description: >-
+      Gestion users, groups, clés SSH, sudoers.
+
+  - id: modules-rhel
+    title: "Modules RHEL"
+    description: >-
+      Spécificités RHEL : firewalld, SELinux, sysctl, mount, parted,
+      filesystem, LVM.
+
+  - id: modules-reseau
+    title: "Modules réseau"
+    description: >-
+      Téléchargement et appels HTTP : get_url, uri.
+
+  - id: modules-diagnostic
+    title: "Modules diagnostic"
+    description: >-
+      Inspection et synchronisation : stat, find, assert/fail, wait_for/pause.
+
+  - id: inventaires
+    title: "Inventaires"
+    description: >-
+      group_vars/host_vars, patterns d'hôtes, inventaire dynamique libvirt.
+
+  - id: roles
+    title: "Rôles"
+    description: >-
+      Anatomie d'un rôle, variables, handlers, argument_specs, consommation,
+      dépendances, rôles système RHEL.
+
+  - id: molecule
+    title: "Tests Molecule"
+    description: >-
+      Cycle TDD avec Molecule, scénarios multi-distro.
+
+  - id: tests
+    title: "Tests Python & lint"
+    description: >-
+      testinfra, tox multi-version, ansible-lint profil production.
+
+  - id: ci
+    title: "CI/CD"
+    description: >-
+      Pipelines GitHub Actions et GitLab CI pour rôles et collections.
+
+  - id: galaxy
+    title: "Galaxy & publication"
+    description: >-
+      ansible-galaxy CLI, requirements.yml, audit de rôles tiers, versioning
+      et publication.
+
+  - id: vault
+    title: "Ansible Vault"
+    description: >-
+      Vault complet : encrypt_string, vault-id multiples, mixtes, dans rôles,
+      intégration HashiCorp/Passbolt.
+
+  - id: ee
+    title: "Execution Environments"
+    description: >-
+      ansible-navigator, ansible-builder, EE custom, pipeline CI, debug.
+
+  - id: troubleshooting
+    title: "Troubleshooting"
+    description: >-
+      Verbosité, debugger interactif, idempotence et performance.
+
+  - id: collections
+    title: "Collections"
+    description: >-
+      Découverte, requirements, création, CI tests, migration depuis un rôle.
+
+  - id: pratiques
+    title: "Pratiques avancées"
+    description: >-
+      Versionner ses playbooks avec Git, ansible-pull mode GitOps.
+
+  - id: rhce
+    title: "Examen RHCE EX294"
+    description: >-
+      Mocks examen complets 4h, 19 tâches chacun, validées par pytest.

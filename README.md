@@ -263,29 +263,29 @@ generated: run `python3 scripts/render-readme.py` to refresh it.
 
 ### Bootstrap
 
-Préparation système des managed nodes (jouée par `dsoxlab provision`).
+System preparation of the managed nodes, played by `dsoxlab provision`.
 
 - [`bootstrap-prepare-managed-nodes`](./labs/bootstrap/prepare-managed-nodes/): Prepare Ansible managed nodes
 
-### Découvrir Ansible
+### Discover Ansible
 
-Premiers contacts : déclaratif vs impératif, installation, CLI, configuration.
+First contact: declarative versus imperative, installation, the CLI, configuration.
 
 - [`decouvrir-declaratif-vs-imperatif`](./labs/decouvrir/declaratif-vs-imperatif/): Declarative vs imperative: why Ansible does not drift
 - [`decouvrir-installation-ansible`](./labs/decouvrir/installation-ansible/): Ansible installation: verify your control node
 - [`decouvrir-configuration-ansible`](./labs/decouvrir/configuration-ansible/): ansible.cfg: precedence and critical options
 - [`decouvrir-prise-en-main-cli`](./labs/decouvrir/prise-en-main-cli/): Ansible CLI: the 8 everyday commands
 
-### Premiers pas
+### First steps
 
-Premier playbook, premiers secrets vault.
+A first playbook, and first vault secrets.
 
 - [`premiers-pas-premier-playbook`](./labs/premiers-pas/premier-playbook/): First playbook: install nginx on the webservers
 - [`premiers-pas-ansible-vault`](./labs/premiers-pas/ansible-vault/): First steps with ansible-vault
 
-### Écrire du code Ansible
+### Write Ansible code
 
-Structure d'un play, contrôle d'exécution, variables, Jinja2, conditions, boucles, gestion d'erreurs.
+The anatomy of a play, execution control, variables, Jinja2, conditionals, loops, error handling.
 
 - [`ecrire-code-plays-et-tasks`](./labs/ecrire-code/plays-et-tasks/): Plays and tasks: anatomy and execution order
 - [`ecrire-code-handlers`](./labs/ecrire-code/handlers/): handlers: the restart-on-config-change pattern
@@ -316,9 +316,9 @@ Structure d'un play, contrôle d'exécution, variables, Jinja2, conditions, bouc
 - [`ecrire-code-lineinfile-vs-template`](./labs/ecrire-code/lineinfile-vs-template/): lineinfile vs template: which module when
 - [`ecrire-code-import-include`](./labs/ecrire-code/import-include/): import vs include: static or dynamic
 
-### Modules fichiers
+### File modules
 
-Manipulation de fichiers : copy, file, blockinfile, lineinfile, replace, fetch, archive.
+Handling files: copy, file, blockinfile, lineinfile, replace, fetch, archive.
 
 - [`modules-fichiers-copy`](./labs/modules-fichiers/copy/): copy module: transfer files and inline content
 - [`modules-fichiers-file`](./labs/modules-fichiers/file/): file module: states, permissions and symlinks
@@ -328,33 +328,33 @@ Manipulation de fichiers : copy, file, blockinfile, lineinfile, replace, fetch, 
 - [`modules-fichiers-fetch`](./labs/modules-fichiers/fetch/): fetch module: retrieve files from managed nodes
 - [`modules-fichiers-archive-unarchive`](./labs/modules-fichiers/archive-unarchive/): archive and unarchive modules: compress and extract
 
-### Modules paquets
+### Package modules
 
-Gestion paquets agnostique (package), options dnf, dépôts RPM.
+Distribution-agnostic package management (package), dnf options, RPM repositories.
 
 - [`modules-paquets-package`](./labs/modules-paquets/package/): package module: distro-agnostic installation
 - [`modules-paquets-dnf-options`](./labs/modules-paquets/dnf-options/): dnf module: enablerepo, security, exclude, autoremove
 - [`modules-paquets-yum-repository`](./labs/modules-paquets/yum-repository/): yum_repository module: declare an RPM repository
 
-### Modules services
+### Service modules
 
-Gestion services systemd et tâches planifiées cron.
+Managing systemd services and cron jobs.
 
 - [`modules-services-systemd`](./labs/modules-services/systemd/): systemd_service module: manage systemd services
 - [`modules-services-cron`](./labs/modules-services/cron/): cron module: schedule idempotent jobs
 
-### Modules utilisateurs
+### User modules
 
-Gestion users, groups, clés SSH, sudoers.
+Managing users, groups, SSH keys and sudoers.
 
 - [`modules-utilisateurs-user`](./labs/modules-utilisateurs/user/): user module: create, modify and remove accounts
 - [`modules-utilisateurs-group`](./labs/modules-utilisateurs/group/): group module: manage Linux groups
 - [`modules-utilisateurs-authorized-key`](./labs/modules-utilisateurs/authorized-key/): authorized_key module: user SSH keys
 - [`modules-utilisateurs-sudoers`](./labs/modules-utilisateurs/sudoers/): sudoers module: manage sudo rights safely
 
-### Modules RHEL
+### RHEL modules
 
-Spécificités RHEL : firewalld, SELinux, sysctl, mount, parted, filesystem, LVM.
+RHEL specifics: firewalld, SELinux, sysctl, mount, parted, filesystem, LVM.
 
 - [`modules-rhel-firewalld`](./labs/modules-rhel/firewalld/): firewalld module: manage the RHEL firewall
 - [`modules-rhel-sysctl`](./labs/modules-rhel/sysctl/): sysctl module: persisted kernel parameters
@@ -364,34 +364,34 @@ Spécificités RHEL : firewalld, SELinux, sysctl, mount, parted, filesystem, LVM
 - [`modules-rhel-filesystem`](./labs/modules-rhel/filesystem/): filesystem module: create a filesystem
 - [`modules-rhel-lvm-storage`](./labs/modules-rhel/lvm-storage/): LVM: chaining lvg, lvol, filesystem and mount
 
-### Modules réseau
+### Network modules
 
-Téléchargement et appels HTTP : get_url, uri.
+Downloads and HTTP calls: get_url, uri.
 
 - [`modules-reseau-get-url`](./labs/modules-reseau/get-url/): get_url module: download a file over HTTP/HTTPS
 - [`modules-reseau-uri`](./labs/modules-reseau/uri/): uri module: REST API calls
 
-### Modules diagnostic
+### Diagnostic modules
 
-Inspection et synchronisation : stat, find, assert/fail, wait_for/pause.
+Inspection and synchronisation: stat, find, assert/fail, wait_for/pause.
 
 - [`modules-diagnostic-stat`](./labs/modules-diagnostic/stat/): stat module: inspect files and directories
 - [`modules-diagnostic-find`](./labs/modules-diagnostic/find/): find module: multi-file search
 - [`modules-diagnostic-assert-fail`](./labs/modules-diagnostic/assert-fail/): assert and fail modules: defensive validation
 - [`modules-diagnostic-wait-for-pause`](./labs/modules-diagnostic/wait-for-pause/): wait_for and pause modules: synchronization
 
-### Inventaires
+### Inventories
 
-group_vars/host_vars, patterns d'hôtes, inventaire dynamique libvirt.
+group_vars and host_vars, host patterns, the dynamic libvirt inventory.
 
 - [`inventaires-statiques`](./labs/inventaires/statiques/): Write a static inventory from scratch: groups, children and group vars
 - [`inventaires-group-vars-host-vars`](./labs/inventaires/group-vars-host-vars/): group_vars and host_vars: structured inventory variables
 - [`inventaires-patterns-hotes`](./labs/inventaires/patterns-hotes/): Host patterns: wildcards and the :, & and ! operators
 - [`inventaires-dynamique-kvm`](./labs/inventaires/dynamique-kvm/): Dynamic KVM inventory with community.libvirt
 
-### Rôles
+### Roles
 
-Anatomie d'un rôle, variables, handlers, argument_specs, consommation, dépendances, rôles système RHEL.
+The anatomy of a role, variables, handlers, argument_specs, consuming a role, dependencies, RHEL system roles.
 
 - [`roles-creer-premier-role`](./labs/roles/creer-premier-role/): Create your first role with ansible-galaxy role init
 - [`roles-variables-defaults-vars`](./labs/roles/variables-defaults-vars/): Role variables: defaults/ vs vars/ and precedence
@@ -401,18 +401,18 @@ Anatomie d'un rôle, variables, handlers, argument_specs, consommation, dépenda
 - [`roles-dependencies`](./labs/roles/dependencies/): Role dependencies via meta/main.yml
 - [`roles-system-roles`](./labs/roles/system-roles/): RHEL system roles: converge time synchronisation with timesync
 
-### Tests Molecule
+### Molecule tests
 
-Cycle TDD avec Molecule, scénarios multi-distro.
+The TDD cycle with Molecule, multi-distribution scenarios.
 
 - [`molecule-introduction`](./labs/molecule/introduction/): Molecule: anatomy of a test scenario
 - [`molecule-installation-config`](./labs/molecule/installation-config/): Molecule: enrich a scenario beyond the defaults
 - [`molecule-tdd-cycle`](./labs/molecule/tdd-cycle/): Molecule: build a users role test-first
 - [`molecule-scenarios-multi-distro`](./labs/molecule/scenarios-multi-distro/): Molecule: test a role across distributions
 
-### Tests Python & lint
+### Python tests and lint
 
-testinfra, tox multi-version, ansible-lint profil production.
+testinfra, tox across versions, ansible-lint on the production profile.
 
 - [`tests-testinfra`](./labs/tests/testinfra/): Molecule + testinfra: Python assertions on a role
 - [`tests-tox-multiversion`](./labs/tests/tox-multiversion/): tox: test a role against several ansible-core versions
@@ -420,14 +420,14 @@ testinfra, tox multi-version, ansible-lint profil production.
 
 ### CI/CD
 
-Pipelines GitHub Actions et GitLab CI pour rôles et collections.
+GitHub Actions and GitLab CI pipelines for roles and collections.
 
 - [`ci-github-actions`](./labs/ci/github-actions/): GitHub Actions: CI workflow for a role
 - [`ci-gitlab`](./labs/ci/gitlab/): GitLab CI: parallel:matrix pipeline for a role
 
-### Galaxy & publication
+### Galaxy and publishing
 
-ansible-galaxy CLI, requirements.yml, audit de rôles tiers, versioning et publication.
+The ansible-galaxy CLI, requirements.yml, auditing third-party roles, versioning and publishing.
 
 - [`galaxy-ansible-galaxy-cli`](./labs/galaxy/ansible-galaxy-cli/): ansible-galaxy CLI: init, install, list, build, publish
 - [`galaxy-installer-roles`](./labs/galaxy/installer-roles/): Install roles and collections from Galaxy or Git
@@ -436,7 +436,7 @@ ansible-galaxy CLI, requirements.yml, audit de rôles tiers, versioning et publi
 
 ### Ansible Vault
 
-Vault complet : encrypt_string, vault-id multiples, mixtes, dans rôles, intégration HashiCorp/Passbolt.
+Vault in full: encrypt_string, multiple vault-ids, mixed files, vault inside roles, integration with HashiCorp and Passbolt.
 
 - [`vault-introduction`](./labs/vault/introduction/): Ansible Vault: encrypt your first secrets file
 - [`vault-chiffrer-fichier-variable`](./labs/vault/chiffrer-fichier-variable/): encrypt_string vs whole-file encryption
@@ -448,7 +448,7 @@ Vault complet : encrypt_string, vault-id multiples, mixtes, dans rôles, intégr
 
 ### Execution Environments
 
-ansible-navigator, ansible-builder, EE custom, pipeline CI, debug.
+ansible-navigator, ansible-builder, a custom EE, the CI pipeline, debugging.
 
 - [`ee-hello`](./labs/ee/hello/): First run inside an Execution Environment
 - [`ee-inspection`](./labs/ee/inspection/): Inspect an Execution Environment and pick the right one
@@ -458,7 +458,7 @@ ansible-navigator, ansible-builder, EE custom, pipeline CI, debug.
 
 ### Troubleshooting
 
-Verbosité, debugger interactif, idempotence et performance.
+Verbosity, the interactive debugger, idempotence and performance.
 
 - [`troubleshooting-verbosite`](./labs/troubleshooting/verbosite/): Verbosity levels and callback plugins
 - [`troubleshooting-debugger`](./labs/troubleshooting/debugger/): Interactive debugger: debugger: on_failed
@@ -466,7 +466,7 @@ Verbosité, debugger interactif, idempotence et performance.
 
 ### Collections
 
-Découverte, requirements, création, CI tests, migration depuis un rôle.
+Discovery, requirements, authoring, CI tests, migrating from a role.
 
 - [`collections-decouvrir`](./labs/collections/decouvrir/): Explore Ansible collections: FQCN and structure
 - [`collections-navigator`](./labs/collections/navigator/): Automation content navigator: discover a module in a collection and use it
@@ -475,16 +475,16 @@ Découverte, requirements, création, CI tests, migration depuis un rôle.
 - [`collections-ci-tests`](./labs/collections/ci-tests/): CI matrix for a collection: ansible-core x Python
 - [`collections-migration-role`](./labs/collections/migration-role/): Migrate a standalone role to a collection
 
-### Pratiques avancées
+### Advanced practices
 
-Versionner ses playbooks avec Git, ansible-pull mode GitOps.
+Versioning your playbooks with Git, ansible-pull in GitOps mode.
 
 - [`pratiques-versionner-git`](./labs/pratiques/versionner-git/): Version your playbooks with Git
 - [`pratiques-ansible-pull-gitops`](./labs/pratiques/ansible-pull-gitops/): ansible-pull: GitOps and Edge pattern
 
-### Examen RHCE EX294
+### RHCE EX294 exam
 
-Mocks examen complets 4h, 19 tâches chacun, validées par pytest.
+Full four-hour exam mocks, 19 tasks each, graded by pytest.
 
 - [`rhce-mock-ex294`](./labs/rhce/mock-ex294/): RHCE EX294 mock exam: 19 tasks in 4 hours
 - [`rhce-mock-ex294-2`](./labs/rhce/mock-ex294-2/): Mock RHCE EX294 #2

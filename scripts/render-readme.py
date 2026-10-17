@@ -74,19 +74,38 @@ def lab_declare(lab_rel: str, lang: str) -> tuple[str, str]:
     return identifiant, titre
 
 
-def render_section(section: dict, lang: str = "fr") -> list[str]:
-    """Rend une section en liste de lignes Markdown.
+def surcharge(lang: str) -> dict[str, dict]:
+    """Les sections de `meta.<lang>.yml`, appariées par `id`.
 
-    Le meta.yml peut porter ``title_en`` et ``description_en`` ; à défaut, la
-    version française sert aux deux, ce qui vaut mieux qu'une section vide.
+    C'est le mécanisme du contrat dsoxlab (0.1.54) : `meta.yml` porte
+    l'anglais, `meta.<lang>.yml` la surcharge, appariée par `id` et JAMAIS par
+    position, de sorte qu'une section insérée au milieu ne décale rien. Son
+    absence n'est pas une erreur : c'est le cas de la langue par défaut.
+
+    Ce script lisait auparavant `title_en` et `description_en`, deux clés
+    qu'aucune section de `meta.yml` ne portait et que le contrat ne connaît
+    pas : la branche anglaise n'était donc jamais emprunte, et les titres
+    français partaient dans les deux README.
     """
-    lines = []
     if lang == "en":
-        title = section.get("title_en") or section["title"]
-        desc = section.get("description_en") or section.get("description", "")
-    else:
-        title = section["title"]
-        desc = section.get("description", "")
+        return {}
+    fichier = REPO_ROOT / f"meta.{lang}.yml"
+    if not fichier.exists():
+        return {}
+    try:
+        traduit = lire_yaml(fichier)
+    except YamlIllisible as exc:
+        print(f"surcharge {lang} ignorée — {exc}", file=sys.stderr)
+        return {}
+    return {str(s.get("id", "")): s for s in (traduit.get("sections") or [])}
+
+
+def render_section(section: dict, lang: str = "fr") -> list[str]:
+    """Rend une section en liste de lignes Markdown."""
+    lines = []
+    traduite = surcharge(lang).get(str(section.get("id", "")), {})
+    title = traduite.get("title") or section["title"]
+    desc = traduite.get("description") or section.get("description", "")
 
     lines.append(f"### {title}")
     lines.append("")
