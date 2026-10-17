@@ -1,4 +1,4 @@
-# Ansible Training — RHCE EX294
+# Ansible Training: RHCE EX294
 
 **Language:** [English](./README.md) · [Français](./README.fr.md)
 
@@ -501,11 +501,17 @@ Mocks examen complets 4h, 19 tâches chacun, validées par pytest.
 | A lab fails right after another | inherited state: `dsoxlab clean <lab-id>` |
 | Risky lab to play | `mise run snapshot` before, `mise run restore` after |
 
-## Contributing & license
+## Contributing
 
 - Contributions: see [CONTRIBUTING](./CONTRIBUTING.md).
 - Conduct: [Code of Conduct](./CODE_OF_CONDUCT.md) · Security: [SECURITY](./SECURITY.md).
 - Publishing: [RELEASING](./RELEASING.md) (tar.gz bundles, no PyPI).
+
+A lab is proven **in both directions** before it is merged,
+`dsoxlab validate-structure` is green, and the statement exists in English and
+in French.
+
+## License
 
 Copyright (c) 2026 Stéphane Robert, https://blog.stephane-robert.info
 
