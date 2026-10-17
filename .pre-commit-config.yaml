@@ -139,7 +139,7 @@ repos:
       # provisioned here.
       - id: validate-structure
         name: dsoxlab validate-structure
-        entry: env DSOXLAB_PROVIDER=kvm uvx dsoxlab validate-structure
+        entry: env DSOXLAB_PROVIDER=kvm uvx 'dsoxlab>=0.5.0' validate-structure
         language: system
         pass_filenames: false
         stages: [pre-push]
