@@ -4,7 +4,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Vault IDs multiples**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/vault-id-multiples/)
+🔗 [**Vault IDs multiples**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/vault-id-multiples/)
 
 **Un mot de passe vault unique** ne suffit pas en équipe : tout le monde a accès aux secrets de **prod** s'il peut déchiffrer **dev**. Solution : **vault-id étiquetés** par environnement.
 

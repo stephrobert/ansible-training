@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Module package Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-package/)
+🔗 [**Module package Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-package/)
 
 `ansible.builtin.package:` installe des paquets de manière **agnostique** : Ansible
 détecte automatiquement le gestionnaire (`ansible_pkg_mgr`) et appelle `dnf:` sur

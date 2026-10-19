@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**lineinfile vs template Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/lineinfile-vs-template/)
+🔗 [**lineinfile vs template Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/lineinfile-vs-template/)
 
 Deux modules pour **modifier des fichiers de config**, deux philosophies opposées :
 

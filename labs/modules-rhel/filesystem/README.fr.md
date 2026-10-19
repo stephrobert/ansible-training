@@ -10,7 +10,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Module filesystem Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-filesystem/)
+🔗 [**Module filesystem Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-filesystem/)
 
 `community.general.filesystem:` crée un **système de fichiers** sur une
 partition ou un volume logique : `ext4`, `xfs`, `btrfs`, `f2fs`, `swap`. C'est

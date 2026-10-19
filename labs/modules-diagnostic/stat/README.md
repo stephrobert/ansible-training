@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible stat module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/module-stat/)
+🔗 [**Ansible stat module**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/module-stat/)
 
 `ansible.builtin.stat:` returns **information** about a file or folder without
 modifying it: existence, type, size, mode, owner, checksum, mtime. It is

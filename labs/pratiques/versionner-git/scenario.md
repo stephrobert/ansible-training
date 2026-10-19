@@ -24,4 +24,4 @@ Keep it at the level of the objective: no CI, no GitOps, no distant forge. Just
 init, add, commit, push, done right.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/pratiques/versionner-git/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/pratiques/versionner-git/

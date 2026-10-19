@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible sudoers module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-sudoers/)
+🔗 [**Ansible sudoers module**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-sudoers/)
 
 `community.general.sudoers:` generates files in `/etc/sudoers.d/` with
 **automatic validation** via `visudo -cf`. It is the **reference module** to

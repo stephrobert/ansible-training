@@ -5,7 +5,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Auditer un rôle Ansible tiers**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/auditer-role-existant/)
+🔗 [**Auditer un rôle Ansible tiers**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/auditer-role-existant/)
 
 Avant d'adopter un rôle Galaxy ou GitHub dans votre projet (et donc de
 **l'exécuter avec `become: true`** sur vos serveurs production), passez-le

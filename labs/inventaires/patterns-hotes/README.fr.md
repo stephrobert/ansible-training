@@ -11,7 +11,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Patterns d'hôtes Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/patterns-hotes/)
+🔗 [**Patterns d'hôtes Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/patterns-hotes/)
 
 **`--limit`** et les opérateurs de pattern permettent de cibler **précisément** les hôtes voulus sans toucher au playbook. Quatre opérateurs essentiels :
 

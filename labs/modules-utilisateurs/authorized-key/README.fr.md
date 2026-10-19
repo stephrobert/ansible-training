@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Module authorized_key Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-authorized-key/)
+🔗 [**Module authorized_key Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-authorized-key/)
 
 `ansible.posix.authorized_key:` gère les **clés SSH publiques** dans le fichier
 `~/.ssh/authorized_keys` d'un utilisateur. C'est l'outil du **provisioning des

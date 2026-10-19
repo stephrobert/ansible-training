@@ -20,4 +20,4 @@ Votre mission, depuis le répertoire du projet :
 4. Convertir la note en une **décision** défendable : adopter, forker ou refuser.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/auditer-role-existant/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/auditer-role-existant/

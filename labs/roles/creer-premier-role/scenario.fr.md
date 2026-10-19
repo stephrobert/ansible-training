@@ -19,4 +19,4 @@ Votre mission, depuis **control-node.lab** :
 4. Appeler le rôle depuis un playbook qui ne cible que **db1.lab**.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/creer-premier-role/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/creer-premier-role/

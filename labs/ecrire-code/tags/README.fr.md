@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Tags Ansible : cibler ou ignorer un sous-ensemble de tâches**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/tags/)
+🔗 [**Tags Ansible : cibler ou ignorer un sous-ensemble de tâches**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/tags/)
 
 Quand un playbook grossit (50, 100 tâches), vous ne voulez pas **tout** rejouer à chaque modif. Les **tags** sont des étiquettes qu'on pose sur les tâches pour pouvoir les **cibler** au lancement :
 

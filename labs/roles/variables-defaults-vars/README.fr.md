@@ -8,7 +8,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Variables defaults vs vars**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/variables-defaults-vars/)
+🔗 [**Variables defaults vs vars**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/variables-defaults-vars/)
 
 Un rôle Ansible expose des **variables d'entrée** que l'utilisateur peut paramétrer. Deux dossiers pour ça :
 

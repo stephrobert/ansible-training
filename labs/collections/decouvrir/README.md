@@ -13,7 +13,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Discover Ansible collections**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/)
+🔗 [**Discover Ansible collections**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/)
 
 A **collection** is the modern distribution unit for Ansible **modules**, **plugins** (filter, lookup, inventory…), **roles**, **playbooks** and **docs**. It definitively replaces the standalone Galaxy v1 roles.
 

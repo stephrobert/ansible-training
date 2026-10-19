@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Débogueur Ansible interactif**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/debugger-interactif/)
+🔗 [**Débogueur Ansible interactif**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/debugger-interactif/)
 
 Quand une tâche échoue dans un playbook long, **relancer tout depuis le début** est lent et frustrant. Ansible fournit un **débogueur interactif** qui ouvre un **REPL** au moment de l'échec : on inspecte les variables, on **modifie les arguments à chaud** (`task.args['name'] = 'nginx'`), on **rejoue** la tâche modifiée (`redo`), on **continue** le playbook (`continue`).
 

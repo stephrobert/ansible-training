@@ -19,4 +19,4 @@ Your mission, from the project directory:
    which for a controller, which for lean production, and why.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/lookup-doc/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/lookup-doc/

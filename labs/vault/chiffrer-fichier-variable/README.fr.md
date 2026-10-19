@@ -4,7 +4,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Chiffrer un fichier ou une variable**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/chiffrer-fichier-variable/)
+🔗 [**Chiffrer un fichier ou une variable**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/chiffrer-fichier-variable/)
 
 Ansible Vault propose **deux approches** complémentaires de chiffrement :
 

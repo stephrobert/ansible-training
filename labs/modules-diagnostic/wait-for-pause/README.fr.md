@@ -6,7 +6,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Modules wait_for et pause Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/module-wait-for-pause/)
+🔗 [**Modules wait_for et pause Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/module-wait-for-pause/)
 
 Deux modules pour la **synchronisation temporelle** dans un play :
 

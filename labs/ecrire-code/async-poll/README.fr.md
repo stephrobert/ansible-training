@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Async et poll Ansible : tâches longues, fire-and-forget, async_status**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/async-poll/)
+🔗 [**Async et poll Ansible : tâches longues, fire-and-forget, async_status**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/async-poll/)
 
 Par défaut, Ansible **maintient une connexion SSH ouverte** pendant toute la durée
 d'une tâche. Si la tâche dure 30 minutes, vous risquez un **timeout SSH** (réseau qui

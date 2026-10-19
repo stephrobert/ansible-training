@@ -25,4 +25,4 @@ Votre mission, depuis le répertoire du projet, contre **db1.lab** :
    décidé à l'exécution.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/consommer-role/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/consommer-role/

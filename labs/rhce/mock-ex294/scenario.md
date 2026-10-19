@@ -21,4 +21,4 @@ Your mission, from **control-node.lab**:
    it is the only useful output of a mock exam. Under three hours means ready.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/certifications/rhce/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/certifications/rhce/

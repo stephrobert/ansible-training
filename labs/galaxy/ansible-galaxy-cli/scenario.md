@@ -19,4 +19,4 @@ Your mission, from the project directory:
 4. Check your reference against the real binary rather than against memory.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ansible-galaxy-cli/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ansible-galaxy-cli/

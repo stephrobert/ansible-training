@@ -7,7 +7,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Présentation des Execution Environments**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/presentation/)
+🔗 [**Présentation des Execution Environments**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/presentation/)
 
 Un **Execution Environment (EE)** est une **image conteneur OCI** qui empaquette `ansible-core`, `ansible-runner`, des **collections** Ansible, des **dépendances Python** et des **dépendances système**. L'EE garantit que le **même runtime** Ansible tourne du laptop au controller AAP — fini le « ça marche sur mon poste ».
 

@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Module copy Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-copy/)
+🔗 [**Module copy Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-copy/)
 
 `ansible.builtin.copy:` est le module de **transfert** par excellence. Il pousse
 un fichier du **control node** vers le **managed node**, ou écrit un **contenu

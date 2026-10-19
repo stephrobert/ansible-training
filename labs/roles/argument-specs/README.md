@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible argument specs: validate a role's inputs**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/argument-specs/)
+🔗 [**Ansible argument specs: validate a role's inputs**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/argument-specs/)
 
 Without `argument_specs`, **Ansible does not validate** a role's input
 variables. If the user passes `webserver_listen_port: "abcd"` (string instead

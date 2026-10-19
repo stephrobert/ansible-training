@@ -18,4 +18,4 @@ Your mission, from **control-node.lab**:
 4. Check that a run with valid values still passes the validation step cleanly.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/argument-specs/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/argument-specs/

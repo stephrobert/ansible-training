@@ -13,7 +13,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Complete `requirements.yml`**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/requirements-yml/)
+🔗 [**Complete `requirements.yml`**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/requirements-yml/)
 
 A mature Ansible project **versions its dependencies** in a single **`requirements.yml`** file. It lists the **collections** and **roles** used, their **source** (Galaxy, Git, tarball URL, local path), their **pinned version** (strict semver), and optionally their **GPG signatures** for integrity verification.
 

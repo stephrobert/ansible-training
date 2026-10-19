@@ -2,7 +2,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible get_url module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/reseau/module-get-url/)
+🔗 [**Ansible get_url module**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/reseau/module-get-url/)
 
 `ansible.builtin.get_url:` downloads a file from an HTTP/HTTPS/FTP URL
 **directly onto the managed node** (no round trip through the control node).

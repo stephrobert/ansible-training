@@ -25,4 +25,4 @@ Restez au niveau de l'objectif : pas de CI, pas de GitOps, pas de forge
 distante. Juste init, add, commit, push, faits correctement.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/pratiques/versionner-git/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/pratiques/versionner-git/

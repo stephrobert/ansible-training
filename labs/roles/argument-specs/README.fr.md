@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Argument specs Ansible : valider les entrées d'un rôle**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/argument-specs/)
+🔗 [**Argument specs Ansible : valider les entrées d'un rôle**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/argument-specs/)
 
 Sans `argument_specs`, **Ansible ne valide pas** les variables d'entrée d'un
 rôle. Si l'utilisateur passe `webserver_listen_port: "abcd"` (string au lieu

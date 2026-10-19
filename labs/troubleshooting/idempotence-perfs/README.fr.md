@@ -13,7 +13,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Idempotence cassée et tuning des performances**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/idempotence-cassee/)
+🔗 [**Idempotence cassée et tuning des performances**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/idempotence-cassee/)
 
 Un playbook **idempotent** affiche `changed=0` au **second passage**. Si vous voyez `changed=N` à chaque run, **vos tâches mentent** sur leur état — chaque exécution refait tout, casse les caches HTTP/CDN, redémarre des services inutilement, et fait perdre confiance dans le code.
 

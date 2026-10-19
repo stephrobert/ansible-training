@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**any_errors_fatal Ansible : arrêter le play sur 1ère erreur cluster**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/any-errors-fatal/)
+🔗 [**any_errors_fatal Ansible : arrêter le play sur 1ère erreur cluster**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/any-errors-fatal/)
 
 Par défaut, Ansible **continue** le play sur les autres hôtes si **un** hôte échoue.
 `any_errors_fatal: true` change ce comportement : **dès la première erreur**, le

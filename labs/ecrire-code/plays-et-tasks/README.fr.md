@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Plays et tasks Ansible : anatomie complète, ordre d'exécution, mots-clés**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/plays-et-tasks/)
+🔗 [**Plays et tasks Ansible : anatomie complète, ordre d'exécution, mots-clés**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/plays-et-tasks/)
 
 Au lab 04, vous avez écrit un play simple avec juste `tasks:`. Mais un vrai play en production a **4 sections de tâches** qui s'exécutent dans un ordre précis :
 

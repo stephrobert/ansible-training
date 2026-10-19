@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Parallélisme et stratégies Ansible : forks, serial, throttle, strategy**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/parallelisme-strategies/)
+🔗 [**Parallélisme et stratégies Ansible : forks, serial, throttle, strategy**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/parallelisme-strategies/)
 
 Par défaut, Ansible exécute une **tâche à la fois** sur **`forks` hôtes en parallèle**
 (défaut 5). `serial:` change ce comportement par **batches successifs** — pratique pour

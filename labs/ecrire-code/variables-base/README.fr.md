@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Variables Ansible : déclaration, portées et types simples**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/variables-base/)
+🔗 [**Variables Ansible : déclaration, portées et types simples**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/variables-base/)
 
 Ansible offre **5 emplacements principaux** pour déclarer une variable : `vars:` (dans
 le play), `vars_files:` (fichiers externes), `group_vars/`, `host_vars/`, et

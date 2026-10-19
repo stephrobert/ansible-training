@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible register and set_fact: capture, lifetime, cacheable**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/register-set-fact/)
+🔗 [**Ansible register and set_fact: capture, lifetime, cacheable**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/register-set-fact/)
 
 `register: var` captures the result of a module into a variable (`rc`, `stdout`,
 `stderr`, `changed`, `failed`, plus module-specific fields). `set_fact:`

@@ -10,7 +10,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible parted module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-parted/)
+🔗 [**Ansible parted module**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-parted/)
 
 `community.general.parted:` creates, deletes, and inspects Linux **disk
 partitions** (MBR or GPT) idempotently. It is the **raw prerequisite** before

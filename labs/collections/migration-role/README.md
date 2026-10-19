@@ -13,7 +13,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Role → collection migration**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/migration-role/)
+🔗 [**Role → collection migration**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/migration-role/)
 
 In 2026, **standalone Galaxy v1 roles are legacy**. Galaxy NG (Galaxy v3 backend) supports **only** collections. If you maintain a public role, you must **migrate it to a collection** without breaking the downstream playbooks that still use it with its old name.
 

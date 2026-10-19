@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Module fetch Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-fetch/)
+🔗 [**Module fetch Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-fetch/)
 
 `ansible.builtin.fetch:` est l'**inverse exact de `copy:`** — il rapatrie un
 fichier depuis un managed node vers le control node. Il sert à collecter des

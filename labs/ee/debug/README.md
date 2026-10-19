@@ -4,7 +4,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Debugging a broken Execution Environment**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/debug-ee-casse/)
+🔗 [**Debugging a broken Execution Environment**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/debug-ee-casse/)
 
 EE definitions break in an often **silent** way: a badly declared schema
 makes whole sections ignored, an unresolvable dependency drowns

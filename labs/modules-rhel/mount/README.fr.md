@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Module mount Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-mount/)
+🔗 [**Module mount Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-mount/)
 
 `ansible.posix.mount:` gère les **points de montage Linux** : ajouter une ligne
 dans `/etc/fstab`, monter immédiatement, démonter, gérer les options de montage.

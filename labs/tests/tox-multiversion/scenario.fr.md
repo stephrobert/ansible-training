@@ -20,4 +20,4 @@ Votre mission, depuis le répertoire du projet :
    portabilité du rôle, pas un test instable.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/tests-tox-multiversion/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/tests-tox-multiversion/

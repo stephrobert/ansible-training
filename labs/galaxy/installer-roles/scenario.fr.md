@@ -21,4 +21,4 @@ Votre mission, depuis le répertoire du projet :
    justifier pourquoi celui-là et pas les autres.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/installer-roles-galaxy/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/installer-roles-galaxy/

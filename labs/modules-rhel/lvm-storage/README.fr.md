@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**LVM avec Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/lvm-storage/)
+🔗 [**LVM avec Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/lvm-storage/)
 
 LVM (Logical Volume Manager) abstrait les disques physiques en **volumes
 logiques redimensionnables**. Pipeline classique :

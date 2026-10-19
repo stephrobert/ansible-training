@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Boucles legacy Ansible : with_items, with_dict, migration vers loop:**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/boucles-with-deprecated/)
+🔗 [**Boucles legacy Ansible : with_items, with_dict, migration vers loop:**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/boucles-with-deprecated/)
 
 Avant Ansible 2.5, on utilisait `with_items:`, `with_dict:`, `with_subelements:`,
 `with_fileglob:`, `with_nested:`, etc. Depuis 2.5, **`loop:`** couplé à des **filtres

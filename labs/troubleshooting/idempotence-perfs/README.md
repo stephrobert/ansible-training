@@ -13,7 +13,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Broken idempotence and performance tuning**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/idempotence-cassee/)
+🔗 [**Broken idempotence and performance tuning**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/idempotence-cassee/)
 
 An **idempotent** playbook shows `changed=0` on the **second run**. If you see `changed=N` on every run, **your tasks are lying** about their state: each run redoes everything, breaks HTTP/CDN caches, restarts services needlessly, and erodes trust in the code.
 

@@ -46,7 +46,7 @@
 > théorique (histoire d'Ansible, Push vs Pull, idempotence) que ce lab vient
 > illustrer concrètement :
 >
-> 🔗 [**Déclaratif vs impératif : la même tâche, deux philosophies**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/declaratif-vs-imperatif/)
+> 🔗 [**Déclaratif vs impératif : la même tâche, deux philosophies**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/declaratif-vs-imperatif/)
 >
 > ⏱ Temps de lecture : ~10 min. Le guide explique le **pourquoi**, ce lab vous
 > fait sentir le **comment** dans la pratique. Les deux ensemble = déclic

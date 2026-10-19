@@ -23,4 +23,4 @@ Votre mission, depuis **control-node.lab** :
    --list`, puis garder la sortie résolue comme preuve sur `db1.lab`.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/ansible-navigator/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/ansible-navigator/

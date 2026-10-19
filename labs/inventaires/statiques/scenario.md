@@ -28,4 +28,4 @@ resolves (`ansible-inventory --list`) and by joining exactly the right hosts
 (`ansible <group> -m ping`).
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/statiques-yaml/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/statiques-yaml/

@@ -6,7 +6,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible wait_for and pause modules**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/module-wait-for-pause/)
+🔗 [**Ansible wait_for and pause modules**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/module-wait-for-pause/)
 
 Two modules for **time synchronization** within a play:
 

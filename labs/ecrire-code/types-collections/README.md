@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible collection types: list, dict, nested**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/types-collections/)
+🔗 [**Ansible collection types: list, dict, nested**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/types-collections/)
 
 Beyond the simple types (string, int, bool), Ansible makes heavy use of
 **complex structures**: lists (`[1, 2, 3]`), dictionaries (`{key: value}`), and

@@ -5,7 +5,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Versioning and publishing an Ansible role**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/versionner-publier/)
+🔗 [**Versioning and publishing an Ansible role**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/versionner-publier/)
 
 A **published** Ansible role must be:
 

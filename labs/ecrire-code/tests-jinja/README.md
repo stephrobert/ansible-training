@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible Jinja2 Tests**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/tests-jinja/)
+🔗 [**Ansible Jinja2 Tests**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/tests-jinja/)
 
 **Jinja2 tests** are written with **`is`** and return a boolean:
 `{{ var is defined }}`, `{{ var is mapping }}`, `{{ var is regex }}`. Unlike

@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible variable precedence (the 22 official levels)**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/precedence-variables/)
+🔗 [**Ansible variable precedence (the 22 official levels)**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/precedence-variables/)
 
 Ansible defines **22 precedence levels** for variables. When the same
 variable is defined in several places, the **highest level wins**. This

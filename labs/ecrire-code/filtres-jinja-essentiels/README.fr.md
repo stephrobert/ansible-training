@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Filtres Jinja2 essentiels Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/filtres-jinja-essentiels/)
+🔗 [**Filtres Jinja2 essentiels Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/filtres-jinja-essentiels/)
 
 Les filtres Jinja2 transforment une valeur via la syntaxe **`{{ valeur | filtre }}`**.
 Ansible expose les filtres standard de Jinja2 + ses propres filtres custom. Les

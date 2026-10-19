@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible group module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-group/)
+🔗 [**Ansible group module**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-group/)
 
 `ansible.builtin.group:` manages **Linux groups**: creation, deletion, forcing
 the GID. Companion module of [`user:`](../user/): you

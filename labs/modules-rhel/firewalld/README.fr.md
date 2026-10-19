@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Module firewalld Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-firewalld/)
+🔗 [**Module firewalld Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-firewalld/)
 
 `ansible.posix.firewalld:` gère **firewalld**, le pare-feu par défaut sur RHEL 7+,
 AlmaLinux, RockyLinux. C'est le module n°1 RHCE 2026 pour ouvrir/fermer des

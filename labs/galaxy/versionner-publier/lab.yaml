@@ -14,7 +14,7 @@ skills:
   - release-automation
 distros:
   - alma9
-doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/versionner-publier/
+doc_url: https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/versionner-publier/
 track:
   - au-dela-ex294
 runtime:

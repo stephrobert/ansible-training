@@ -17,4 +17,4 @@ Your mission, from **control-node.lab**:
 4. Confirm the role's `meta/main.yml` identity card is complete and readable.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/handlers-meta/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/handlers-meta/

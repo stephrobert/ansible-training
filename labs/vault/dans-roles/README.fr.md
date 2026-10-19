@@ -4,7 +4,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Vault dans les rôles**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/vault-dans-roles/)
+🔗 [**Vault dans les rôles**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/vault-dans-roles/)
 
 Un rôle Ansible peut contenir ses **propres secrets**, chiffrés avec Vault. Le **pattern standard 2026** :
 

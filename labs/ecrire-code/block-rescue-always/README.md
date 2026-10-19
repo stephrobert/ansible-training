@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Block / rescue / always Ansible: try/catch/finally**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/block-rescue-always/)
+🔗 [**Block / rescue / always Ansible: try/catch/finally**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/block-rescue-always/)
 
 `block:` groups several tasks under an **error-handling structure**:
 

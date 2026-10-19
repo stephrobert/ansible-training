@@ -6,7 +6,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**CI Ansible avec GitHub Actions**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ci-github-actions/)
+🔗 [**CI Ansible avec GitHub Actions**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ci-github-actions/)
 
 Une CI **complète** pour un rôle Ansible orchestre, à chaque PR :
 

@@ -11,7 +11,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Module lineinfile Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-lineinfile/)
+🔗 [**Module lineinfile Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-lineinfile/)
 
 `ansible.builtin.lineinfile:` modifie **une seule ligne** dans un fichier
 existant : ajouter si absente, remplacer une ligne identifiée par regexp,

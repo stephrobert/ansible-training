@@ -19,4 +19,4 @@ Your mission, from **control-node.lab**:
    flight, and a reused SSH connection. Re-measure and state the real gain.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/idempotence-cassee/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/idempotence-cassee/

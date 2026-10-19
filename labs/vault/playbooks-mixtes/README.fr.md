@@ -4,7 +4,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Playbooks mixtes (clair + chiffré)**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/playbooks-mixtes/)
+🔗 [**Playbooks mixtes (clair + chiffré)**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/playbooks-mixtes/)
 
 **Pattern recommandé 2026** : séparer les **variables publiques** (clair) des **secrets** (chiffrés) dans deux fichiers distincts au sein de chaque `group_vars/<groupe>/` :
 

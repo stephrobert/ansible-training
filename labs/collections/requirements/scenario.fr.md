@@ -22,4 +22,4 @@ Votre mission, depuis **control-node.lab** :
    serveurs Galaxy le jour où l'entreprise place un hub privé devant le public.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/requirements-yml/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/requirements-yml/

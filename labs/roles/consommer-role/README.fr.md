@@ -5,7 +5,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Consommer un rôle Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/consommer-role/)
+🔗 [**Consommer un rôle Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/consommer-role/)
 
 Il existe **3 façons** d'utiliser un rôle dans un play. Choisir la bonne
 selon le besoin :

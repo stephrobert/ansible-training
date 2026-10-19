@@ -19,7 +19,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Dynamic inventory for KVM**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/dynamiques/plugin-libvirt-kvm/)
+🔗 [**Dynamic inventory for KVM**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/dynamiques/plugin-libvirt-kvm/)
 
 The **`community.libvirt.libvirt`** plugin queries the local **libvirt API** and generates an inventory **on every run** of Ansible. No more manually maintaining the list of hosts: create a VM, and it appears immediately in the inventory.
 

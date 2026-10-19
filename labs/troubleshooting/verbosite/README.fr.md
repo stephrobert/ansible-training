@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Verbosité Ansible : -v / -vv / -vvv / -vvvv**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/verbosite-vvv/)
+🔗 [**Verbosité Ansible : -v / -vv / -vvv / -vvvv**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/verbosite-vvv/)
 
 Quand un playbook échoue, **les flags de verbosité** sont vos premiers outils. Chaque niveau ouvre un nouveau cran d'information :
 

@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**First steps with Ansible Vault**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas/premiers-pas-ansible-vault/)
+🔗 [**First steps with Ansible Vault**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas/premiers-pas-ansible-vault/)
 
 As soon as a playbook handles a **password**, an **API token** or a
 **private key**, you must encrypt these values before committing them into

@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible check mode and diff: dry-run and change visualization**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/checkmode-diff/)
+🔗 [**Ansible check mode and diff: dry-run and change visualization**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/checkmode-diff/)
 
 `--check` simulates the execution without applying the changes. `--diff` shows the
 unified diff of the modified files. `check_mode: false` at the task level forces a

@@ -7,7 +7,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Testing an Ansible role with Molecule**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/tdd-molecule-introduction/)
+🔗 [**Testing an Ansible role with Molecule**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/tdd-molecule-introduction/)
 
 **Molecule** is the reference tool for **testing Ansible roles**. It
 automates a full cycle:

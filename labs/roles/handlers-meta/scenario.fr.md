@@ -19,4 +19,4 @@ Votre mission, depuis **control-node.lab** :
 4. Vérifier que la carte d'identité du rôle (`meta/main.yml`) est complète.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/handlers-meta/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/handlers-meta/

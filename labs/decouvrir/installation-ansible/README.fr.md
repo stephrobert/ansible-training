@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Installer Ansible : pipx, mise, dnf, Execution Environment**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/installation-ansible/)
+🔗 [**Installer Ansible : pipx, mise, dnf, Execution Environment**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/installation-ansible/)
 
 Avant d'écrire le moindre playbook, il faut **un poste de contrôle qui marche** : Ansible installé, les bons binaires dans le `PATH`, les collections principales présentes. Ce lab ne demande **rien à écrire** — vous allez **inspecter** votre installation et apprendre à diagnostiquer un poste mal configuré.
 

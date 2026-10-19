@@ -21,4 +21,4 @@ Your mission, from **control-node.lab**:
    Galaxy server when the company puts a private hub in front of the public one.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/requirements-yml/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/requirements-yml/

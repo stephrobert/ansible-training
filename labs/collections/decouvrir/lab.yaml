@@ -13,7 +13,7 @@ skills:
   - collection-inspect
 distros:
   - alma9
-doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/decouvrir-collection/
+doc_url: https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/decouvrir-collection/
 certification_tags:
   - rhce
 runtime:

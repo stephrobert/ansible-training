@@ -7,7 +7,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**HashiCorp Vault / OpenBao avec Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/integration-hashicorp-vault/)
+🔗 [**HashiCorp Vault / OpenBao avec Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/integration-hashicorp-vault/)
 
 **Limites d'Ansible Vault** (labs 77-81) :
 

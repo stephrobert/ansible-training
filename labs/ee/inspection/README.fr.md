@@ -4,7 +4,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Inspecter un EE — images, doc, collections**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/lookup-doc/)
+🔗 [**Inspecter un EE — images, doc, collections**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/lookup-doc/)
 
 Avant de **builder son propre EE** (lab 86), il faut savoir **inspecter** un EE existant : quelles collections embarquées ? quelle version d'ansible-core ? quelles dépendances Python ? quels packages système ? Ansible Navigator fournit **`ansible-navigator images`** pour cette exploration en TUI, et **`ansible-navigator doc`** pour la doc d'un module donné depuis l'EE.
 

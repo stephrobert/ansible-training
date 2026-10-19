@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**failed_when et changed_when Ansible : redéfinir succès et changement**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/failed-when-changed-when/)
+🔗 [**failed_when et changed_when Ansible : redéfinir succès et changement**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/failed-when-changed-when/)
 
 Par défaut, Ansible considère qu'une tâche `command:` ou `shell:` est **`failed`**
 si le code retour (`rc`) est différent de 0, et **`changed`** dans tous les cas.

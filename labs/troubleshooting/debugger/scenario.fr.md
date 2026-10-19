@@ -21,4 +21,4 @@ Votre mission, depuis **control-node.lab** :
    pour que la valeur ne dépende plus de quelqu'un devant son clavier.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/debugger-interactif/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/debugger-interactif/

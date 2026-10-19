@@ -18,4 +18,4 @@ Your mission, from the project directory:
    should pin the result.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/versionner-publier/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/versionner-publier/

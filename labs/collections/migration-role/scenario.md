@@ -19,4 +19,4 @@ Your mission, from **control-node.lab**:
    silent is compatibility forever, and that is not what you signed up for.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/migration-role/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/migration-role/

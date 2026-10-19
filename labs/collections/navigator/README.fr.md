@@ -13,7 +13,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Automation content navigator**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/ansible-navigator/)
+🔗 [**Automation content navigator**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/ansible-navigator/)
 
 `ansible-navigator` est l'**Automation content navigator** : le front-end moderne
 que Red Hat pousse pour remplacer les commandes `ansible-*` éparpillées. Un seul

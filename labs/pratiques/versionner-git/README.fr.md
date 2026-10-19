@@ -6,7 +6,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Versionner ses playbooks avec Git**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/pratiques/versionner-git/)
+🔗 [**Versionner ses playbooks avec Git**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/pratiques/versionner-git/)
 
 Un playbook qui n'est pas versionné est un playbook qu'on finit par casser sans
 pouvoir revenir en arrière. L'objectif officiel de l'EX294 « Manage content in a

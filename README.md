@@ -11,7 +11,7 @@
 Hands-on **Ansible** training, driven by the
 [`dsoxlab`](https://github.com/stephrobert/dsoxlab) CLI. This repository is the
 **lab catalog** for the Ansible track of
-[blog.stephane-robert.info](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/),
+[www.stephane-robert.info](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/),
 aimed at the **RHCE (EX294)** certification, with idempotency as its common
 thread.
 
@@ -513,7 +513,7 @@ in French.
 
 ## License
 
-Copyright (c) 2026 Stéphane Robert, https://blog.stephane-robert.info
+Copyright (c) 2026 Stéphane Robert, https://www.stephane-robert.info
 
 This catalogue is published under the
 [Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)](./LICENSE)

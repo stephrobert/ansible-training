@@ -21,4 +21,4 @@ Votre mission, depuis **control-node.lab** :
    exigera demain.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/

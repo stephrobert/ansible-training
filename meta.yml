@@ -9,7 +9,7 @@ repo:
   id: ansible-training
   category: ansible             # 'ansible' | 'kubernetes' | 'linux' | 'terraform' | …
   title: "Ansible Training: RHCE EX294 2026"
-  blog_url: "https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/"
+  blog_url: "https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/"
   # Où `dsoxlab support --issue` dépose le rapport d'un apprenant.
   #
   # Sans ce champ, dsoxlab retombe sur `git remote get-url origin`, ce qui

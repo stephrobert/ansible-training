@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Getting started with the Ansible CLI: the 8 everyday commands**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/prise-en-main-cli/)
+🔗 [**Getting started with the Ansible CLI: the 8 everyday commands**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/prise-en-main-cli/)
 
 Ansible is operated through **8 commands** that each have a precise role. Most labs use only 2 of them (`ansible` and `ansible-playbook`), but in production you will regularly touch the other 6 to diagnose, secure or lint your code.
 

@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Jinja2 basic syntax in Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/jinja2-base/)
+🔗 [**Jinja2 basic syntax in Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/jinja2-base/)
 
 Jinja2 is the **templating engine** used by Ansible (and many other Python
 tools: Flask, Django, Salt). It offers **3 syntaxes**:

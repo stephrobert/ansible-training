@@ -13,7 +13,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Préparer la RHCE (EX294)**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/certifications/rhce/)
+🔗 [**Préparer la RHCE (EX294)**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/certifications/rhce/)
 
 L'examen **RHCE EX294** est **performance-based** : 4 heures, environnement
 RHEL/AlmaLinux live, écriture de playbooks complets sur 15 à 20 tâches. Ce lab

@@ -8,7 +8,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Variables defaults vs vars**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/variables-defaults-vars/)
+🔗 [**Variables defaults vs vars**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/variables-defaults-vars/)
 
 An Ansible role exposes **input variables** that the user can parameterize. Two directories for that:
 

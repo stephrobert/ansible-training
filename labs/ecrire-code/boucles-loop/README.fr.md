@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Boucles Ansible : loop, loop_control, dict2items**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/boucles-loop/)
+🔗 [**Boucles Ansible : loop, loop_control, dict2items**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/boucles-loop/)
 
 `loop:` est la directive moderne (Ansible 2.5+) pour répéter une tâche sur une **liste**
 ou un **dict** (via `dict2items`). Elle remplace les anciennes formes `with_items:`,

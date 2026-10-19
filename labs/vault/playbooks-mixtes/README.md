@@ -4,7 +4,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Mixed playbooks (cleartext + encrypted)**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/playbooks-mixtes/)
+🔗 [**Mixed playbooks (cleartext + encrypted)**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/playbooks-mixtes/)
 
 **Recommended 2026 pattern**: separate the **public variables** (cleartext) from the **secrets** (encrypted) into two distinct files inside each `group_vars/<group>/`:
 

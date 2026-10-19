@@ -2,7 +2,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible uri module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/reseau/module-uri/)
+🔗 [**Ansible uri module**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/reseau/module-uri/)
 
 `ansible.builtin.uri:` makes **HTTP/HTTPS** calls from the managed node:
 GET, POST, PUT, DELETE. It is the equivalent of a `curl` but with **explicit

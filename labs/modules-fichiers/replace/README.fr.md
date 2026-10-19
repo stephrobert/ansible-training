@@ -4,7 +4,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Module replace Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-replace/)
+🔗 [**Module replace Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-replace/)
 
 `ansible.builtin.replace:` substitue **toutes les occurrences** d'un motif
 regex dans un fichier — sans toucher au reste de la ligne ni du fichier.

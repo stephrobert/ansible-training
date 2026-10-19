@@ -13,7 +13,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**`requirements.yml` complet**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/requirements-yml/)
+🔗 [**`requirements.yml` complet**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/requirements-yml/)
 
 Un projet Ansible mature **versionne ses dépendances** dans un fichier **`requirements.yml`** unique. Il liste les **collections** et **rôles** utilisés, leur **source** (Galaxy, Git, URL tarball, chemin local), leur **version pinnée** (semver strict), et optionnellement leurs **signatures GPG** pour vérification d'intégrité.
 

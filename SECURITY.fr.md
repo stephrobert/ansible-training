@@ -22,7 +22,7 @@ Si vous pensez avoir trouvé une vulnérabilité, signalez-la en privé :
   [avis de sécurité privé](https://github.com/stephrobert/ansible-training/security/advisories/new)
   sur GitHub.
 - Sinon, utilisez les coordonnées publiées sur
-  <https://blog.stephane-robert.info>.
+  <https://www.stephane-robert.info>.
 
 Merci d'inclure :
 

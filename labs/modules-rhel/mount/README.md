@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible mount module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-mount/)
+🔗 [**Ansible mount module**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-mount/)
 
 `ansible.posix.mount:` manages **Linux mount points**: add a line
 in `/etc/fstab`, mount immediately, unmount, manage the mount options.

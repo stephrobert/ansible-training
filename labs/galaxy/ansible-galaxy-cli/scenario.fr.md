@@ -19,4 +19,4 @@ Votre mission, depuis le répertoire du projet :
 4. Confronter votre référence au binaire réel plutôt qu'à vos souvenirs.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ansible-galaxy-cli/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ansible-galaxy-cli/

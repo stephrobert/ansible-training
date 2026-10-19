@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Module user Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-user/)
+🔗 [**Module user Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-user/)
 
 `ansible.builtin.user:` gère les **utilisateurs Linux** : création, modification
 des attributs (shell, home, groups), suppression, hashage de password,

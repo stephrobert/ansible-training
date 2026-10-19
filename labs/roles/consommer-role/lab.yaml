@@ -13,7 +13,7 @@ skills:
   - static-vs-dynamic
 distros:
   - alma9
-doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/consommer-role/
+doc_url: https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/consommer-role/
 certification_tags:
   - rhce
 runtime:

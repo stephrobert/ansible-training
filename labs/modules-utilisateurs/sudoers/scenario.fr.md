@@ -22,4 +22,4 @@ Votre mission :
    `/etc/sudoers.d/`**, validé syntaxiquement avant toute écriture sur le disque.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-sudoers/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-sudoers/

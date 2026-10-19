@@ -20,4 +20,4 @@ Votre mission, depuis **control-node.lab** :
    sans le déchiffrer, puis établir qui, dans l'équipe, reçoit quel mot de passe.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/vault-id-multiples/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/vault-id-multiples/

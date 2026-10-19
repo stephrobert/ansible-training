@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible facts and magic vars: ansible_facts, gather_subset, hostvars**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/facts-magic-vars/)
+🔗 [**Ansible facts and magic vars: ansible_facts, gather_subset, hostvars**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/facts-magic-vars/)
 
 **Facts** are system information collected automatically by Ansible
 at the start of a play (`gather_facts: true` by default): OS, version, IP, memory,

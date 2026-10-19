@@ -19,4 +19,4 @@ Your mission, from **control-node.lab**:
 4. Check the payoff: `main.yml` is readable, and diffs on it stay reviewable.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/playbooks-mixtes/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/playbooks-mixtes/

@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Handlers Ansible : notify, listen, flush_handlers et restart-on-config-change**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/handlers/)
+🔗 [**Handlers Ansible : notify, listen, flush_handlers et restart-on-config-change**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/handlers/)
 
 Un **handler** est une **tâche réactive** : elle ne s'exécute **que si** une autre tâche l'a notifiée **et** que cette tâche est en `changed` (pas en `ok`). C'est le pattern que vous appliquerez 100 fois en production : « relance le service **uniquement si** sa config a changé ».
 

@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**First Ansible playbook: install nginx, open port 80, start the service**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas/premier-playbook/)
+🔗 [**First Ansible playbook: install nginx, open port 80, start the service**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas/premier-playbook/)
 
 This is your **first real playbook**, the one where you write the YAML yourself. The blog page presents the **anatomy of a playbook**:
 

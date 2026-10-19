@@ -5,7 +5,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Tester un rôle Ansible avec tox multi-version**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/tests-tox-multiversion/)
+🔗 [**Tester un rôle Ansible avec tox multi-version**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/tests-tox-multiversion/)
 
 Un rôle distribué sur Galaxy doit fonctionner sur **plusieurs versions
 d'`ansible-core`** (typique : 2.19, 2.20, 2.21). On peut le valider

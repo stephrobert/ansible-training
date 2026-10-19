@@ -11,7 +11,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Testing an Ansible role on several distributions**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/molecule-scenarios-multi-distro/)
+🔗 [**Testing an Ansible role on several distributions**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/molecule-scenarios-multi-distro/)
 
 A Galaxy-ready role must work on **several OSes**: RHEL,
 AlmaLinux, Rocky, Debian, Ubuntu, sometimes SUSE. Molecule makes this **simple**

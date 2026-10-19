@@ -5,7 +5,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Versionner et publier un rôle Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/versionner-publier/)
+🔗 [**Versionner et publier un rôle Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/versionner-publier/)
 
 Un rôle Ansible **publié** doit être :
 

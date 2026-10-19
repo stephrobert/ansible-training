@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible file module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-file/)
+🔗 [**Ansible file module**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-file/)
 
 `ansible.builtin.file:` is the **Swiss army knife of file metadata**. Unlike
 `copy:`, it transfers **no content**: it acts only on the **existence**, the

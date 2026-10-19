@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Jinja2 syntaxe de base Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/jinja2-base/)
+🔗 [**Jinja2 syntaxe de base Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/jinja2-base/)
 
 Jinja2 est le **moteur de templating** utilisé par Ansible (et de nombreux autres
 outils Python : Flask, Django, Salt). Il offre **3 syntaxes** :
