@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible conditions: when, operators, multi-conditions**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/conditions-when/)
+🔗 [**Ansible conditions: when, operators, multi-conditions**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/conditions-when/)
 
 `when:` filters the execution of a task based on a **Jinja2 boolean expression**.
 Without a condition, the task runs on all the targeted hosts. With `when:`, it only

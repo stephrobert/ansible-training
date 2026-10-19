@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible tags: targeting or ignoring a subset of tasks**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/tags/)
+🔗 [**Ansible tags: targeting or ignoring a subset of tasks**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/tags/)
 
 When a playbook grows (50, 100 tasks), you do not want to replay **everything** on each change. **Tags** are labels you place on tasks so you can **target** them at launch time:
 

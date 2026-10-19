@@ -19,4 +19,4 @@ Your mission:
 4. Guarantee strict **idempotence**: the second run must report `changed: 0`.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-lineinfile/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-lineinfile/

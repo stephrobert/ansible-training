@@ -5,7 +5,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**ansible-lint en mode production**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ansible-lint-production-profile/)
+🔗 [**ansible-lint en mode production**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ansible-lint-production-profile/)
 
 `ansible-lint` a **6 profils** progressifs :
 

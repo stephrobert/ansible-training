@@ -13,7 +13,7 @@
 
 ## 🧠 Recap
 
-🔗 [**CI pipeline for collections**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/pipeline-ci/)
+🔗 [**CI pipeline for collections**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/pipeline-ci/)
 
 A production collection is **tested against several versions** of `ansible-core` and Python to guarantee **backward compatibility**. The 2026 pattern: **GitHub Actions** with an `ansible-core × python` **matrix**, running **`ansible-test sanity`** + **`ansible-test units`** + **`ansible-lint --strict`** in a compliant Docker, with action **SHA pinning** and **`permissions: {}`** at the global level.
 

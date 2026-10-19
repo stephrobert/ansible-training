@@ -19,7 +19,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Inventaire dynamique pour KVM**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/dynamiques/plugin-libvirt-kvm/)
+🔗 [**Inventaire dynamique pour KVM**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/dynamiques/plugin-libvirt-kvm/)
 
 Le plugin **`community.libvirt.libvirt`** interroge l'**API libvirt** locale et génère un inventaire **à chaque exécution** d'Ansible. Plus besoin de maintenir manuellement la liste des hôtes : créez une VM, elle apparaît immédiatement dans l'inventaire.
 

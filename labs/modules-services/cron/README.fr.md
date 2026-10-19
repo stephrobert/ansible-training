@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Module cron Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-cron/)
+🔗 [**Module cron Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-cron/)
 
 `ansible.builtin.cron:` gère les **jobs cron** avec **idempotence garantie via le
 `name:`**. Chaque job est identifié par son **nom unique** que Ansible inscrit en

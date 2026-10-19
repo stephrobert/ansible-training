@@ -20,4 +20,4 @@ Votre mission, depuis le répertoire du projet :
    l'équipe consomme une version, et non un tag mouvant.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/ee-builder/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/ee-builder/

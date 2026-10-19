@@ -18,4 +18,4 @@ Your mission:
    **`/var/log/myapp-init.timestamp`** (mode `0644`).
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-file/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-file/

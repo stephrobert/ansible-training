@@ -22,4 +22,4 @@ Votre mission :
    groupe n'est chargée et la démonstration ne prouve rien.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/group-vars-host-vars/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/group-vars-host-vars/

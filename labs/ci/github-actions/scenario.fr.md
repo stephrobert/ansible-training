@@ -21,4 +21,4 @@ Votre mission, depuis le répertoire du projet :
    identifiant laissé derrière le checkout pour les étapes suivantes.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ci-github-actions/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ci-github-actions/

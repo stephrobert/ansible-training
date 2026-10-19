@@ -6,7 +6,7 @@ Ce lab est joué **automatiquement** à la fin de `dsoxlab provision`. Il prépa
 
 ## 🧠 Rappel et lecture recommandée
 
-🔗 [**Préparer les nœuds gérés Ansible : Python, SSH, sudo, firewall**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas/preparer-noeuds-geres/)
+🔗 [**Préparer les nœuds gérés Ansible : Python, SSH, sudo, firewall**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas/preparer-noeuds-geres/)
 
 Cette page explique :
 

@@ -5,7 +5,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Les rôles Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/)
+🔗 [**Les rôles Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/)
 
 « **Use RHEL system roles** » est un objectif explicite de l'examen **EX294**.
 C'est le seul objectif de l'examen que cette formation n'abordait nulle part

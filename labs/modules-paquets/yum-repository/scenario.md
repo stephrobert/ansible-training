@@ -22,4 +22,4 @@ Your mission:
    stays out of the enabled list, and a second run reports `changed: 0`.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-yum-repository/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-yum-repository/

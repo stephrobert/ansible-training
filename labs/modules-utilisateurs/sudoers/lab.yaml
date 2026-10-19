@@ -13,7 +13,7 @@ skills:
   - least-privilege
 distros:
   - alma9
-doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-sudoers/
+doc_url: https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-sudoers/
 certification_tags:
   - rhce
 runtime:

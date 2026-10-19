@@ -18,4 +18,4 @@ Your mission:
    below 1000 and must let the system assign its own number.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-group/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-group/

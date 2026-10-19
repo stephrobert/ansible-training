@@ -8,7 +8,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Passbolt integration with Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/integration-passbolt/)
+🔗 [**Passbolt integration with Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/integration-passbolt/)
 
 **Passbolt** is a **team-oriented** password manager under an open-source license (AGPL). Unlike HashiCorp Vault (lab 82), it aims at a different audience:
 

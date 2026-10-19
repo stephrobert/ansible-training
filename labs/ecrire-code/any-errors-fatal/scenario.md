@@ -26,4 +26,4 @@ Your mission:
    perfection. And work out what it does once combined with `serial`.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/any-errors-fatal/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/any-errors-fatal/

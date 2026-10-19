@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Module template Ansible : validate, backup, lstrip_blocks**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/module-template/)
+🔗 [**Module template Ansible : validate, backup, lstrip_blocks**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/module-template/)
 
 `ansible.builtin.template:` génère un fichier sur le managed node à partir d'un
 template Jinja2 du control node + variables Ansible. C'est le module **n°1** pour

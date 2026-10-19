@@ -4,7 +4,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Déboguer un Execution Environment cassé**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/debug-ee-casse/)
+🔗 [**Déboguer un Execution Environment cassé**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/debug-ee-casse/)
 
 Les définitions d'EE cassent de façon souvent **silencieuse** : un schéma
 mal déclaré fait ignorer des sections entières, une dépendance introuvable

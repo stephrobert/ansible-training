@@ -22,4 +22,4 @@ Votre mission, depuis **control-node.lab** :
    gain réel.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/idempotence-cassee/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/idempotence-cassee/

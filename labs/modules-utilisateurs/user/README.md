@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible user module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-user/)
+🔗 [**Ansible user module**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-user/)
 
 `ansible.builtin.user:` manages **Linux users**: creation, modification of the
 attributes (shell, home, groups), deletion, password hashing, default SSH key

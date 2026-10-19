@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**ignore_errors Ansible : usage légitime vs anti-pattern**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/ignore-errors/)
+🔗 [**ignore_errors Ansible : usage légitime vs anti-pattern**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/ignore-errors/)
 
 `ignore_errors: true` permet à une tâche d'**échouer** sans **arrêter le play**. La
 tâche reste marquée `failed`, mais Ansible passe à la suivante. C'est l'**équivalent

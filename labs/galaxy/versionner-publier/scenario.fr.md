@@ -20,4 +20,4 @@ Votre mission, depuis le répertoire du projet :
    **consommateur** doit épingler le résultat.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/versionner-publier/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/versionner-publier/

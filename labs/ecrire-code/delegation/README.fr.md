@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Délégation Ansible : delegate_to, run_once, local_action**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/delegation/)
+🔗 [**Délégation Ansible : delegate_to, run_once, local_action**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/delegation/)
 
 `delegate_to:` redirige l'exécution d'une tâche vers **un autre hôte** que celui ciblé
 par le play. `run_once: true` exécute la tâche **une seule fois** (sur le premier hôte

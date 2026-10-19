@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Module dnf Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-dnf-options/)
+🔗 [**Module dnf Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-dnf-options/)
 
 Sur un parc 100% RHEL/RockyLinux/AlmaLinux, **`dnf:` est plus puissant que
 `package:`** parce qu'il expose les options **spécifiques de DNF** :

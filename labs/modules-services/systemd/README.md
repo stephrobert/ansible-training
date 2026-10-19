@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible systemd_service module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-systemd/)
+🔗 [**Ansible systemd_service module**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-systemd/)
 
 On modern distributions (RHEL 7+, Ubuntu 16.04+), **all services**
 are managed by **systemd**. The `ansible.builtin.systemd_service:` module

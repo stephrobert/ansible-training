@@ -22,4 +22,4 @@ Your mission, from the project directory, against **db1.lab**:
    which for a tag-driven one, which for a flag decided at runtime.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/consommer-role/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/consommer-role/

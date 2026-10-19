@@ -20,4 +20,4 @@ Votre mission, depuis le répertoire du projet :
    pull apporte en périphérie ou à quatre cents nœuds, et ce qu'on cède en échange.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/pratiques/ansible-pull-gitops/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/pratiques/ansible-pull-gitops/

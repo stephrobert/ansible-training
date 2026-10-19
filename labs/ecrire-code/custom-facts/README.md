@@ -13,7 +13,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible custom facts**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/custom-facts/)
+🔗 [**Ansible custom facts**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/custom-facts/)
 
 The **standard facts** (`ansible_distribution`, `ansible_default_ipv4`, etc.) are collected by the **`setup`** module at the start of each play. **Custom facts** extend this mechanism: you drop a script (Bash, Python, or static JSON/INI) into **`/etc/ansible/facts.d/<name>.fact`** on the target, and Ansible reads it at each `gather_facts` and exposes the result under **`ansible_local.<name>`**.
 

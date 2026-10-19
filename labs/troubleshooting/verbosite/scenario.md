@@ -19,4 +19,4 @@ Your mission, from **control-node.lab**:
 4. Observe what a **missing `no_log`** leaks at higher verbosity, and fix it.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/verbosite-vvv/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/verbosite-vvv/

@@ -4,7 +4,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Introduction à Ansible Vault**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/ansible-vault-introduction/)
+🔗 [**Introduction à Ansible Vault**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/ansible-vault-introduction/)
 
 **Ansible Vault** chiffre les fichiers contenant des secrets (mots de passe, tokens API, clés privées) avec **AES256**. Ces fichiers peuvent être commités dans Git **sans risque** — le chiffrement protège leur contenu. Au runtime, Ansible les **déchiffre à la volée** avec un mot de passe vault fourni via `--vault-password-file` ou `--ask-vault-pass`.
 

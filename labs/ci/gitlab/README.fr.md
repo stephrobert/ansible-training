@@ -6,7 +6,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**CI Ansible avec GitLab CI**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ci-gitlab/)
+🔗 [**CI Ansible avec GitLab CI**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ci-gitlab/)
 
 GitLab CI est l'**équivalent GitLab** de GitHub Actions :
 

@@ -20,4 +20,4 @@ Votre mission, depuis le répertoire du projet :
    réellement changé : ce qui est désormais garanti, et ce que cela coûte.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/presentation/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/presentation/

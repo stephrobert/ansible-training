@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Filtres Jinja2 avancés Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/filtres-jinja/)
+🔗 [**Filtres Jinja2 avancés Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/filtres-jinja/)
 
 Au-delà des **filtres essentiels** vus au lab 19 (`default`, `combine`, `selectattr`,
 `map`), Ansible expose des **filtres avancés** pour des cas spécialisés :

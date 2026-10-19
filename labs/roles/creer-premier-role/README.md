@@ -11,7 +11,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Create your first Ansible role**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/creer-premier-role/)
+🔗 [**Create your first Ansible role**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/creer-premier-role/)
 
 An **Ansible role** is the unit of reuse: a structured directory that packages tasks, variables, templates, handlers and tests around a single goal. It is **the equivalent of a Terraform module** on the Ansible side.
 

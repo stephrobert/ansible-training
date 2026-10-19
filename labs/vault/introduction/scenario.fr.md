@@ -20,4 +20,4 @@ Votre mission, depuis **control-node.lab** :
    existant, et savoir remettre un fichier en clair quand il n'a plus de secret.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/ansible-vault-introduction/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/ansible-vault-introduction/

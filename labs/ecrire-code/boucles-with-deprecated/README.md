@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Legacy Ansible loops: with_items, with_dict, migration to loop:**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/boucles-with-deprecated/)
+🔗 [**Legacy Ansible loops: with_items, with_dict, migration to loop:**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/boucles-with-deprecated/)
 
 Before Ansible 2.5, you used `with_items:`, `with_dict:`, `with_subelements:`,
 `with_fileglob:`, `with_nested:`, etc. Since 2.5, **`loop:`** combined with **Jinja2

@@ -13,7 +13,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Import vs Include : les 5 directives Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/import-include/)
+🔗 [**Import vs Include : les 5 directives Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/import-include/)
 
 Ansible offre **5 directives** pour découper un playbook en fichiers réutilisables :
 

@@ -19,4 +19,4 @@ Your mission, from the project directory:
    what is now guaranteed, and what it costs you.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/presentation/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/presentation/

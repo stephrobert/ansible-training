@@ -5,7 +5,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Consume an Ansible role**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/consommer-role/)
+🔗 [**Consume an Ansible role**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/consommer-role/)
 
 There are **3 ways** to use a role in a play. Choose the right one
 according to the need:

@@ -6,7 +6,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Tests Molecule avec testinfra**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/tests-testinfra/)
+🔗 [**Tests Molecule avec testinfra**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/tests-testinfra/)
 
 Le `verifier: ansible` (lab 62-65) écrit les assertions en **YAML**, ce qui
 est OK mais limité. Le `verifier: testinfra` les écrit en **Python** :

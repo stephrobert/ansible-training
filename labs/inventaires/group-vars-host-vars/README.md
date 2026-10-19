@@ -11,7 +11,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible inventories: group_vars and host_vars**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/group-vars-host-vars/)
+🔗 [**Ansible inventories: group_vars and host_vars**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/group-vars-host-vars/)
 
 Ansible **automatically** looks for variables in two folders placed **next to the inventory**:
 
@@ -187,7 +187,7 @@ pytest -v challenge/tests/
 ## 💡 Going further
 
 - **`group_vars/<group>/main.yml`**: if a single variable becomes a folder, you can split it (`main.yml`, `vault.yml`, `network.yml`).
-- **Full precedence (22 levels)**: see the [dedicated page](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/precedence-variables/).
+- **Full precedence (22 levels)**: see the [dedicated page](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/precedence-variables/).
 - **Host patterns**: see [lab 56: host patterns](../patterns-hotes/) to target with `--limit`.
 
 ## 🔍 Linting with `ansible-lint`

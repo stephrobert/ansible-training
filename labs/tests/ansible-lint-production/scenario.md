@@ -18,4 +18,4 @@ Your mission, from the project directory:
 4. Add a hook that **blocks secret leaks** at commit time, private keys included.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ansible-lint-production-profile/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ansible-lint-production-profile/

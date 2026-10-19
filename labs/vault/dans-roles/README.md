@@ -4,7 +4,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Vault in roles**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/vault-dans-roles/)
+🔗 [**Vault in roles**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/vault-dans-roles/)
 
 An Ansible role can contain its **own secrets**, encrypted with Vault. The **standard 2026 pattern**:
 

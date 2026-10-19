@@ -19,4 +19,4 @@ Your mission, from **control-node.lab**:
    know how to bring a file back to clear text when it stops holding a secret.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/ansible-vault-introduction/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/ansible-vault-introduction/

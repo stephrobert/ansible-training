@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Module sysctl Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-sysctl/)
+🔗 [**Module sysctl Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-sysctl/)
 
 `ansible.posix.sysctl:` gère les **paramètres kernel** runtime via `sysctl`
 (fichier `/etc/sysctl.conf` ou `/etc/sysctl.d/*.conf`). Cas d'usage RHCE

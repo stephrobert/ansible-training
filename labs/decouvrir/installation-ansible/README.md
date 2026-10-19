@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Installing Ansible: pipx, mise, dnf, Execution Environment**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/installation-ansible/)
+🔗 [**Installing Ansible: pipx, mise, dnf, Execution Environment**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/installation-ansible/)
 
 Before writing a single playbook, you need **a control node that works**: Ansible installed, the right binaries in the `PATH`, the main collections present. This lab requires **nothing to write**: you are going to **inspect** your installation and learn to diagnose a misconfigured node.
 

@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Module file Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-file/)
+🔗 [**Module file Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-file/)
 
 `ansible.builtin.file:` est le **couteau suisse des métadonnées de fichiers**.
 Contrairement à `copy:`, il ne transfère **aucun contenu** — il agit uniquement

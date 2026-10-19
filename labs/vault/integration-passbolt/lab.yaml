@@ -13,7 +13,7 @@ skills:
   - secret-management
 distros:
   - alma9
-doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/integration-passbolt/
+doc_url: https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/integration-passbolt/
 certification_tags:
   - rhce
 runtime:

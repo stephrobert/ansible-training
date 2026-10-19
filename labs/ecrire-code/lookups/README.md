@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible lookups: file, env, password, vars, hashi_vault**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/lookups/)
+🔗 [**Ansible lookups: file, env, password, vars, hashi_vault**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/lookups/)
 
 A **lookup** retrieves a piece of data from a **source external** to the playbook: a
 local file, an environment variable, a shell command, a generated password, a

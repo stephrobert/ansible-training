@@ -4,7 +4,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible yum_repository module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-yum-repository/)
+🔗 [**Ansible yum_repository module**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-yum-repository/)
 
 `ansible.builtin.yum_repository:` declares an **RPM repository** (yum/dnf) by
 generating the `.repo` file in `/etc/yum.repos.d/`. It is the tool to

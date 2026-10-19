@@ -21,4 +21,4 @@ Votre mission, depuis le répertoire du projet :
    sous vos pieds, et un linter supply-chain vous le dira.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/pipeline-ci/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/pipeline-ci/

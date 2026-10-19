@@ -13,7 +13,7 @@ skills:
   - no-log
 distros:
   - alma9
-doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas/premiers-pas-ansible-vault/
+doc_url: https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas/premiers-pas-ansible-vault/
 certification_tags:
   - rhce
 runtime:

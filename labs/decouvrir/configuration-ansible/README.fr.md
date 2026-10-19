@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Configuration Ansible : ansible.cfg, précédence, options critiques**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/ansible-config-fichier/)
+🔗 [**Configuration Ansible : ansible.cfg, précédence, options critiques**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/ansible-config-fichier/)
 
 Tout projet Ansible mature dispose d'un **`ansible.cfg`** qui fixe les **options par défaut** : chemin de l'inventaire, user SSH, comportement de `become`, callbacks, **forks**, **pipelining**, **roles_path**, **collections_path**. Sans ce fichier, Ansible utilise des **valeurs par défaut globales** rarement adaptées à un projet — et chaque exécution exige des arguments CLI répétitifs.
 

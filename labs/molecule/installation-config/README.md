@@ -6,7 +6,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Molecule: advanced configuration**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/molecule-installation-config/)
+🔗 [**Molecule: advanced configuration**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/molecule-installation-config/)
 
 Lab 62 laid down the bare minimum: `molecule.yml`, `converge.yml`, `verify.yml`.
 In production, you enrich it with:

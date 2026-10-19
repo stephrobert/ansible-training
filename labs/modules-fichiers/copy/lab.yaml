@@ -14,7 +14,7 @@ skills:
   - idempotence
 distros:
   - alma9
-doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-copy/
+doc_url: https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-copy/
 certification_tags:
   - rhce
 runtime:

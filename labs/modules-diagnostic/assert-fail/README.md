@@ -6,7 +6,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible assert and fail modules**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/module-assert-fail/)
+🔗 [**Ansible assert and fail modules**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/module-assert-fail/)
 
 Two complementary modules for **defensive programming**:
 

@@ -13,7 +13,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Preparing for the RHCE (EX294)**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/certifications/rhce/)
+🔗 [**Preparing for the RHCE (EX294)**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/certifications/rhce/)
 
 The **RHCE EX294** exam is **performance-based**: 4 hours, live RHEL/AlmaLinux environment, writing complete playbooks over 15 to 20 tasks covering **inventories**, **variables**, **conditions**, **loops**, **roles**, **file/service/user/SELinux/firewalld management**, **ansible-vault**, **error handling**, **rolling deployment**, **delegation**, **tags**, **scheduled tasks** and **custom facts**. No multiple choice. Success = **every executed playbook returns `failed=0`**.
 

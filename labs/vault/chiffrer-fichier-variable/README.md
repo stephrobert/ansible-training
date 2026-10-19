@@ -4,7 +4,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Encrypt a file or a variable**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/chiffrer-fichier-variable/)
+🔗 [**Encrypt a file or a variable**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/chiffrer-fichier-variable/)
 
 Ansible Vault offers **two complementary approaches** to encryption:
 

@@ -15,7 +15,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Pull mode with ansible-pull (GitOps Edge)**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/pratiques/ansible-pull-gitops/)
+🔗 [**Pull mode with ansible-pull (GitOps Edge)**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/pratiques/ansible-pull-gitops/)
 
 Ansible works by default in **push** mode: a control node SSHes to the targets. But there is a **pull** mode: the target **fetches its playbook from a Git repo** (with **`ansible-pull`**) and **runs itself**. No need for a centralized control node. No need for reverse SSH access.
 

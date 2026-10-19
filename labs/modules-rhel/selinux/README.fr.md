@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Module SELinux Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-selinux/)
+🔗 [**Module SELinux Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-selinux/)
 
 SELinux (Security-Enhanced Linux) est le système de **contrôle d'accès
 obligatoire** activé par défaut sur RHEL/AlmaLinux/Rocky en mode `enforcing`.

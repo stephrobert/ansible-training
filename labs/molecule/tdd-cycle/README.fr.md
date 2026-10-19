@@ -5,7 +5,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Cycle TDD avec Molecule**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/molecule-tdd-cycle/)
+🔗 [**Cycle TDD avec Molecule**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/molecule-tdd-cycle/)
 
 **TDD (Test-Driven Development)** appliqué à un rôle Ansible :
 

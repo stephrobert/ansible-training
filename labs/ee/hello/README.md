@@ -7,7 +7,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Introducing Execution Environments**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/presentation/)
+🔗 [**Introducing Execution Environments**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/presentation/)
 
 An **Execution Environment (EE)** is an **OCI container image** that packages `ansible-core`, `ansible-runner`, Ansible **collections**, **Python dependencies** and **system dependencies**. The EE guarantees that the **same** Ansible **runtime** runs from the laptop to the AAP controller: no more "it works on my machine".
 

@@ -5,7 +5,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Dependencies between Ansible roles**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/dependencies/)
+🔗 [**Dependencies between Ansible roles**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/dependencies/)
 
 A role can **declare** other roles it depends on. Ansible runs
 them **before** it.

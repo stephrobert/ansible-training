@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Prise en main de la CLI Ansible : les 8 commandes du quotidien**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/prise-en-main-cli/)
+🔗 [**Prise en main de la CLI Ansible : les 8 commandes du quotidien**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/prise-en-main-cli/)
 
 Ansible se manipule via **8 commandes** qui ont chacune un rôle précis. La plupart des labs n'en utilisent que 2 (`ansible` et `ansible-playbook`), mais en production vous toucherez régulièrement les 6 autres pour diagnostiquer, sécuriser ou linter votre code.
 

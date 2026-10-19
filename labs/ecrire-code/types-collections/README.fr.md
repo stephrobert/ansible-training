@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Types collections Ansible : list, dict, nested**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/types-collections/)
+🔗 [**Types collections Ansible : list, dict, nested**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/types-collections/)
 
 Au-delà des types simples (string, int, bool), Ansible utilise massivement des
 **structures complexes** : listes (`[1, 2, 3]`), dictionnaires (`{key: value}`), et

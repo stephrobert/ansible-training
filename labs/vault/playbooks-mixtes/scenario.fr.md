@@ -20,4 +20,4 @@ Votre mission, depuis **control-node.lab** :
 4. Constater le gain : `main.yml` reste lisible, et ses diffs restent relisibles.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/playbooks-mixtes/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/playbooks-mixtes/

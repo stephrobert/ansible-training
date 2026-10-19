@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Modules archive et unarchive Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/archive-unarchive/)
+🔗 [**Modules archive et unarchive Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/archive-unarchive/)
 
 Deux modules complémentaires pour gérer des **tarballs** et **zips** :
 

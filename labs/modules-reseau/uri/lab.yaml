@@ -14,7 +14,7 @@ skills:
   - healthcheck
 distros:
   - alma9
-doc_url: https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/reseau/module-uri/
+doc_url: https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/reseau/module-uri/
 certification_tags:
   - rhce
 runtime:

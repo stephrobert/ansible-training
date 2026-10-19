@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Premier playbook Ansible : installer nginx, ouvrir le port 80, démarrer le service**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas/premier-playbook/)
+🔗 [**Premier playbook Ansible : installer nginx, ouvrir le port 80, démarrer le service**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas/premier-playbook/)
 
 C'est votre **premier vrai playbook** — celui où vous écrivez vous-même le YAML. La page du blog présente l'**anatomie d'un playbook** :
 

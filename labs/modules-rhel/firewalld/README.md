@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible firewalld module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-firewalld/)
+🔗 [**Ansible firewalld module**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-firewalld/)
 
 `ansible.posix.firewalld:` manages **firewalld**, the default firewall on RHEL 7+,
 AlmaLinux, RockyLinux. It is the #1 RHCE 2026 module to open/close

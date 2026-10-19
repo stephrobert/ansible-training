@@ -29,4 +29,4 @@ Le play doit être **idempotent** : rejoué, il ne réécrit rien et ne redémar
 rien.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/

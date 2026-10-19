@@ -7,7 +7,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Build an EE with ansible-builder**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/ee-builder/)
+🔗 [**Build an EE with ansible-builder**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/ee-builder/)
 
 **`ansible-builder`** v3 reads an **`execution-environment.yml`** v3 file and generates a multi-stage **`Containerfile`** that produces the final OCI image via **Podman**. Four files coexist:
 

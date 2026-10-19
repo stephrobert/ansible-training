@@ -46,7 +46,7 @@
 > theoretical context (Ansible history, Push vs Pull, idempotence) that this
 > lab illustrates concretely:
 >
-> 🔗 [**Declarative vs imperative: the same task, two philosophies**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/declaratif-vs-imperatif/)
+> 🔗 [**Declarative vs imperative: the same task, two philosophies**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/declaratif-vs-imperatif/)
 >
 > ⏱ Reading time: ~10 min. The guide explains the **why**, this lab makes you
 > feel the **how** in practice. The two together = guaranteed mental click.

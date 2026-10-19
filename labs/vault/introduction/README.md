@@ -4,7 +4,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Introduction to Ansible Vault**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/ansible-vault-introduction/)
+🔗 [**Introduction to Ansible Vault**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/ansible-vault-introduction/)
 
 **Ansible Vault** encrypts files containing secrets (passwords, API tokens, private keys) with **AES256**. These files can be committed to Git **safely**: the encryption protects their content. At runtime, Ansible **decrypts them on the fly** with a vault password provided via `--vault-password-file` or `--ask-vault-pass`.
 

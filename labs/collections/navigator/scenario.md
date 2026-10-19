@@ -22,4 +22,4 @@ Your mission, from **control-node.lab**:
    --list`, then keep the resolved output as proof on `db1.lab`.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/ansible-navigator/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/ansible-navigator/

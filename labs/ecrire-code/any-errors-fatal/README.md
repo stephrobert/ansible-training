@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible any_errors_fatal: stop the play on the 1st cluster error**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/any-errors-fatal/)
+🔗 [**Ansible any_errors_fatal: stop the play on the 1st cluster error**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/any-errors-fatal/)
 
 By default, Ansible **continues** the play on the other hosts if **one** host fails.
 `any_errors_fatal: true` changes this behavior: **as soon as the first error occurs**, the

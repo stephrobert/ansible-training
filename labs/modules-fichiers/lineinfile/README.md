@@ -11,7 +11,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible lineinfile module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-lineinfile/)
+🔗 [**Ansible lineinfile module**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-lineinfile/)
 
 `ansible.builtin.lineinfile:` modifies **a single line** in an existing file:
 add if absent, replace a line identified by a regexp, or remove. It is the basic

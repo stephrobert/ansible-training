@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible variables: declaration, scopes and simple types**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/variables-base/)
+🔗 [**Ansible variables: declaration, scopes and simple types**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/variables-base/)
 
 Ansible offers **5 main locations** to declare a variable: `vars:` (in the
 play), `vars_files:` (external files), `group_vars/`, `host_vars/`, and

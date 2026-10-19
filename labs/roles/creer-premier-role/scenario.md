@@ -18,4 +18,4 @@ Your mission, from **control-node.lab**:
 4. Call the role from a playbook targeting **db1.lab** only.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/creer-premier-role/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/creer-premier-role/

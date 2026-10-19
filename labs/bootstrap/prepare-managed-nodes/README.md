@@ -6,7 +6,7 @@ This lab runs **automatically** at the end of `dsoxlab provision`. It prepares t
 
 ## 🧠 Recap and recommended reading
 
-🔗 [**Prepare Ansible managed nodes: Python, SSH, sudo, firewall**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas/preparer-noeuds-geres/)
+🔗 [**Prepare Ansible managed nodes: Python, SSH, sudo, firewall**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas/preparer-noeuds-geres/)
 
 This page explains:
 

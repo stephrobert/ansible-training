@@ -29,4 +29,4 @@ Ansible ce qu'il résout (`ansible-inventory --list`) et en joignant exactement
 les bons hôtes (`ansible <groupe> -m ping`).
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/statiques-yaml/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/statiques-yaml/

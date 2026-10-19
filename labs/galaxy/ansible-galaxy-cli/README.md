@@ -5,7 +5,7 @@
 
 ## 🧠 Recap
 
-🔗 [**ansible-galaxy CLI**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ansible-galaxy-cli/)
+🔗 [**ansible-galaxy CLI**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ansible-galaxy-cli/)
 
 `ansible-galaxy` is the CLI tool to **manage roles and collections**:
 create, install, list, verify, build, publish. There are **2 parallel

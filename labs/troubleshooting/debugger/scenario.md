@@ -19,4 +19,4 @@ Your mission, from **control-node.lab**:
    longer depends on someone being at the keyboard.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/debugger-interactif/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/debugger-interactif/

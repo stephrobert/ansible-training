@@ -5,7 +5,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Auditing a third-party Ansible role**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/auditer-role-existant/)
+🔗 [**Auditing a third-party Ansible role**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/auditer-role-existant/)
 
 Before adopting a Galaxy or GitHub role in your project (and therefore
 **running it with `become: true`** on your production servers), put it

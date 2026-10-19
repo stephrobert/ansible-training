@@ -20,4 +20,4 @@ Your mission, from **control-node.lab**:
    its **fully qualified name**. That is what the linter will demand tomorrow.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/

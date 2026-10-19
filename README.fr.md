@@ -11,7 +11,7 @@
 Formation **Ansible** pratique, pilotée par la CLI
 [`dsoxlab`](https://github.com/stephrobert/dsoxlab). Ce dépôt est le **catalogue
 de labs** de la formation Ansible de
-[blog.stephane-robert.info](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/),
+[www.stephane-robert.info](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/),
 orientée certification **RHCE (EX294)**, avec l'idempotence comme fil rouge.
 
 ## Ce que c'est
@@ -512,7 +512,7 @@ français.
 
 ## Licence
 
-Copyright (c) 2026 Stéphane Robert, https://blog.stephane-robert.info
+Copyright (c) 2026 Stéphane Robert, https://www.stephane-robert.info
 
 Ce catalogue est publié sous licence
 [Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)](./LICENSE).

@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Conditions Ansible : when, opérateurs, multi-conditions**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/conditions-when/)
+🔗 [**Conditions Ansible : when, opérateurs, multi-conditions**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/conditions-when/)
 
 `when:` filtre l'exécution d'une tâche selon une **expression booléenne Jinja2**.
 Sans condition, la tâche tourne sur tous les hôtes ciblés. Avec `when:`, elle ne

@@ -5,7 +5,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**ansible-galaxy CLI**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ansible-galaxy-cli/)
+🔗 [**ansible-galaxy CLI**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ansible-galaxy-cli/)
 
 `ansible-galaxy` est l'outil CLI pour **gérer les rôles et collections** :
 créer, installer, lister, vérifier, builder, publier. Il y a **2 sous-commandes**

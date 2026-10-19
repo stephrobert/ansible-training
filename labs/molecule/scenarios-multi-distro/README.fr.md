@@ -11,7 +11,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Tester un rôle Ansible sur plusieurs distributions**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/molecule-scenarios-multi-distro/)
+🔗 [**Tester un rôle Ansible sur plusieurs distributions**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/molecule-scenarios-multi-distro/)
 
 Un rôle prêt pour Galaxy doit fonctionner sur **plusieurs OS** : RHEL,
 AlmaLinux, Rocky, Debian, Ubuntu, parfois SUSE. Molecule rend ça **simple**

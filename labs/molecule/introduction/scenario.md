@@ -18,4 +18,4 @@ Your mission, from the project directory:
 4. Confirm the scenario is standard-compliant, not just present.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/tdd-molecule-introduction/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/tdd-molecule-introduction/

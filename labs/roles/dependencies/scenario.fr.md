@@ -24,4 +24,4 @@ Votre mission, depuis le répertoire du projet, contre **db1.lab** :
    réponse.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/dependencies/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/dependencies/

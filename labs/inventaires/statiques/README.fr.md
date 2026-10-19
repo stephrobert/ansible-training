@@ -11,9 +11,9 @@
 
 ## 🧠 Rappel
 
-🔗 [**Inventaire statique au format YAML**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/statiques-yaml/)
-· [Version INI](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/statiques-ini/)
-· [Vérifier son inventaire](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/verifier-inventaire/)
+🔗 [**Inventaire statique au format YAML**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/statiques-yaml/)
+· [Version INI](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/statiques-ini/)
+· [Vérifier son inventaire](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/verifier-inventaire/)
 
 L'inventaire est le **point de départ** de tout ce qu'Ansible fait. Sans lui,
 aucun playbook ne sait sur quelles machines agir. Les autres labs de cette

@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible plays and tasks: complete anatomy, execution order, keywords**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/plays-et-tasks/)
+🔗 [**Ansible plays and tasks: complete anatomy, execution order, keywords**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/plays-et-tasks/)
 
 In lab 04, you wrote a simple play with just `tasks:`. But a real production play has **4 task sections** that execute in a precise order:
 

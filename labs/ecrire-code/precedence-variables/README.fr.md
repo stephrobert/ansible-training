@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Précédence des variables Ansible (les 22 niveaux officiels)**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/precedence-variables/)
+🔗 [**Précédence des variables Ansible (les 22 niveaux officiels)**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/precedence-variables/)
 
 Ansible définit **22 niveaux de précédence** pour les variables. Quand la même
 variable est définie à plusieurs endroits, le **niveau le plus haut gagne**. Cette

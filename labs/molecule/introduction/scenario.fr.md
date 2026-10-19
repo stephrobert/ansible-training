@@ -19,4 +19,4 @@ Votre mission, depuis le répertoire du projet :
 4. Confirmer que le scénario est conforme au standard, et pas juste présent.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/tdd-molecule-introduction/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/tdd-molecule-introduction/

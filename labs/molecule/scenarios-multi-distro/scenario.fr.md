@@ -19,4 +19,4 @@ Votre mission, depuis le répertoire du projet :
 4. Vérifier que le **même** rôle, inchangé, converge sur les trois plateformes.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/molecule-scenarios-multi-distro/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/molecule-scenarios-multi-distro/

@@ -19,4 +19,4 @@ Votre mission, depuis **control-node.lab** :
    sanity : une collection qui échoue en sanity n'est pas distribuable.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/creer-collection-custom/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/creer-collection-custom/

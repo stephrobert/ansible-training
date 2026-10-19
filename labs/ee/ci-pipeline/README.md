@@ -7,7 +7,7 @@
 
 ## 🧠 Recap
 
-🔗 [**CI EE pipeline: build, scan, sign, push**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/exec-playbook/#pipeline-github-actions)
+🔗 [**CI EE pipeline: build, scan, sign, push**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/execution-environments/exec-playbook/#pipeline-github-actions)
 
 An EE in production must be **rebuilt regularly** (deps CVEs), **scanned** (Trivy), **signed** (cosign / Sigstore) and **published** to a private registry. This lab provides **two equivalent pipelines**: **GitHub Actions** and **GitLab CI**, in 2026 mode (SHA pinning, minimal permissions, blocking scan mode).
 

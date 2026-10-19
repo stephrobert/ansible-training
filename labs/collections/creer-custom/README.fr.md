@@ -13,7 +13,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Construire une collection Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/creer-collection-custom/)
+🔗 [**Construire une collection Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/collections/creer-collection-custom/)
 
 Une **collection custom** est l'aboutissement du parcours collections : packager **plusieurs ressources** (modules + rôles + plugins + playbooks) sous un même **namespace versionné**, distribuable, versionnable, testable.
 

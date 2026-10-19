@@ -4,7 +4,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Module yum_repository Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-yum-repository/)
+🔗 [**Module yum_repository Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-yum-repository/)
 
 `ansible.builtin.yum_repository:` déclare un **dépôt RPM** (yum/dnf) en
 générant le fichier `.repo` dans `/etc/yum.repos.d/`. C'est l'outil pour

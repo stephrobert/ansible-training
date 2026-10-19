@@ -21,4 +21,4 @@ Votre mission, depuis le répertoire du projet :
 4. Activer le chronométrage des tâches, et désigner la plus lente.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/molecule-installation-config/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/molecule-installation-config/

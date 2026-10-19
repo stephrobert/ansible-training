@@ -11,7 +11,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible host patterns**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/patterns-hotes/)
+🔗 [**Ansible host patterns**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/patterns-hotes/)
 
 **`--limit`** and the pattern operators let you target **precisely** the hosts you want without touching the playbook. Four essential operators:
 

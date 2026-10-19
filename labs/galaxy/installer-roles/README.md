@@ -5,7 +5,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Installing roles via requirements.yml**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/installer-roles-galaxy/)
+🔗 [**Installing roles via requirements.yml**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/installer-roles-galaxy/)
 
 A `requirements.yml` file is the **Ansible equivalent** of `package.json`
 (Node), `requirements.txt` (Python) or `Gemfile` (Ruby). It declares **all

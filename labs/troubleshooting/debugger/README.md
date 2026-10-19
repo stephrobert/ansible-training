@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Interactive Ansible debugger**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/debugger-interactif/)
+🔗 [**Interactive Ansible debugger**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/debugger-interactif/)
 
 When a task fails in a long playbook, **rerunning everything from the start** is slow and frustrating. Ansible provides an **interactive debugger** that opens a **REPL** at the moment of failure: you inspect variables, **change arguments on the fly** (`task.args['name'] = 'nginx'`), **replay** the modified task (`redo`), and **continue** the playbook (`continue`).
 

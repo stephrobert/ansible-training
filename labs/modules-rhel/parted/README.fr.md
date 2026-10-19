@@ -10,7 +10,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Module parted Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-parted/)
+🔗 [**Module parted Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-parted/)
 
 `community.general.parted:` crée, supprime, et inspecte des **partitions
 disque** Linux (MBR ou GPT) en idempotent. C'est le **prérequis brut** avant

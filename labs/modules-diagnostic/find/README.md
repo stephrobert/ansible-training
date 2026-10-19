@@ -11,7 +11,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible find module**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/module-find/)
+🔗 [**Ansible find module**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/module-find/)
 
 `ansible.builtin.find:` searches for **multiple files** by pattern (glob or regex),
 age, size, type. It is the equivalent of the Unix `find` command but with a

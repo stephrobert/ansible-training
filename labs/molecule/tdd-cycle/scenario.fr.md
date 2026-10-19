@@ -19,4 +19,4 @@ Votre mission, depuis le répertoire du projet :
    rester verte pendant la réécriture, sinon elle ne vous protégeait pas.
 
 La méthode complète est dans le guide compagnon :
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/molecule-tdd-cycle/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/molecule-tdd-cycle/

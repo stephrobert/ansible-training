@@ -18,4 +18,4 @@ Your mission, from the project directory:
    the edge or at four hundred nodes, and what you give up in exchange.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/pratiques/ansible-pull-gitops/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/pratiques/ansible-pull-gitops/

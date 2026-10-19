@@ -21,4 +21,4 @@ Your mission, from the project directory, against **db1.lab**:
    many times that shared role runs, and what changes the answer.
 
 The full method is in the companion guide:
-https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/dependencies/
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/dependencies/

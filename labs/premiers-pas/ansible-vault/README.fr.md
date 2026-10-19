@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Premiers pas avec Ansible Vault**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas/premiers-pas-ansible-vault/)
+🔗 [**Premiers pas avec Ansible Vault**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas/premiers-pas-ansible-vault/)
 
 Dès qu'un playbook manipule un **mot de passe**, un **token API** ou une
 **clé privée**, il faut chiffrer ces valeurs avant de les commiter dans

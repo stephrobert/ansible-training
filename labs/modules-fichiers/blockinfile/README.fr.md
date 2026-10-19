@@ -14,7 +14,7 @@
 
 ## 🧠 Rappel
 
-🔗 [**Module blockinfile Ansible**](https://blog.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-blockinfile/)
+🔗 [**Module blockinfile Ansible**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-blockinfile/)
 
 `ansible.builtin.blockinfile:` insère ou met à jour un **bloc multi-lignes** dans
 un fichier existant, avec **idempotence garantie via des markers automatiques**.
