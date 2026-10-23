@@ -1,6 +1,6 @@
 [project]
 name = "ansible-training"
-version = "0.2.1"
+version = "0.2.2"
 description = "Lab pédagogique Ansible RHCE EX294 — fournisseur de labs pour la CLI dsoxlab"
 requires-python = ">=3.11"
 dependencies = []

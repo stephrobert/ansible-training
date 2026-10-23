@@ -6,6 +6,37 @@ All notable changes to this project are documented in this file. The format is
 based on [Keep a Changelog](https://keepachangelog.com/), and the project follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.2.2] - 2026-10-23
+
+### Added
+
+- A verdict can no longer be committed together with what it measures. The
+  `verdicts-et-commun-separes` hook refuses a commit carrying
+  `validation-labs.json` alongside anything the cycle plays:
+  `challenge/tests/`, `setup.yaml`, `cleanup.yaml`, `lab.yaml` of any lab, and
+  the shared tooling. It is itself tested, in both directions, by a hook of its
+  own.
+
+  This closes a case **no measurement can catch afterwards**. The staleness of
+  a verdict used to be judged by comparing DATES, and that comparison was wrong
+  in both directions on 2026-10-22: a correction committed together with the
+  verdicts it invalidated passed as healthy, and labs re-attested on a branch
+  came back "to be re-attested" after their squash merge, their content
+  unchanged. When a squashed pull request touches a test *after* its campaign,
+  the single commit carries both and the squash has destroyed what told them
+  apart. It cannot be observed, so it is prevented.
+
+  The statement stays allowed next to a verdict: it is not played by the cycle,
+  and forbidding it would demand a campaign for a typo.
+
+### Fixed
+
+- `pipelineMustNotLeakSecretsInConfig` is removed from `.plumber.yaml`, where
+  it was declared twice. Plumber dropped that control and answers "was removed
+  and is now ignored: secret detection is no longer part of Plumber; remove
+  this block". Keeping it suggested that secret detection was covered here. It
+  is not, and `detect-private-key` is what comes closest, as a hook.
+
 ## [0.2.1] - 2026-10-19
 
 ### Changed
