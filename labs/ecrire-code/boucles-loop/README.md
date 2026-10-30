@@ -172,11 +172,18 @@ The `label:` shows `[item=nginx=80]`: readable.
 
 ## 📚 Exercise 5 — Nested loop and `loop_var`
 
-When you have **two nested loops** (e.g.: a block in a loop that
-itself contains a loop), `item` becomes ambiguous: you must rename it.
+A task carries only **one** `loop:`. To walk « every user, and for each user
+every file », you must either turn the double loop into a single one, or hand
+the inner loop to a task file. Note that `loop` is **not** a `block:` keyword.
+Putting `loop:` on a `block` fails with `'loop' is not a valid attribute for a
+Block`.
+
+**Idiomatic form: the `subelements` filter.** It builds a single list of
+`[user, file]` pairs. Inside the loop, `item.0` is the user and `item.1` the
+file:
 
 ```yaml
-- name: Demo boucles imbriquees
+- name: Demo nested loop with subelements
   hosts: db1.lab
   become: true
   vars:
@@ -184,23 +191,45 @@ itself contains a loop), `item` becomes ambiguous: you must rename it.
       - { name: alice, files: [.bashrc, .vimrc] }
       - { name: bob, files: [.bashrc] }
   tasks:
-    - name: Creer fichier marker pour chaque user/file combination
-      block:
-        - name: Inner loop sur les fichiers du user courant
-          ansible.builtin.debug:
-            msg: "User {{ user_item.name }}, file {{ file_item }}"
-          loop: "{{ user_item.files }}"
-          loop_control:
-            loop_var: file_item
+    - name: Show each user/file pair
+      ansible.builtin.debug:
+        msg: "User {{ item.0.name }}, file {{ item.1 }}"
+      loop: "{{ users | subelements('files') }}"
+      loop_control:
+        label: "{{ item.0.name }}/{{ item.1 }}"
+```
+
+**Second form: `include_tasks` and `loop_var`.** When the inner loop must
+carry several tasks, the outer task includes a task file in a loop, and that
+file holds its own loop. Both loops would use `item`: `loop_var` renames the
+one of each level. Create `fichiers-user.yml` next to `lab.yml`:
+
+```yaml
+- name: Inner loop over the current user's files
+  ansible.builtin.debug:
+    msg: "User {{ user_item.name }}, file {{ file_item }}"
+  loop: "{{ user_item.files }}"
+  loop_control:
+    loop_var: file_item
+```
+
+Then, in `lab.yml`, the outer task:
+
+```yaml
+  tasks:
+    - name: Outer loop over the users
+      ansible.builtin.include_tasks: fichiers-user.yml
       loop: "{{ users }}"
       loop_control:
         loop_var: user_item
         label: "{{ user_item.name }}"
 ```
 
-🔍 **Observation**: `loop_var: user_item` renames `item` of the outer loop to
-`user_item`, and `loop_var: file_item` renames the inner loop to `file_item`.
-Without these renamings, the inner loop would have overwritten the outer's `item`: a silent bug.
+🔍 **Observation**: with `subelements`, a single loop is enough and `item` is
+never ambiguous. With `include_tasks`, `loop_var: user_item` renames the outer
+loop's `item` and `loop_var: file_item` renames the inner one. Without these
+renamings, Ansible warns that the loop variable `item` is already in use, and
+the inner loop shadows the outer one.
 
 ## 📚 Exercise 6 — The trap: `loop` with a string (not a list)
 
@@ -239,7 +268,7 @@ loop: "{{ not_a_list if not_a_list is sequence and not_a_list is not string else
 - **`loop_control: label:`** is **mandatory in practice** on loops over dicts.
 - **`dict2items`** converts a dict into a `[{key, value}]` list to loop over.
 - **`index_var:`** + **`pause:`** = useful options for pacing and identification.
-- **`loop_var:`** is mandatory for nested loops.
+- **`subelements`** flattens a double loop into a single one; **`loop_var:`** tells the two levels of a looped `include_tasks` apart.
 - **`loop:` over a string** iterates character by character: a frequent trap.
 
 ## 🤔 Reflection questions
