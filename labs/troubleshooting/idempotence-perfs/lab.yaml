@@ -1,7 +1,7 @@
 ---
 id: troubleshooting-idempotence-perfs
 title: "Fix broken idempotence and tune performance"
-description: "Make a shell task idempotent with creates or changed_when, measure a baseline with profile_tasks, then enable pipelining, forks and ControlPersist."
+description: "Make a shell task idempotent with creates or changed_when, measure a baseline with profile_tasks, then tune pipelining and forks (ControlPersist is already on by default)."
 section: troubleshooting
 level: l3
 difficulty: advanced
