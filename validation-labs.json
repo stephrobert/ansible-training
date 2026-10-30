@@ -1,0 +1,31 @@
+{
+  "genere_le": "2026-10-30 17:44:56",
+  "ansible-core": "ansible [core 2.21.5]",
+  "dsoxlab": "dsoxlab 0.5.5",
+  "labs": {
+    "ecrire-code-boucles-loop": {
+      "id": "ecrire-code-boucles-loop",
+      "chemin": "ecrire-code/boucles-loop",
+      "verdict": "VALIDE",
+      "score_avant": 0,
+      "score_apres": 100,
+      "tests": "5/5",
+      "duree_s": 28.3,
+      "traces": [],
+      "pourquoi": "",
+      "date": "2026-10-30"
+    },
+    "troubleshooting-idempotence-perfs": {
+      "id": "troubleshooting-idempotence-perfs",
+      "chemin": "troubleshooting/idempotence-perfs",
+      "verdict": "VALIDE",
+      "score_avant": 0,
+      "score_apres": 100,
+      "tests": "5/5",
+      "duree_s": 23.7,
+      "traces": [],
+      "pourquoi": "",
+      "date": "2026-10-30"
+    }
+  }
+}

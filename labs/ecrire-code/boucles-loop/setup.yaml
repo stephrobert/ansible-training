@@ -17,6 +17,11 @@
         - chal_charlie
       failed_when: false
 
+    - name: Recreate chal_bob, as an earlier run would have left him
+      ansible.builtin.user:
+        name: chal_bob
+        state: present
+
     - name: Remove the loop result file
       ansible.builtin.file:
         path: /tmp/loop-result.txt

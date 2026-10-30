@@ -172,11 +172,18 @@ Le `label:` affiche `[item=nginx=80]` — lisible.
 
 ## 📚 Exercice 5 — Boucle imbriquée et `loop_var`
 
-Quand vous avez **deux boucles imbriquées** (ex : un block dans une boucle qui
-contient lui-même une boucle), `item` devient ambigu — il faut renommer.
+Une tâche ne porte qu'**un seul** `loop:`. Pour parcourir « chaque utilisateur,
+et pour chacun chaque fichier », il faut donc transformer la double boucle en
+une seule, ou déléguer la boucle interne à un fichier de tâches. Attention :
+`loop` n'est **pas** un mot-clé de `block:`. Poser `loop:` sur un `block`
+échoue avec `'loop' is not a valid attribute for a Block`.
+
+**Forme idiomatique : le filtre `subelements`.** Il produit une seule liste de
+paires `[utilisateur, fichier]`. Dans la boucle, `item.0` est l'utilisateur et
+`item.1` le fichier :
 
 ```yaml
-- name: Demo boucles imbriquees
+- name: Demo boucle imbriquee avec subelements
   hosts: db1.lab
   become: true
   vars:
@@ -184,23 +191,46 @@ contient lui-même une boucle), `item` devient ambigu — il faut renommer.
       - { name: alice, files: [.bashrc, .vimrc] }
       - { name: bob, files: [.bashrc] }
   tasks:
-    - name: Creer fichier marker pour chaque user/file combination
-      block:
-        - name: Inner loop sur les fichiers du user courant
-          ansible.builtin.debug:
-            msg: "User {{ user_item.name }}, file {{ file_item }}"
-          loop: "{{ user_item.files }}"
-          loop_control:
-            loop_var: file_item
+    - name: Afficher chaque couple utilisateur/fichier
+      ansible.builtin.debug:
+        msg: "User {{ item.0.name }}, file {{ item.1 }}"
+      loop: "{{ users | subelements('files') }}"
+      loop_control:
+        label: "{{ item.0.name }}/{{ item.1 }}"
+```
+
+**Seconde forme : `include_tasks` et `loop_var`.** Quand la boucle interne
+doit porter plusieurs tâches, la tâche externe inclut un fichier de tâches en
+boucle, et ce fichier contient sa propre boucle. Les deux boucles utiliseraient
+`item` : `loop_var` renomme celui de chaque niveau. Créez `fichiers-user.yml`
+à côté de `lab.yml` :
+
+```yaml
+- name: Inner loop sur les fichiers du user courant
+  ansible.builtin.debug:
+    msg: "User {{ user_item.name }}, file {{ file_item }}"
+  loop: "{{ user_item.files }}"
+  loop_control:
+    loop_var: file_item
+```
+
+Puis, dans `lab.yml`, la tâche externe :
+
+```yaml
+  tasks:
+    - name: Boucle externe sur les utilisateurs
+      ansible.builtin.include_tasks: fichiers-user.yml
       loop: "{{ users }}"
       loop_control:
         loop_var: user_item
         label: "{{ user_item.name }}"
 ```
 
-🔍 **Observation** : `loop_var: user_item` renomme `item` de la boucle externe en
-`user_item`, et `loop_var: file_item` renomme la boucle interne en `file_item`.
-Sans ces renommages, l'inner aurait écrasé `item` de l'outer — bug silencieux.
+🔍 **Observation** : avec `subelements`, une seule boucle suffit et `item`
+n'est jamais ambigu. Avec `include_tasks`, `loop_var: user_item` renomme `item`
+de la boucle externe et `loop_var: file_item` celui de la boucle interne. Sans
+ces renommages, Ansible signale que la variable de boucle `item` est déjà
+utilisée, et la boucle interne masque celle de l'externe.
 
 ## 📚 Exercice 6 — Le piège : `loop` avec une string (pas une liste)
 
@@ -239,7 +269,7 @@ loop: "{{ not_a_list if not_a_list is sequence and not_a_list is not string else
 - **`loop_control: label:`** est **obligatoire en pratique** sur les boucles de dicts.
 - **`dict2items`** convertit un dict en liste `[{key, value}]` pour boucler dessus.
 - **`index_var:`** + **`pause:`** = options utiles pour le rythme et l'identification.
-- **`loop_var:`** est obligatoire pour les boucles imbriquées.
+- **`subelements`** aplatit une double boucle en une seule ; **`loop_var:`** distingue les deux niveaux d'un `include_tasks` en boucle.
 - **`loop:` sur une string** itère caractère par caractère — piège fréquent.
 
 ## 🤔 Questions de réflexion

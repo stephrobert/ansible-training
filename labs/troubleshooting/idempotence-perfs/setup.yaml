@@ -19,5 +19,5 @@
     - name: What this lab expects from you
       ansible.builtin.debug:
         msg: >-
-          Make a shell task idempotent with creates or changed_when, measure a baseline with profile_tasks, then enable pipelining, forks and ControlPersist
+          Make a shell task idempotent with creates or changed_when, measure a baseline with profile_tasks, then tune pipelining and forks (ControlPersist is already on by default)
       run_once: true
