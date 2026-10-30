@@ -1,0 +1,19 @@
+{
+  "genere_le": "2026-10-30 11:17:42",
+  "ansible-core": "ansible [core 2.21.5]",
+  "dsoxlab": "dsoxlab 0.5.5",
+  "labs": {
+    "troubleshooting-idempotence-perfs": {
+      "id": "troubleshooting-idempotence-perfs",
+      "chemin": "troubleshooting/idempotence-perfs",
+      "verdict": "VALIDE",
+      "score_avant": 0,
+      "score_apres": 100,
+      "tests": "5/5",
+      "duree_s": 23.7,
+      "traces": [],
+      "pourquoi": "",
+      "date": "2026-10-30"
+    }
+  }
+}
