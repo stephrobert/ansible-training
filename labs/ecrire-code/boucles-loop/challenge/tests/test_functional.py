@@ -38,13 +38,15 @@ def test_user_charlie_exists(host):
 
 
 def test_user_bob_does_not_exist(host):
-    """Bob a enabled: false → ne doit PAS être créé."""
+    """Bob a enabled: false : son compte, laissé par un passage précédent, doit être supprimé."""
     assert not host.user("chal_bob").exists, message(
-        en="chal_bob must NOT be created: his entry carries enabled: false. "
-           "The when: goes on the task and reads item.enabled, item by item.",
-        fr="chal_bob ne doit PAS être créé : son entrée porte enabled: false. "
-           "Le when: se pose sur la tâche et lit item.enabled, élément par "
-           "élément.",
+        en="chal_bob must NOT exist: his entry carries enabled: false, and an "
+           "earlier run left his account behind. Remove it (state: absent) "
+           "for the entries that are not enabled, reading item.enabled.",
+        fr="chal_bob ne doit PAS exister : son entrée porte enabled: false, et "
+           "un passage précédent a laissé son compte. Supprime-le "
+           "(state: absent) pour les entrées non activées, en lisant "
+           "item.enabled.",
     )
 
 
