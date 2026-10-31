@@ -326,3 +326,17 @@ sections:
     labs:
       - rhce/mock-ex294
       - rhce/mock-ex294-2
+
+# Envoi des preuves vers le compte facultatif du site, par `dsoxlab login` puis
+# `dsoxlab push`. Rien ne part sans ces deux gestes de l'apprenant. Toutes ces
+# valeurs sont publiques : le client Cognito de la CLI est un client public
+# (PKCE, sans secret). Le retour passe par une page du site qui affiche le code
+# à recopier, la page de connexion gérée refusant une boucle locale en http.
+learning:
+  sync:
+    protocol: "learner-sync/1"
+    api: "https://q44wsl0b0i.execute-api.eu-west-3.amazonaws.com"
+    issuer: "https://cognito-idp.eu-west-3.amazonaws.com/eu-west-3_x2PWxNlgE"
+    oauth_domain: "https://connexion.stephane-robert.info"
+    client_id: "4fitn8grnrm8gu70v4ud35itti"
+    callback_url: "https://www.stephane-robert.info/auth/cli/"
