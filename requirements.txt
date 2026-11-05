@@ -20,7 +20,7 @@ yamllint>=1.38.0
 
 # Tests des challenges (pattern repris de l'ancien lab ansible-training)
 # pytest + testinfra valident chaque solution de challenge.
-pytest>=9.1.1
+pytest>=9.2.0
 pytest-testinfra>=10.2.2
 
 # pyyaml : requis par conftest.py, qui importe yaml au chargement de la suite.
