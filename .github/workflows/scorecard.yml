@@ -1,6 +1,5 @@
-# OpenSSF Scorecard: measures the repository's supply-chain security posture
-# (branch protection, pinned dependencies, token permissions, code review, …)
-# and publishes the result to the public Scorecard viewer and the README badge.
+
+# OpenSSF Scorecard - Supply chain security
 name: OpenSSF Scorecard
 
 on:
@@ -20,18 +19,18 @@ concurrency:
 jobs:
   analysis:
     name: Scorecard analysis
-    # Scorecard needs a public repository (commit-graph API + result
-    # publication). Skips while private (pre-launch); activates once public.
     if: ${{ !github.event.repository.private }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+
     permissions:
       contents: read
-      security-events: write   # upload SARIF to Code Scanning
-      id-token: write          # publish results to the OpenSSF Scorecard API
+      security-events: write
+      id-token: write
+
     steps:
       - name: Harden the runner
-        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
         with:
           egress-policy: audit
 
@@ -40,46 +39,15 @@ jobs:
         with:
           persist-credentials: false
 
-      # Two attempts, and this is not superstition.
-      #
-      # GitHub's GraphQL API intermittently returns an internal error when
-      # Scorecard runs RIGHT AFTER a push: "ListCommits: error during
-      # graphqlHandler.setup: internal error: githubv4.Query: Something went
-      # wrong while executing your query". The commit has just landed and its
-      # associated data has not propagated on GitHub's side yet.
-      #
-      # Measured on 2026-09-15 across the fleet: several push runs failed during
-      # a burst of merges, and the SAME repositories analysed cleanly minutes
-      # later without a single line having changed. The query was replayed by
-      # hand: it passes. So this is not broken data, it is a moment.
-      #
-      # Without a second attempt the branch stays red for a failure that is not
-      # ours, and a red branch people learn to ignore stops being useful.
-      - name: Run Scorecard
+      - name: Run OpenSSF Scorecard
         id: scorecard
-        continue-on-error: true
-        uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
+        uses: ossf/scorecard-action@fa7117db83c52d787ae5a89f350999701505d78e # v2.5.0
         with:
           results_file: results.sarif
           results_format: sarif
-          publish_results: true # publish to the OpenSSF viewer (drives the README badge)
-
-      - name: Let GitHub propagate the commit
-        if: steps.scorecard.outcome == 'failure'
-        run: sleep 90
-
-      # This one carries NO continue-on-error: if the second attempt fails too,
-      # the job fails, which is exactly what we want. A workflow that can no
-      # longer fail no longer measures anything.
-      - name: Run Scorecard (second attempt)
-        if: steps.scorecard.outcome == 'failure'
-        uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
-        with:
-          results_file: results.sarif
-          results_format: sarif
-          publish_results: true # publish to the OpenSSF viewer (drives the README badge)
+          publish_results: true
 
       - name: Upload SARIF to Code Scanning
-        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           sarif_file: results.sarif
