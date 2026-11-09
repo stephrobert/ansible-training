@@ -52,9 +52,10 @@ jobs:
           persist-credentials: false
 
       - name: Plumber compliance scan
-        uses: getplumber/plumber@d3536bae4727b9290d9e69ee25c4350ddbcd91cd # v0.6.0
+        # No `version:` input: the action installs the binary of its own release
+        # (the default in its action.yml), so Dependabot moves both together.
+        uses: getplumber/plumber@ec8cb3a7edd6a324b33e85109b627b2df6023d94 # v0.7.23
         with:
-          version: "v0.4.3"
           verify-attestation: "true"   # check the binary's SLSA provenance before running
           # Gate on the Plumber Score itself. `threshold` is DEPRECATED and its
           # value 100 is explicitly "treated as unset" by the action — it gated
