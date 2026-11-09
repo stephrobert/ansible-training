@@ -78,6 +78,26 @@ def tests_en_echec(sortie: str) -> list[str]:
     return sorted(set(noms))
 
 
+def echecs_du_document(d: dict) -> list[str]:
+    """Les tests en échec d'un document `check --json`.
+
+    Depuis dsoxlab 0.8.0, le document porte `failed_checks`, la liste des
+    contrôles ratés que le moteur a lui-même relevés, pour TOUS les labs. C'est
+    elle qu'on lit d'abord : une épreuve (capstone, ou `exam_passing_score`)
+    ne donne plus rien dans `output`, vide avec `output_withheld: true`, et
+    lire la sortie brute y rendrait une liste vide sur une épreuve ratée.
+
+    Avant la 0.8.0, `failed_checks` est absent : on revient à la sortie brute.
+    Une liste vide n'est crue que si le moteur ne dit pas `failed` : un
+    document qui annonce un échec sans nommer de contrôle relève du repli.
+    """
+    noms = d.get("failed_checks")
+    lisible = isinstance(noms, list) and all(isinstance(n, str) for n in noms)
+    if lisible and (noms or d.get("status") != "failed"):
+        return sorted(set(noms))
+    return tests_en_echec(d.get("output", ""))
+
+
 def lire(stdout: str) -> dict:
     """Le document de `dsoxlab check --json`, réduit à ce qui décide.
 
@@ -111,7 +131,7 @@ def lire(stdout: str) -> dict:
         # une exécution non mesurée n'est pas une note, c'est une absence.
         "score": d.get("score", 0) if d.get("recorded") else None,
         "recorded": bool(d.get("recorded")),
-        "echecs": tests_en_echec(d.get("output", "")),
+        "echecs": echecs_du_document(d),
     }
 
 
