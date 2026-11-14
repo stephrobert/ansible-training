@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible parallelism and strategies: forks, serial, throttle, strategy**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/parallelisme-strategies/)
+🔗 [**Ansible parallelism and strategies: forks, serial, throttle, strategy**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/parallelisme-strategies/) (in French)
 
 By default, Ansible runs **one task at a time** on **`forks` hosts in parallel**
 (default 5). `serial:` changes this behavior to **successive batches**, handy for

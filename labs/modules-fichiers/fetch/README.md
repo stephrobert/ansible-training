@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible fetch module**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-fetch/)
+🔗 [**Ansible fetch module**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-fetch/) (in French)
 
 `ansible.builtin.fetch:` is the **exact inverse of `copy:`**: it pulls a file
 back from a managed node to the control node. It is used to collect **logs**,

@@ -14,7 +14,7 @@
 
 ## 🧠 Recap
 
-🔗 [**Ansible roles: handlers and meta**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/handlers-meta/)
+🔗 [**Ansible roles: handlers and meta**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/handlers-meta/) (in French)
 
 In [lab 58](../creer-premier-role/), you created your first
 role (the `tasks/main.yml` skeleton). In [lab 59](../variables-defaults-vars/),
