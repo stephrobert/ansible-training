@@ -5,7 +5,7 @@
 
 ## 🧠 Recap
 
-🔗 [**ansible-lint in production mode**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ansible-lint-production-profile/)
+🔗 [**ansible-lint in production mode**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ansible-lint-production-profile/) (in French)
 
 `ansible-lint` has **6 progressive profiles**:
 

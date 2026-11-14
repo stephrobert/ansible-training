@@ -20,4 +20,4 @@ Your mission, from **control-node.lab**:
    default). Re-measure and state the real gain.
 
 The full method is in the companion guide:
-https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/idempotence-cassee/
+https://www.stephane-robert.info/en/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/idempotence-cassee/
