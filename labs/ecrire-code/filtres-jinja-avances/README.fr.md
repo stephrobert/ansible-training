@@ -45,7 +45,7 @@ dans des cas non triviaux.
 ```bash
 cd $ANSIBLE_TRAINING
 ansible db1.lab -m ping
-ansible-galaxy collection install community.general ansible.utils
+ansible-galaxy collection install -r requirements.yml
 ```
 
 ## 📚 Exercice 1 — `regex_search` : extraire une partie d'une string
@@ -236,15 +236,25 @@ map(attribute='name')` — souvent plus lisible que JMESPath sur les cas simples
     - name: Verifier si une IP est dans le subnet
       ansible.builtin.debug:
         msg: "192.168.1.42 dans {{ network }} : {{ '192.168.1.42' | ansible.utils.ipaddr(network) }}"
+        # → 192.168.1.42 dans 192.168.1.0/24 : 192.168.1.42
 
-    - name: Reseau /16 a partir d une IP /24
+    - name: Reseau /16 qui contient ce /24
       ansible.builtin.debug:
-        msg: "{{ network | ansible.utils.ipaddr('network/16') }}"
+        msg: "{{ (network | split('/'))[0] | ansible.utils.ipsubnet(16) }}"
+        # → 192.168.0.0/16
 ```
 
 🔍 **Observation** : `ipaddr` couvre 90% des manipulations IP : extraire le réseau
 parent, compter les hôtes, valider qu'une IP est dans un range. Très utile pour
 des configs réseau dynamiques.
+
+**Le réseau parent ne se demande pas à `ipaddr`.** `ipaddr('network/16')`
+n'existe pas : le filtre échoue sur `unsupported operand type(s) for +:
+'NoneType' and 'str'`. `ipsubnet(16)` appliqué au CIDR échoue aussi
+(`Requested subnet size of 16 is invalid`), parce qu'il cherche un /16
+**dans** le /24. On lui donne donc l'adresse seule, sans son préfixe :
+`ipsubnet(16)` rend alors le /16 qui la contient. Une adresse hors du réseau
+testé rend une chaîne vide avec `ipaddr(network)`.
 
 ## 📚 Exercice 7 — Le piège : filtres qui ne sont **pas dans builtin**
 
@@ -255,15 +265,26 @@ la collection installée, vous obtenez une erreur cryptique.
 ansible-galaxy collection install community.general ansible.utils
 ```
 
-🔍 **Observation** : sur Ansible Core 2.20, `community.general` et `ansible.utils`
-**ne sont pas inclus par défaut**. Il faut les installer via `ansible-galaxy`.
+🔍 **Observation** : `ansible-core` seul n'inclut ni `community.general` ni
+`ansible.utils`. Il faut les installer via `ansible-galaxy` (le
+`requirements.yml` du dépôt les déclare).
+
+**La collection ne suffit pas.** Ces filtres s'exécutent sur le contrôleur et
+importent une bibliothèque Python : `jmespath` pour `json_query`, `netaddr`
+pour `ipaddr` et `ipsubnet`. Elle doit être installée dans **le Python
+d'ansible-core**, pas dans celui du système. Sans elle, le filtre échoue sur
+`You need to install "jmespath" prior to running json_query filter` ou sur
+`Failed to import the required Python library (netaddr)`. Le `mise.toml` du
+dépôt les installe avec ansible-core (`mise install`). Si vous avez installé
+ansible-core autrement, ajoutez-les au même environnement, par exemple
+`pipx inject ansible-core jmespath netaddr`.
 
 **Convention** : préfixer **toujours** le nom du filtre avec le namespace si la
 collection n'est pas builtin :
 
 ```yaml
 {{ var | community.general.json_query('items[*].id') }}
-{{ network | ansible.utils.ipaddr('network/24') }}
+{{ network | ansible.utils.ipaddr('network/prefix') }}
 ```
 
 ## 🔍 Observations à noter
@@ -274,6 +295,7 @@ collection n'est pas builtin :
 - **`json_query`** (community.general) = JMESPath pour navigation JSON complexe.
 - **`ipaddr`** (ansible.utils) = manipulation IPs / CIDR.
 - **Filtres hors builtin** nécessitent `ansible-galaxy collection install`.
+- **`json_query`** et **`ipaddr`** exigent aussi `jmespath` et `netaddr` dans le Python d'ansible-core.
 
 ## 🤔 Questions de réflexion
 

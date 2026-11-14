@@ -39,7 +39,11 @@
 # l'interpréteur d'ansible-core, pas le poste.
 # py-passbolt : même histoire que hvac, pour le lookup de
 # anatomicjc.passbolt (vault/integration-passbolt).
-"pipx:ansible-core" = { version = "2.18", uvx_args = "--with libvirt-python --with hvac --with py-passbolt --with standard-imghdr" }
+# jmespath et netaddr : même histoire, pour les filtres json_query
+# (community.general) et ipaddr/ipsubnet (ansible.utils) du lab
+# ecrire-code/filtres-jinja-avances. Sans eux, les exercices 5 et 6 échouent
+# dès le premier filtre (blog-roadmap#158). Versions mesurées le 2026-11-14.
+"pipx:ansible-core" = { version = "2.18", uvx_args = "--with libvirt-python --with hvac --with py-passbolt --with standard-imghdr --with jmespath==1.1.0 --with netaddr==1.3.0" }
 
 # Chaîne qualité. Le profil production d'ansible-lint est ce que la CI exige :
 # une montée de version change ce qui passe, d'où le pin sur la mineure.
