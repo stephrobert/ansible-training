@@ -6,6 +6,20 @@ Tous les changements notables de ce projet sont consignés dans ce fichier. Le
 format s'appuie sur [Keep a Changelog](https://keepachangelog.com/), et le projet
 suit le [versionnage sémantique](https://semver.org/lang/fr/).
 
+## [Non publié]
+
+### Modifié
+
+- Le README ne recopie plus la documentation du moteur dsoxlab (contrat, cycle
+  de vie d'un lab) : il renvoie aux pages où le moteur se documente lui-même
+  (dsoxlab#201). Trois affirmations devenues fausses sont corrigées :
+  `validate-structure` signale bien un `lab.yaml` qui lève et un lab déclaré
+  dans le `meta.yml` mais absent (depuis dsoxlab 0.1.97), donc `list-labs`
+  n'a plus à passer en premier ; un hôte `UNREACHABLE` se vérifie avec
+  `dsoxlab infra status`, pas `dsoxlab status` ; et le bandeau « migration vers
+  le contrat dsoxlab 0.1.6 » du CONTRIBUTING disparaît, la migration étant
+  faite depuis longtemps.
+
 ## [0.2.2] - 2026-10-23
 
 ### Ajouté

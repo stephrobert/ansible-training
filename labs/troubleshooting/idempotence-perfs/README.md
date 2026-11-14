@@ -13,7 +13,7 @@
 
 ## Recap
 
-Companion guide: [**Broken idempotence and performance tuning**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/idempotence-cassee/)
+Companion guide: [**Broken idempotence and performance tuning**](https://www.stephane-robert.info/en/docs/infra-as-code/gestion-de-configuration/ansible/troubleshooting/idempotence-cassee/)
 
 An **idempotent** playbook shows `changed=0` on the **second run**: it found the system already in the wanted state and touched nothing. When `changed=N` comes back on every run, the recap can no longer tell a real change from a task that replays for nothing, and a service may be restarted for no reason.
 

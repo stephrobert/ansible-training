@@ -11,9 +11,9 @@
 
 ## 🧠 Recap
 
-🔗 [**Static inventory in YAML format**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/statiques-yaml/)
-· [INI version](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/statiques-ini/)
-· [Check your inventory](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/verifier-inventaire/)
+🔗 [**Static inventory in YAML format**](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/statiques-yaml/) (in French)
+· [INI version](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/statiques-ini/) (in French)
+· [Check your inventory](https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/verifier-inventaire/) (in French)
 
 The inventory is the **starting point** of everything Ansible does. Without it,
 no playbook knows which machines to act on. The other labs of this section
