@@ -7,12 +7,6 @@ This repository is a **lab catalog** consumed by the
 labs, fixes, and translations. The CLI itself lives in its own repository: do not
 add engine code here.
 
-> **Migration in progress.** The catalog is currently moving to the dsoxlab 0.1.6
-> contract (a `lab.yaml` per lab, `setup.yaml` / `cleanup.yaml`, infrastructure
-> declared in `meta.yml`). This document describes the target contract. Until the
-> migration lands, new lab contributions are on hold: please open an issue rather
-> than a PR so we can agree on scope together.
-
 ## Setup
 
 ```bash
@@ -55,6 +49,10 @@ Playbooks target the groups dsoxlab injects into the inventory: `lab_target` for
 the primary host, and `lab_<role>` for every role declared under
 `runtime.targets[].roles`. Never hard-code an FQDN.
 
+What each file holds, and every field of `lab.yaml`, is documented by the
+engine: [catalog author guide](https://github.com/stephrobert/dsoxlab/blob/main/docs/catalog-author.md)
+and [contract](https://github.com/stephrobert/dsoxlab/blob/main/docs/contract-v1.md).
+
 ## Proposing a lab
 
 - **Start from a capability, not a module.** Describe a demonstrable capability
@@ -75,16 +73,14 @@ solution in a PR is an automatic rejection: it spoils the lab for everyone.
 ## Local checks (before opening a PR)
 
 ```bash
-dsoxlab list-labs              # does your lab show up? if not, lab.yaml is invalid
 dsoxlab validate-structure     # the meta.yml + lab.yaml contract
 dsoxlab check <lab-id>         # run the lab's tests
 ansible-lint                   # production profile (see .ansible-lint)
 ```
 
-In that order, with `list-labs` first: a `lab.yaml` that raises while parsing
-**silently** disappears from the catalog, and `validate-structure` only validates
-labs that were already discovered. A lab missing from `list-labs` is almost
-always an invalid `lab.yaml`.
+`validate-structure` also reports the labs the engine cannot load (a
+`lab.yaml` that raises, a lab listed in `meta.yml` but absent from the disk),
+and fails on them: it is enough on its own.
 
 ## Attesting a lab both ways
 

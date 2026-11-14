@@ -6,6 +6,20 @@ All notable changes to this project are documented in this file. The format is
 based on [Keep a Changelog](https://keepachangelog.com/), and the project follows
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- The README no longer copies the dsoxlab engine documentation (contract,
+  lab life cycle): it links to the pages where the engine documents itself
+  (dsoxlab#201). Three statements that had become false are fixed:
+  `validate-structure` does report a `lab.yaml` that raises and a lab declared
+  in `meta.yml` but missing (since dsoxlab 0.1.97), so `list-labs` no longer
+  has to run first; an `UNREACHABLE` host is checked with
+  `dsoxlab infra status`, not `dsoxlab status`; and the "migration to the
+  dsoxlab 0.1.6 contract" banner of CONTRIBUTING is gone, the migration being
+  long done.
+
 ## [0.2.2] - 2026-10-23
 
 ### Added

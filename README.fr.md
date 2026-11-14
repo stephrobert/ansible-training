@@ -122,46 +122,18 @@ versionné : `git pull` apporte les nouveaux labs sans jamais y toucher.
 
 ## Comment ça marche
 
-### Le contrat déclaratif (deux niveaux)
+### Le moteur, documenté là où il vit
 
-Le catalogue est décrit par des données, pas par du code : le moteur `dsoxlab`
-reste neutre vis-à-vis du domaine et lit deux niveaux de fichiers.
+Ce catalogue se joue avec `dsoxlab`, qui documente lui-même son contrat et ses
+commandes. Ce README ne les répète pas, pour ne pas dériver quand le moteur
+change (issue dsoxlab #201) :
 
-- **`meta.yml`** à la racine déclare l'identité du dépôt, la topologie
-  d'infrastructure (réseau, hôtes, provider) et l'**ordre** des sections
-  qu'affiche `list-labs`.
-- **`lab.yaml`** par lab (sous `labs/<section>/<lab>/`) déclare ses `skills`,
-  son `level`, son `runtime` (`vm` ou `shell`, avec les hôtes visés), ses
-  `distros`, son `doc_url` et un bloc `validation`. Un `lab.fr.yaml` optionnel
-  surcharge le `title` et la `description` en français.
-
-`dsoxlab validate-structure` vérifie le contrat des labs **découverts** :
-fichiers requis présents, métadonnées complètes, cohérence des cibles. Attention,
-il ne signale pas un lab déclaré dans `meta.yml` mais absent du disque : la
-découverte se fait par un glob sur `labs/**/lab.yaml`, et un `lab.yaml` invalide
-disparaît **silencieusement** du catalogue. D'où la règle : `dsoxlab list-labs`
-d'abord, `validate-structure` ensuite.
-
-### Le cycle de vie d'un lab
-
-L'apprenant pilote tout par la CLI :
-
-```bash
-dsoxlab doctor                        # vérifier l'environnement
-dsoxlab list-labs                     # parcourir le catalogue
-dsoxlab show <id>                     # métadonnées et statut d'un lab
-dsoxlab run <id>                      # préparer et démarrer l'environnement
-dsoxlab challenge <id>                # lire la mission (sans pas-à-pas)
-dsoxlab hint <id>                     # révéler un indice (déduit du score)
-dsoxlab check <id>                    # jouer les tests, calculer et noter
-dsoxlab submit <id>                   # soumission finale, clôt la session
-dsoxlab progress                      # avancement par section, score moyen
-```
-
-`run` est le moment où l'environnement se monte. Pour un lab **shell**, la CLI
-crée le `workdir` et copie les fixtures déclarées. Pour un lab **vm**, elle joue
-le `setup.yaml` du lab sur les managed nodes et ouvre un accès au control node,
-là où vous écrivez vos playbooks.
+- le contrat : `meta.yml`, `lab.yaml`, `lab.<langue>.yaml`, les runtimes et
+  leurs champs : [contrat](https://github.com/stephrobert/dsoxlab/blob/main/docs/contract-v1.fr.md) ;
+- les commandes et la vie d'un lab, de `run` à `check` :
+  [commandes](https://github.com/stephrobert/dsoxlab/blob/main/docs/commands.fr.md) et [jouer un lab](https://github.com/stephrobert/dsoxlab/blob/main/docs/learner.fr.md) ;
+- écrire un lab, et ce que contrôle `validate-structure` :
+  [guide de l'auteur](https://github.com/stephrobert/dsoxlab/blob/main/docs/catalog-author.fr.md).
 
 ### Topologie
 
@@ -494,7 +466,7 @@ Mocks examen complets 4h, 19 tâches chacun, validées par pytest.
 
 | Symptôme | Piste |
 | --- | --- |
-| `UNREACHABLE` sur un managed node | `dsoxlab status` ; les VMs tournent-elles (`virsh list --all`) ? |
+| `UNREACHABLE` sur un managed node | `dsoxlab infra status` (il nomme la cause quand un hôte reste muet) ; les VMs tournent-elles (`virsh list --all`) ? |
 | `dsoxlab list-labs` ne montre pas votre lab | son `lab.yaml` lève au parsing : il disparaît sans message |
 | Un test passe « sans raison » | cache de facts : `rm -rf .ansible_facts/` |
 | Un lab échoue après un autre | état hérité : `dsoxlab clean <id-du-lab>` |

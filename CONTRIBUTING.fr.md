@@ -7,12 +7,6 @@ Ce dépôt est un **catalogue de labs** consommé par la CLI
 nouveaux labs, des correctifs et des traductions. La CLI vit dans son propre
 dépôt : n'ajoute pas de code moteur ici.
 
-> **Migration en cours.** Le catalogue passe actuellement au contrat dsoxlab
-> 0.1.6 (`lab.yaml` par lab, `setup.yaml` / `cleanup.yaml`, infra déclarée dans
-> `meta.yml`). Ce document décrit le contrat cible. Tant que la migration n'est
-> pas terminée, les contributions de nouveaux labs sont mises en attente :
-> ouvre une issue plutôt qu'une PR, on cale le périmètre ensemble.
-
 ## Mise en place
 
 ```bash
@@ -56,6 +50,10 @@ Les playbooks ciblent les groupes que dsoxlab injecte dans l'inventaire :
 `lab_target` pour l'hôte principal, `lab_<role>` pour chaque rôle déclaré dans
 `runtime.targets[].roles`. Ne code jamais un FQDN en dur.
 
+Ce que contient chaque fichier, et chaque champ du `lab.yaml`, est documenté
+par le moteur : [guide de l'auteur](https://github.com/stephrobert/dsoxlab/blob/main/docs/catalog-author.fr.md)
+et [contrat](https://github.com/stephrobert/dsoxlab/blob/main/docs/contract-v1.fr.md).
+
 ## Proposer un lab
 
 - **Partir d'une capacité, pas d'un module.** Décris une capacité démontrable
@@ -77,16 +75,14 @@ automatique : elle spoile le lab pour tout le monde.
 ## Vérifications locales (avant d'ouvrir une PR)
 
 ```bash
-dsoxlab list-labs              # ton lab apparaît-il ? sinon, lab.yaml invalide
 dsoxlab validate-structure     # le contrat meta.yml + lab.yaml
 dsoxlab check <id-du-lab>      # lancer les tests du lab
 ansible-lint                   # profil production (cf. .ansible-lint)
 ```
 
-Dans cet ordre, et `list-labs` en premier : un `lab.yaml` qui lève au parsing
-disparaît **silencieusement** du catalogue, et `validate-structure` ne valide que
-les labs déjà découverts. Un lab absent de `list-labs` est presque toujours un
-`lab.yaml` invalide.
+`validate-structure` rapporte aussi les labs que le moteur ne peut pas charger
+(un `lab.yaml` qui lève, un lab listé dans le `meta.yml` mais absent du disque),
+et il échoue sur eux : il suffit à lui seul.
 
 ## Attester un lab dans les deux sens
 
