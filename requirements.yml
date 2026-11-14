@@ -14,6 +14,12 @@ collections:
   - name: community.general
     version: ">=10.0.0"
 
+  # Filtres ipaddr et ipsubnet du lab ecrire-code/filtres-jinja-avances. Le
+  # README faisait installer la collection à la main, et ce fichier ne la
+  # déclarait pas (blog-roadmap#158). Mesuré avec la 6.0.2 le 2026-11-14.
+  - name: ansible.utils
+    version: ">=6.0.0"
+
   # Modules réseau Linux (nmcli, ip, route…)
   - name: ansible.netcommon
     version: ">=8.0.0"
