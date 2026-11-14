@@ -33,7 +33,7 @@ is what fails RHCE candidates, so the tests must prove it, not hope for it.
 ```text
 labs/<section>/<lab>/
 ├── lab.yaml            # the contract (id, level, runtime, validation…)
-├── lab.fr.yaml         # optional: French override of title/description ONLY
+├── lab.fr.yaml         # optional: French override of title, description and criteria labels ONLY
 ├── README.md
 ├── scenario.md         # scenario.fr.md for the French version
 ├── setup.yaml          # starting state applied to the managed nodes
