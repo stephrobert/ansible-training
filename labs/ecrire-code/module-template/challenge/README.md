@@ -1,14 +1,42 @@
-# 🎯 Challenge — Module `template:` with `backup`
+# Overwrite the config, lose the evidence
 
-## ✅ Objective
+## The situation
+
+The banner on **db1.lab** is generated from a template now, which is progress.
+What is not progress: last week's run replaced it with a broken version, and
+nobody could produce the previous one. It existed in exactly one place, the
+file that had just been overwritten. On a banner, that costs an apology. On the
+config of a service that will not restart, at 6 p.m. on a Friday, it costs the
+evening.
+
+You make the generation safe, from **control-node.lab**.
+
+Your mission:
+
+1. Render `/etc/banner.txt` on `db1.lab` from a **Jinja2 template**, the header
+   text coming from a variable rather than a literal.
+2. Build the metadata block by **iterating over a dict**, so that adding a
+   field later means editing data, not the template.
+3. Keep the previous version: every overwrite must leave a **timestamped
+   backup** behind.
+4. Set permissions explicitly and **quote the mode** — an unquoted octal is not
+   the mode you think it is. Then find out what `validate:` would buy you on a
+   real config.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/module-template/ (in French)
+
+## 🎯 Challenge — Module `template:` with `backup`
+
+### ✅ Objective
 
 Generate **`/etc/banner.txt`** on **db1.lab** from a template, with
 **mode 0644**. Adding `backup: true` is a **production best practice**,
 recommended but **not verified by the tests**.
 
-## 🧩 Files to create
+### 🧩 Files to create
 
-### 1) `challenge/templates/banner.txt.j2`
+#### 1) `challenge/templates/banner.txt.j2`
 
 Must produce:
 
@@ -38,7 +66,7 @@ Skeleton:
 {% endfor %}
 ```
 
-### 2) `challenge/solution.yml`
+#### 2) `challenge/solution.yml`
 
 Skeleton:
 
@@ -63,7 +91,7 @@ Skeleton:
         backup: true              # best practice (prod), not verified by the tests
 ```
 
-## 🧩 Options to know on `template:`
+### 🧩 Options to know on `template:`
 
 | Option | Effect |
 | --- | --- |
@@ -90,7 +118,7 @@ Skeleton:
 > - **`mode:` always quoted**: `mode: "0644"` (not `mode: 0644` which is
 >   octal then decimal = mode 420).
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 ansible-playbook labs/ecrire-code/module-template/challenge/solution.yml
@@ -101,19 +129,19 @@ ansible db1.lab -m ansible.builtin.command -a "ls -la /etc/banner.txt*"
 🔍 On the **2nd run after modifying** the template, you will see `/etc/banner.txt.<ts>~`
 appear (proof of `backup: true`).
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/module-template/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-module-template
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`validate:`**: add `validate: 'echo %s'` to see Ansible pass the
   temporary file to the validation command. On an nginx.conf, it would be

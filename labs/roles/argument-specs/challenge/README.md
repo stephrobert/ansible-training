@@ -1,6 +1,30 @@
-# 🎯 Challenge — Argument specs with valid + invalid values
+# A typo that only blew up ten minutes in
 
-## ✅ Objective
+## The situation
+
+Yesterday a colleague called your `webserver` role with `webserver_state:
+enabled`. There is no such choice. Ansible said nothing, ran happily for ten
+minutes, then died deep inside a package task with a stack trace nobody could
+read. The value was wrong from the first second, but the role had no way to say
+so. A role that trusts its inputs makes its users pay for its silence.
+
+Your mission, from **control-node.lab**:
+
+1. Deploy the `webserver` role on **db1.lab** with **valid** inputs: listening
+   port **8090**, plus a package state and a service state chosen from the
+   allowed values, and a custom index page.
+2. Have the role **type, constrain and document** its input variables so a wrong
+   value is rejected **before the first task runs**, not ten minutes later.
+3. Feed it a deliberately invalid value and read the rejection message: it must
+   name the variable and list what was allowed.
+4. Check that a run with valid values still passes the validation step cleanly.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/argument-specs/ (in French)
+
+## 🎯 Challenge — Argument specs with valid + invalid values
+
+### ✅ Objective
 
 Write `challenge/solution.yml` that on **db1.lab** uses the `webserver`
 role with **valid values** to demonstrate that:
@@ -9,7 +33,7 @@ role with **valid values** to demonstrate that:
 2. The pytest test can **run the same solution with an invalid value
    passed via `--extra-vars`** and observe that `argument_specs` rejects it.
 
-## 🧩 Stuck?
+### 🧩 Stuck?
 
 ```bash
 dsoxlab hint roles-argument-specs
@@ -18,7 +42,7 @@ dsoxlab hint roles-argument-specs
 Hints are progressive and **cost points**: the first one points you in the
 right direction, the last one unblocks you.
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -53,9 +77,9 @@ right direction, the last one unblocks you.
 >   `valeur_invalide` are passed via the pytest test itself
 >   (subprocess).
 
-## 🚀 Run
+### 🚀 Run
 
-### Normal run (valid values)
+#### Normal run (valid values)
 
 ```bash
 ansible-playbook labs/roles/argument-specs/challenge/solution.yml
@@ -64,7 +88,7 @@ ansible-playbook labs/roles/argument-specs/challenge/solution.yml
 🔍 The role runs normally, you see the
 `Validating arguments against arg spec 'main'` task pass `ok`.
 
-### Run with an INVALID value (by hand, to observe the message)
+#### Run with an INVALID value (by hand, to observe the message)
 
 ```bash
 ansible-playbook labs/roles/argument-specs/challenge/solution.yml \
@@ -83,7 +107,7 @@ fatal: [db1.lab]: FAILED!
 This is exactly what the pytest test reproduces to validate that argument_specs
 is indeed active.
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/roles/argument-specs/challenge/tests/
@@ -100,13 +124,13 @@ The test checks:
   checks that argument_specs rejects it: non-zero exit + message containing
   `must be one of`.
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean roles-argument-specs
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **Document a `path:` option**: for file paths.
   `argument_specs` does not check existence: combine with `assert:`

@@ -1,6 +1,33 @@
-# 🎯 Challenge — `authorized_key` multi-users avec restrictions
+# Distribuer des accès SSH sans distribuer le serveur entier
 
-## ✅ Objectif
+## La situation
+
+L'authentification par mot de passe part à la retraite sur **db1.lab**, et trois
+accès doivent atterrir avant sa disparition : Alice travaille de partout et a
+besoin d'une clé ordinaire ; Bob ne se connecte jamais que depuis le sous-réseau
+du bureau, et la sécurité veut que sa clé ne serve à rien ailleurs ; le robot de
+sauvegarde a besoin de son propre compte, mais une clé de robot qui ouvre un
+shell interactif, c'est un double des accès admin qui dort dans un runner de CI.
+Tout se provisionne depuis **control-node.lab**.
+
+Votre mission :
+
+1. Créer les deux comptes utilisateurs sur **db1.lab**, puis installer la **clé
+   personnelle d'Alice**, sans restriction.
+2. Installer la **clé de Bob restreinte au sous-réseau du bureau**, sans
+   allocation de terminal.
+3. Donner au robot de sauvegarde une clé qui ne peut **que déclencher le script
+   de sauvegarde** : pas de shell, pas de tunnels, pas de renvoi X11. Une clé
+   interceptée ne doit rien valoir.
+4. Ajouter les clés **sans effacer** celles déjà en place : verrouiller le
+   formateur hors de la machine ne fait pas partie de l'exercice.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-authorized-key/
+
+## 🎯 Challenge — `authorized_key` multi-users avec restrictions
+
+### ✅ Objectif
 
 Sur **db1.lab**, provisionner **3 clés SSH** différentes :
 
@@ -9,7 +36,7 @@ Sur **db1.lab**, provisionner **3 clés SSH** différentes :
 3. Clé **de service** dans le compte d'alice : commande forcée
    (`command="/usr/local/bin/backup.sh"`) + restrictions de session.
 
-## 🧩 Le matériel de clés est déjà en place
+### 🧩 Le matériel de clés est déjà en place
 
 `dsoxlab run` génère pour vous les paires de clés d'alice et de bob, sur le
 control node, dans le répertoire `files/` du lab :
@@ -31,7 +58,7 @@ précisément pour cela que le setup les crée.
 > le setup ne régénère une paire que si sa clé privée manque : la supprimer vous
 > donnerait une clé publique différente de celle déjà déployée.
 
-## 🧩 Module à utiliser : `ansible.posix.authorized_key`
+### 🧩 Module à utiliser : `ansible.posix.authorized_key`
 
 | Option | Effet |
 | --- | --- |
@@ -40,7 +67,7 @@ précisément pour cela que le setup les crée.
 | `state: present` | Ajoute si absent (idempotent). |
 | `key_options:` | Préfixe la clé avec des options OpenSSH (`from=`, `command=`, `no-pty`, etc.). |
 
-## 🧩 Squelette
+### 🧩 Squelette
 
 ```yaml
 ---
@@ -104,7 +131,7 @@ précisément pour cela que le setup les crée.
 >   permissions (0700). Sans, la clé peut être ignorée par sshd
 >   (perms trop ouvertes).
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/modules-utilisateurs/authorized-key/challenge/solution.yml
@@ -112,19 +139,19 @@ ansible db1.lab -b -m ansible.builtin.command -a "cat /home/alice/.ssh/authorize
 ansible db1.lab -b -m ansible.builtin.command -a "cat /home/bob/.ssh/authorized_keys"
 ```
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/modules-utilisateurs/authorized-key/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean modules-utilisateurs-authorized-key
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **`exclusive: true`** : remplace **toutes** les clés du user par celle(s)
   fournie(s). Pratique pour purger des clés orphelines en un seul run.

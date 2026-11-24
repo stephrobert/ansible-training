@@ -1,12 +1,36 @@
-# 🎯 Challenge — 3 groups with forced GIDs + 1 system group
+# Align the group numbering before mounting the NFS share
 
-## ✅ Objective
+## The situation
+
+The team is about to share a volume between several hosts, and the first test
+went badly: a file written on one server came back unreadable on the next.
+Cause found, and it is textbook. The groups were created host by host with
+whatever GID the system handed out, so the same group name carries two
+different numbers, and the filesystem stores rights **by GID**, never by name.
+Before the share goes live, the numbering gets frozen from **control-node.lab**.
+
+Your mission:
+
+1. Create the three project groups on **db1.lab** with their **explicit GIDs**
+   (4000, 4001, 4002), so the numbering is reproducible on every host of the
+   fleet.
+2. Drive the three creations from a **single task**, not by copying and pasting
+   the same block three times.
+3. Add the application's **system group**, which belongs in the reserved range
+   below 1000 and must let the system assign its own number.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-group/ (in French)
+
+## 🎯 Challenge — 3 groups with forced GIDs + 1 system group
+
+### ✅ Objective
 
 On **db1.lab**, create 4 groups via `ansible.builtin.group`, including 3 with an
 **explicit GID** (for multi-host consistency) and 1 **system** group
 (GID < 1000 auto-assigned by the system).
 
-## 🧩 Specifications
+### 🧩 Specifications
 
 | Name | GID | Type |
 | --- | --- | --- |
@@ -20,7 +44,7 @@ On **db1.lab**, create 4 groups via `ansible.builtin.group`, including 3 with an
 > `rhce-shared` has GID 4000 on one host and 1010 on another, the ACLs become
 > inconsistent.
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -63,26 +87,26 @@ On **db1.lab**, create 4 groups via `ansible.builtin.group`, including 3 with an
 > - **Deleting a group in use**: `state: absent` fails if
 >   users have this group as primary. Delete the users first.
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-utilisateurs/group/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "getent group rhce-shared rhce-admins rhce-readonly myapp-system"
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-utilisateurs/group/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean modules-utilisateurs-group
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **GID conflict**: if you run on a host where GID 4000 is already taken by
   another group, the task fails. Demonstrate it by manually placing a

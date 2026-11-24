@@ -1,13 +1,37 @@
-# 🎯 Challenge — Collect `os-release` with `fetch:`
+# Collect the OS inventory before the migration window
 
-## ✅ Objective
+## The situation
+
+Management wants to know exactly which distribution release runs on each server
+before signing off the migration plan, and "I checked, they're all the same"
+does not count as evidence. You need the raw `/etc/os-release` of every managed
+node, filed on **control-node.lab** under a predictable name, ready to diff and
+to attach to the plan. Screenshots of SSH sessions are not an inventory: the
+collection has to be replayable when the fleet grows.
+
+Your mission:
+
+1. Pull **`/etc/os-release`** from **web1.lab** and **db1.lab** back to the
+   control node, each landing in a **flat file named after its short hostname**
+   (no per-host subtree, no `.lab` suffix).
+2. Tag **web1.lab** with a lab identity file, then bring that file back to the
+   control node as well: the same play both pushes and retrieves.
+3. Make the destination paths **derive from the inventory**, not from a
+   hand-written list of hostnames.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-fetch/ (in French)
+
+## 🎯 Challenge — Collect `os-release` with `fetch:`
+
+### ✅ Objective
 
 `fetch:` is the **inverse** of `copy:`: it pulls a file back from the **managed
 node** to the **control node**. This challenge demonstrates it on **2 hosts**.
 
-## 🧩 Tasks
+### 🧩 Tasks
 
-### Play 1 — Collection on web1 AND db1
+#### Play 1 — Collection on web1 AND db1
 
 Target: `hosts: web1.lab,db1.lab` (2 hosts as an explicit pattern).
 
@@ -19,7 +43,7 @@ the short hostname (without `.lab`):
 | `web1.lab` | `collected/web1-os-release.txt` |
 | `db1.lab` | `collected/db1-os-release.txt` |
 
-### Play 2 — web1-specific tag
+#### Play 2 — web1-specific tag
 
 Target: `hosts: web1.lab` only.
 
@@ -27,7 +51,7 @@ Target: `hosts: web1.lab` only.
    content `RHCE-LAB-2026`.
 2. Pull it back (`fetch:`) to the control node into `collected/web1-tag.txt`.
 
-## 🧩 Stuck?
+### 🧩 Stuck?
 
 ```bash
 dsoxlab hint modules-fichiers-fetch
@@ -36,7 +60,7 @@ dsoxlab hint modules-fichiers-fetch
 Hints are progressive and **cost points**: the first one points you in the
 right direction, the last one unblocks you.
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -80,7 +104,7 @@ right direction, the last one unblocks you.
 > - **`dest/<hostname>/`**: lets you differentiate the fetches of several
 >   hosts. Do not combine with `flat: true`.
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-fichiers/fetch/challenge/solution.yml
@@ -88,7 +112,7 @@ ls -la collected/
 cat collected/web1-tag.txt
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-fichiers/fetch/challenge/tests/
@@ -96,13 +120,13 @@ pytest -v labs/modules-fichiers/fetch/challenge/tests/
 
 The test inspects files **on the control node** (not testinfra/SSH).
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean modules-fichiers-fetch
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`fetch: flat: false`** (default): Ansible creates
   `dest/<hostname>/<full_path>`. Useful to preserve the original tree during

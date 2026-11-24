@@ -36,7 +36,6 @@ labs/<section>/<lab>/
 ├── lab.yaml            # le contrat (id, level, runtime, validation…)
 ├── lab.fr.yaml         # optionnel : surcharge FR du title, de la description et des libellés de critères UNIQUEMENT
 ├── README.md
-├── scenario.md         # scenario.fr.md pour la version française
 ├── setup.yaml          # état de départ posé sur les managed nodes
 ├── cleanup.yaml        # remise à zéro entre deux passages
 └── challenge/

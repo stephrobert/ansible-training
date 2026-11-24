@@ -1,12 +1,39 @@
-# 🎯 Challenge — 6 Jinja2 filters in a marker file
+# The data comes in dirty, the config must come out clean
 
-## ✅ Objective
+## The situation
+
+The values feeding your configs arrive from three sources and none of them
+agrees with the others. One field comes padded with spaces and shouting in
+capitals. Two package lists overlap and must become a single set. The service
+catalogue mixes prod and staging. A base config needs a TLS override stacked on
+top. And one variable is sometimes plainly absent — which does not warn you, it
+kills the templating halfway through the run.
+
+You clean all of it **in the data**, on `db1.lab`, from **control-node.lab**.
+
+Your mission:
+
+1. Normalise a dirty string, then merge two package lists into one
+   deduplicated, sorted set.
+2. Extract the **production** services from a list of dicts and keep only their
+   names.
+3. Merge a base config with its overrides, and understand what a flat merge
+   does to the keys underneath.
+4. Make a missing variable **fall back** to a value instead of taking the run
+   down with it, then write the six results on db1.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/filtres-jinja-essentiels/ (in French)
+
+## 🎯 Challenge — 6 Jinja2 filters in a marker file
+
+### ✅ Objective
 
 Write `challenge/solution.yml` that, on **db1.lab**, writes
 `/tmp/filtres-result.txt` containing **6 lines**, each demonstrating an essential
 Jinja2 filter.
 
-## 🧩 Input data
+### 🧩 Input data
 
 Put these variables in the play's `vars:`:
 
@@ -26,7 +53,7 @@ tls_overrides:
   tls: true
 ```
 
-## 🧩 Expected output
+### 🧩 Expected output
 
 ```text
 trimmed=hello world
@@ -37,7 +64,7 @@ default_value=fallback-OK
 yaml_safe={hello: world}
 ```
 
-## 🧩 6 filters to use
+### 🧩 6 filters to use
 
 | Line | Filters | Effect |
 | --- | --- | --- |
@@ -48,7 +75,7 @@ yaml_safe={hello: world}
 | `default_value` | `default('fallback-OK')` | Default value on a nonexistent variable |
 | `yaml_safe` | `to_yaml`, `trim` | Inline YAML rendering |
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -92,26 +119,26 @@ yaml_safe={hello: world}
 >   `nice` version adds indentation and line breaks (to produce a readable
 >   file).
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 ansible-playbook labs/ecrire-code/filtres-jinja-essentiels/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "cat /tmp/filtres-result.txt"
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/filtres-jinja-essentiels/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-filtres-jinja-essentiels
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`difference` / `intersect` / `symmetric_difference`**: set operations
   on lists (beyond `union`).

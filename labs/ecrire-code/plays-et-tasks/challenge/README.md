@@ -1,10 +1,37 @@
-# 🎯 Challenge — Complete play on db1 with nginx
+# "The restart happened after the all-clear"
+
+## The situation
+
+Last deployment on **db1.lab** left the team puzzled: the maintenance banner
+went up before the service was even installed, and the restart landed after the
+post-deployment notification had already been sent. Nobody wrote a bug. The
+playbook was one long flat `tasks:` list, so everything ran in writing order,
+and nothing ran in the right one. A play has sections, and they exist for
+exactly this.
+
+You rewrite it properly from **control-node.lab**.
+
+Your mission:
+
+1. Structure a play on `db1.lab` around **`pre_tasks`**, **`tasks`**,
+   **`post_tasks`** and **`handlers`**.
+2. Deploy `nginx`, started and enabled, serving a page that identifies the host
+   by its inventory name.
+3. Make the config change **notify** a restart handler instead of restarting on
+   every single run.
+4. Prove the real execution order with **timestamped marker files**: the
+   pre-deploy marker must be older than the post-deploy one.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/plays-et-tasks/ (in French)
+
+## 🎯 Challenge — Complete play on db1 with nginx
 
 You wrote a complete play with `pre_tasks` / `tasks` / `post_tasks` / `handlers`. The challenge **reproduces this pattern** on another host (`db1.lab`) to check that you master the **anatomy of a professional play**. The deployed software does not change: it is indeed the structure of the play that is the subject, not the installed package.
 
 > The **parallelism** concepts (`serial:`, `max_fail_percentage:`, `strategy:`) are the subject of [lab 09](../../parallelisme-strategies/), they are **not** required here.
 
-## ✅ Objective
+### ✅ Objective
 
 Write `solution.yml` at the root of **this directory**
 (`labs/ecrire-code/plays-et-tasks/challenge/solution.yml`) that:
@@ -19,7 +46,7 @@ Write `solution.yml` at the root of **this directory**
 8. The handler restarts nginx via `ansible.builtin.systemd state: restarted`
 9. Lays down a marker file `/tmp/challenge-postdeploy-db1.txt` in `post_tasks`
 
-## 🧩 Instructions
+### 🧩 Instructions
 
 Skeleton to complete:
 
@@ -113,7 +140,7 @@ curl http://db1.lab
 
 The `curl` must return exactly: `Challenge OK from db1.lab`
 
-## 🧪 Validation
+### 🧪 Validation
 
 The `tests/test_functional.py` script automatically checks:
 
@@ -133,7 +160,7 @@ To run the tests, from the repo root:
 pytest -v labs/ecrire-code/plays-et-tasks/challenge/tests/
 ```
 
-## 🚀 Going further
+### 🚀 Going further
 
 - Add a `pre_tasks` that calls a `uri:` module toward a non-existent endpoint, check that the `pre_tasks` fails **before** `tasks` run (proof of the order `pre_tasks` → `tasks`).
 - Add `meta: flush_handlers` at the end of `tasks:` and observe the exact moment when the handler runs, see [lab 06](../../handlers/).
@@ -143,7 +170,7 @@ pytest -v labs/ecrire-code/plays-et-tasks/challenge/tests/
 
 Good luck! 🧠
 
-## 🧹 Reset
+### 🧹 Reset
 
 To replay the challenge in a neutral state:
 

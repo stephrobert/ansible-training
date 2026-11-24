@@ -1,6 +1,33 @@
-# 🎯 Challenge — Continue after an ignored error
+# The keyword that hides your outages
 
-## ✅ Objective
+## The situation
+
+Somebody sprinkled `ignore_errors: true` across the playbook until it stopped
+being red. It is green now. It is also lying: a failed database migration
+scrolls past as a discreet `...ignoring`, and the play ends in success. The
+keyword is not evil, and it has a couple of honest uses — a cleanup that must
+tolerate an already-absent service, for one. It is the reflex that is the
+problem, and the only cure is to see precisely what it does and does not do.
+
+You measure it on `db1.lab`, from **control-node.lab**.
+
+Your mission:
+
+1. Try to stop a service that does not exist on `db1.lab`: a guaranteed
+   failure, and a legitimate one in a cleanup.
+2. Ignore that error explicitly, putting the keyword where it belongs — it
+   qualifies the task, it is not a module parameter.
+3. Prove the play carried on: the next task runs, leaves its marker, and the
+   recap reports `failed=0` even though a task failed.
+4. Then argue against yourself: name what `failed_when` or `block`/`rescue`
+   would have given you here that a silent ignore never will.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/ignore-errors/ (in French)
+
+## 🎯 Challenge — Continue after an ignored error
+
+### ✅ Objective
 
 Write `challenge/solution.yml` that, on **db1.lab**:
 
@@ -11,7 +38,7 @@ Write `challenge/solution.yml` that, on **db1.lab**:
 
 The play ends in success (`failed=0`) despite the silent error.
 
-## 🧩 Stuck?
+### 🧩 Stuck?
 
 ```bash
 dsoxlab hint ecrire-code-ignore-errors
@@ -20,7 +47,7 @@ dsoxlab hint ecrire-code-ignore-errors
 Hints are progressive and **cost points**: the first one points you in the
 right direction, the last one unblocks you.
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -57,7 +84,7 @@ right direction, the last one unblocks you.
 >   `ignored` column does not exist in all versions, but the error
 >   counter does not increment with `ignore_errors`.
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 ansible-playbook labs/ecrire-code/ignore-errors/challenge/solution.yml
@@ -69,19 +96,19 @@ ansible-playbook labs/ecrire-code/ignore-errors/challenge/solution.yml
 - 2nd task: `changed`
 - `PLAY RECAP`: `failed=0, ignored=1`
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/ignore-errors/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-ignore-errors
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`ignore_unreachable: true`**: continues even if the host becomes
   unreachable (different from `ignore_errors`, which covers only **task

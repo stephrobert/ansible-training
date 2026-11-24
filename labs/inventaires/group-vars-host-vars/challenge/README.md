@@ -1,8 +1,36 @@
-# 🎯 Challenge — Demonstrate precedence with a playbook
+# Settle the argument about which port the app really uses
+
+## The situation
+
+The team has been going in circles for two days. The application listens on the
+standard port everywhere, except on the web tier, which uses another, except on
+**web1.lab**, which was moved again for a conflict nobody documented. Three
+different answers depending on who you ask, and the variable is spread across
+three inventory levels that override each other. Reading the YAML is not enough:
+what settles it is what Ansible **resolves at runtime**, on each host, from
+**control-node.lab**.
+
+Your mission:
+
+1. Spread the application port across the inventory's **three levels**: the
+   default for everyone, the web tier's override, and **web1.lab**'s specific
+   value.
+2. Write a play targeting **all hosts** that drops on each one a marker holding
+   **the port resolved for that host**, named after the host itself.
+3. Prove the precedence on the three managed nodes: **web1.lab** takes its
+   host-level value, **web2.lab** takes the group's, and **db1.lab** falls back
+   to the default.
+4. Run it against the **lab inventory**, without which none of the group
+   variables load and the demonstration proves nothing.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/group-vars-host-vars/ (in French)
+
+## 🎯 Challenge — Demonstrate precedence with a playbook
 
 You have seen that `ansible-inventory --host` resolves the variables correctly. The challenge is to **prove dynamically** the resolution on the 3 hosts via a playbook that lays down a marker file containing the value of `app_port` resolved for that host.
 
-## ✅ Objective
+### ✅ Objective
 
 Write `solution.yml` that:
 
@@ -12,7 +40,7 @@ Write `solution.yml` that:
 
 The inventory to use: **the one of the parent lab** (`../inventory/hosts.yml`), not the one of the challenge.
 
-## 🧩 Instructions
+### 🧩 Instructions
 
 Skeleton to complete:
 
@@ -65,7 +93,7 @@ Check the files on each host:
    port resolu pour db1.lab : 80
    ```
 
-## 🧪 Validation
+### 🧪 Validation
 
 The `tests/test_precedence.py` script automatically checks:
 
@@ -77,7 +105,7 @@ The `tests/test_precedence.py` script automatically checks:
 pytest -v challenge/tests/
 ```
 
-## 🚀 Going further
+### 🚀 Going further
 
 - Add `app_port: 5555` in `--extra-vars` on the command line and observe: the value **overrides** everything (priority 22 out of 22).
 - Add a `group_vars/webservers/main.yml` folder instead of a `webservers.yml` file: Ansible accepts both formats. Prefer the **folder** if you split into several files (`main.yml`, `vault.yml`, `network.yml`).
@@ -87,7 +115,7 @@ pytest -v challenge/tests/
 
 Good luck! 🧠
 
-## 🧹 Reset
+### 🧹 Reset
 
 To replay the challenge in a neutral state:
 

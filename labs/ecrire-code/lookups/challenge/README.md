@@ -1,12 +1,39 @@
-# 🎯 Challenge — Combining 3 lookups
+# The token lives here, the server needs it there
 
-## ✅ Objective
+## The situation
+
+The API token sits in a file on the control node. **db1.lab** has never seen
+it, and should never hold a copy of it beyond the config file you are about to
+render. A colleague suggested copying the token onto db1 first and reading it
+from there, which defeats the entire point of keeping it on one machine.
+Ansible can read local data at template time and push only the result. That is
+what lookups are for, and the direction is the whole lesson.
+
+You work from **control-node.lab**.
+
+Your mission:
+
+1. Read the **API token from a file on the control node** and push it into
+   `/tmp/lookups-challenge.txt` on `db1.lab`.
+2. Add a value taken from the control node's **environment**, and one taken
+   from the **output of a command** run locally.
+3. Convince yourself of the direction: all three values describe your control
+   node, not db1 — even though the file lands on db1.
+4. Note that a file lookup resolves **relative to the playbook**, not to your
+   shell, and know when `query` should replace `lookup`.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/lookups/ (in French)
+
+## 🎯 Challenge — Combining 3 lookups
+
+### ✅ Objective
 
 Write `challenge/solution.yml` that, on **db1.lab**, writes
 `/tmp/lookups-challenge.txt` containing **3 values** read on the **control
 node** (not on the managed node) via 3 different lookup plugins.
 
-## 🧩 Preparation: create the source file
+### 🧩 Preparation: create the source file
 
 The `lookup('file', ...)` look for a file **on the control node** (relative
 to the playbook directory). Prepare it:
@@ -16,7 +43,7 @@ mkdir -p labs/ecrire-code/lookups/challenge/files
 echo "MAGIC-TOKEN-RHCE-2026" > labs/ecrire-code/lookups/challenge/files/api-token.txt
 ```
 
-## 🧩 3 lookups to use
+### 🧩 3 lookups to use
 
 | Lookup | Role | Example |
 | --- | --- | --- |
@@ -28,7 +55,7 @@ echo "MAGIC-TOKEN-RHCE-2026" > labs/ecrire-code/lookups/challenge/files/api-toke
 > managed node, which is what makes them useful (pushing a local secret onto
 > the remote hosts).
 
-## 🧩 Expected output
+### 🧩 Expected output
 
 `/tmp/lookups-challenge.txt` (on db1) must contain:
 
@@ -38,7 +65,7 @@ home=/home/<you>
 host_local=<short hostname of your machine>
 ```
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -73,26 +100,26 @@ host_local=<short hostname of your machine>
 >   shell variable expansion: pass a complete and simple
 >   command (`hostname -s`, not `echo $USER`).
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 ansible-playbook labs/ecrire-code/lookups/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "cat /tmp/lookups-challenge.txt"
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/lookups/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-lookups
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`lookup('vars', 'name')`**: retrieves the value of an Ansible variable by
   its name (useful in dynamic programming).

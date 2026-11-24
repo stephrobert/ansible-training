@@ -1,14 +1,42 @@
-# 🎯 Challenge — Module `template:` avec `backup`
+# On écrase la config, on perd la preuve
 
-## ✅ Objectif
+## La situation
+
+La bannière de **db1.lab** est générée depuis un template, désormais, et c'est
+un progrès. Ce qui n'en est pas un : le run de la semaine dernière l'a
+remplacée par une version cassée, et personne n'a pu produire la précédente.
+Elle existait à exactement un endroit : le fichier qui venait d'être écrasé.
+Sur une bannière, ça coûte des excuses. Sur la configuration d'un service qui
+refuse de redémarrer, un vendredi à 18 heures, ça coûte la soirée. Vous
+sécurisez la génération depuis **control-node.lab**.
+
+Votre mission :
+
+1. Générer `/etc/banner.txt` sur `db1.lab` depuis un **template Jinja2**, le
+   texte d'en-tête venant d'une variable plutôt que d'une chaîne en dur.
+2. Construire le bloc de métadonnées en **itérant sur un dict**, pour
+   qu'ajouter un champ plus tard revienne à modifier la donnée, pas le
+   template.
+3. Conserver la version précédente : chaque écrasement doit laisser derrière
+   lui une **sauvegarde horodatée**.
+4. Poser les permissions explicitement et **quoter le mode** : un octal non
+   quoté n'est pas le mode que vous croyez. Puis découvrir ce que `validate:`
+   vous apporterait sur une vraie config.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/module-template/
+
+## 🎯 Challenge — Module `template:` avec `backup`
+
+### ✅ Objectif
 
 Générer **`/etc/banner.txt`** sur **db1.lab** depuis un template, avec
 **mode 0644**. Ajouter `backup: true` est une **bonne pratique de
 production**, recommandée mais **non vérifiée par les tests**.
 
-## 🧩 Fichiers à créer
+### 🧩 Fichiers à créer
 
-### 1) `challenge/templates/banner.txt.j2`
+#### 1) `challenge/templates/banner.txt.j2`
 
 Doit produire :
 
@@ -38,7 +66,7 @@ Squelette :
 {% endfor %}
 ```
 
-### 2) `challenge/solution.yml`
+#### 2) `challenge/solution.yml`
 
 Squelette :
 
@@ -63,7 +91,7 @@ Squelette :
         backup: true              # bonne pratique (prod), non vérifiée par les tests
 ```
 
-## 🧩 Options à connaître sur `template:`
+### 🧩 Options à connaître sur `template:`
 
 | Option | Effet |
 | --- | --- |
@@ -90,7 +118,7 @@ Squelette :
 > - **`mode:` toujours quoté** : `mode: "0644"` (pas `mode: 0644` qui est
 >   octal puis décimal = mode 420).
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/ecrire-code/module-template/challenge/solution.yml
@@ -101,19 +129,19 @@ ansible db1.lab -m ansible.builtin.command -a "ls -la /etc/banner.txt*"
 🔍 Au **2e run après modif** du template, vous verrez `/etc/banner.txt.<ts>~`
 apparaître (preuve de `backup: true`).
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/ecrire-code/module-template/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-module-template
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **`validate:`** : ajoutez `validate: 'echo %s'` pour voir Ansible passer le
   fichier temporaire à la commande de validation. Sur un nginx.conf, ce serait

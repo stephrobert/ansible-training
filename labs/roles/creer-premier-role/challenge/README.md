@@ -1,10 +1,34 @@
-# 🎯 Challenge — Write your own role and deploy it on db1.lab
+# Stop copy-pasting the same web server playbook
+
+## The situation
+
+Your team ships web servers by copy-pasting the same twenty tasks into every new
+playbook. Last week a firewall rule was fixed in one copy and forgotten in the
+four others, and a host went live with HTTP closed. The lead has had enough:
+anything reusable now ships as a **role**. A `webserver` role (nginx) already
+exists as a model and was handed to you ready-made, and a new internal app
+needs a web server on **db1.lab**. This time you write the role yourself.
+
+Your mission, from **control-node.lab**:
+
+1. Scaffold an **`nginx-server` role** with the standard layout: `tasks/`,
+   `defaults/`, `handlers/`, `meta/` and a `README.md`.
+2. Have it install **nginx**, start and enable it, and open HTTP in firewalld
+   **persistently**, without sacrificing idempotence.
+3. Expose an overridable default in `defaults/main.yml` and wire a
+   **`Restart nginx`** handler triggered by `notify:`.
+4. Call the role from a playbook targeting **db1.lab** only.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/creer-premier-role/ (in French)
+
+## 🎯 Challenge — Write your own role and deploy it on db1.lab
 
 You deployed the `webserver` role on `web1.lab`, but that role was **provided ready-made**. The challenge is to **create a role yourself** named `nginx-server` on the same structural model, and to deploy it on `db1.lab`.
 
 The goal: practice **creating a role from scratch**, from `ansible-galaxy role init` all the way to calling it from a playbook. The deployed software does not change: the role structure is the subject.
 
-## ✅ Objective
+### ✅ Objective
 
 Write `solution.yml` that:
 
@@ -16,9 +40,9 @@ Write `solution.yml` that:
    - `roles/nginx-server/meta/main.yml` minimal (galaxy_info)
    - `roles/nginx-server/README.md` minimal
 
-## 🧩 Instructions
+### 🧩 Instructions
 
-### 1. Create the role structure
+#### 1. Create the role structure
 
 ```bash
 cd labs/roles/creer-premier-role/
@@ -26,7 +50,7 @@ ansible-galaxy role init challenge/roles/nginx-server
 ls challenge/roles/nginx-server/      # 9 sub-directories generated (tasks, defaults, handlers, meta…)
 ```
 
-### 2. Complete `tasks/main.yml`
+#### 2. Complete `tasks/main.yml`
 
 ```yaml
 ---
@@ -49,14 +73,14 @@ ls challenge/roles/nginx-server/      # 9 sub-directories generated (tasks, defa
     state: ???
 ```
 
-### 3. Complete `defaults/main.yml`
+#### 3. Complete `defaults/main.yml`
 
 ```yaml
 ---
 nginx_state: ???                   # package 'present' by default
 ```
 
-### 4. Complete `handlers/main.yml`
+#### 4. Complete `handlers/main.yml`
 
 ```yaml
 ---
@@ -66,7 +90,7 @@ nginx_state: ???                   # package 'present' by default
     state: ???                     # restarted
 ```
 
-### 5. Write `solution.yml` (skeleton to complete)
+#### 5. Write `solution.yml` (skeleton to complete)
 
 ```yaml
 ---
@@ -77,7 +101,7 @@ nginx_state: ???                   # package 'present' by default
     - role: ???                    # name of the directory under challenge/roles/
 ```
 
-### 6. Run from the repo root
+#### 6. Run from the repo root
 
 ```bash
 ANSIBLE_ROLES_PATH=labs/roles/creer-premier-role/challenge/roles \
@@ -101,7 +125,7 @@ ansible-playbook \
 >   need to fill all of them. `defaults/`, `tasks/`, `handlers/`, `meta/`
 >   are enough here.
 
-### 7. Test
+#### 7. Test
 
    ```bash
    curl http://db1.lab/
@@ -109,7 +133,7 @@ ansible-playbook \
 
    Expected output: nginx's default welcome page.
 
-## 🧪 Validation
+### 🧪 Validation
 
 The pytest test automatically checks:
 
@@ -122,7 +146,7 @@ The pytest test automatically checks:
 pytest -v challenge/tests/
 ```
 
-## 🚀 Going further
+### 🚀 Going further
 
 - Refactor the role so that it accepts an `nginx_listen_port` parameter and templates `nginx.conf` accordingly. Caution: a non-standard port requires an SELinux label. This is the subject of **lab 59** (variables).
 - Compare the `ansible-playbook` outputs with `--check --diff` before the real run.
@@ -132,7 +156,7 @@ pytest -v challenge/tests/
 
 Good luck! 🧠
 
-## 🧹 Reset
+### 🧹 Reset
 
 To replay the challenge in a neutral state:
 

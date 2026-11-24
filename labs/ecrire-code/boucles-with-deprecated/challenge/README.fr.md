@@ -1,6 +1,34 @@
-# 🎯 Challenge — Migrer des boucles `with_*` vers `loop:`
+# Le playbook dont vous héritez a été écrit en 2016
 
-## ✅ Objectif
+## La situation
+
+Vous reprenez un dépôt auquel personne n'a touché depuis des années. Il
+marche. Il fait aussi échouer la barrière de lint de la CI dès son premier
+fichier : du `with_items` partout, un `with_dict` sur la table des ports, un
+`with_subelements` que personne n'ose lire à voix haute. La syntaxe est
+dépréciée, pas cassée, et c'est exactement pour ça qu'elle est encore là. Elle
+continuera de marcher jusqu'à la version qui la supprime, et cette version
+n'est pas loin.
+
+Vous modernisez les itérations sur `db1.lab`, depuis **control-node.lab**.
+
+Votre mission :
+
+1. Réécrire l'itération sur liste simple avec **`loop:`**, le remplacement
+   moderne au un pour un.
+2. Migrer la table des ports : un dict ne s'itère **pas** directement. Le
+   convertir en liste de paires et atteindre la clé comme la valeur.
+3. En profiter pour garder la console lisible : étiqueter chaque itération par
+   ce qu'elle fait réellement.
+4. Atteindre zéro dépréciation sur `ansible-lint`, et découvrir laquelle de ces
+   réécritures le linter peut faire à votre place.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/boucles-with-deprecated/
+
+## 🎯 Challenge — Migrer des boucles `with_*` vers `loop:`
+
+### ✅ Objectif
 
 Écrire `challenge/solution.yml` qui sur **db1.lab** utilise **uniquement la
 forme moderne `loop:`** (jamais `with_items:` ni `with_dict:`) pour deux
@@ -11,7 +39,7 @@ itérations différentes :
 | Liste simple | `[apple, banana, cherry]` | 3 fichiers `/tmp/withitems-<fruit>.txt` |
 | Dict (clé→valeur) | `{nginx: 80, redis: 6379}` | `/tmp/withdict-nginx.txt` (contenu `80`), `/tmp/withdict-redis.txt` (contenu `6379`) |
 
-## 🧩 Bloqué ?
+### 🧩 Bloqué ?
 
 ```bash
 dsoxlab hint ecrire-code-boucles-with-deprecated
@@ -20,7 +48,7 @@ dsoxlab hint ecrire-code-boucles-with-deprecated
 Les indices sont progressifs et **coûtent des points** : le premier oriente, le
 dernier débloque.
 
-## 🧩 Squelette
+### 🧩 Squelette
 
 ```yaml
 ---
@@ -69,7 +97,7 @@ dernier débloque.
 > - **Pas de double-loop** : `loop:` n'accepte qu'une dimension. Pour 2
 >   dimensions, utiliser `subelements` ou `product` filter.
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/ecrire-code/boucles-with-deprecated/challenge/solution.yml
@@ -82,19 +110,19 @@ ansible db1.lab -m ansible.builtin.command -a "ls /tmp/withitems-*.txt /tmp/with
 ansible db1.lab -m ansible.builtin.command -a "cat /tmp/withdict-nginx.txt"
 ```
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/ecrire-code/boucles-with-deprecated/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-boucles-with-deprecated
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **`with_items` → `loop`** (1-to-1) ; **`with_dict` → `loop: dict | dict2items`** ;
   **`with_subelements` → `subelements` filter**. La doc Ansible liste toutes

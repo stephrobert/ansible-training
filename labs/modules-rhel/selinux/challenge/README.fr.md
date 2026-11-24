@@ -1,6 +1,34 @@
-# 🎯 Challenge — SELinux pour servir une app web custom
+# Servir l'application depuis un dossier custom, SELinux toujours actif
 
-## ✅ Objectif
+## La situation
+
+L'application déployée sur **db1.lab** vit en dehors de la racine web par
+défaut, et nginx renvoie 403 sur chaque fichier alors que les permissions sont
+correctes. Elle doit aussi joindre une API backend, et ces appels sortants sont
+refusés eux aussi. Un collègue a appliqué le correctif le plus rapide : SELinux
+désactivé. Ce n'est pas un correctif, c'est un constat au prochain audit, et
+l'examen RHCE le note comme un échec. Vous remettez la protection et faites
+fonctionner l'application **avec**, depuis **control-node.lab**.
+
+Votre mission :
+
+1. Installer les prérequis SELinux sur **db1.lab**, sans lesquels les modules
+   échouent sur une erreur peu parlante, puis remettre SELinux en **enforcing**
+   sous la politique targeted.
+2. Autoriser les **connexions réseau sortantes** du serveur web via le bon
+   booléen, avec **persistance** : un booléen qui retombe au reboot ne corrige
+   rien.
+3. Déclarer le bon **contexte de fichier sur le répertoire applicatif custom**,
+   sous forme de motif couvrant toute l'arborescence, pas seulement le dossier.
+4. **Appliquer ce contexte aux fichiers déjà présents** : le déclarer dans la
+   politique les laisse intacts, et nginx continue de renvoyer 403.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-selinux/
+
+## 🎯 Challenge — SELinux pour servir une app web custom
+
+### ✅ Objectif
 
 Sur **db1.lab**, préparer **SELinux** pour que le serveur web (nginx) puisse :
 
@@ -20,7 +48,7 @@ la racine web par défaut (`/usr/share/nginx/html/` pour nginx sur RHEL).
 > nginx exactement comme à Apache. Le paquet `httpd` n'est jamais requis pour
 > ce lab.
 
-## 🧩 6 étapes
+### 🧩 6 étapes
 
 1. **Installer prérequis** : `python3-libselinux` et
    `policycoreutils-python-utils` (les modules Ansible SELinux dépendent de ces
@@ -34,7 +62,7 @@ la racine web par défaut (`/usr/share/nginx/html/` pour nginx sur RHEL).
    étape, le contexte est dans la **policy** mais pas sur les **fichiers**
    existants).
 
-## 🧩 Modules à utiliser
+### 🧩 Modules à utiliser
 
 | Module | Rôle |
 | --- | --- |
@@ -43,7 +71,7 @@ la racine web par défaut (`/usr/share/nginx/html/` pour nginx sur RHEL).
 | `community.general.sefcontext` | Définir un contexte sur un chemin (regex) |
 | `ansible.builtin.command: restorecon ...` | Appliquer le contexte |
 
-## 🧩 Squelette
+### 🧩 Squelette
 
 ```yaml
 ---
@@ -97,7 +125,7 @@ la racine web par défaut (`/usr/share/nginx/html/` pour nginx sur RHEL).
 > - **`python3-libselinux`** doit être installé sur la cible. Sans, les
 >   modules `seboolean`/`sefcontext` plantent avec une erreur peu claire.
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/modules-rhel/selinux/challenge/solution.yml
@@ -106,7 +134,7 @@ ansible db1.lab -m ansible.builtin.command -a "getsebool httpd_can_network_conne
 ansible db1.lab -m ansible.builtin.command -a "ls -dZ /var/www/myapp"
 ```
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 > ⏱️ **Un test redémarre db1** (environ 90 s). Il est marqué `slow`, et il est
 > là volontairement : la persistance après redémarrage est le piège qui fait
@@ -124,13 +152,13 @@ ansible db1.lab -m ansible.builtin.command -a "ls -dZ /var/www/myapp"
 pytest -v labs/modules-rhel/selinux/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean modules-rhel-selinux
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **`getsebool -a`** : liste tous les booléens SELinux et leur état.
 - **`semanage fcontext -l | grep myapp`** : voir les contextes définis dans

@@ -1,10 +1,35 @@
-# 🎯 Challenge — Écrire son propre rôle et le déployer sur db1.lab
+# Arrêter de copier-coller le même playbook web
+
+## La situation
+
+Votre équipe déploie ses serveurs web en recopiant les mêmes vingt tâches dans
+chaque nouveau playbook. La semaine dernière, une règle de pare-feu a été
+corrigée dans une copie et oubliée dans les quatre autres : un hôte est parti en
+production avec HTTP fermé. Le lead a tranché : tout ce qui est réutilisable
+devient un **rôle**. Un rôle `webserver` existe déjà comme modèle, on vous l'a
+donné tout fait, et une nouvelle application interne réclame un serveur web sur
+**db1.lab**. Cette fois, le rôle, c'est vous qui l'écrivez.
+
+Votre mission, depuis **control-node.lab** :
+
+1. Générer un rôle **`nginx-server`** avec la structure standard : `tasks/`,
+   `defaults/`, `handlers/`, `meta/` et un `README.md`.
+2. Lui faire installer **nginx**, le démarrer, l'activer au boot et ouvrir HTTP
+   dans firewalld de façon **persistante**, sans casser l'idempotence.
+3. Exposer une valeur surchargeable dans `defaults/main.yml` et brancher un
+   handler **`Restart nginx`** déclenché par `notify:`.
+4. Appeler le rôle depuis un playbook qui ne cible que **db1.lab**.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/creer-premier-role/
+
+## 🎯 Challenge — Écrire son propre rôle et le déployer sur db1.lab
 
 Vous avez déployé le rôle `webserver` sur `web1.lab`, mais ce rôle vous était **fourni tout fait**. Le challenge consiste à **créer vous-même un rôle** `nginx-server` sur le même modèle structurel, et à le déployer sur `db1.lab`.
 
 L'objectif : pratiquer la **création d'un rôle from scratch**, du `ansible-galaxy role init` jusqu'à l'appel depuis un playbook. Le logiciel déployé ne change pas : c'est la structure du rôle qui est le sujet.
 
-## ✅ Objectif
+### ✅ Objectif
 
 Écrire `solution.yml` qui :
 
@@ -16,9 +41,9 @@ L'objectif : pratiquer la **création d'un rôle from scratch**, du `ansible-gal
    - `roles/nginx-server/meta/main.yml` minimal (galaxy_info)
    - `roles/nginx-server/README.md` minimal
 
-## 🧩 Consignes
+### 🧩 Consignes
 
-### 1. Créer la structure du rôle
+#### 1. Créer la structure du rôle
 
 ```bash
 cd labs/roles/creer-premier-role/
@@ -26,7 +51,7 @@ ansible-galaxy role init challenge/roles/nginx-server
 ls challenge/roles/nginx-server/      # 9 sous-dossiers générés (tasks, defaults, handlers, meta…)
 ```
 
-### 2. Compléter `tasks/main.yml`
+#### 2. Compléter `tasks/main.yml`
 
 ```yaml
 ---
@@ -49,14 +74,14 @@ ls challenge/roles/nginx-server/      # 9 sous-dossiers générés (tasks, defau
     state: ???
 ```
 
-### 3. Compléter `defaults/main.yml`
+#### 3. Compléter `defaults/main.yml`
 
 ```yaml
 ---
 nginx_state: ???                   # paquet 'present' par défaut
 ```
 
-### 4. Compléter `handlers/main.yml`
+#### 4. Compléter `handlers/main.yml`
 
 ```yaml
 ---
@@ -66,7 +91,7 @@ nginx_state: ???                   # paquet 'present' par défaut
     state: ???                     # restarted
 ```
 
-### 5. Écrire `solution.yml` (squelette à compléter)
+#### 5. Écrire `solution.yml` (squelette à compléter)
 
 ```yaml
 ---
@@ -77,7 +102,7 @@ nginx_state: ???                   # paquet 'present' par défaut
     - role: ???                    # nom du dossier sous challenge/roles/
 ```
 
-### 6. Lancer depuis la racine du repo
+#### 6. Lancer depuis la racine du repo
 
 ```bash
 ANSIBLE_ROLES_PATH=labs/roles/creer-premier-role/challenge/roles \
@@ -101,7 +126,7 @@ ansible-playbook \
 >   besoin de tous les remplir. `defaults/`, `tasks/`, `handlers/`, `meta/`
 >   suffisent ici.
 
-### 7. Tester
+#### 7. Tester
 
    ```bash
    curl http://db1.lab/
@@ -109,7 +134,7 @@ ansible-playbook \
 
    Sortie attendue : la page d'accueil par défaut de nginx.
 
-## 🧪 Validation
+### 🧪 Validation
 
 Le test pytest vérifie automatiquement :
 
@@ -122,7 +147,7 @@ Le test pytest vérifie automatiquement :
 pytest -v challenge/tests/
 ```
 
-## 🚀 Pour aller plus loin
+### 🚀 Pour aller plus loin
 
 - Refactorer le rôle pour qu'il accepte un paramètre `nginx_listen_port` et template `nginx.conf` en conséquence. Attention : un port non standard demande une étiquette SELinux. C'est le sujet du **lab 59** (variables).
 - Comparer les sorties `ansible-playbook` avec `--check --diff` avant le run réel.
@@ -132,7 +157,7 @@ pytest -v challenge/tests/
 
 Bonne chance ! 🧠
 
-## 🧹 Reset
+### 🧹 Reset
 
 Pour rejouer le challenge dans un état neutre :
 

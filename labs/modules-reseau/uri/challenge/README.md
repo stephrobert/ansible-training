@@ -1,6 +1,33 @@
-# 🎯 Challenge — Module `uri:` (API calls + JSON parsing)
+# Talk to the API from the playbook, not from a curl pipeline
 
-## ✅ Objective
+## The situation
+
+The deployment chain has to register each server with an inventory API: read
+the reference payload, then declare the node. Today it is done with
+`command: curl` piped into `jq`, and it hurts. The exit status says nothing
+useful about the HTTP code, the response is parsed with a regex, and any API
+that answers `201` instead of `200` breaks the run. You rewrite the exchange
+from **control-node.lab**, targeting **db1.lab**, with Ansible actually parsing
+the JSON instead of a shell pretending to.
+
+Your mission:
+
+1. **Query the reference endpoint** in GET from **db1.lab**, **capturing the
+   response body**, which the module does not return by default, and save it
+   under `/opt/`.
+2. **Declare the node in POST** with a **JSON body** built as a structure, not a
+   hand-escaped string.
+3. **Accept the API's legitimate codes** (`200` and `201`): a creation
+   answering `201` is a success, not a failure.
+4. Save the **parsed** response as readable JSON, working from the structure the
+   module returns rather than from raw text.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/reseau/module-uri/ (in French)
+
+## 🎯 Challenge — Module `uri:` (API calls + JSON parsing)
+
+### ✅ Objective
 
 On **db1.lab**, make 2 HTTP calls with **`ansible.builtin.uri`** to the internal
 inventory API of the lab, served by **`api-interne.lab:8009`**:
@@ -18,7 +45,7 @@ No `command: curl`. Everything through the Ansible module.
 > **logs every call**: the tests re-read this log, and therefore see whether
 > the request really went out, and with which agent.
 
-## 🧩 Steps
+### 🧩 Steps
 
 1. **GET** `http://api-interne.lab:8009/api/reference`:
    - `return_content: true` to capture the body.
@@ -33,7 +60,7 @@ No `command: curl`. Everything through the Ansible module.
    - `register: post_response`.
    - **Write** `post_response.json | to_nice_json` to `/opt/lab-uri-post.json`.
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -91,7 +118,7 @@ No `command: curl`. Everything through the Ansible module.
 >   or a timestamp in the response would make the `copy:` `changed` on every
 >   pass.
 
-## 🚀 Launch
+### 🚀 Launch
 
 ```bash
 ansible-playbook labs/modules-reseau/uri/challenge/solution.yml
@@ -101,20 +128,20 @@ ansible db1.lab -m ansible.builtin.command -a "head -5 /opt/lab-uri-get.json"
 ansible web2.lab -b -m ansible.builtin.command -a "cat /var/log/nginx/lab-uri-api.log"
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-reseau/uri/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 ansible db1.lab -b -m file -a "path=/opt/lab-uri-get.json state=absent"
 ansible db1.lab -b -m file -a "path=/opt/lab-uri-post.json state=absent"
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`until:` + `retries:` + `delay:`**: application healthcheck, repeat the
   call until it responds correctly (at most N times).

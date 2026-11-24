@@ -1,6 +1,34 @@
-# 🎯 Challenge — Monter un loop device persistant
+# Donner à l'application un volume dédié qui revient après un reboot
 
-## ✅ Objectif
+## La situation
+
+L'application de **db1.lab** écrit ses données directement sur le système de
+fichiers racine, et un log parti en vrille a déjà rempli le disque et arrêté le
+système. Il lui faut son espace à elle, isolé, mais le disque physique n'arrivera
+pas avant plusieurs semaines. Un fichier image monté en loop device achète
+l'isolation tout de suite, sans attendre le matériel. La vraie exigence est celle
+que tout le monde oublie : un volume monté à la main disparaît au reboot suivant,
+et l'application se remet à écrire sur la racine sans prévenir.
+
+Votre mission :
+
+1. Sur **db1.lab**, créer le **fichier image de 100 Mo** de façon qu'un second
+   passage ne le recrée pas, puis le **formater en ext4**.
+2. Créer le point de montage, puis **monter l'image et l'inscrire dans
+   `/etc/fstab`** en une seule étape : l'état que vous choisissez décide si le
+   montage survit au reboot.
+3. Passer l'option qui transforme le fichier image en device utilisable, et
+   durcir le volume pour qu'il ne puisse porter **ni nœuds de périphériques ni
+   binaires setuid**.
+4. Prouver la persistance : l'entrée fstab est présente et le volume est monté
+   maintenant.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-mount/
+
+## 🎯 Challenge — Monter un loop device persistant
+
+### ✅ Objectif
 
 Sur **db1.lab**, créer un fichier image `100M`, le formater en `ext4`, et le
 **monter** sur `/mnt/lab-data` avec une **entrée `/etc/fstab`** (persistant
@@ -10,7 +38,7 @@ loop (c'est ce qui survit au reboot), `noatime` n'enregistre pas les access
 times, et `nodev,nosuid` sont les options de durcissement (pas de device node,
 pas de setuid sur ce système de fichiers).
 
-## 🧩 Étapes
+### 🧩 Étapes
 
 1. Créer le fichier image **`/opt/lab-disk.img`** de 100 Mo (utilisez `dd` avec
    `creates:` pour idempotence).
@@ -19,7 +47,7 @@ pas de setuid sur ce système de fichiers).
 4. **Monter** + écrire dans **fstab** via `ansible.posix.mount` avec
    `state: mounted` et `opts: loop,defaults,noatime,nodev,nosuid`.
 
-## 🧩 Modules clés
+### 🧩 Modules clés
 
 | Module | Rôle |
 | --- | --- |
@@ -28,7 +56,7 @@ pas de setuid sur ce système de fichiers).
 | `ansible.builtin.file` | Créer le point de montage |
 | `ansible.posix.mount` | Monter + gérer fstab |
 
-## 🧩 Sémantique de `state:` du module mount
+### 🧩 Sémantique de `state:` du module mount
 
 | `state:` | Effet |
 | --- | --- |
@@ -37,7 +65,7 @@ pas de setuid sur ce système de fichiers).
 | `unmounted` | Démonte, **garde** la ligne fstab |
 | `absent` | Démonte **et** supprime de fstab |
 
-## 🧩 Options de mount
+### 🧩 Options de mount
 
 Ce challenge **impose** `opts: loop,defaults,noatime,nodev,nosuid` (séparées
 par virgule). Chacune :
@@ -52,7 +80,7 @@ Les tests vérifient que `noatime`, `nodev` et `nosuid` sont actives sur le
 montage (via `findmnt`) et toujours présentes après un reboot : les omettre
 fait échouer le lab.
 
-## 🧩 Squelette
+### 🧩 Squelette
 
 ```yaml
 ---
@@ -99,7 +127,7 @@ fait échouer le lab.
 > - **`backup: true`** sur `mount:` : sauvegarde `fstab` avant
 >   modification — précieux en prod.
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/modules-rhel/mount/challenge/solution.yml
@@ -108,7 +136,7 @@ ansible db1.lab -m ansible.builtin.command -a "grep lab-data /etc/fstab"
 ansible db1.lab -m ansible.builtin.command -a "mount | grep lab-data"
 ```
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 > ⏱️ **Un test redémarre db1** (environ 90 s). Il est marqué `slow`, et il est
 > là volontairement : la persistance après redémarrage est le piège qui fait
@@ -126,13 +154,13 @@ ansible db1.lab -m ansible.builtin.command -a "mount | grep lab-data"
 pytest -v labs/modules-rhel/mount/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean modules-rhel-mount
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **`state: present`** seul : on inscrit dans fstab sans monter (utile pour
   pré-configurer un host avant un disque physique branché plus tard).

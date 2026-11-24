@@ -1,12 +1,40 @@
-# 🎯 Challenge — 4 filtres Jinja2 avancés
+# Quatre transformations que personne ne devrait faire à la main
 
-## ✅ Objectif
+## La situation
+
+L'intégration que vous branchez a besoin de quatre choses qu'Ansible ne vous
+donne pas toutes faites : le préfixe de rôle de la machine, enfoui dans son
+FQDN ; un en-tête d'authentification Basic, donc un couple d'identifiants
+encodé en base64 ; une liste qui arrive imbriquée depuis l'export d'une autre
+équipe ; et une empreinte sha256 pour savoir si une charge utile a réellement
+changé. Les quatre se font à la main aujourd'hui, depuis une page de wiki
+pleine de commandes à copier-coller, et cette page est fausse.
+
+Vous les faites dans la donnée, sur `db1.lab`, depuis **control-node.lab**.
+
+Votre mission :
+
+1. **Extraire** le préfixe de rôle d'un FQDN avec une regex, ancrée pour
+   s'arrêter avant le premier chiffre.
+2. **Encoder** le couple d'identifiants en base64, en restant lucide sur ce que
+   c'est : de l'encodage, jamais du chiffrement.
+3. **Aplatir** la liste imbriquée, et vérifier jusqu'à quelle profondeur le
+   filtre descend avant de renoncer.
+4. Produire une empreinte **sha256** d'une chaîne, puis écrire les quatre
+   résultats sur db1.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/filtres-jinja/
+
+## 🎯 Challenge — 4 filtres Jinja2 avancés
+
+### ✅ Objectif
 
 Écrire `challenge/solution.yml` qui sur **db1.lab** pose
 `/tmp/filtres-avances.txt` contenant **4 lignes**, chacune produite par un
 filtre Jinja2 avancé.
 
-## 🧩 Données d'entrée
+### 🧩 Données d'entrée
 
 ```yaml
 fqdn: "web1.lab.example.com"
@@ -15,7 +43,7 @@ nested: [[1, 2], [3, [4, 5]]]
 to_hash: "foobar"
 ```
 
-## 🧩 Sortie attendue
+### 🧩 Sortie attendue
 
 ```text
 prefix=web
@@ -24,7 +52,7 @@ flat=[1, 2, 3, 4, 5]
 sha256=c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2
 ```
 
-## 🧩 4 filtres à utiliser
+### 🧩 4 filtres à utiliser
 
 | Filtre | Effet |
 | --- | --- |
@@ -33,7 +61,7 @@ sha256=c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2
 | `flatten` | Aplatit récursivement une liste de listes |
 | `hash('sha256')` | Empreinte SHA256 hexadécimale d'une string |
 
-## 🧩 Squelette
+### 🧩 Squelette
 
 ```yaml
 ---
@@ -77,26 +105,26 @@ sha256=c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2
 >   `to_hash | hash('sha256')`. Pour MD5 :  `'md5'`. Ne **jamais**
 >   utiliser `hash` sur un secret : c'est un hash, pas une auth.
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/ecrire-code/filtres-jinja-avances/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "cat /tmp/filtres-avances.txt"
 ```
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/ecrire-code/filtres-jinja-avances/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-filtres-jinja-avances
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **`hash('md5')` / `hash('sha1')` / `hash('sha512')`** : autres algos. Sur
   les versions récentes d'Ansible, `password_hash('sha512')` génère un hash de

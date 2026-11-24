@@ -1,6 +1,34 @@
-# 🎯 Challenge — `delegate_to` + `run_once`
+# Une trace de déploiement, pas une par hôte
 
-## ✅ Objectif
+## La situation
+
+Chaque livraison sur **web1.lab** et **web2.lab** laisse une trace locale sur
+chaque nœud, et ça, ça marche. Ce qui ne marche pas, c'est la trace
+centralisée : l'équipe veut **une** ligne sur **db1.lab** attestant que la
+livraison a eu lieu. Aujourd'hui, le playbook l'écrit une fois par webserver,
+donc db1 reçoit deux fois le même fichier dans la même seconde. Sur un parc de
+quarante nœuds, ce serait quarante fois. Et db1 n'est même pas dans le groupe
+`webservers`.
+
+Vous corrigez ça depuis **control-node.lab**, sans ajouter un second playbook.
+
+Votre mission :
+
+1. Depuis un play qui cible `webservers`, déposer un **marqueur local** sur
+   chaque hôte, nommé d'après l'hôte lui-même.
+2. Écrire la **trace centrale sur `db1.lab`** depuis ce même play, alors que
+   db1 appartient à un tout autre groupe.
+3. Garantir que cette trace est écrite **exactement une fois** pour tout le
+   lot, et non une fois par webserver.
+4. Lire la notation `web1.lab -> db1.lab` dans la sortie, puis vérifier
+   l'isolation : la trace centrale existe sur db1 et sur aucun webserver.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/delegation/
+
+## 🎯 Challenge — `delegate_to` + `run_once`
+
+### ✅ Objectif
 
 Écrire `challenge/solution.yml` qui démontre **deux mécaniques** complémentaires :
 
@@ -10,7 +38,7 @@
    pourtant absent du groupe `webservers`) — preuve que `delegate_to` permet
    d'agir hors-pattern, et que `run_once` empêche le doublon.
 
-## 🧩 Bloqué ?
+### 🧩 Bloqué ?
 
 ```bash
 dsoxlab hint ecrire-code-delegation
@@ -19,7 +47,7 @@ dsoxlab hint ecrire-code-delegation
 Les indices sont progressifs et **coûtent des points** : le premier oriente, le
 dernier débloque.
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/ecrire-code/delegation/challenge/solution.yml
@@ -43,7 +71,7 @@ ansible db1.lab -m ansible.builtin.command \
     -a "ls /tmp/delegation-on-db1.txt"
 ```
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/ecrire-code/delegation/challenge/tests/
@@ -56,13 +84,13 @@ Le test vérifie :
 - `/tmp/delegation-on-db1.txt` sur **db1** (preuve `delegate_to`).
 - **Aucun** `/tmp/delegation-on-db1.txt` sur web1 ni web2 (preuve isolation).
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-delegation
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **`delegate_facts: true`** : les facts collectés sur l'hôte délégué sont
   enregistrés sur l'hôte cible (utile pour partager une info de db1 vers les

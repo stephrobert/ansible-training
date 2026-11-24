@@ -1,6 +1,34 @@
-# 🎯 Challenge — Chiffrer un secret avec ansible-vault
+# Huit commandes, dont une qui vous évite la une des journaux
 
-## ✅ Objectif
+## La situation
+
+Première semaine dans l'équipe. En un après-midi, on vous demande ce que
+résout vraiment un inventaire, quels arguments accepte réellement un module,
+pourquoi le run de cette nuit a été lent, et où vit le mot de passe de la base
+de production. Vous pourriez ouvrir huit onglets de navigateur. Ou apprendre
+que chaque réponse est une **commande livrée avec Ansible**, et que la
+dernière, `ansible-vault`, est tout ce qui sépare votre dépôt Git d'une fuite
+de secrets. Tout se joue depuis **votre control node**.
+
+Votre mission :
+
+1. Faire le tour de la boîte à outils : `ansible` en ad-hoc, `ansible-doc`,
+   `ansible-config`, `ansible-inventory`, `ansible-galaxy` et `ansible-lint`,
+   chacun répondant à une vraie question.
+2. Prouver ensuite que vous savez manipuler un secret : scripter la création
+   d'un petit `vault-secret.yml` contenant une clé d'API et un mot de passe de
+   base.
+3. Le **chiffrer** avec un fichier de mot de passe en `0600`, et vérifier sur
+   le disque que le fichier commence bien par l'en-tête Vault `AES256`.
+4. Le **relire** sans le déchiffrer sur place, et échouer franchement
+   (exit 1) au moindre écart.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/prise-en-main-cli/
+
+## 🎯 Challenge — Chiffrer un secret avec ansible-vault
+
+### ✅ Objectif
 
 Écrire un script Bash `solution.sh` à la racine de **ce répertoire** qui :
 
@@ -63,7 +91,7 @@ echo "Vault OK"
 >   `view`, `edit`, `rekey`. Choisissez celle qui **lit sans modifier le
 >   fichier** pour l'étape 5.
 
-## 🧪 Validation
+### 🧪 Validation
 
 Le test pytest lance votre `solution.sh` et vérifie qu'il retourne exit 0
 ET que `vault-secret.yml` est bien chiffré sur disque.
@@ -72,7 +100,7 @@ ET que `vault-secret.yml` est bien chiffré sur disque.
 pytest -v labs/decouvrir/prise-en-main-cli/challenge/tests/
 ```
 
-## 🚀 Pour aller plus loin
+### 🚀 Pour aller plus loin
 
 - Au lieu de poser le mot de passe en clair dans `.vault-pass`, intégrez-le
   via le **client de récupération de mot de passe** (un script qui lit dans
@@ -80,7 +108,7 @@ pytest -v labs/decouvrir/prise-en-main-cli/challenge/tests/
 - Ajoutez **`ansible-vault rekey`** pour changer le mot de passe d'un fichier
   Vault sans toucher au contenu.
 
-## 🧹 Reset
+### 🧹 Reset
 
 Pour rejouer le challenge dans un état neutre :
 

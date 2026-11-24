@@ -1,6 +1,32 @@
-# 🎯 Challenge — `authorized_key` multi-user with restrictions
+# Hand out SSH access without handing out the whole server
 
-## ✅ Objective
+## The situation
+
+Password authentication is being retired on **db1.lab**, and three accesses
+must land before it goes: Alice works from anywhere and needs an ordinary key;
+Bob only ever connects from the office subnet, and security wants his key
+useless from anywhere else; the backup robot needs an account of its own, but a
+robot key that opens an interactive shell is a spare set of admin credentials
+sitting in a CI runner. Everything is provisioned from **control-node.lab**.
+
+Your mission:
+
+1. Create the two user accounts on **db1.lab**, then install **Alice's personal
+   key** with no restrictions.
+2. Install **Bob's key restricted to the office subnet**, with no terminal
+   allocation.
+3. Give the backup robot a key that can **only trigger the backup script**, with
+   no shell, no tunnels and no X11 forwarding: an intercepted key must be worth
+   nothing.
+4. Add the keys **without wiping** those already in place: locking the trainer
+   out of the box is not part of the exercise.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-authorized-key/ (in French)
+
+## 🎯 Challenge — `authorized_key` multi-user with restrictions
+
+### ✅ Objective
 
 On **db1.lab**, provision **3 different SSH keys**:
 
@@ -9,7 +35,7 @@ On **db1.lab**, provision **3 different SSH keys**:
 3. **Service key** in alice's account: forced command
    (`command="/usr/local/bin/backup.sh"`) + session restrictions.
 
-## 🧩 The key material is already there
+### 🧩 The key material is already there
 
 `dsoxlab run` generates alice's and bob's keypairs for you, on the control node,
 under the lab's `files/` directory:
@@ -31,7 +57,7 @@ precisely why the setup creates them.
 > only regenerates a pair when its private key is missing: deleting it would
 > hand you a different public key from the one already deployed.
 
-## 🧩 Module to use: `ansible.posix.authorized_key`
+### 🧩 Module to use: `ansible.posix.authorized_key`
 
 | Option | Effect |
 | --- | --- |
@@ -40,7 +66,7 @@ precisely why the setup creates them.
 | `state: present` | Adds if absent (idempotent). |
 | `key_options:` | Prefixes the key with OpenSSH options (`from=`, `command=`, `no-pty`, etc.). |
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -104,7 +130,7 @@ precisely why the setup creates them.
 >   permissions (0700). Without it, the key can be ignored by sshd
 >   (permissions too open).
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-utilisateurs/authorized-key/challenge/solution.yml
@@ -112,19 +138,19 @@ ansible db1.lab -b -m ansible.builtin.command -a "cat /home/alice/.ssh/authorize
 ansible db1.lab -b -m ansible.builtin.command -a "cat /home/bob/.ssh/authorized_keys"
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-utilisateurs/authorized-key/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean modules-utilisateurs-authorized-key
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`exclusive: true`**: replaces **all** the user's keys with the one(s)
   provided. Handy to purge orphan keys in a single run.

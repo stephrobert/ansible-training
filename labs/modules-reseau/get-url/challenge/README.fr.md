@@ -1,6 +1,39 @@
-# 🎯 Challenge — Module `get_url:` (téléchargement avec checksum)
+# Sortir les appels curl cachés dans le playbook de provisioning
 
-## ✅ Objectif
+## La situation
+
+Le playbook qui provisionne **db1.lab** télécharge encore ses fichiers de
+référence avec `command: curl`, et cela se voit. Chaque passage annonce
+`changed`, parce qu'une commande shell n'a aucune idée de la présence du fichier,
+et la chaîne d'intégration ne distingue plus un vrai changement du bruit de fond.
+Rien ne vérifie non plus ce qui atterrit sur le disque : ce que le miroir sert
+est écrit tel quel, corrompu ou non. L'un des deux fichiers ne doit jamais être
+écrasé une fois en place : c'est la référence que l'équipe amende localement, et
+un nouveau téléchargement efface ces modifications en silence. Celui-là n'est
+d'ailleurs plus en libre accès : le dépôt interne le sert désormais depuis une
+zone protégée. Vous nettoyez depuis **control-node.lab**, sans laisser une seule
+commande shell.
+
+Votre mission :
+
+1. Télécharger les deux documents de référence sur **db1.lab** dans `/opt/`,
+   mode `0644`, avec le **module Ansible dédié** : pas de `curl`, pas de `wget`.
+2. **Vérifier l'intégrité** du document public à partir du **fichier de sommes
+   sha256 que le dépôt publie à côté de lui**, plutôt que de faire confiance aux
+   octets qui arrivent. Sans figer d'empreinte dans le playbook.
+3. **Authentifier** la requête du second document, que le dépôt sert depuis une
+   zone protégée.
+4. Protéger ce second fichier pour qu'**une copie déjà présente ne soit jamais
+   retéléchargée**, quoi que serve désormais la source amont.
+5. Prouver l'**idempotence** : un second passage ne télécharge rien et n'annonce
+   aucun changement.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/reseau/module-get-url/
+
+## 🎯 Challenge — Module `get_url:` (téléchargement avec checksum)
+
+### ✅ Objectif
 
 Sur **db1.lab**, télécharger 2 fichiers depuis le **dépôt de référence interne**
 du lab, servi par `depot-interne.lab:8008`, avec **vérification d'intégrité**
@@ -19,7 +52,7 @@ Utiliser **`ansible.builtin.get_url`**. Pas de `command: curl` ni de `command: w
 > chaque requête** : les tests relisent ce journal et voient donc si vous avez
 > réellement vérifié l'intégrité, et avec quel agent vous avez téléchargé.
 
-### 🔑 Accès à la zone protégée
+#### 🔑 Accès à la zone protégée
 
 | Utilisateur | Mot de passe |
 | --- | --- |
@@ -29,7 +62,7 @@ Le mot de passe est en clair ici parce que le sujet de ce lab est `get_url`.
 En production il vivrait dans **Ansible Vault** : c'est l'objet de la section
 « vault » de la formation.
 
-## 🧩 Étapes
+### 🧩 Étapes
 
 1. **Télécharger** `gpl-3.0.txt` dans `/opt/lab-gpl3.txt` (mode 0644), en
    **vérifiant son empreinte sha256**. Le dépôt publie les sommes à côté du
@@ -42,7 +75,7 @@ En production il vivrait dans **Ansible Vault** : c'est l'objet de la section
    échoue. Ajouter `force: false` (ne pas re-télécharger si présent).
 3. **Vérifier** qu'un 2ᵉ run du playbook ne retélécharge **pas** (idempotence).
 
-## 🧩 Squelette
+### 🧩 Squelette
 
 ```yaml
 ---
@@ -87,7 +120,7 @@ En production il vivrait dans **Ansible Vault** : c'est l'objet de la section
 > - **Proxy d'entreprise** : `environment: { http_proxy: '...', https_proxy: '...' }`
 >   au niveau task ou play.
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/modules-reseau/get-url/challenge/solution.yml
@@ -97,20 +130,20 @@ ansible db1.lab -m ansible.builtin.command -a "wc -l /opt/lab-gpl3.txt /opt/lab-
 ansible web2.lab -b -m ansible.builtin.command -a "cat /var/log/nginx/lab-get-url-depot.log"
 ```
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/modules-reseau/get-url/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 ansible db1.lab -b -m file -a "path=/opt/lab-gpl3.txt state=absent"
 ansible db1.lab -b -m file -a "path=/opt/lab-lgpl3.txt state=absent"
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **`headers:`** : injection de Bearer tokens / API keys pour endpoints
   authentifiés. Stocker les secrets dans **Ansible Vault**.

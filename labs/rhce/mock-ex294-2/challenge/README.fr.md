@@ -1,6 +1,40 @@
-# Challenge — Examen blanc RHCE EX294 #2 : 19 tâches en 4 heures
+# Quatre heures, sans moteur de recherche, sur une machine inconnue
 
-## Conditions de l'examen
+## La situation
+
+C'est le second examen blanc. Même épreuve, autre décor : une pile Apache et
+valkey là où le premier mock faisait tourner nginx et mariadb, d'autres
+utilisateurs, un autre découpage disque, d'autres ports et un autre horaire.
+Tout ce qu'un candidat aurait pu retenir par cœur de sa première tentative ne
+vaut plus rien ici, et c'est le but. Ce qui survit au changement de décor, c'est
+la compétence.
+
+Dix-neuf tâches indépendantes réparties sur les quatre machines du lab, quatre
+heures, et pour toute documentation ce qui est livré avec Ansible. Une tâche
+compte quand elle s'exécute proprement et que son résultat tient à l'inspection.
+
+Votre mission, depuis **control-node.lab** :
+
+1. Lancer le chrono et traiter les dix-neuf tâches : inventaires et variables,
+   fichiers, paquets, services, utilisateurs, stockage, sécurité, rôles et vault,
+   puis gestion d'erreur, déploiement par vagues, délégation, tags, tâches
+   planifiées, facts personnalisés et une content collection installée depuis un
+   `requirements.yml`, sur **web1.lab**, **web2.lab** et **db1.lab**.
+2. **Vérifier chaque tâche dès qu'elle est finie.** Les candidats qui gardent la
+   vérification pour la fin découvrent leurs erreurs à quarante minutes du terme,
+   sans le temps de les corriger.
+3. Gérer le temps comme à un examen, pas comme à un lab : une tâche qui résiste,
+   on l'abandonne et on y revient.
+4. Faire un débriefing honnête à la fin. Ce que vous avez dû chercher est votre
+   vraie faiblesse, et c'est le seul produit utile d'un examen blanc. Sous trois
+   heures : vous êtes prêt.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/certifications/rhce/
+
+## Examen blanc RHCE EX294 #2 : 19 tâches en 4 heures
+
+### Conditions de l'examen
 
 - **Durée** : 4 heures chrono.
 - **Environnement** : 4 VMs (`web1.lab`, `web2.lab`, `db1.lab`, `control-node.lab`).
@@ -9,7 +43,7 @@
 - **Critère de réussite** : les tests pytest verts (19 tâches, plusieurs
   d'entre elles vérifiées par plus d'un test).
 
-## Pré-requis (à valider avant de démarrer le chrono)
+### Pré-requis (à valider avant de démarrer le chrono)
 
 ```bash
 cd $ANSIBLE_TRAINING
@@ -33,7 +67,7 @@ dsoxlab run rhce-mock-ex294-2     # joue le setup.yaml, puis vous rend la main
 
 Démarrez le chrono **après**.
 
-## Arborescence imposée
+### Arborescence imposée
 
 Tous les fichiers ci-dessous sont à créer **sous le dossier du lab** :
 `labs/rhce/mock-ex294-2/`.
@@ -55,7 +89,7 @@ labs/rhce/mock-ex294-2/
     └── solution.yml          ← le playbook unique qui orchestre les 19 tâches
 ```
 
-## Lancement attendu
+### Lancement attendu
 
 ```bash
 ANSIBLE_ROLES_PATH=labs/rhce/mock-ex294-2/roles \
@@ -67,9 +101,9 @@ ansible-playbook \
 
 ---
 
-## Les 19 tâches
+### Les 19 tâches
 
-### Tâche 1 — Inventaire statique
+#### Tâche 1 — Inventaire statique
 
 Produire `inventory/hosts.yml` au format YAML déclarant :
 
@@ -85,7 +119,7 @@ Produire `inventory/hosts.yml` au format YAML déclarant :
 `ansible-inventory -i inventory/hosts.yml --graph` doit afficher les deux
 groupes avec leurs hôtes.
 
-### Tâche 2 — Variables hiérarchiques
+#### Tâche 2 — Variables hiérarchiques
 
 Définir :
 
@@ -103,7 +137,7 @@ deploy_stage: staging
 pool_size: 8
 ```
 
-### Tâche 3 — Vault
+#### Tâche 3 — Vault
 
 - Créer `.vault_password` (mode `0600`) avec un mot de passe de votre choix.
 - Créer `vault.yml`, **chiffré**, contenant la variable :
@@ -112,7 +146,7 @@ pool_size: 8
 - Sur `db1.lab`, écrire `/tmp/lab200-token.txt` (mode `0600`) contenant la valeur
   déchiffrée de `api_token`.
 
-### Tâche 4 — Template
+#### Tâche 4 — Template
 
 Sur `db1.lab`, déposer `/tmp/lab200-service.conf` :
 
@@ -120,16 +154,16 @@ Sur `db1.lab`, déposer `/tmp/lab200-service.conf` :
 - contenu généré depuis un template Jinja2 incluant **au minimum** le hostname
   Ansible et la valeur de `schema_name` (la chaîne `lab200schema` doit apparaître).
 
-### Tâche 5 — Paquets
+#### Tâche 5 — Paquets
 
 Installer sur **tous** les hôtes : `httpd`, `valkey`, `python3-libselinux`.
 
-### Tâche 6 — Services
+#### Tâche 6 — Services
 
 - Sur `frontends` : `httpd` activé au boot et démarré.
 - Sur `db1.lab` : `valkey` activé au boot et démarré.
 
-### Tâche 7 — Utilisateurs et groupes
+#### Tâche 7 — Utilisateurs et groupes
 
 Sur **tous** les hôtes :
 
@@ -138,7 +172,7 @@ Sur **tous** les hôtes :
 - Le user `svcuser` doit pouvoir exécuter `/usr/bin/journalctl` via `sudo` **sans
   saisir de mot de passe** (uniquement cette commande).
 
-### Tâche 8 — SELinux
+#### Tâche 8 — SELinux
 
 Sur `frontends`, activer le booléen SELinux `httpd_can_network_connect_db` de
 manière **permanente** (survit au reboot).
@@ -148,7 +182,7 @@ manière **permanente** (survit au reboot).
 > une page servie par Apache à ouvrir une connexion réseau vers une base de
 > données. Vérifiez-le avec `ps -eZ | grep httpd`.
 
-### Tâche 9 — Firewalld
+#### Tâche 9 — Firewalld
 
 - Sur `frontends` : ouvrir les services `http` et `https`.
 - Sur `db1.lab` : ouvrir le **port `6379/tcp`** (le port de valkey).
@@ -156,7 +190,7 @@ manière **permanente** (survit au reboot).
 Les règles doivent être **persistantes** (reboot) **et actives immédiatement**
 (pas besoin de `firewall-cmd --reload` après le playbook).
 
-### Tâche 10 — Stockage LVM
+#### Tâche 10 — Stockage LVM
 
 Sur `db1.lab`, dans le VG existant `vg_lab` :
 
@@ -164,7 +198,7 @@ Sur `db1.lab`, dans le VG existant `vg_lab` :
 - Le formater en **ext4**.
 - Le monter sur `/srv/appdata`, avec une entrée `fstab` qui **persiste au reboot**.
 
-### Tâche 11 — Rôle `web_publish`
+#### Tâche 11 — Rôle `web_publish`
 
 Créer un rôle `web_publish` (sous `roles/web_publish/`) qui, sur les `frontends` :
 
@@ -176,7 +210,7 @@ Créer un rôle `web_publish` (sous `roles/web_publish/`) qui, sur les `frontend
 
 Le `solution.yml` invoque ce rôle pour les `frontends`.
 
-### Tâche 12 — Boucles et conditions
+#### Tâche 12 — Boucles et conditions
 
 Sur `db1.lab`, créer 6 fichiers `/tmp/slot1` à `/tmp/slot6` :
 
@@ -185,7 +219,7 @@ Sur `db1.lab`, créer 6 fichiers `/tmp/slot1` à `/tmp/slot6` :
 
 Les 6 fichiers doivent être créés en **une seule tâche** avec une boucle.
 
-### Tâche 13 — Gestion d'incident
+#### Tâche 13 — Gestion d'incident
 
 Sur `db1.lab`, le playbook doit tenter de démarrer le service `lab200-agent`.
 Aucun paquet de la distribution ne fournit ce service : la tentative **échoue
@@ -202,7 +236,7 @@ réellement**, à chaque passage. C'est voulu.
 - **Dans tous les cas**, succès comme échec : écrire
   `/tmp/lab200-incident-fin.txt` (mode `0644`).
 
-### Tâche 14 — Déploiement par vagues
+#### Tâche 14 — Déploiement par vagues
 
 Sur les `frontends`, le déploiement doit se faire **par vagues d'un seul hôte à
 la fois**, dans l'ordre de l'inventaire (`web1.lab`, puis `web2.lab`).
@@ -216,7 +250,7 @@ la fois**, dans l'ordre de l'inventaire (`web1.lab`, puis `web2.lab`).
 > La vérification porte sur les **horodatages** (`mtime`) des deux marqueurs :
 > celui de `web1.lab` doit précéder celui de `web2.lab` d'au moins 3 secondes.
 
-### Tâche 15 — Journal de déploiement centralisé
+#### Tâche 15 — Journal de déploiement centralisé
 
 Depuis un play qui cible les **`frontends`**, écrire le journal
 `/tmp/lab200-central-log.txt` (mode `0644`, owner `root`) **sur `db1.lab`**.
@@ -227,7 +261,7 @@ Depuis un play qui cible les **`frontends`**, écrire le journal
   `inventory_hostname`) et porter la valeur de `pool_size` (cf. tâche 2).
 - Le fichier ne doit exister **sur aucun** frontend.
 
-### Tâche 16 — Tâche planifiée
+#### Tâche 16 — Tâche planifiée
 
 Sur `db1.lab`, planifier un rapport dans la **crontab de l'utilisateur
 `svcuser`** (cf. tâche 7), c'est-à-dire celle que rend `crontab -l -u svcuser` :
@@ -236,7 +270,7 @@ Sur `db1.lab`, planifier un rapport dans la **crontab de l'utilisateur
 - commande : `/usr/bin/date >> /tmp/lab200-audit.log 2>&1` ;
 - une entrée et une seule : rejouer le playbook ne doit pas la dupliquer.
 
-### Tâche 17 — Sélection des tâches par tags
+#### Tâche 17 — Sélection des tâches par tags
 
 Sur `db1.lab`, quatre tâches, chacune déposant son marqueur en mode `0644` :
 
@@ -256,7 +290,7 @@ Les deux comportements vérifiés, sur des runs réels :
 - **Avec `--tags publish`** : publication et systématique sont posés ; init et
   purge sont **absents**.
 
-### Tâche 18 — Fact personnalisé
+#### Tâche 18 — Fact personnalisé
 
 Sur les `frontends`, publier un fact personnalisé que toute collecte de facts
 retrouvera :
@@ -278,7 +312,7 @@ ansible frontends -i inventory/hosts.yml \
     -m ansible.builtin.setup -a filter=ansible_local
 ```
 
-### Tâche 19 — Content Collection via `requirements.yml`
+#### Tâche 19 — Content Collection via `requirements.yml`
 
 L'objectif EX294 **« Install Content Collections and use them in playbooks »**
 n'est prouvé par aucune des tâches précédentes : ajoutez-le.
@@ -306,7 +340,7 @@ Puis, depuis `db1.lab` :
 
 ---
 
-## Validation
+### Validation
 
 ```bash
 pytest -v labs/rhce/mock-ex294-2/challenge/tests/
@@ -320,13 +354,13 @@ plus large que demandé : à chaque fois l'état est juste à l'instant T et fau
 après reboot, ou juste et dangereux. Ce sont exactement les points que l'examen
 réel sanctionne.
 
-## Reset
+### Reset
 
 ```bash
 dsoxlab clean rhce-mock-ex294-2
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **`ansible-lint --profile production`** : validez la qualité de votre solution.
 - **Idempotence** : relancez la solution une seconde fois. Un `PLAY RECAP` avec

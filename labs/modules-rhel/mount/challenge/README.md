@@ -1,6 +1,33 @@
-# 🎯 Challenge — Mount a persistent loop device
+# Give the app a dedicated volume that comes back after a reboot
 
-## ✅ Objective
+## The situation
+
+The application on **db1.lab** writes its data straight onto the root
+filesystem, and one runaway log already filled the disk and stopped the system.
+It needs its own space, isolated, but the physical disk is weeks away from
+delivery. An image file mounted as a loop device buys the isolation now, without
+waiting for hardware. The real requirement is the one everyone forgets: a
+volume mounted by hand disappears at the next reboot, and the app restarts
+writing onto the root filesystem without a word.
+
+Your mission:
+
+1. On **db1.lab**, create the **100 MB image file** in a way that a second run
+   will not recreate, then **format it in ext4**.
+2. Create the mount point, then **mount the image and register it in
+   `/etc/fstab`** in one step: the state you pick decides whether the mount
+   survives the reboot.
+3. Pass the option that turns the image file into a usable device, and harden
+   the volume so it can carry **no device nodes and no setuid binaries**.
+4. Prove the persistence: the fstab entry is there and the volume is mounted
+   right now.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-mount/ (in French)
+
+## 🎯 Challenge — Mount a persistent loop device
+
+### ✅ Objective
 
 On **db1.lab**, create a `100M` image file, format it as `ext4`, and
 **mount** it on `/mnt/lab-data` with an **`/etc/fstab` entry** (persistent
@@ -10,7 +37,7 @@ device (this is what survives the reboot), `noatime` skips access-time
 writes, and `nodev,nosuid` are the hardening options (no device nodes, no
 setuid on this filesystem).
 
-## 🧩 Steps
+### 🧩 Steps
 
 1. Create the image file **`/opt/lab-disk.img`** of 100 MB (use `dd` with
    `creates:` for idempotence).
@@ -19,7 +46,7 @@ setuid on this filesystem).
 4. **Mount** + write into **fstab** via `ansible.posix.mount` with
    `state: mounted` and `opts: loop,defaults,noatime,nodev,nosuid`.
 
-## 🧩 Key modules
+### 🧩 Key modules
 
 | Module | Role |
 | --- | --- |
@@ -28,7 +55,7 @@ setuid on this filesystem).
 | `ansible.builtin.file` | Create the mount point |
 | `ansible.posix.mount` | Mount + manage fstab |
 
-## 🧩 Semantics of the mount module's `state:`
+### 🧩 Semantics of the mount module's `state:`
 
 | `state:` | Effect |
 | --- | --- |
@@ -37,7 +64,7 @@ setuid on this filesystem).
 | `unmounted` | Unmounts, **keeps** the fstab line |
 | `absent` | Unmounts **and** removes from fstab |
 
-## 🧩 Mount options
+### 🧩 Mount options
 
 This challenge **requires** `opts: loop,defaults,noatime,nodev,nosuid`
 (comma-separated). Each one:
@@ -51,7 +78,7 @@ This challenge **requires** `opts: loop,defaults,noatime,nodev,nosuid`
 The tests check that `noatime`, `nodev` and `nosuid` are active on the mount
 (via `findmnt`) and still present after a reboot: omitting them fails the lab.
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -98,7 +125,7 @@ The tests check that `noatime`, `nodev` and `nosuid` are active on the mount
 > - **`backup: true`** on `mount:`: backs up `fstab` before
 >   modification, valuable in prod.
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-rhel/mount/challenge/solution.yml
@@ -107,7 +134,7 @@ ansible db1.lab -m ansible.builtin.command -a "grep lab-data /etc/fstab"
 ansible db1.lab -m ansible.builtin.command -a "mount | grep lab-data"
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 > ⏱️ **One test reboots db1** (about 90 s). It is marked `slow`, and it is
 > there on purpose: persistence after a restart is the trap that fails RHCSA
@@ -124,13 +151,13 @@ ansible db1.lab -m ansible.builtin.command -a "mount | grep lab-data"
 pytest -v labs/modules-rhel/mount/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean modules-rhel-mount
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`state: present`** alone: write into fstab without mounting (useful to
   pre-configure a host before a physical disk is plugged in later).

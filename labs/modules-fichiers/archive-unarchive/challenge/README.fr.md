@@ -1,6 +1,30 @@
-# 🎯 Challenge — `archive` + `unarchive` (sauvegarder et restaurer)
+# Prouver que la chaîne de sauvegarde et de restauration fonctionne
 
-## ✅ Objectif
+## La situation
+
+**db1.lab** porte un répertoire de données qui n'a jamais été sauvegardé, et le
+plan de reprise affirme que la procédure de restauration est « documentée ».
+Personne ne l'a jamais exécutée. Votre responsable veut la chaîne complète
+démontrée de bout en bout avant l'audit : produire une archive, la restaurer
+ailleurs, et montrer que les deux côtés concordent. Le tout doit tourner depuis
+**control-node.lab**, en playbook qu'un cron pourrait rejouer chaque nuit sans
+malmener le disque.
+
+Votre mission :
+
+1. Mettre en place les données source sur **db1.lab** dans `/opt/data-source/`,
+   puis en produire l'archive compressée **`/opt/backup/data.tar.gz`**.
+2. Restaurer cette archive dans **`/opt/restored/`**, en gardant à l'esprit que
+   l'archive se trouve **sur le managed node**, pas sur votre control node.
+3. Rendre l'extraction **idempotente** : le second passage doit **skipper** la
+   restauration au lieu de réécrire les fichiers et de bousculer tous les mtime.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/archive-unarchive/
+
+## 🎯 Challenge — `archive` + `unarchive` (sauvegarder et restaurer)
+
+### ✅ Objectif
 
 Sur **db1.lab**, démontrer le pipeline complet :
 
@@ -11,7 +35,7 @@ Sur **db1.lab**, démontrer le pipeline complet :
 3. **Extraire** : restaurer l'archive dans `/opt/restored/`. **Idempotent**
    au 2e run grâce à `creates:`.
 
-## 🧩 Modules clés
+### 🧩 Modules clés
 
 - `community.general.archive` (FQCN) — module **archive** (créer un .tar.gz, .zip, etc.).
 - `ansible.builtin.unarchive` — extraction d'archive (livré avec `ansible-core`).
@@ -26,7 +50,7 @@ Sur **db1.lab**, démontrer le pipeline complet :
 >
 > `unarchive`, lui, est bien dans `ansible.builtin`.
 
-## 🧩 Squelette
+### 🧩 Squelette
 
 ```yaml
 ---
@@ -93,7 +117,7 @@ Sur **db1.lab**, démontrer le pipeline complet :
 > - **`extra_opts:`** : passer des flags au binaire tar. Ex
 >   `--strip-components=1` pour retirer le 1er niveau de dossier.
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/modules-fichiers/archive-unarchive/challenge/solution.yml
@@ -103,19 +127,19 @@ ansible db1.lab -m ansible.builtin.command -a "ls -la /opt/data-source /opt/back
 🔍 Au **2e run**, la tâche `unarchive` doit afficher `skipped` (preuve du
 `creates:`).
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/modules-fichiers/archive-unarchive/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean modules-fichiers-archive-unarchive
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **`format: zip` / `format: bz2` / `format: xz`** : autres formats supportés.
 - **`exclude_path:`** sur `archive` : exclure certains fichiers de l'archive

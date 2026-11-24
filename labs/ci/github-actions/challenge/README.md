@@ -1,6 +1,31 @@
-# 🎯 Challenge — Write the GitHub Actions workflow (lint + Molecule matrix)
+# The role is open source now, and strangers will send patches
 
-## ✅ Mission
+## The situation
+
+Your `webserver` role is public. The first outside pull request arrives tomorrow,
+and you will not run it by hand: you neither trust the code nor have the time,
+and nobody wants to be the human who forgot to test one distribution. Worse, a
+workflow that clones the repo and runs untrusted code with a writable token is
+how a role becomes an attack path. The gate has to be automatic, and it has to
+be safe on a contributor's branch.
+
+Your mission, from the project directory:
+
+1. Have every push and pull request go through **two gates**: linting first, then
+   the Molecule cycle, so a style failure never burns matrix minutes.
+2. Spread the test job across a matrix of **distributions crossed with
+   `ansible-core` versions**, running in parallel.
+3. Cache the Python dependency install between runs, so the pipeline stays fast
+   enough that people actually wait for it.
+4. Lock the workflow down: **least-privilege token permissions**, and no
+   credentials left behind in the checkout for later steps to reuse.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ci-github-actions/ (in French)
+
+## 🎯 Challenge — Write the GitHub Actions workflow (lint + Molecule matrix)
+
+### ✅ Mission
 
 The `.github/workflows/test.yml` file is delivered **incomplete** (some `???`
 and empty jobs). Complete it to get an Ansible role CI compliant with the
@@ -19,7 +44,7 @@ Expected state (this is what pytest checks):
 | Least privilege | global `permissions:` empty (`{}`), rights granted job by job |
 | Credentials | `persist-credentials: false` on each `actions/checkout` |
 
-## 🧩 Stuck?
+### 🧩 Stuck?
 
 ```bash
 dsoxlab hint ci-github-actions
@@ -28,7 +53,7 @@ dsoxlab hint ci-github-actions
 Hints are progressive and **cost points**: the first one points you in the
 right direction, the last one unblocks you.
 
-## 📓 Command log
+### 📓 Command log
 
 When your workflow is ready, record in `challenge/solution.sh` the
 commands you used to build and validate it (for
@@ -39,19 +64,19 @@ test harness, must exist for pytest to run:
 chmod +x challenge/solution.sh
 ```
 
-## 🧪 Validation
+### 🧪 Validation
 
 ```bash
 pytest -v labs/ci/github-actions/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ci-github-actions
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - `zizmor .github/workflows/test.yml`: static security audit of workflows.
 - Reusable workflows: share this CI across several roles.

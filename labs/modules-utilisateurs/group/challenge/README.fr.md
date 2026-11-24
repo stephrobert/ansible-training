@@ -1,12 +1,37 @@
-# 🎯 Challenge — 3 groupes avec GIDs forcés + 1 groupe système
+# Aligner la numérotation des groupes avant de monter le partage NFS
 
-## ✅ Objectif
+## La situation
+
+L'équipe s'apprête à partager un volume entre plusieurs hôtes, et le premier
+test s'est mal passé : un fichier écrit sur un serveur revenait illisible sur le
+suivant. La cause est identifiée, et elle est classique. Les groupes ont été
+créés hôte par hôte avec le GID que le système voulait bien attribuer : le même
+nom de groupe porte donc deux numéros différents, alors que le système de
+fichiers stocke les droits **par GID**, jamais par nom. Avant la mise en service
+du partage, la numérotation se fige depuis **control-node.lab**.
+
+Votre mission :
+
+1. Créer les trois groupes du projet sur **db1.lab** avec leurs **GID
+   explicites** (4000, 4001, 4002), pour que la numérotation soit reproductible
+   sur tous les hôtes du parc.
+2. Piloter les trois créations depuis une **seule tâche**, pas en recopiant
+   trois fois le même bloc.
+3. Ajouter le **groupe système** de l'application, qui relève de la plage
+   réservée sous 1000 et doit laisser le système attribuer son numéro.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-group/
+
+## 🎯 Challenge — 3 groupes avec GIDs forcés + 1 groupe système
+
+### ✅ Objectif
 
 Sur **db1.lab**, créer 4 groupes via `ansible.builtin.group`, dont 3 avec
 **GID explicite** (pour cohérence multi-hôtes) et 1 **système**
 (GID < 1000 auto-attribué par le système).
 
-## 🧩 Spécifications
+### 🧩 Spécifications
 
 | Nom | GID | Type |
 | --- | --- | --- |
@@ -20,7 +45,7 @@ Sur **db1.lab**, créer 4 groupes via `ansible.builtin.group`, dont 3 avec
 > nom de groupe. Si `rhce-shared` a GID 4000 sur un hôte et 1010 sur un
 > autre, les ACL deviennent incohérentes.
 
-## 🧩 Squelette
+### 🧩 Squelette
 
 ```yaml
 ---
@@ -63,26 +88,26 @@ Sur **db1.lab**, créer 4 groupes via `ansible.builtin.group`, dont 3 avec
 > - **Suppression d'un groupe utilisé** : `state: absent` échoue si des
 >   users ont ce groupe en primaire. Supprimer les users d'abord.
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/modules-utilisateurs/group/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "getent group rhce-shared rhce-admins rhce-readonly myapp-system"
 ```
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/modules-utilisateurs/group/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean modules-utilisateurs-group
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **GID conflict** : si vous lancez sur un hôte où GID 4000 est déjà pris par
   un autre groupe, la tâche échoue. Démontrez-le en posant manuellement un

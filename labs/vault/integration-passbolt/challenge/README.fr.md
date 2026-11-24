@@ -1,6 +1,34 @@
-# 🎯 Challenge — Passbolt : récupérer un secret, et le prouver
+# Le tableur partagé des mots de passe doit disparaître
 
-## ✅ Objectif
+## La situation
+
+Vos playbooks tirent leurs secrets d'infrastructure d'un vrai serveur dédié. Les
+humains, non. Les comptes SaaS, les clés d'API tierces, les passphrases de
+certificats et le login d'administration que tout le monde utilise vivent dans un
+tableur sur un partage réseau, parce que l'équipe a besoin de les lire avec ses
+yeux, pas seulement depuis un playbook. Ces secrets méritent un toit qui serve les
+deux : une interface web qu'un humain utilisera vraiment, et une interface
+qu'Ansible sait interroger.
+
+Votre mission, depuis le répertoire du projet :
+
+1. Monter une instance **Passbolt locale** avec sa base de données, puis créer le
+   compte d'administration et la **clé OpenPGP** qui vous identifie auprès d'elle.
+2. Faire récupérer un secret par un playbook via la collection dédiée, en vous
+   authentifiant par votre clé privée et sa passphrase, avec **aucune valeur
+   secrète en dur** dans le YAML.
+3. Museler les tâches sensibles pour que le secret n'apparaisse ni dans la sortie
+   ni dans les journaux, quelle que soit la verbosité.
+4. Positionner l'outil face à un serveur de type HashiCorp : son modèle
+   d'identité, c'est une clé par humain, pas un token par machine. Dire quels
+   secrets vont où.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/integration-passbolt/
+
+## 🎯 Challenge — Passbolt : récupérer un secret, et le prouver
+
+### ✅ Objectif
 
 Écrire `challenge/solution.yml` : un playbook qui s'authentifie auprès de
 votre Passbolt local avec **votre clé OpenPGP**, récupère le secret
@@ -15,7 +43,7 @@ savent : tant que le serveur ne répond pas, que la clé n'est pas exportée
 ou que la passphrase n'est pas dans l'environnement, ils se mettent en
 **`skip` avec la marche à suivre**. Ils ne passent jamais « à vide ».
 
-## 🔧 Pré-requis (les étapes manuelles, une seule fois)
+### 🔧 Pré-requis (les étapes manuelles, une seule fois)
 
 ```bash
 cd labs/vault/integration-passbolt/
@@ -39,7 +67,7 @@ mise install   # py-passbolt voyage avec ansible-core
 export PASSBOLT_PASSPHRASE='<votre passphrase>'
 ```
 
-## 🧩 Contrat attendu
+### 🧩 Contrat attendu
 
 | Élément | Attente |
 | --- | --- |
@@ -51,7 +79,7 @@ export PASSBOLT_PASSPHRASE='<votre passphrase>'
 | Preuve | `/tmp/lab83-passbolt-lookup.txt`, mode `0600`, contenu `Secret length: <n>` |
 | Silence | `no_log: true` sur toute tâche qui manipule le secret |
 
-## 🧩 Squelette
+### 🧩 Squelette
 
 ```yaml
 ---
@@ -97,7 +125,7 @@ export PASSBOLT_PASSPHRASE='<votre passphrase>'
 >   la clé SSH via `inventory_dir`, que l'implicite `localhost` ne sait pas
 >   résoudre. Sans cette neutralisation, le play plante avant sa 1ère tâche.
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 export PASSBOLT_PASSPHRASE='<votre passphrase>'
@@ -105,7 +133,7 @@ ansible-playbook labs/vault/integration-passbolt/challenge/solution.yml
 cat /tmp/lab83-passbolt-lookup.txt
 ```
 
-## 🧪 Validation
+### 🧪 Validation
 
 ```bash
 pytest -v labs/vault/integration-passbolt/challenge/tests/
@@ -116,14 +144,14 @@ playbook et vérifient la preuve sur le système (existence, mode `0600`,
 longueur cohérente, aucun secret en clair dans le YAML). Sinon : `skip`
 explicite, jamais un faux vert.
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean vault-integration-passbolt
 rm -f /tmp/lab83-passbolt-lookup.txt
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **Passbolt vs HashiCorp Vault** : Passbolt cible les **équipes humaines**
   (UI riche, partage par groupe), Vault cible le **runtime** (secrets

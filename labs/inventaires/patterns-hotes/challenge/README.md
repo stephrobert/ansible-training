@@ -1,8 +1,35 @@
-# 🎯 Challenge — Target precisely via patterns
+# Target the right hosts without editing the playbook every time
+
+## The situation
+
+The same playbook has to run on a different perimeter every time: only the web
+servers under test, the web tier except the one host being investigated, the
+whole fleet except staging. The current habit is to edit the `hosts:` line
+before each run, and the accident everyone saw coming happened last week: a
+leftover perimeter, and the play went out on every server. The playbook must
+stop knowing who it targets. That decision belongs at **run time**, from
+**control-node.lab**.
+
+Your mission:
+
+1. Write a play targeting **all hosts**, dropping a marker named after each
+   host: no perimeter hardcoded in the YAML.
+2. Get the filtering done at **run time**, so the same file serves the three
+   perimeters without a single edit.
+3. Hit exactly three targets: the **intersection** of the web tier and staging,
+   the web tier **minus** one specific host, and the whole fleet **excluding**
+   staging.
+4. Prove the aim: only the expected hosts carry the marker, and the others were
+   never touched.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/patterns-hotes/ (in French)
+
+## 🎯 Challenge — Target precisely via patterns
 
 You have seen each pattern operator individually. The challenge is to **combine** several operators and to **prove** that only the expected hosts receive the marker.
 
-## ✅ Objective
+### ✅ Objective
 
 Write `solution.yml` that:
 
@@ -31,7 +58,7 @@ The automated test **runs 3 commands** with different `--limit` values and check
 > `ansible-playbook --limit <pattern> --list-hosts` shows the targets without
 > changing anything: use it to try a pattern out before running it.
 
-## 🧩 Instructions
+### 🧩 Instructions
 
 Skeleton to complete:
 
@@ -74,13 +101,13 @@ ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config web1.lab cat /tmp/lab56-mark
 
 The pytest test automatically applies the 3 patterns one after another.
 
-## 🧪 Validation
+### 🧪 Validation
 
 ```bash
 pytest -v challenge/tests/
 ```
 
-## 🚀 Going further
+### 🚀 Going further
 
 - Add a 4th test case: `--limit '*1.lab'` (should touch `web1.lab` AND `db1.lab`).
 - Modify the inventory to add a `dev` group containing `web1.lab` and `db1.lab`. Test `dev:!monitoring` (= web1, because db1 is in monitoring).
@@ -90,7 +117,7 @@ pytest -v challenge/tests/
 
 Good luck! 🧠
 
-## 🧹 Reset
+### 🧹 Reset
 
 To replay the challenge in a neutral state:
 

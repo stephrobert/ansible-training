@@ -1,6 +1,33 @@
-# 🎯 Challenge : convertir le script Bash impératif en playbook idempotent
+# Le script qui ajoute une ligne toutes les nuits
 
-## ✅ Objectif
+## La situation
+
+Un collègue déploie la page d'accueil de **web1.lab** avec un script Bash
+lancé par cron. Ça marche. Sauf que les visiteurs lisent maintenant trois fois
+« Servi par web1.lab » sur la page, puis quatre, puis cinq. Personne n'a
+touché à la page : le script ajoute la ligne à chaque passage et ne se demande
+jamais si elle est déjà là. L'incident est petit, la leçon ne l'est pas.
+
+Depuis **control-node.lab**, vous allez voir pourquoi le même travail, écrit
+en déclaratif, ne peut pas dériver.
+
+Votre mission :
+
+1. Jouer **trois fois le script Bash** sur `web1.lab` et regarder le compteur
+   de lignes grimper : la dérive, en direct.
+2. Réinitialiser le nœud, puis jouer **trois fois le playbook** et constater
+   que la page reste à exactement une ligne.
+3. Lire le second `PLAY RECAP` : **`changed=0`** est la preuve mécanique de
+   l'idempotence, pas une affaire d'opinion.
+4. Comparer les deux fichiers et nommer ce que le module `lineinfile:` compare avant
+   d'écrire quoi que ce soit.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/declaratif-vs-imperatif/
+
+## 🎯 Challenge : convertir le script Bash impératif en playbook idempotent
+
+### ✅ Objectif
 
 Le fichier `scripts/install-nginx-impératif.sh` déploie nginx de façon
 **impérative** : il enchaîne des commandes et, pire, **ajoute** une ligne à la
@@ -22,7 +49,7 @@ second passage).
 | Page d'accueil | `/usr/share/nginx/html/index.html` contient **exactement une** ligne `<p>Servi par ...</p>` |
 | Idempotence | 2e passage du playbook : `changed=0` dans le `PLAY RECAP` |
 
-## 🧩 Squelette : `challenge/solution.yml`
+### 🧩 Squelette : `challenge/solution.yml`
 
 ```yaml
 ---
@@ -58,7 +85,7 @@ second passage).
         create: false
 ```
 
-## 💡 Pièges
+### 💡 Pièges
 
 - **Un état, pas des commandes.** Le script Bash `echo "..." | tee -a` ajoute
   **une ligne par exécution** : c'est la dérive. Ne le traduisez **pas** en une
@@ -78,7 +105,7 @@ second passage).
   `ansible.posix.firewalld`, `ansible.builtin.systemd_service`,
   `ansible.builtin.lineinfile`). `ansible-lint --profile production` l'exige.
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 # Depuis la racine du dépôt, une fois challenge/solution.yml écrit :
@@ -88,7 +115,7 @@ ansible-playbook labs/decouvrir/declaratif-vs-imperatif/challenge/solution.yml
 ansible-playbook labs/decouvrir/declaratif-vs-imperatif/challenge/solution.yml
 ```
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/decouvrir/declaratif-vs-imperatif/challenge/tests/
@@ -102,7 +129,7 @@ La suite pytest prouve l'**état du système**, pas qu'une commande a tourné :
 - nginx sert réellement cette page en HTTP.
 - Le playbook est **idempotent** : un second passage donne `changed=0`.
 
-## 🧹 Remise à zéro
+### 🧹 Remise à zéro
 
 ```bash
 dsoxlab clean decouvrir-declaratif-vs-imperatif
@@ -110,7 +137,7 @@ dsoxlab clean decouvrir-declaratif-vs-imperatif
 
 Supprime la ligne « Servi par ... » pour rejouer depuis un état propre.
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - Rendez le script **Bash** idempotent à la main
   (`grep -q "Servi par" ... || echo ...`). Ça marche, mais vous avez réinventé

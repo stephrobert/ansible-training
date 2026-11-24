@@ -1,6 +1,33 @@
-# 🎯 Challenge — Filter a list of dicts with `selectattr`
+# Staging keeps leaking into the production config
 
-## ✅ Objective
+## The situation
+
+The service catalogue is a single list: name, port, tier. Four entries today,
+forty next quarter. The file feeding production monitoring is maintained by
+hand from that list, and the last update quietly slipped a staging port into
+it. Nobody noticed until monitoring woke someone at 3 a.m. over a dev database.
+The catalogue is fine. Copying it by hand is what keeps failing.
+
+From **control-node.lab**, you generate the production view from the catalogue
+itself.
+
+Your mission:
+
+1. Declare the catalogue on `db1.lab` as a **list of dicts**, each entry
+   carrying its name, port and tier.
+2. Generate `/tmp/services-production.txt` holding **only** the `production`
+   tier, one `<name>:<port>` per line.
+3. Do the filtering **in the data**, not by hand: the staging and dev entries
+   must never reach the file, whatever order the catalogue is written in.
+4. Check the result is exactly the two expected lines and nothing else, then
+   reach a nested field to build each line.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/types-collections/ (in French)
+
+## 🎯 Challenge — Filter a list of dicts with `selectattr`
+
+### ✅ Objective
 
 Write `challenge/solution.yml` that on **db1.lab**:
 
@@ -8,7 +35,7 @@ Write `challenge/solution.yml` that on **db1.lab**:
 2. Writes `/tmp/services-production.txt` that contains **only** the services
    of the `production` tier, in the format `<name>:<port>` (one per line).
 
-## 🧩 Input data
+### 🧩 Input data
 
 To copy into the play's `vars:`:
 
@@ -20,7 +47,7 @@ services:
   - { name: dev-db, port: 5432, tier: dev }
 ```
 
-## 🧩 Expected output
+### 🧩 Expected output
 
 The `/tmp/services-production.txt` file must contain **exactly**:
 
@@ -31,7 +58,7 @@ cache:6379
 
 The `web` (staging) and `dev-db` (dev) services are **excluded**.
 
-## 🧩 Jinja2 tools to know
+### 🧩 Jinja2 tools to know
 
 Three filters to combine to process a list of dicts:
 
@@ -46,7 +73,7 @@ Three filters to combine to process a list of dicts:
 > You can do this with a **Jinja2 loop** (`{% for ... %}`) directly
 > in the `content:` string.
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -83,26 +110,26 @@ Three filters to combine to process a list of dicts:
 >   and **NOT** `web:80` nor `dev-db:5432`. Double-check the syntax
 >   `selectattr('tier', 'equalto', 'production')`.
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 ansible-playbook labs/ecrire-code/types-collections/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "cat /tmp/services-production.txt"
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/types-collections/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-types-collections
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **Without `selectattr`**: reproduce the filter with a `for` + `if`
   (`{% for s in services if s.tier == "production" %}`). It is more verbose

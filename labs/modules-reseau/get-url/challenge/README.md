@@ -1,6 +1,38 @@
-# 🎯 Challenge — Module `get_url:` (download with checksum)
+# Retire the curl calls hiding in the provisioning playbook
 
-## ✅ Objective
+## The situation
+
+The playbook that provisions **db1.lab** still downloads its reference files
+with `command: curl`, and it shows. Every run reports `changed`, because a shell
+command has no idea whether the file is already there, and the pipeline can no
+longer tell a real change from background noise. Nothing checks what actually
+lands on disk either: whatever the mirror serves gets written, corrupted or not.
+One of the two files must never be overwritten once in place: it is the
+reference the team amends locally, and a fresh download silently wipes those
+edits. That one no longer sits in the open: the internal repository now serves
+it from a protected area. You clean this up from **control-node.lab**, with no
+shell command left.
+
+Your mission:
+
+1. Download the two reference documents onto **db1.lab** into `/opt/`, mode
+   `0644`, using the **dedicated Ansible module**: no `curl`, no `wget`.
+2. **Check the integrity** of the public document against the **sha256 checksum
+   file the repository publishes next to it**, rather than trusting the bytes
+   that arrive. Do not freeze a fingerprint into the playbook.
+3. **Authenticate** the request for the second document, which the repository
+   serves from a protected area.
+4. Protect that second file so that **an existing copy is never re-downloaded**,
+   whatever upstream now serves.
+5. Prove the **idempotence**: a second run downloads nothing and reports no
+   change.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/reseau/module-get-url/ (in French)
+
+## 🎯 Challenge — Module `get_url:` (download with checksum)
+
+### ✅ Objective
 
 On **db1.lab**, download 2 files from the **internal reference repository** of
 the lab, served by `depot-interne.lab:8008`, with **integrity check** (sha256),
@@ -19,7 +51,7 @@ Use **`ansible.builtin.get_url`**. No `command: curl` and no `command: wget`.
 > every request**: the tests re-read this log and therefore see whether you
 > really checked the integrity, and with which agent you downloaded.
 
-### 🔑 Access to the protected zone
+#### 🔑 Access to the protected zone
 
 | User | Password |
 | --- | --- |
@@ -29,7 +61,7 @@ The password is in cleartext here because the subject of this lab is `get_url`.
 In production it would live in **Ansible Vault**: that is the subject of the
 "vault" section of the training.
 
-## 🧩 Steps
+### 🧩 Steps
 
 1. **Download** `gpl-3.0.txt` to `/opt/lab-gpl3.txt` (mode 0644), **checking
    its sha256 fingerprint**. The repo publishes the sums next to the file, at
@@ -43,7 +75,7 @@ In production it would live in **Ansible Vault**: that is the subject of the
 3. **Check** that a 2nd run of the playbook does **not** re-download
    (idempotence).
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -88,7 +120,7 @@ In production it would live in **Ansible Vault**: that is the subject of the
 > - **Corporate proxy**: `environment: { http_proxy: '...', https_proxy: '...' }`
 >   at the task or play level.
 
-## 🚀 Launch
+### 🚀 Launch
 
 ```bash
 ansible-playbook labs/modules-reseau/get-url/challenge/solution.yml
@@ -98,20 +130,20 @@ ansible db1.lab -m ansible.builtin.command -a "wc -l /opt/lab-gpl3.txt /opt/lab-
 ansible web2.lab -b -m ansible.builtin.command -a "cat /var/log/nginx/lab-get-url-depot.log"
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-reseau/get-url/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 ansible db1.lab -b -m file -a "path=/opt/lab-gpl3.txt state=absent"
 ansible db1.lab -b -m file -a "path=/opt/lab-lgpl3.txt state=absent"
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`headers:`**: injection of Bearer tokens / API keys for authenticated
   endpoints. Store the secrets in **Ansible Vault**.

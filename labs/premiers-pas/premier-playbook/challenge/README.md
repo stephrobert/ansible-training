@@ -1,4 +1,30 @@
-# 🎯 Challenge — nginx on db1.lab, port 8888
+# A status page on db1, and SELinux says no
+
+## The situation
+
+The monitoring team wants a small HTTP endpoint on **db1.lab**. Port 80 is off
+the table on that host, so it has to be **8888**. Trivial, until the first
+attempt: `nginx` refuses to start, the log says *"bind() to 0.0.0.0:8888 failed
+(13: Permission denied)"*, and nothing in the config is wrong. Welcome to RHEL:
+a non-standard port is not just a firewall matter, SELinux has an opinion too.
+
+You write this from **control-node.lab**. Nobody logs into db1 to fix it by
+hand.
+
+Your mission:
+
+1. Install **`nginx`** on `db1.lab`, started and enabled at boot.
+2. Make it listen on **8888** instead of 80, and make **SELinux** accept that
+   port instead of silently killing the service.
+3. Open **8888** in firewalld so the rule applies immediately **and** survives
+   a reboot.
+4. Serve the exact welcome page the challenge asks for, then read the
+   `PLAY RECAP` of a second run: it must be `changed=0`.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/premiers-pas/premier-playbook/ (in French)
+
+## 🎯 Challenge — nginx on db1.lab, port 8888
 
 You have just deployed **nginx** on the `webservers`, on its default port.
 The challenge is to rewrite a playbook that does the **same logic** on
@@ -9,7 +35,7 @@ task order, firewalld opening) on another host, and to discover that
 changing a single port number surfaces one more lock on RHEL:
 **SELinux**.
 
-## ✅ Objective
+### ✅ Objective
 
 Write a playbook named `solution.yml` at the root of **this directory**
 (`labs/premiers-pas/premier-playbook/challenge/solution.yml`) that:
@@ -23,7 +49,7 @@ Write a playbook named `solution.yml` at the root of **this directory**
 7. Places an `index.html` welcome page with the exact text:
    `Hello from db1.lab — Ansible RHCE 2026`
 
-## 🧩 Instructions
+### 🧩 Instructions
 
 Skeleton to complete (`challenge/solution.yml`):
 
@@ -114,7 +140,7 @@ curl http://db1.lab:8888
 # Must return: Hello from db1.lab — Ansible RHCE 2026
 ```
 
-## 🧪 Validation
+### 🧪 Validation
 
 The `tests/test_functional.py` script automatically validates your solution.
 It checks on **db1.lab**:
@@ -135,7 +161,7 @@ To run the tests, from the repo root:
 pytest -v labs/premiers-pas/premier-playbook/challenge/tests/
 ```
 
-## 🚀 Going further
+### 🚀 Going further
 
 - Add a **final check** in your playbook with
   `ansible.builtin.uri` that calls `http://localhost:8888` on the managed node
@@ -152,7 +178,7 @@ pytest -v labs/premiers-pas/premier-playbook/challenge/tests/
 
 Good luck! 🧠
 
-## 🧹 Reset
+### 🧹 Reset
 
 To replay the challenge from a neutral state:
 

@@ -1,11 +1,37 @@
-# 🎯 Challenge — Special tags `always` and `never`
+# The reset task that must never fire by accident
+
+## The situation
+
+The `db1.lab` playbook does three things: it runs a pre-flight check, it
+applies the routine config, and it holds a **reset** routine that wipes the
+host's state clean. That last one is legitimate, someone needs it when a node
+is rebuilt. But it lives in the same file, and it has already fired once,
+triggered by a tired engineer who only wanted to push a config change. You are
+not going to split the file. You are going to make the reset unreachable unless
+someone asks for it by name, from **control-node.lab**.
+
+Your mission:
+
+1. Tag the routine config task so `--tags configuration` touches it and nothing
+   else.
+2. Make the pre-flight marker run **whatever** the operator asked for, using the
+   `always` tag.
+3. Lock the destructive reset behind **`never`**, alongside its own `reset` tag:
+   left out by default, left out even on a bare run, reachable only on demand.
+4. Verify by running with `--tags configuration`: the `always` and
+   `configuration` markers are there, the reset marker is not.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/tags/ (in French)
+
+## 🎯 Challenge — Special tags `always` and `never`
 
 You know how to use `tags: install`. The challenge adds two special tags:
 
 - **`always`**: the task runs **even if** the learner launches with `--tags configuration`.
 - **`never`**: the task **never** runs unless you explicitly run `--tags reset`.
 
-## ✅ Objective
+### ✅ Objective
 
 Write `solution.yml` that targets `db1.lab` and contains:
 
@@ -17,7 +43,7 @@ Write `solution.yml` that targets `db1.lab` and contains:
    `/tmp/challenge-tag-reset.txt` and **removes** `/tmp/challenge-tag-configuration.txt`
    and `/tmp/challenge-tag-always.txt`
 
-## 🧩 Instructions
+### 🧩 Instructions
 
 Skeleton to complete:
 
@@ -95,7 +121,7 @@ Skeleton to complete:
 >   is that its marker **exists**. The play also runs with
 >   `gather_facts: false`: that fact is not even collected.
 
-## 🧪 Validation
+### 🧪 Validation
 
 The `tests/test_tags.py` script checks on **db1.lab**:
 
@@ -108,7 +134,7 @@ The `tests/test_tags.py` script checks on **db1.lab**:
 pytest -v labs/ecrire-code/tags/challenge/tests/
 ```
 
-## 🚀 Going further
+### 🚀 Going further
 
 - Redo the challenge running **without `--tags`**: `always` runs,
   `configuration` too, `never` still left out.
@@ -120,7 +146,7 @@ pytest -v labs/ecrire-code/tags/challenge/tests/
 
 Good luck! 🧠
 
-## 🧹 Reset
+### 🧹 Reset
 
 To replay the challenge in a neutral state:
 

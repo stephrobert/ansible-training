@@ -1,6 +1,33 @@
-# 🎯 Challenge — Convert the imperative Bash script into an idempotent playbook
+# The script that adds a line every night
 
-## ✅ Objective
+## The situation
+
+A colleague deploys the landing page of **web1.lab** with a Bash script fired
+by cron. It works. Except visitors now read *"Servi par web1.lab"* three times
+on the home page, then four, then five. Nobody touched the page: the script
+appends the line at every run and never asks whether it is already there. The
+incident is small, the lesson is not.
+
+From **control-node.lab**, you are going to watch why the same job, written
+declaratively, cannot drift.
+
+Your mission:
+
+1. Run the **Bash script three times** against `web1.lab` and watch the line
+   counter climb: that is drift, live.
+2. Reset the node, then run the **playbook three times** and observe the page
+   stay at exactly one line.
+3. Read the second `PLAY RECAP`: **`changed=0`** is the mechanical proof of
+   idempotence, not a matter of opinion.
+4. Compare the two files and name what the `lineinfile:` module compares before it
+   writes anything at all.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/declaratif-vs-imperatif/ (in French)
+
+## 🎯 Challenge — Convert the imperative Bash script into an idempotent playbook
+
+### ✅ Objective
 
 The file `scripts/install-nginx-impératif.sh` deploys nginx **imperatively**: it
 chains commands and, worse, **appends** a line to the home page on every run, so
@@ -20,7 +47,7 @@ state, and reach it **idempotently** (`changed=0` on the second run).
 | Home page | `/usr/share/nginx/html/index.html` contains **exactly one** `<p>Servi par ...</p>` line |
 | Idempotence | 2nd run of the playbook → `changed=0` in `PLAY RECAP` |
 
-## 🧩 Skeleton — `challenge/solution.yml`
+### 🧩 Skeleton — `challenge/solution.yml`
 
 ```yaml
 ---
@@ -56,7 +83,7 @@ state, and reach it **idempotently** (`changed=0` on the second run).
         create: false
 ```
 
-## 💡 Traps
+### 💡 Traps
 
 - **State, not commands.** The Bash script `echo "..." | tee -a` appends **one
   line per run**: that is the drift. Do **not** translate it into a
@@ -76,7 +103,7 @@ state, and reach it **idempotently** (`changed=0` on the second run).
   `ansible.posix.firewalld`, `ansible.builtin.systemd_service`,
   `ansible.builtin.lineinfile`). `ansible-lint --profile production` requires it.
 
-## 🚀 Launch
+### 🚀 Launch
 
 ```bash
 # From the repo root, once challenge/solution.yml is written:
@@ -86,7 +113,7 @@ ansible-playbook labs/decouvrir/declaratif-vs-imperatif/challenge/solution.yml
 ansible-playbook labs/decouvrir/declaratif-vs-imperatif/challenge/solution.yml
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/decouvrir/declaratif-vs-imperatif/challenge/tests/
@@ -100,7 +127,7 @@ The pytest suite proves the **system state**, not that a command ran:
 - nginx actually serves that page over HTTP.
 - The playbook is **idempotent**: a second run yields `changed=0`.
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean decouvrir-declaratif-vs-imperatif
@@ -108,7 +135,7 @@ dsoxlab clean decouvrir-declaratif-vs-imperatif
 
 Removes the `Servi par ...` line so you can replay from a clean state.
 
-## 💡 Going further
+### 💡 Going further
 
 - Make the **Bash** script idempotent by hand
   (`grep -q "Servi par" ... || echo ...`). It works, but you reinvented

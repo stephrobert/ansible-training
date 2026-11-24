@@ -1,12 +1,39 @@
-# 🎯 Challenge — 4 advanced Jinja2 filters
+# Four transformations nobody should do by hand
 
-## ✅ Objective
+## The situation
+
+The integration you are wiring needs four things Ansible will not hand you
+ready-made: the machine's role prefix, buried inside its FQDN; a Basic auth
+header, which means the credentials pair must be base64 encoded; a list that
+arrives nested from another team's export; and a sha256 fingerprint so you can
+tell whether a payload actually changed. All four are done by hand today, from
+a wiki page of copy-pasteable commands, and the wiki page is wrong.
+
+You do them in the data, on `db1.lab`, from **control-node.lab**.
+
+Your mission:
+
+1. **Extract** the role prefix from an FQDN with a regex, anchored so it stops
+   before the first digit.
+2. **Encode** the credentials pair to base64, and stay clear about what that
+   is: encoding, never encryption.
+3. **Flatten** the nested list into a flat one, and check how deep the filter
+   goes before it gives up.
+4. Produce a **sha256** fingerprint of a string, then write the four results on
+   db1.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/filtres-jinja/ (in French)
+
+## 🎯 Challenge — 4 advanced Jinja2 filters
+
+### ✅ Objective
 
 Write `challenge/solution.yml` that, on **db1.lab**, writes
 `/tmp/filtres-avances.txt` containing **4 lines**, each produced by an
 advanced Jinja2 filter.
 
-## 🧩 Input data
+### 🧩 Input data
 
 ```yaml
 fqdn: "web1.lab.example.com"
@@ -15,7 +42,7 @@ nested: [[1, 2], [3, [4, 5]]]
 to_hash: "foobar"
 ```
 
-## 🧩 Expected output
+### 🧩 Expected output
 
 ```text
 prefix=web
@@ -24,7 +51,7 @@ flat=[1, 2, 3, 4, 5]
 sha256=c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2
 ```
 
-## 🧩 4 filters to use
+### 🧩 4 filters to use
 
 | Filter | Effect |
 | --- | --- |
@@ -33,7 +60,7 @@ sha256=c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2
 | `flatten` | Recursively flattens a list of lists |
 | `hash('sha256')` | Hexadecimal SHA256 fingerprint of a string |
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -77,26 +104,26 @@ sha256=c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2
 >   `to_hash | hash('sha256')`. For MD5: `'md5'`. **Never**
 >   use `hash` on a secret: it is a hash, not an auth.
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 ansible-playbook labs/ecrire-code/filtres-jinja-avances/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "cat /tmp/filtres-avances.txt"
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/filtres-jinja-avances/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-filtres-jinja-avances
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`hash('md5')` / `hash('sha1')` / `hash('sha512')`**: other algorithms. On
   recent Ansible versions, `password_hash('sha512')` generates a

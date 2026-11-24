@@ -1,4 +1,29 @@
-# 🎯 Challenge — combining 2 different vault files in a single play
+# The database password is in the Git history
+
+## The situation
+
+The security review found it this morning: a `db_secrets.yml` committed in clear
+text eighteen months ago, still readable by anyone who can clone the repository.
+Deleting the file changes nothing, Git remembers. The password is rotating today,
+and the new one is not going anywhere near a plain YAML file. What the repository
+holds from now on is ciphertext, decrypted only at run time on the control node.
+
+Your mission, from **control-node.lab**:
+
+1. Encrypt the two secrets files the application needs, so what lands in Git is
+   unreadable without the vault password, and confirm the encryption is real by
+   inspecting the file.
+2. Read and modify an encrypted file **without** leaving a decrypted copy behind
+   on disk.
+3. Have a playbook consume **both** encrypted files in a single run and prove, on
+   **db1.lab**, that their values arrived intact, in a file readable only by root.
+4. Handle the rotation itself: change the vault password on an existing file, and
+   know how to bring a file back to clear text when it stops holding a secret.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/ansible-vault-introduction/ (in French)
+
+## 🎯 Challenge — combining 2 different vault files in a single play
 
 This challenge uses **two encrypted files** (`db_secrets.yml` and
 `api_secrets.yml`, already delivered in `challenge/`) in a single playbook.
@@ -8,7 +33,7 @@ Both were encrypted with the **same vault password**:
 This password is **enforced**, not chosen: the delivered files were
 encrypted with it, so it is the only one that opens them.
 
-## ✅ Objective
+### ✅ Objective
 
 On **`db1.lab`**, deposit `/tmp/lab77-challenge-result.txt` (mode `0600`)
 that proves that **both** encrypted files were decrypted.
@@ -20,7 +45,7 @@ that proves that **both** encrypted files were decrypted.
 | `ChallengeDB2026` (prefix of `db_password`) | `db_secrets.yml` |
 | `challenge_api_xyz789` (the `api_key`) | `api_secrets.yml` |
 
-## 🧩 Skeleton to complete
+### 🧩 Skeleton to complete
 
 Step 1: check that the lab vault password is in place. The `.vault_password`
 file is gitignored (a password is never committed), so it is absent from a
@@ -86,7 +111,7 @@ Step 3: write `challenge/solution.yml`:
 > - **Mode `0600`** is essential: a file that contains a password
 >   must be readable only by root.
 
-## 🚀 Launch
+### 🚀 Launch
 
 ```bash
 ansible-playbook \
@@ -98,7 +123,7 @@ ansible-playbook \
 > the pytest replay: you do not need to pass it again for the automated
 > tests.
 
-## 🧪 Validation
+### 🧪 Validation
 
 ```bash
 pytest -v labs/vault/introduction/challenge/tests/
@@ -109,13 +134,13 @@ pytest -v labs/vault/introduction/challenge/tests/
 playbook must display `changed=0` everywhere in the `PLAY RECAP`, this is the
 RHCE criterion).
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean vault-introduction
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`ansible-vault rekey`**: change the vault password without touching
   the content (periodic rotation).

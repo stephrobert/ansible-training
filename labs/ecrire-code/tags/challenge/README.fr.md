@@ -1,11 +1,39 @@
-# 🎯 Challenge — Tags spéciaux `always` et `never`
+# La tâche de reset qui ne doit jamais partir toute seule
+
+## La situation
+
+Le playbook de `db1.lab` fait trois choses : un contrôle préalable, la
+configuration de routine, et il embarque une routine de **reset** qui remet
+l'état de l'hôte à zéro. Cette dernière est légitime : quelqu'un en a besoin
+quand un nœud est reconstruit. Sauf qu'elle vit dans le même fichier, et
+qu'elle est déjà partie une fois, déclenchée par un ingénieur fatigué qui
+voulait seulement pousser un changement de config. Vous n'allez pas découper
+le fichier : vous allez rendre le reset inatteignable sauf demande nominative,
+depuis **control-node.lab**.
+
+Votre mission :
+
+1. Taguer la tâche de configuration de routine pour qu'un run
+   `--tags configuration` la touche, elle et rien d'autre.
+2. Faire tourner le marqueur de contrôle préalable **quoi que** demande
+   l'opérateur, grâce au tag `always`.
+3. Verrouiller le reset destructif derrière **`never`**, à côté de son propre
+   tag `reset` : ignoré par défaut, ignoré même sur un run sans option,
+   joignable uniquement sur demande explicite.
+4. Vérifier en lançant avec `--tags configuration` : les marqueurs `always` et
+   `configuration` sont là, celui du reset ne l'est pas.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/tags/
+
+## 🎯 Challenge — Tags spéciaux `always` et `never`
 
 Vous savez utiliser `tags: install`. Le challenge ajoute deux tags spéciaux :
 
 - **`always`** : la tâche s'exécute **même si** l'apprenant lance avec `--tags configuration`.
 - **`never`** : la tâche ne s'exécute **jamais** sauf si on lance explicitement `--tags reset`.
 
-## ✅ Objectif
+### ✅ Objectif
 
 Écrire `solution.yml` qui cible `db1.lab` et contient :
 
@@ -17,7 +45,7 @@ Vous savez utiliser `tags: install`. Le challenge ajoute deux tags spéciaux :
    `/tmp/challenge-tag-reset.txt` et **supprime** `/tmp/challenge-tag-configuration.txt`
    et `/tmp/challenge-tag-always.txt`
 
-## 🧩 Consignes
+### 🧩 Consignes
 
 Squelette à compléter :
 
@@ -95,7 +123,7 @@ Squelette à compléter :
 >   tags, c'est que son marqueur **existe**. Le play tourne d'ailleurs avec
 >   `gather_facts: false` : ce fact n'est même pas collecté.
 
-## 🧪 Validation
+### 🧪 Validation
 
 Le script `tests/test_tags.py` vérifie sur **db1.lab** :
 
@@ -108,7 +136,7 @@ Le script `tests/test_tags.py` vérifie sur **db1.lab** :
 pytest -v labs/ecrire-code/tags/challenge/tests/
 ```
 
-## 🚀 Pour aller plus loin
+### 🚀 Pour aller plus loin
 
 - Refaites le challenge en lançant **sans `--tags`** : `always` tourne,
   `configuration` aussi, `never` toujours écarté.
@@ -120,7 +148,7 @@ pytest -v labs/ecrire-code/tags/challenge/tests/
 
 Bonne chance ! 🧠
 
-## 🧹 Reset
+### 🧹 Reset
 
 Pour rejouer le challenge dans un état neutre :
 

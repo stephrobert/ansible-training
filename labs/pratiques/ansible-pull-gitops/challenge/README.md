@@ -1,6 +1,30 @@
-# 🎯 Challenge — Run `ansible-pull` from db1.lab
+# Four hundred nodes your control node will never reach
 
-## ✅ Objective
+## The situation
+
+The new fleet lives in shops behind consumer routers: no public address, no
+inbound SSH, sometimes offline for a day. Your control node cannot reach any of
+them, and the push model has run out of road. There is no more central machine
+opening connections outward. If a node wants its configuration, it will have to
+go and get it, from the one thing it can always reach: a Git repository.
+
+Your mission, from the project directory:
+
+1. Publish the configuration as a **Git repository** and have the target pull it
+   and apply it **to itself**, no control node in the loop.
+2. Prove it ran by having the pulled play leave evidence on the node it was
+   executed from, not on the machine that wrote the playbook.
+3. Make it **autonomous**: schedule the pull so the node converges on its own, and
+   arrange for a freshly provisioned machine to bootstrap itself on first boot.
+4. Draw the line for your team: what push still does better, what pull buys you at
+   the edge or at four hundred nodes, and what you give up in exchange.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/pratiques/ansible-pull-gitops/ (in French)
+
+## 🎯 Challenge — Run `ansible-pull` from db1.lab
+
+### ✅ Objective
 
 Make **db1.lab configure itself** in pull mode: a
 Git repo containing a `pull-playbook.yml`, cloned and run on db1 by
@@ -16,9 +40,9 @@ check **the state of db1.lab**.
 | `/tmp/lab98-pull-marker.txt` exists, owner `root`, mode `0644` | the pulled playbook ran with privileges |
 | The marker contains `ansible-pull executed` and the machine's hostname | the play ran **on db1**, not on the control node |
 
-## 🧩 Steps (you write the content)
+### 🧩 Steps (you write the content)
 
-### Step 1 — The local Git repo
+#### Step 1 — The local Git repo
 
 Create `repo-pull/` in this lab, write `pull-playbook.yml` in it, then make
 it a real repo (`git init` + commit). The playbook targets the machine that
@@ -42,7 +66,7 @@ runs it, not a remote host:
         mode: ???
 ```
 
-### Step 2 — The orchestrator script `challenge/solution.sh`
+#### Step 2 — The orchestrator script `challenge/solution.sh`
 
 A shell script (not a playbook) that, in order:
 
@@ -83,14 +107,14 @@ ansible db1.lab -b -m ansible.builtin.command \
 > - **Owner `root`**: `ansible-pull` must run with elevation (`-b` on
 >   the ad-hoc command), otherwise the marker will belong to `ansible`.
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 chmod +x labs/pratiques/ansible-pull-gitops/challenge/solution.sh
 bash labs/pratiques/ansible-pull-gitops/challenge/solution.sh
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/pratiques/ansible-pull-gitops/challenge/tests/
@@ -99,13 +123,13 @@ pytest -v labs/pratiques/ansible-pull-gitops/challenge/tests/
 The tests reset db1, run your `solution.sh`, then
 check on db1 the Git clone and the marker (owner, mode, content).
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean pratiques-ansible-pull-gitops
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **Periodic run**: set up a cron or a systemd timer that re-runs
   `ansible-pull` every 30 minutes: the node converges on its own.

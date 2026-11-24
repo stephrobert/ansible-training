@@ -1,11 +1,35 @@
-# 🎯 Challenge — `find:` + automatic cleanup
+# Clean up the oversized logs without deleting the useful ones
 
-## ✅ Objective
+## The situation
+
+An application on **db1.lab** has been dumping logs into `/tmp` for weeks, and a
+few of them have grown fat enough to threaten the partition. The rule the team
+agreed on is simple: past a certain size, the log goes; below that, it stays,
+because the small ones are still what you read when debugging. Nobody wants a
+`rm` recited from memory at 2 a.m. on a production box. You drive the cleanup
+from **control-node.lab**, and Ansible decides what goes.
+
+Your mission:
+
+1. Set up the working directory and its log files on **db1.lab**: the ground
+   this cleanup will run against.
+2. **Search** that directory for the `.log` files **over 5 MB**, letting the
+   search module do the filtering rather than a shell one-liner.
+3. **Delete only the files it found**, by iterating over the search result: what
+   is not on the list is not touched.
+4. Prove the outcome: the small logs survive, the big ones are gone.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/module-find/ (in French)
+
+## 🎯 Challenge — `find:` + automatic cleanup
+
+### ✅ Objective
 
 On **db1.lab**, create 5 `.log` files of various sizes, then use `find:` to
 identify those **> 5MB** and delete them in a loop.
 
-## 🧩 Steps
+### 🧩 Steps
 
 1. Create a folder `/tmp/lab-find-cleanup/` (mode 0755).
 2. Create **5 files** `.log` in it:
@@ -19,7 +43,7 @@ identify those **> 5MB** and delete them in a loop.
 
 At the end, **only** `small1.log` and `small2.log` must remain.
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -74,26 +98,26 @@ At the end, **only** `small1.log` and `small2.log` must remain.
 > - **`patterns:`**: list of globs (`*.log`, `*.tmp`). For regex:
 >   `use_regex: true` + regex patterns.
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-diagnostic/find/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "ls -la /tmp/lab-find-cleanup/"
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-diagnostic/find/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 ansible db1.lab -b -m file -a "path=/tmp/lab-find-cleanup state=absent"
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`age: 7d`**: add a time filter (logs > 5MB **AND** > 7 days).
 - **`recurse: true`**: descend into the subfolders.

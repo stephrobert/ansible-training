@@ -1,6 +1,33 @@
-# 🎯 Challenge — The webserver role declares its prerequisites, db1 proves it
+# Everyone forgets the prerequisites
 
-## ✅ Objective
+## The situation
+
+Every playbook that uses the `webserver` role starts with the same two chores:
+put SELinux in the right mode with the right booleans, then open the ports in
+firewalld. Whoever forgets one gets a web server that starts and serves nothing,
+and spends an afternoon on it. Those prerequisites are not the caller's problem:
+the role knows what it needs, so the role should say it, once, and be obeyed.
+
+Your mission, from the project directory, against **db1.lab**:
+
+1. Have the `webserver` role **declare** the two roles it depends on,
+   `selinux_setup` then `firewall_setup`, so a caller can never skip them again.
+2. Pass each dependency the variables it needs: SELinux in `enforcing`, and
+   **443/tcp** opened by the firewall role, without leaking them into the
+   parent role.
+3. Write a play that consumes **only** the `webserver` role, listening on
+   8081, and prove the real execution order on the target: each role logs its
+   passage in `/tmp/deps-order.txt`, and that file must read dependencies
+   first, parent role last.
+4. Walk into the diamond: when two dependencies share a third one, decide how
+   many times that shared role runs, and what changes the answer.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/dependencies/ (in French)
+
+## 🎯 Challenge — The webserver role declares its prerequisites, db1 proves it
+
+### ✅ Objective
 
 The `webserver` role shipped in `roles/` has two structural prerequisites that its
 callers constantly forget: SELinux in the right mode, and a firewall
@@ -17,7 +44,7 @@ The tests do not read `meta/main.yml`: they check **the state of db1.lab**.
 Each role in the lab records its passage in `/tmp/deps-order.txt`: this
 file is the proof of the real execution order.
 
-## 🧩 Expected contract (state of db1.lab)
+### 🧩 Expected contract (state of db1.lab)
 
 | Proof | Expected state |
 | --- | --- |
@@ -26,7 +53,7 @@ file is the proof of the real execution order.
 | Dependency 2 executed | `firewalld` started **and** enabled, port **443/tcp** open (var `firewall_setup_open_ports` passed by the dependency) |
 | Parent role executed | nginx installed, started, enabled, listening on **8081**, port 8081/tcp open, welcome page in place |
 
-## 🧩 Skeletons
+### 🧩 Skeletons
 
 `roles/webserver/meta/main.yml` (part to complete):
 
@@ -68,7 +95,7 @@ dependencies:
 >   imposes them itself.
 > - **`443/tcp`** in firewalld format, with the quotes.
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 ANSIBLE_ROLES_PATH=labs/roles/dependencies/roles \
@@ -79,19 +106,19 @@ ANSIBLE_ROLES_PATH=labs/roles/dependencies/roles \
 `firewall_setup :` appear **before** those of the `webserver` role, even though
 the play mentions them nowhere.
 
-## 🧪 Validation
+### 🧪 Validation
 
 ```bash
 pytest -v labs/roles/dependencies/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean roles-dependencies
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **The diamond**: add a `common` role that both `selinux_setup`
   AND `firewall_setup` depend on. Re-run: `common` appears only once in

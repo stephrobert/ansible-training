@@ -1,6 +1,29 @@
-# 🎯 Challenge — `archive` + `unarchive` (back up and restore)
+# Prove the backup and restore chain actually works
 
-## ✅ Objective
+## The situation
+
+**db1.lab** carries a data directory that has never been backed up, and the
+disaster recovery plan says the restore procedure is "documented". Nobody has
+ever run it. Your manager wants the full chain demonstrated end to end before
+the audit: produce an archive, restore it elsewhere, and show both sides match.
+The whole thing has to run from **control-node.lab** as a playbook a cron job
+could replay every night without churning the disk.
+
+Your mission:
+
+1. Set up the source data on **db1.lab** under `/opt/data-source/`, then
+   produce the compressed archive **`/opt/backup/data.tar.gz`** from it.
+2. Restore that archive into **`/opt/restored/`**, remembering the archive
+   lives **on the managed node**, not on your control node.
+3. Make the extraction **idempotent**: the second run must **skip** the restore
+   instead of rewriting the files and churning every mtime.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/archive-unarchive/ (in French)
+
+## 🎯 Challenge — `archive` + `unarchive` (back up and restore)
+
+### ✅ Objective
 
 On **db1.lab**, demonstrate the full pipeline:
 
@@ -11,7 +34,7 @@ On **db1.lab**, demonstrate the full pipeline:
 3. **Extract**: restore the archive into `/opt/restored/`. **Idempotent** on the
    2nd run thanks to `creates:`.
 
-## 🧩 Key modules
+### 🧩 Key modules
 
 - `community.general.archive` (FQCN): the **archive** module (create a .tar.gz, .zip, etc.).
 - `ansible.builtin.unarchive`: archive extraction (shipped with `ansible-core`).
@@ -26,7 +49,7 @@ On **db1.lab**, demonstrate the full pipeline:
 >
 > `unarchive`, on the other hand, is indeed in `ansible.builtin`.
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -91,7 +114,7 @@ On **db1.lab**, demonstrate the full pipeline:
 > - **`extra_opts:`**: pass flags to the tar binary. For example
 >   `--strip-components=1` to remove the first directory level.
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-fichiers/archive-unarchive/challenge/solution.yml
@@ -101,19 +124,19 @@ ansible db1.lab -m ansible.builtin.command -a "ls -la /opt/data-source /opt/back
 🔍 On the **2nd run**, the `unarchive` task must show `skipped` (proof of the
 `creates:`).
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-fichiers/archive-unarchive/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean modules-fichiers-archive-unarchive
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`format: zip` / `format: bz2` / `format: xz`**: other supported formats.
 - **`exclude_path:`** on `archive`: exclude certain files from the archive
