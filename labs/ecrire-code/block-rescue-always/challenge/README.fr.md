@@ -1,6 +1,33 @@
-# 🎯 Challenge — `block` + `rescue` + `always` sur erreur volontaire
+# La migration est morte en chemin et a laissé la porte ouverte
 
-## ✅ Objectif
+## La situation
+
+Une migration sur **db1.lab** a échoué en plein milieu le mois dernier. Elle
+avait déjà basculé le service en mode maintenance, et elle ne l'en a jamais
+sorti : l'échec a interrompu le playbook sur place, et l'étape de nettoyage,
+bien rangée en bas du fichier, n'a jamais tourné. L'hôte est resté hors
+rotation jusqu'à ce que quelqu'un s'en aperçoive. L'erreur n'est pas le
+problème : une erreur sans rattrapage ni nettoyage, si. Vous reconstruisez le
+play depuis **control-node.lab**, avec une vraie transaction autour.
+
+Votre mission :
+
+1. Regrouper les tâches risquées dans un **`block:`** sur `db1.lab`, dont une
+   qui échouera à coup sûr.
+2. Capturer cet échec dans un **`rescue:`** qui consigne ce qui s'est passé, au
+   lieu de laisser le play mourir sur place.
+3. Garantir que le nettoyage tourne dans **`always:`**, que le block ait réussi
+   ou explosé.
+4. Lire le récapitulatif : **`failed=0`**. L'erreur a eu lieu, elle a été
+   traitée, le play est un succès. Puis trouver la variable qui dit au `rescue`
+   ce qui a réellement échoué.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/block-rescue-always/
+
+## 🎯 Challenge — `block` + `rescue` + `always` sur erreur volontaire
+
+### ✅ Objectif
 
 Écrire `challenge/solution.yml` qui sur **db1.lab** :
 
@@ -12,7 +39,7 @@
 4. Le `PLAY RECAP` final doit afficher **`failed=0`** — le rescue a rattrapé
    l'erreur et le play termine en **succès**.
 
-## 🧩 Pattern
+### 🧩 Pattern
 
 ```yaml
 - name: Bloc transactionnel
@@ -26,7 +53,7 @@
 
 Analogie Python : `try / except / finally`.
 
-## 🧩 Squelette
+### 🧩 Squelette
 
 ```yaml
 ---
@@ -59,7 +86,7 @@ Analogie Python : `try / except / finally`.
 > 💡 **Indice commande qui échoue** : `/bin/false` retourne toujours rc=1. Vous
 > pouvez aussi utiliser `command: /bin/sh -c 'exit 1'`.
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/ecrire-code/block-rescue-always/challenge/solution.yml
@@ -87,19 +114,19 @@ ansible-playbook labs/ecrire-code/block-rescue-always/challenge/solution.yml
 >   `ansible_failed_result` pour debug. Ne pas les confondre avec
 >   `ansible_failed_handler` (handlers échoués).
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/ecrire-code/block-rescue-always/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-block-rescue-always
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **`ansible_failed_task` / `ansible_failed_result`** : variables magiques
   disponibles dans `rescue:` qui exposent la tâche qui a échoué et son

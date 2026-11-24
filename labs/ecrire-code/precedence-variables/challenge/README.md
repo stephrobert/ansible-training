@@ -1,6 +1,34 @@
-# 🎯 Challenge — Precedence: two duels to settle
+# "I changed the value and nothing happened"
 
-## ✅ Objective
+## The situation
+
+Two hours lost yesterday. A colleague set the value in the vars file, ran the
+playbook against **db1.lab**, and got the old one. Set it again, in another
+file: same result. They ended up editing the play itself, which is precisely
+what nobody wants in the repo. Ansible resolves one variable name across
+**twenty-two levels**, and there is nothing mysterious about it: you either
+know the order or you spend your afternoons fighting it. You settle the
+question experimentally, from **control-node.lab**.
+
+Your mission:
+
+1. Declare the **same variable** in the play's `vars:` and in a file loaded by
+   `vars_files:`.
+2. Run it bare and record the resolved value on db1: discover that
+   `vars_files:` (level 14) **wins** against the play's `vars:` (level 12), the
+   exact opposite of intuition.
+3. Override both from the command line with **`--extra-vars`** and watch the
+   top level win over everything else.
+4. Explain the result instead of memorising it: say what each level is for, and
+   why `--extra-vars` is the right tool for a one-off override and the wrong one
+   for a permanent setting.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/precedence-variables/ (in French)
+
+## 🎯 Challenge — Precedence: two duels to settle
+
+### ✅ Objective
 
 Demonstrate **two** things in a single run, with **two** variables:
 
@@ -13,9 +41,9 @@ Demonstrate **two** things in a single run, with **two** variables:
 You will therefore stack these variables at several levels, run the play
 with `--extra-vars` on **`winner` only**, and read the two results.
 
-## 🧩 Files to create
+### 🧩 Files to create
 
-### 1) `challenge/vars/loader.yml`
+#### 1) `challenge/vars/loader.yml`
 
 ```yaml
 ---
@@ -23,7 +51,7 @@ winner: "vars_files"
 duel: "vars_files"
 ```
 
-### 2) `challenge/solution.yml`
+#### 2) `challenge/solution.yml`
 
 Skeleton to complete:
 
@@ -70,7 +98,7 @@ Skeleton to complete:
 >   let precedence settle it. Declaring it only in
 >   `vars/loader.yml` would make the test pass without demonstrating anything.
 
-## 🚀 Run (with --extra-vars)
+### 🚀 Run (with --extra-vars)
 
 ```bash
 ansible-playbook labs/ecrire-code/precedence-variables/challenge/solution.yml \
@@ -93,7 +121,7 @@ Two readings in this file:
 - `duel=vars_files`: without `--extra-vars` to arbitrate, **`vars_files:` (14)
   beats the play `vars:` (12)**. There is the real lesson of the lab.
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/precedence-variables/challenge/tests/
@@ -102,13 +130,13 @@ pytest -v labs/ecrire-code/precedence-variables/challenge/tests/
 > ⚠️ The root `conftest.py` automatically plays your `solution.yml` with
 > `--extra-vars "winner=extra_vars_wins"` (see `_EXTRA_ARGS`).
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-precedence-variables
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **Without `--extra-vars`**: rerun without the flag. `winner` then switches to
   `vars_files`, for the same reason as `duel`: **`vars_files:` (14) wins**

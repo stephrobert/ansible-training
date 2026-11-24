@@ -1,6 +1,29 @@
-# 🎯 Challenge — `copy:` module (deploy an SSH banner)
+# Roll out the legal login banner on the web tier
 
-## ✅ Objective
+## The situation
+
+The security audit closed on one blocking finding: **web1.lab** opens SSH
+sessions with no legal notice, while compliance demands proof that access is
+announced as monitored before the shell even appears. The same audit asks that
+every host identify itself in its message of the day. You work from
+**control-node.lab**: nothing gets typed by hand on the server, the banner
+ships as a playbook so the next twenty servers cost one `--limit`.
+
+Your mission:
+
+1. Push the legal banner text from the control node to
+   **`/etc/ssh/banner-rhce`** on **web1.lab**, owned by root, world-readable,
+   with a **backup** of any previous version.
+2. Write the server identity marker straight into **`/etc/motd-rhce`** as
+   **inline content**, without shipping a source file for three words.
+3. Keep both tasks **idempotent**: a second run must report zero changes.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/fichiers/module-copy/ (in French)
+
+## 🎯 Challenge — `copy:` module (deploy an SSH banner)
+
+### ✅ Objective
 
 On **web1.lab**, drop **two files** into `/etc/`:
 
@@ -12,9 +35,9 @@ On **web1.lab**, drop **two files** into `/etc/`:
 
 Demonstrates the difference between `src:` (source file) and `content:` (string).
 
-## 🧩 Files to create
+### 🧩 Files to create
 
-### 1) `challenge/files/banner-ssh.txt`
+#### 1) `challenge/files/banner-ssh.txt`
 
 To create on the control node side. Content:
 
@@ -25,7 +48,7 @@ To create on the control node side. Content:
 =====================================
 ```
 
-### 2) `challenge/solution.yml`
+#### 2) `challenge/solution.yml`
 
 Skeleton:
 
@@ -54,7 +77,7 @@ Skeleton:
         mode: "0644"
 ```
 
-## 🧩 Expected output
+### 🧩 Expected output
 
 | File | Source | Content |
 | --- | --- | --- |
@@ -75,7 +98,7 @@ Skeleton:
 > - **`copy:` is idempotent by checksum**: on an identical 2nd run,
 >   `changed=0`.
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-fichiers/copy/challenge/solution.yml
@@ -86,19 +109,19 @@ ansible web1.lab -m ansible.builtin.command -a "cat /etc/motd-rhce"
 🔍 On the 2nd run after modifying the source file, you will see
 `/etc/ssh/banner-rhce.<timestamp>~` appear (proof of `backup: true`).
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-fichiers/copy/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean modules-fichiers-copy
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`force: false`**: does not overwrite the file if it already exists (useful
   for an initial config you do not want to reset).

@@ -1,9 +1,44 @@
-# 🎯 Challenge — Écrire un inventaire statique de zéro
+# Il n'y a pas encore d'inventaire, et rien ne tourne sans lui
+
+## La situation
+
+Les autres labs d'inventaire vous fournissaient un `hosts.yml` tout prêt et vous
+laissaient jouer avec les patterns et les variables. Dans la vraie vie, et le
+jour de l'examen, personne ne vous donne ce fichier : c'est vous qui l'écrivez.
+La toute première tâche de l'examen blanc RHCE est « créer l'inventaire statique
+des hôtes », et chaque playbook que vous lancerez le lit. Un inventaire absent,
+ou qui range le mauvais hôte dans le mauvais groupe, fait viser les mauvaises
+machines à toutes les tâches suivantes.
+
+Vous êtes sur **control-node.lab**, face à trois nœuds gérés : deux serveurs web
+(**web1.lab**, **web2.lab**) et un serveur de base de données (**db1.lab**).
+Aucun inventaire n'existe.
+
+Votre mission :
+
+1. Écrire un **inventaire statique de zéro**, à la main, sans générateur.
+2. Déclarer deux groupes d'hôtes : **`webservers`** (web1 + web2) et
+   **`dbservers`** (db1).
+3. Déclarer un **groupe parent** `datacenter` qui les agrège tous les deux, via
+   **`children`**.
+4. Ajouter des **variables de groupe** : une propre à `webservers`, une portée
+   par le parent `datacenter` pour que chaque hôte en hérite.
+5. Ne jamais coder d'adresse IP en dur : la connexion passe par le `ssh_config`
+   de dsoxlab, et l'utilisateur SSH est `student`.
+
+Vous ne prouvez rien en montrant le fichier. Vous le prouvez en demandant à
+Ansible ce qu'il résout (`ansible-inventory --list`) et en joignant exactement
+les bons hôtes (`ansible <groupe> -m ping`).
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/statiques-yaml/
+
+## 🎯 Challenge — Écrire un inventaire statique de zéro
 
 Aucun inventaire ne vous est fourni. Vous partez d'une page blanche et vous
 écrivez `inventory/hosts.yml` à la main, comme à la tâche 1 de l'examen.
 
-## ✅ Objectif
+### ✅ Objectif
 
 Créer le fichier `inventory/hosts.yml` (à la racine du lab) déclarant :
 
@@ -20,7 +55,7 @@ Créer le fichier `inventory/hosts.yml` (à la racine du lab) déclarant :
 de dsoxlab, le compte de connexion est `ansible` (le compte de service que
 dsoxlab provisionne sur les VMs).
 
-## 🧩 Consignes
+### 🧩 Consignes
 
 Le **bloc de connexion** (spécifique à dsoxlab) vous est donné : recopiez-le tel
 quel sous `all.vars`, puis complétez `children` avec vos groupes.
@@ -69,7 +104,7 @@ all:
 >   n'atteint aucune VM et les tests échouent sur la connexion, pas sur vos
 >   groupes.
 
-## 🔎 Vérifiez vous-même avant de lancer les tests
+### 🔎 Vérifiez vous-même avant de lancer les tests
 
 ```bash
 cd labs/inventaires/statiques/
@@ -84,7 +119,7 @@ ansible-inventory -i inventory/hosts.yml --host db1.lab
 # Attendu : db_role=database ET site=paris, mais PAS de web_role.
 ```
 
-## 🧪 Validation
+### 🧪 Validation
 
 ```bash
 pytest -v challenge/tests/
@@ -94,7 +129,7 @@ Les tests interrogent l'inventaire **résolu par Ansible** (`ansible-inventory
 --list` / `--host`) et joignent les hôtes par **ping** : ils prouvent l'état,
 pas le texte du fichier.
 
-## 🚀 Pour aller plus loin
+### 🚀 Pour aller plus loin
 
 - Réécrivez le même inventaire au **format INI** (`inventory/hosts.ini`) et
   vérifiez que `ansible-inventory --graph` rend le même graphe.
@@ -103,7 +138,7 @@ pas le texte du fichier.
 - Ajoutez un second parent `production` qui agrège `datacenter`, et observez
   l'héritage en cascade de `site` avec `ansible-inventory --host web1.lab`.
 
-## 🧹 Reset
+### 🧹 Reset
 
 Le livrable de ce lab est un fichier local (`inventory/`, gitignoré) : il n'y a
 rien à nettoyer sur les VMs. Pour repartir de zéro, supprimez simplement votre

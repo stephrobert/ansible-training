@@ -1,6 +1,34 @@
-# 🎯 Challenge — Précédence : deux duels à trancher
+# « j'ai changé la valeur et il ne se passe rien »
 
-## ✅ Objectif
+## La situation
+
+Deux heures perdues hier. Un collègue a posé la valeur dans le fichier de
+vars, lancé le playbook sur **db1.lab**, et récupéré l'ancienne. Il l'a posée
+à nouveau, dans un autre fichier : même résultat. Il a fini par modifier le
+play lui-même, exactement ce que personne ne veut voir dans le dépôt. Ansible
+résout un même nom de variable à travers **vingt-deux niveaux**, et il n'y a
+là rien de mystérieux : soit vous connaissez l'ordre, soit vous y passez vos
+après-midi. Vous tranchez expérimentalement, depuis **control-node.lab**.
+
+Votre mission :
+
+1. Déclarer la **même variable** dans les `vars:` du play et dans un fichier
+   chargé par `vars_files:`.
+2. Lancer sans rien passer et enregistrer la valeur résolue sur db1 :
+   `vars_files:` (niveau 14) **gagne** contre les `vars:` du play (niveau 12),
+   tout l'inverse de l'intuition.
+3. Écraser les deux depuis la ligne de commande avec **`--extra-vars`** et
+   regarder le niveau le plus haut l'emporter sur tout le reste.
+4. Expliquer le résultat plutôt que l'apprendre par cœur : pourquoi
+   `--extra-vars` est le bon outil d'une surcharge ponctuelle, et le mauvais
+   d'un réglage permanent.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/precedence-variables/
+
+## 🎯 Challenge — Précédence : deux duels à trancher
+
+### ✅ Objectif
 
 Démontrer **deux** choses d'un seul run, avec **deux** variables :
 
@@ -13,9 +41,9 @@ Démontrer **deux** choses d'un seul run, avec **deux** variables :
 Vous allez donc superposer ces variables à plusieurs niveaux, lancer le play
 avec `--extra-vars` sur **`winner` seulement**, et lire les deux résultats.
 
-## 🧩 Fichiers à créer
+### 🧩 Fichiers à créer
 
-### 1) `challenge/vars/loader.yml`
+#### 1) `challenge/vars/loader.yml`
 
 ```yaml
 ---
@@ -23,7 +51,7 @@ winner: "vars_files"
 duel: "vars_files"
 ```
 
-### 2) `challenge/solution.yml`
+#### 2) `challenge/solution.yml`
 
 Squelette à compléter :
 
@@ -70,7 +98,7 @@ Squelette à compléter :
 >   laisser la précédence trancher. Le déclarer uniquement dans
 >   `vars/loader.yml` ferait passer le test sans rien démontrer.
 
-## 🚀 Lancement (avec --extra-vars)
+### 🚀 Lancement (avec --extra-vars)
 
 ```bash
 ansible-playbook labs/ecrire-code/precedence-variables/challenge/solution.yml \
@@ -93,7 +121,7 @@ Deux lectures dans ce fichier :
 - `duel=vars_files` : sans `--extra-vars` pour arbitrer, **`vars_files:` (14)
   bat `vars:` du play (12)**. Voilà le vrai enseignement du lab.
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/ecrire-code/precedence-variables/challenge/tests/
@@ -102,13 +130,13 @@ pytest -v labs/ecrire-code/precedence-variables/challenge/tests/
 > ⚠️ Le `conftest.py` racine joue automatiquement votre `solution.yml` avec
 > `--extra-vars "winner=extra_vars_wins"` (cf. `_EXTRA_ARGS`).
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-precedence-variables
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **Sans `--extra-vars`** : relancez sans le flag. `winner` bascule alors sur
   `vars_files`, pour la même raison que `duel` : **`vars_files:` (14) gagne**

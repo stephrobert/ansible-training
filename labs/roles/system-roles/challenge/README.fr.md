@@ -1,6 +1,41 @@
-# 🎯 Challenge — Piloter `chronyd` par le rôle système `timesync`
+# Le fichier que personne n'aurait dû écrire
 
-## ✅ Objectif
+## La situation
+
+L'audit a rendu son rapport. Sur db1.lab, l'horloge dérive, les serveurs NTP
+sont ceux que le DHCP a bien voulu pousser, et le `/etc/chrony.conf` en place
+porte trois générations de commentaires contradictoires. Le collègue qui l'avait
+« corrigé à la main la dernière fois » est parti depuis. Personne n'ose y
+toucher, parce que personne ne sait ce qui casse si on y touche.
+
+Red Hat a déjà écrit ce que vous alliez réécrire. Le rôle système `timesync`
+prend une intention en variables et rend un fichier généré, signé, cohérent, sur
+toutes les versions de RHEL. C'est un objectif de l'EX294 à part entière, et
+c'est aussi la seule façon de rendre ce fichier réparable par le prochain.
+
+Votre mission, depuis le répertoire du projet, contre **db1.lab** :
+
+1. Consommer le rôle système **`timesync`** au niveau du play, en nom pleinement
+   qualifié. Vous ne devez écrire **aucune ligne** de `chrony.conf` vous-même.
+2. Déclarer **trois serveurs NTP** : `0.fr.pool.ntp.org` en source préférée,
+   `1.fr.pool.ntp.org`, et `2.fr.pool.ntp.org` bridé à un intervalle
+   d'interrogation maximal. Tous les trois en `iburst`.
+3. Ramener le **seuil de correction brutale** de l'horloge à 0,1 seconde, et
+   exiger que **deux sources** soient d'accord avant tout ajustement.
+4. Faire disparaître ce que la distribution avait posé : le `pool` par défaut et
+   la porte ouverte du DHCP.
+5. Le prouver sur la machine, pas dans votre éditeur : `chronyd` doit tourner
+   avec ces trois sources, et l'horloge doit être verrouillée sur l'une d'elles.
+
+Le play doit être **idempotent** : rejoué, il ne réécrit rien et ne redémarre
+rien.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/
+
+## 🎯 Challenge — Piloter `chronyd` par le rôle système `timesync`
+
+### ✅ Objectif
 
 Écrire `challenge/solution.yml` : **un play** sur db1.lab qui consomme le rôle
 système **`fedora.linux_system_roles.timesync`** et lui passe l'intention de
@@ -16,9 +51,9 @@ configuration est un échec.
 > les variables du rôle. Un test parse votre YAML et exige le rôle en FQCN dans
 > la liste `roles:` du play.
 
-## 🧩 Contrat attendu
+### 🧩 Contrat attendu
 
-### Les trois serveurs NTP
+#### Les trois serveurs NTP
 
 | Serveur | Options demandées |
 | --- | --- |
@@ -30,13 +65,13 @@ Rappel : chaque entrée de `timesync_ntp_servers` est un **dictionnaire**, dont
 la seule clé requise est `hostname`. Les autres options sont des booléens ou des
 entiers portant le nom de la directive chrony correspondante.
 
-### Les deux réglages d'horloge
+#### Les deux réglages d'horloge
 
 - **Seuil de correction brutale** : `0.1` seconde (la distribution est à `1.0`).
 - **Minimum de sources concordantes** avant ajustement : `2` (la distribution
   est à `1`).
 
-### Ce qui doit disparaître
+#### Ce qui doit disparaître
 
 - La directive **`pool`** de la distribution.
 - La directive **`sourcedir`**, qui laissait le DHCP injecter ses serveurs.
@@ -45,7 +80,7 @@ Ces deux-là partent **toutes seules** si vous avez fait le reste correctement :
 le rôle **régénère** le fichier au lieu de l'amender. Si elles sont encore là,
 c'est que quelque chose écrit à côté du rôle.
 
-## 🧩 Squelette
+### 🧩 Squelette
 
 ```yaml
 ---
@@ -84,13 +119,13 @@ c'est que quelque chose écrit à côté du rôle.
 >   sûr », votre play ne sera plus idempotent et le test d'idempotence le dira.
 > - **`0.1` n'est pas `"0.1"`.** Le seuil est un flottant.
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/roles/system-roles/challenge/solution.yml
 ```
 
-## 🧪 Validation
+### 🧪 Validation
 
 ```bash
 pytest -v labs/roles/system-roles/challenge/tests/
@@ -106,13 +141,13 @@ chronyc -N sources                           # ce que le démon a chargé
 chronyc tracking                             # sur quoi l'horloge est verrouillée
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean roles-system-roles
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **Passez `timesync_dhcp_ntp_servers: true`** et rejouez : `sourcedir`
   réapparaît, `PEERNTP=no` disparaît. Une variable, deux fichiers, zéro ligne

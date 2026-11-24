@@ -1,6 +1,34 @@
-# 🎯 Challenge — Consume the `webserver` role the 3 ways, and prove it
+# The role that ran when it was told not to
 
-## ✅ Objective
+## The situation
+
+A colleague guarded the `webserver` role with a `when:` and a feature flag, and
+the role deployed anyway on a host that was supposed to stay untouched. The
+condition was there, in plain sight, and it was ignored. The bug is not in the
+`when:`, it is in the way the role was called: two of the three ways to invoke a
+role resolve at parse time, and only one of them evaluates conditions at runtime.
+
+Your mission, from the project directory, against **db1.lab**:
+
+1. Deploy the `webserver` role the standard way, at play level, listening on
+   port 8080: package, service, page, everything provable on the target.
+2. **Import** the role's trace entry point statically, guarded by a feature
+   flag that is off, and show both faces of "static": the trace file must NOT
+   appear, yet the role's default variables must be visible to the play,
+   because the role was loaded at parse time anyway.
+3. **Include** the same entry point dynamically, under a condition that only
+   exists at runtime (the live state of the nginx service), and show the
+   mirror image: the trace file appears, but the role's variables stay
+   private.
+4. State the rule you would give your team: which form for a systematic role,
+   which for a tag-driven one, which for a flag decided at runtime.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/consommer-role/ (in French)
+
+## 🎯 Challenge — Consume the `webserver` role the 3 ways, and prove it
+
+### ✅ Objective
 
 Write `challenge/solution.yml`: **3 plays** on db1.lab that consume the
 `webserver` role shipped in `roles/`, each through a different form
@@ -14,9 +42,9 @@ The role provides two entry points:
 - `tasks/stamp.yml`: writes `/tmp/consommer-{{ webserver_invocation }}.txt`,
   the trace of the invocation. The caller provides `webserver_invocation`.
 
-## 🧩 Expected contract
+### 🧩 Expected contract
 
-### Play 1 — `roles:` (the systematic deployment)
+#### Play 1 — `roles:` (the systematic deployment)
 
 Consume `webserver` at play level, with `webserver_listen_port: 8080`.
 
@@ -24,7 +52,7 @@ State checked on db1: `nginx` package installed, service **started and
 enabled**, nginx **listening on 8080**, the role's default welcome page
 in place (mode `0644`).
 
-### Play 2 — `import_role` (static), guarded by a flag TURNED OFF
+#### Play 2 — `import_role` (static), guarded by a flag TURNED OFF
 
 In a play with `vars: {deploy_extras: false}`:
 
@@ -40,7 +68,7 @@ applied to each imported task), BUT
 **loaded at parsing**, its defaults are visible in the play, even though
 none of its tasks ran. That is what "static" means.
 
-### Play 3 — `include_role` (dynamic), under a runtime condition
+#### Play 3 — `include_role` (dynamic), under a runtime condition
 
 1. An `ansible.builtin.service_facts:` task: the real state of services,
    information that exists **only at runtime**.
@@ -57,7 +85,7 @@ condition was true, the role was loaded and executed on the fly), BUT
 An exact mirror of play 2: executed but invisible, versus visible but
 not executed.
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -129,26 +157,26 @@ not executed.
 >   the two `consommer-vars-*.txt` files must reveal what each
 >   form actually exposes.
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 ANSIBLE_ROLES_PATH=labs/roles/consommer-role/roles \
   ansible-playbook labs/roles/consommer-role/challenge/solution.yml
 ```
 
-## 🧪 Validation
+### 🧪 Validation
 
 ```bash
 pytest -v labs/roles/consommer-role/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean roles-consommer-role
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **Pass `deploy_extras: true`** (`-e deploy_extras=true`): the trace
   `consommer-import.txt` appears. An import's `when:` is indeed evaluated

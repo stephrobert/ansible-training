@@ -1,10 +1,37 @@
-# 🎯 Challenge — Play complet sur db1 avec nginx
+# « le redémarrage est passé après le feu vert »
+
+## La situation
+
+Le dernier déploiement sur **db1.lab** a laissé l'équipe perplexe : le bandeau
+de maintenance est apparu avant même que le service soit installé, et le
+redémarrage a eu lieu après l'envoi de la notification de fin. Personne n'a
+ouvert de bug. Le playbook était une seule longue liste `tasks:` à plat : tout
+s'est exécuté dans l'ordre d'écriture, et rien dans le bon ordre. Un play a
+des sections, et elles existent précisément pour ça.
+
+Vous le réécrivez proprement depuis **control-node.lab**.
+
+Votre mission :
+
+1. Structurer un play sur `db1.lab` autour de **`pre_tasks`**, **`tasks`**,
+   **`post_tasks`** et **`handlers`**.
+2. Déployer `nginx`, démarré et activé, servant une page qui identifie l'hôte
+   par son nom d'inventaire.
+3. Faire en sorte que la modification de config **notifie** un handler de
+   redémarrage, au lieu de redémarrer à chaque passage.
+4. Prouver l'ordre d'exécution réel avec des **fichiers marqueurs horodatés** :
+   le marqueur predeploy doit être antérieur au marqueur postdeploy.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/plays-et-tasks/
+
+## 🎯 Challenge — Play complet sur db1 avec nginx
 
 Vous avez écrit un play complet avec `pre_tasks` / `tasks` / `post_tasks` / `handlers`. Le challenge **reproduit ce pattern** sur un autre hôte (`db1.lab`) pour vérifier que vous maîtrisez l'**anatomie d'un play professionnel**. Le logiciel déployé ne change pas : c'est bien la structure du play qui est le sujet, pas le paquet installé.
 
 > Les concepts de **parallélisme** (`serial:`, `max_fail_percentage:`, `strategy:`) sont l'objet du [lab 09](../../parallelisme-strategies/) — ils ne sont **pas** demandés ici.
 
-## ✅ Objectif
+### ✅ Objectif
 
 Écrire `solution.yml` à la racine de **ce répertoire**
 (`labs/ecrire-code/plays-et-tasks/challenge/solution.yml`) qui :
@@ -19,7 +46,7 @@ Vous avez écrit un play complet avec `pre_tasks` / `tasks` / `post_tasks` / `ha
 8. Le handler redémarre nginx via `ansible.builtin.systemd state: restarted`
 8. Pose un fichier marqueur `/tmp/challenge-postdeploy-db1.txt` dans `post_tasks`
 
-## 🧩 Consignes
+### 🧩 Consignes
 
 Squelette à compléter :
 
@@ -113,7 +140,7 @@ curl http://db1.lab
 
 Le `curl` doit retourner exactement : `Challenge OK from db1.lab`
 
-## 🧪 Validation
+### 🧪 Validation
 
 Le script `tests/test_functional.py` vérifie automatiquement :
 
@@ -133,7 +160,7 @@ Pour lancer les tests, depuis la racine du repo :
 pytest -v labs/ecrire-code/plays-et-tasks/challenge/tests/
 ```
 
-## 🚀 Pour aller plus loin
+### 🚀 Pour aller plus loin
 
 - Ajoutez un `pre_tasks` qui appelle un module `uri:` vers un endpoint inexistant — vérifiez que le `pre_tasks` échoue **avant** que `tasks` ne tournent (preuve de l'ordre `pre_tasks` → `tasks`).
 - Ajoutez `meta: flush_handlers` à la fin de `tasks:` et observez le moment exact où le handler tourne — voir le [lab 06](../../handlers/).
@@ -143,7 +170,7 @@ pytest -v labs/ecrire-code/plays-et-tasks/challenge/tests/
 
 Bonne chance ! 🧠
 
-## 🧹 Reset
+### 🧹 Reset
 
 Pour rejouer le challenge dans un état neutre :
 

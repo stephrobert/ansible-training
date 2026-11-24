@@ -1,6 +1,33 @@
-# 🎯 Challenge — SELinux to serve a custom web app
+# Serve the app from a custom directory, with SELinux still on
 
-## ✅ Objective
+## The situation
+
+The application deployed on **db1.lab** lives outside the default web root, and
+nginx returns 403 on every file even though the permissions are right. It also
+needs to reach a backend API, and those outbound calls are refused too. A
+colleague found the fastest fix and applied it: SELinux disabled. That is not a
+fix, that is a finding on the next audit, and the RHCE exam scores it as a
+failure. You put the protection back and make the app work **with** it, from
+**control-node.lab**.
+
+Your mission:
+
+1. Install the SELinux prerequisites on **db1.lab**, without which the modules
+   fail with an unhelpful error, then put SELinux back to **enforcing** under
+   the targeted policy.
+2. Allow the web server's **outbound network connections** through the right
+   boolean, **persistently**: a boolean that resets at reboot fixes nothing.
+3. Declare the correct **file context on the custom application directory**, as
+   a path pattern covering the tree and not just the directory itself.
+4. **Apply that context to the files already there**: declaring it in the policy
+   leaves existing files untouched, and nginx keeps returning 403.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-selinux/ (in French)
+
+## 🎯 Challenge — SELinux to serve a custom web app
+
+### ✅ Objective
 
 On **db1.lab**, prepare **SELinux** so that the web server (nginx) can:
 
@@ -20,7 +47,7 @@ the default web root (`/usr/share/nginx/html/` for nginx on RHEL).
 > nginx exactly as to Apache. The `httpd` package is never required for
 > this lab.
 
-## 🧩 6 steps
+### 🧩 6 steps
 
 1. **Install prerequisites**: `python3-libselinux` and
    `policycoreutils-python-utils` (the Ansible SELinux modules depend on these
@@ -33,7 +60,7 @@ the default web root (`/usr/share/nginx/html/` for nginx on RHEL).
 6. **Apply the context** with `restorecon -R /var/www/myapp` (without this
    step, the context is in the **policy** but not on the existing **files**).
 
-## 🧩 Modules to use
+### 🧩 Modules to use
 
 | Module | Role |
 | --- | --- |
@@ -42,7 +69,7 @@ the default web root (`/usr/share/nginx/html/` for nginx on RHEL).
 | `community.general.sefcontext` | Define a context on a path (regex) |
 | `ansible.builtin.command: restorecon ...` | Apply the context |
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -96,7 +123,7 @@ the default web root (`/usr/share/nginx/html/` for nginx on RHEL).
 > - **`python3-libselinux`** must be installed on the target. Without it, the
 >   `seboolean`/`sefcontext` modules crash with an unclear error.
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-rhel/selinux/challenge/solution.yml
@@ -105,7 +132,7 @@ ansible db1.lab -m ansible.builtin.command -a "getsebool httpd_can_network_conne
 ansible db1.lab -m ansible.builtin.command -a "ls -dZ /var/www/myapp"
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 > ⏱️ **One test reboots db1** (about 90 s). It is marked `slow`, and it is
 > there on purpose: persistence after a restart is the trap that fails RHCSA
@@ -122,13 +149,13 @@ ansible db1.lab -m ansible.builtin.command -a "ls -dZ /var/www/myapp"
 pytest -v labs/modules-rhel/selinux/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean modules-rhel-selinux
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`getsebool -a`**: lists all SELinux booleans and their state.
 - **`semanage fcontext -l | grep myapp`**: see the contexts defined in

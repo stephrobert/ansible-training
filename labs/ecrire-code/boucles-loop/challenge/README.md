@@ -1,6 +1,32 @@
-# 🎯 Challenge — Create 3 users, 2 of them active (`loop` + `when` + `loop_control`)
+# Three accounts requested, one already revoked
 
-## ✅ Objective
+## The situation
+
+HR sent the list: three accounts to create on **db1.lab**, each with its own
+shell. Between the request and today, one of them was revoked — the person
+never joined. The list still carries all three, with a flag saying which are
+active, because that list is the source of truth and nobody is allowed to trim
+it by hand. Your playbook must read the flag, not the length.
+
+You write it from **control-node.lab**.
+
+Your mission:
+
+1. Iterate over the account list and create **only the ones flagged active**,
+   each with the shell it asks for.
+2. Make sure the revoked account **does not exist** on the host, even if an
+   earlier run created it before the revocation.
+3. Keep the console readable: forty accounts printed as raw dicts is a wall of
+   noise — **label** each iteration by its name.
+4. Write a recap file listing the active accounts, alphabetical and
+   comma-separated, derived from that same list rather than retyped.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/en/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/boucles-loop/
+
+## 🎯 Challenge — Create 3 users, 2 of them active (`loop` + `when` + `loop_control`)
+
+### ✅ Objective
 
 Write `challenge/solution.yml` that, on **db1.lab**:
 
@@ -10,7 +36,7 @@ Write `challenge/solution.yml` that, on **db1.lab**:
 3. Lays down a summary file `/tmp/loop-result.txt` listing the active
    users (comma-separated, alphabetical order).
 
-## 🧩 Input data
+### 🧩 Input data
 
 ```yaml
 challenge_users:
@@ -25,7 +51,7 @@ Expected result:
 - User `chal_bob` **not** created.
 - `/tmp/loop-result.txt` contains `chal_alice,chal_charlie`.
 
-## 🧩 Model of a conditional loop
+### 🧩 Model of a conditional loop
 
 ```yaml
 - name: Faire qqch sur certains items seulement
@@ -37,7 +63,7 @@ Expected result:
   when: item.???              # filtre sur l'item courant
 ```
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -89,7 +115,7 @@ Expected result:
 > - **`selectattr` returns a generator**. Chain `| list` if you
 >   want `length` or to index (`[0]`).
 
-## 🚀 Launch
+### 🚀 Launch
 
 ```bash
 ansible-playbook labs/ecrire-code/boucles-loop/challenge/solution.yml
@@ -103,13 +129,13 @@ ansible db1.lab -m ansible.builtin.command -a "id chal_bob" || echo "chal_bob ab
 ansible db1.lab -m ansible.builtin.command -a "cat /tmp/loop-result.txt"
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/boucles-loop/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-boucles-loop
@@ -117,7 +143,7 @@ dsoxlab clean ecrire-code-boucles-loop
 
 Removes the 3 users + the marker file.
 
-## 💡 Going further
+### 💡 Going further
 
 - **`with_items` (deprecated)**: old syntax equivalent to `loop:`.
   Avoid it in new code: `ansible-lint` flags it.

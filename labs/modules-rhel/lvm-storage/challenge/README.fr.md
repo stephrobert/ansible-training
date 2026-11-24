@@ -1,6 +1,33 @@
-# 🎯 Challenge — Pipeline LVM complet (PV → VG → LV → FS → mount)
+# Construire un stockage extensible sans fenêtre de maintenance
 
-## ✅ Objectif
+## La situation
+
+La dernière panne de **db1.lab** a servi de leçon : la partition de données était
+pleine, et l'agrandir signifiait démonter, redimensionner et prier. L'équipe
+d'architecture a tranché pour le prochain volume, ce sera LVM, précisément pour
+que la croissance de demain coûte une commande au lieu d'un dimanche soir. Le
+disque secondaire est rattaché et vierge. Vous construisez toute la chaîne
+depuis **control-node.lab**, du volume physique jusqu'au volume monté, dans un
+playbook que le parc rejouera.
+
+Votre mission :
+
+1. Sur **db1.lab**, faire du **disque secondaire un volume physique** et
+   l'agréger dans un **volume group**, en une seule étape comme le permet le
+   module dédié.
+2. Tailler un **volume logique** dans ce groupe, en laissant de la place dans le
+   pool pour la croissance qui justifie tout ce montage.
+3. **Formater** le volume logique en xfs et le **monter via fstab**, avec
+   l'option qui épargne au disque l'écriture des temps d'accès. Un volume monté
+   à la main disparaît au redémarrage suivant, en silence.
+4. Confirmer que le second passage affiche **`changed: 0`**.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/lvm-storage/
+
+## 🎯 Challenge — Pipeline LVM complet (PV → VG → LV → FS → mount)
+
+### ✅ Objectif
 
 Sur **db1.lab**, le disque secondaire **`/dev/vdb`** (5 GiB) est vierge : le
 setup du lab l'a rendu tel, sans label ni partition. Écrivez `solution.yml`
@@ -19,7 +46,7 @@ qui amène la machine dans cet état :
 > préalable : LVM n'en a pas besoin, et c'est le pipeline le plus courant
 > pour un disque dédié.
 
-## 🧩 Squelette à compléter
+### 🧩 Squelette à compléter
 
 ```yaml
 ---
@@ -67,7 +94,7 @@ qui amène la machine dans cet état :
 > - **Le point de montage** : `state: mounted` crée le répertoire s'il
 >   manque, une tâche `file:` dédiée est superflue.
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 Une fois `solution.yml` complété, lancez-le contre `db1.lab` :
 
@@ -78,7 +105,7 @@ ansible-playbook labs/modules-rhel/lvm-storage/challenge/solution.yml
 Le `PLAY RECAP` doit afficher `failed=0`. Relancez une seconde fois : un
 `changed=0` confirme l'idempotence.
 
-## 🧪 Validation
+### 🧪 Validation
 
 > ⏱️ **Un test redémarre db1** (environ 90 s). Il est marqué `slow`, et il est
 > là volontairement : la persistance après redémarrage est le piège qui fait
@@ -105,7 +132,7 @@ Les tests vérifient sur db1 :
 - `/etc/fstab` porte l'entrée du montage (type, device et `noatime`).
 - Le 2e run du playbook n'annonce plus aucun `changed`.
 
-## 🧹 Reset
+### 🧹 Reset
 
 Pour rejouer le challenge dans un état neutre :
 
@@ -116,7 +143,7 @@ dsoxlab clean modules-rhel-lvm-storage
 Le cleanup démonte, retire l'entrée fstab, supprime LV, VG et PV, puis rend
 `/dev/vdb` vierge : vous pouvez relancer la solution from scratch.
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **`ansible-lint --profile production`** : validez la qualité de votre solution.
 

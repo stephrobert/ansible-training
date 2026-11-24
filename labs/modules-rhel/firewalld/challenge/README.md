@@ -1,6 +1,30 @@
-# 🎯 Challenge — Firewalld for a web stack
+# Open the web stack without leaving the door open at reboot
 
-## ✅ Objective
+## The situation
+
+The application goes live on **web1.lab** tonight: the public site on HTTP and
+HTTPS, plus two ports the dev team still needs for its staging instance. The
+previous rollout is exactly why nobody trusts hand-typed firewall commands
+anymore. The rules were applied at the console, worked all afternoon, and
+vanished on the maintenance reboot: the site was unreachable at 6 a.m. and
+nobody understood why. You rebuild the whole thing from **control-node.lab**.
+
+Your mission:
+
+1. Make sure firewalld is **installed, running and enabled at boot** on
+   **web1.lab**, before writing any rule into thin air.
+2. Allow the two **predefined web services** in the public zone, using their
+   service names rather than raw port numbers.
+3. Open the two **custom staging ports** in the same zone.
+4. Every rule must be **active right now and survive the reboot**: getting only
+   one of the two is precisely the trap that took the site down.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/module-firewalld/ (in French)
+
+## 🎯 Challenge — Firewalld for a web stack
+
+### ✅ Objective
 
 On **web1.lab**, configure **firewalld** to expose a web stack:
 
@@ -10,7 +34,7 @@ On **web1.lab**, configure **firewalld** to expose a web stack:
 All the rules must be **persistent** (`permanent: true`) **AND**
 **active immediately** (`immediate: true`).
 
-## 🧩 Why `permanent` AND `immediate`?
+### 🧩 Why `permanent` AND `immediate`?
 
 | Combination | Effect |
 | --- | --- |
@@ -18,7 +42,7 @@ All the rules must be **persistent** (`permanent: true`) **AND**
 | `immediate: true` alone | The rule is active now, **but lost at reboot**. |
 | **Both** | Active now **and** persistent, which is what you want almost always. |
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -73,7 +97,7 @@ All the rules must be **persistent** (`permanent: true`) **AND**
 >   portable) rather than `port: 80/tcp`. The service is defined in
 >   `/usr/lib/firewalld/services/`.
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-rhel/firewalld/challenge/solution.yml
@@ -89,7 +113,7 @@ ansible web1.lab -b -m ansible.builtin.shell -a "firewall-cmd --query-service=ht
 ansible web1.lab -b -m ansible.builtin.shell -a "firewall-cmd --permanent --query-port=8080/tcp && firewall-cmd --permanent --query-port=8443/tcp"
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 > ⏱️ **One test reboots db1** (about 90 s). It is marked `slow`, and it is
 > there on purpose: persistence after a restart is the trap that fails RHCSA
@@ -106,13 +130,13 @@ ansible web1.lab -b -m ansible.builtin.shell -a "firewall-cmd --permanent --quer
 pytest -v labs/modules-rhel/firewalld/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean modules-rhel-firewalld
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **Creating a custom zone**: `zone: dmz` accepts an existing zone
   but does not create it. To create one, use `community.general.firewalld_info`

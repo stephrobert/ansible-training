@@ -1,6 +1,34 @@
-# 🎯 Challenge — Synthèse des facts via `hostvars`
+# Le tableur d'inventaire auquel plus personne ne croit
 
-## ✅ Objectif
+## La situation
+
+Le rapport de capacité est un tableur, rempli à la main, et il est faux depuis
+des mois : le chiffre de mémoire de db1 date d'avant son dernier
+redimensionnement, et l'IP de web1 a bien été mise à jour lors du changement
+de réseau, dans un des deux onglets. Pendant ce temps, les machines savent
+tout cela d'elles-mêmes, et Ansible le collecte au début de chaque run avant
+de le jeter. Depuis **control-node.lab**, vous construisez une synthèse qui lit
+les machines plutôt que le tableur.
+
+Votre mission :
+
+1. Sur `db1.lab`, écrire `/tmp/facts-summary.txt` portant son nom d'inventaire,
+   sa distribution et sa mémoire totale, **lus dans les facts** et non saisis à
+   la main.
+2. Y ajouter le nombre d'hôtes que contient réellement le groupe `webservers`,
+   pris dans l'inventaire lui-même et non de mémoire.
+3. Y ajouter l'**adresse IP de web1.lab** via `hostvars`, depuis un play qui
+   tourne sur db1.
+4. S'assurer que les facts de web1 existent avant de les lire : `hostvars` ne
+   porte que ce qui a déjà été collecté. Puis réduire le coût de la collecte
+   avec `gather_subset`.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/facts-magic-vars/
+
+## 🎯 Challenge — Synthèse des facts via `hostvars`
+
+### ✅ Objectif
 
 Écrire `challenge/solution.yml` qui sur **db1.lab** pose un fichier
 `/tmp/facts-summary.txt` contenant 5 informations agrégées **depuis 2 hôtes
@@ -16,7 +44,7 @@ webservers_count=2
 web1_ip=<IPv4 réelle de web1, lue depuis ses facts>
 ```
 
-## 🧩 Pièce-clé : `hostvars`
+### 🧩 Pièce-clé : `hostvars`
 
 `hostvars` est un dictionnaire **global** qui contient les variables (et facts)
 de **tous** les hôtes que Ansible a déjà *gathered* dans le run courant.
@@ -25,7 +53,7 @@ de **tous** les hôtes que Ansible a déjà *gathered* dans le run courant.
 > que web1 ait été **gathered au préalable**. Sinon, `hostvars['web1.lab']`
 > ne contient que les vars statiques de l'inventaire — pas les facts.
 
-## 🧩 Pattern à utiliser : 2 plays
+### 🧩 Pattern à utiliser : 2 plays
 
 Le solution.yml contient **deux plays consécutifs** :
 
@@ -55,7 +83,7 @@ Le solution.yml contient **deux plays consécutifs** :
           web1_ip={{ ??? }}
 ```
 
-## 🧩 Variables magiques à utiliser
+### 🧩 Variables magiques à utiliser
 
 | Champ | Variable Ansible |
 | --- | --- |
@@ -79,7 +107,7 @@ Le solution.yml contient **deux plays consécutifs** :
 >   le premier est l'IP de la route par défaut, le second la liste
 >   complète. Choisir selon le contexte.
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/ecrire-code/facts-magic-vars/challenge/solution.yml
@@ -88,19 +116,19 @@ ansible db1.lab -m ansible.builtin.command -a "cat /tmp/facts-summary.txt"
 
 🔍 Vérifiez que les 5 lignes sont présentes avec les bonnes valeurs.
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/ecrire-code/facts-magic-vars/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-facts-magic-vars
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **Cache des facts** : si vous avez configuré un fact cache (`fact_caching:
   jsonfile` dans `ansible.cfg` — c'est le cas dans ce repo), le pre-gather de

@@ -1,6 +1,34 @@
-# 🎯 Challenge — Mapper un code retour à la sémantique Ansible
+# La commande qui annonce « rien à signaler » avec rc=1
 
-## ✅ Objectif
+## La situation
+
+La moitié de l'outillage de **db1.lab** ignore la convention. `grep` retourne 1
+quand il ne trouve rien. `diff` retourne 1 quand deux fichiers diffèrent. Le
+vérificateur de conformité retourne 1 pour dire « j'ai changé quelque chose ».
+Ansible lit tout code retour non nul comme un échec, point final : le play
+s'arrête sur une tâche qui a fait exactement ce qu'on lui demandait. Pendant ce
+temps, une `command:` en lecture seule se déclare fièrement `changed` à chaque
+passage, et votre preuve d'idempotence ne vaut plus rien. Vous apprenez la
+vraie sémantique à Ansible, depuis **control-node.lab**.
+
+Votre mission :
+
+1. Lancer sur `db1.lab` une commande qui sort en **rc=1**, et capturer son
+   résultat.
+2. Redéfinir ce que veut dire **échec** pour cette tâche : 0 et 1 sont des
+   issues légitimes, tout ce qui est au-dessus est une vraie erreur.
+3. Redéfinir ce que veut dire **changement** : rc=1 est le signal que quelque
+   chose a bougé, donc la tâche doit se déclarer `changed`, pas `ok`.
+4. Prouver que le play a survécu : la tâche suivante s'exécute et le
+   récapitulatif affiche `failed=0`. Puis déterminer laquelle des deux
+   conditions Ansible évalue en premier, et pourquoi ça compte.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/failed-when-changed-when/
+
+## 🎯 Challenge — Mapper un code retour à la sémantique Ansible
+
+### ✅ Objectif
 
 Écrire `challenge/solution.yml` qui sur **db1.lab** fait passer une commande
 retournant **rc=1** (donc *échec* par défaut Ansible) pour un succès — mais
@@ -10,7 +38,7 @@ Pourquoi ? Certaines commandes utilisent rc=1 comme **signal métier** (`grep`
 qui ne trouve rien, `diff` qui détecte des différences, etc.). Sans
 `failed_when`, le play s'arrêterait à tort.
 
-## 🧩 Sémantique attendue
+### 🧩 Sémantique attendue
 
 | Code retour | Sémantique Ansible souhaitée |
 | --- | --- |
@@ -18,7 +46,7 @@ qui ne trouve rien, `diff` qui détecte des différences, etc.). Sans
 | `rc=1` | `changed` (modification métier détectée — pas un échec) |
 | `rc=2,3,…` | `failed` (vraie erreur) |
 
-## 🧩 Mots-clés à combiner
+### 🧩 Mots-clés à combiner
 
 - **`register: result`** : capture le résultat (notamment `result.rc`).
 - **`failed_when:`** : redéfinit ce qui est considéré comme un échec.
@@ -32,7 +60,7 @@ qui ne trouve rien, `diff` qui détecte des différences, etc.). Sans
   changed_when: result.rc == ???          # quel rc déclenche "changed"
 ```
 
-## 🧩 Squelette
+### 🧩 Squelette
 
 ```yaml
 ---
@@ -54,7 +82,7 @@ qui ne trouve rien, `diff` qui détecte des différences, etc.). Sans
         mode: "0644"
 ```
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/ecrire-code/failed-when-changed-when/challenge/solution.yml
@@ -80,19 +108,19 @@ ansible-playbook labs/ecrire-code/failed-when-changed-when/challenge/solution.ym
 > - **Boolean expression** : `failed_when: result.stdout != ""` (string
 >   non vide), `failed_when: "'ERROR' in result.stderr"` (substring).
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/ecrire-code/failed-when-changed-when/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-failed-when-changed-when
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **`failed_when: result.stderr`** : on échoue si stderr est non vide
   (utile pour des commandes qui retournent rc=0 mais écrivent un warning

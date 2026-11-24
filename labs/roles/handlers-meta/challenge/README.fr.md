@@ -1,6 +1,31 @@
-# 🎯 Challenge — Handlers et meta du rôle webserver
+# Nginx redémarre à chaque run, et personne ne sait ce qui a été livré
 
-## ✅ Objectif
+## La situation
+
+Deux plaintes le même matin. La prod : le rôle de déploiement redémarre nginx à
+**chaque** exécution et coupe les connexions même quand rien n'a changé. La
+conformité : aucune trace ne dit ce qui a été déployé, où, ni sur quel port. Les
+deux symptômes ont la même cause : le rôle réagit dans ses `tasks:` et ne
+documente rien de lui-même. Les réactions vont dans les handlers, l'identité
+dans `meta/`.
+
+Votre mission, depuis **control-node.lab** :
+
+1. Déployer le rôle `webserver` sur **db1.lab** avec un port d'écoute
+   personnalisé (**8080**) et une page d'accueil portant le nom de l'hôte.
+2. Faire déclencher par ce changement les handlers du rôle : un redémarrage de
+   service, un rechargement, et un handler **hors service** qui écrit une trace
+   de déploiement.
+3. Cette trace doit consigner l'hôte **et** le port réellement appliqué : preuve
+   que le handler a lu la valeur surchargée, pas la valeur par défaut.
+4. Vérifier que la carte d'identité du rôle (`meta/main.yml`) est complète.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/handlers-meta/
+
+## 🎯 Challenge — Handlers et meta du rôle webserver
+
+### ✅ Objectif
 
 Écrire `challenge/solution.yml` qui sur **db1.lab** utilise le rôle
 `webserver` avec un **port custom** pour démontrer que :
@@ -10,7 +35,7 @@
 2. Le `meta/main.yml` du rôle est correctement lu (vérifiable via
    `ansible-galaxy role list`).
 
-## 🧩 Bloqué ?
+### 🧩 Bloqué ?
 
 ```bash
 dsoxlab hint roles-handlers-meta
@@ -19,7 +44,7 @@ dsoxlab hint roles-handlers-meta
 Les indices sont progressifs et **coûtent des points** : le premier oriente, le
 dernier débloque.
 
-## 🧩 Squelette
+### 🧩 Squelette
 
 ```yaml
 ---
@@ -54,7 +79,7 @@ dernier débloque.
 >   vraiment. Au 2ème run identique, `changed=0` et aucun handler ne tourne :
 >   c'est ce que vérifie `test_solution_idempotente`.
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/roles/handlers-meta/challenge/solution.yml
@@ -69,7 +94,7 @@ ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'sudo ss -tlnp | gre
 ssh -F ~/.cache/dsoxlab/ansible-training/ssh_config db1.lab 'sudo cat /var/log/deploy-notification.log'
 ```
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/roles/handlers-meta/challenge/tests/
@@ -82,13 +107,13 @@ Le test vérifie sur db1 :
 - `/var/log/deploy-notification.log` contient `Deployment completed` + `db1.lab` + `8080`.
 - `nginx` écoute sur `:8080`.
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean roles-handlers-meta
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **`ansible-galaxy role list`** : valide que le `meta/main.yml` est lisible.
   Si vous obtenez une erreur de parsing, c'est un problème de YAML.

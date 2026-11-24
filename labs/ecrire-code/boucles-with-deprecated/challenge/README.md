@@ -1,6 +1,33 @@
-# 🎯 Challenge — Migrate `with_*` loops to `loop:`
+# The playbook you inherited was written in 2016
 
-## ✅ Objective
+## The situation
+
+You take over a repo nobody has touched in years. It works. It also fails the
+CI lint gate on its very first file: `with_items` everywhere, a `with_dict` on
+the ports mapping, a `with_subelements` nobody dares read out loud. The syntax
+is deprecated, not broken, which is exactly why it is still there. It will keep
+working right until the release that removes it, and that release is not far
+off.
+
+You modernise the iterations on `db1.lab`, from **control-node.lab**.
+
+Your mission:
+
+1. Rewrite the simple list iteration with **`loop:`**, the modern one-to-one
+   replacement.
+2. Migrate the port mapping: a dict does **not** iterate directly. Convert it
+   to a list of pairs and reach both the key and the value.
+3. Keep the console readable while you are in there: label each iteration by
+   what it actually does.
+4. Reach zero deprecation on `ansible-lint`, and find out which of these
+   rewrites the linter can perform for you.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/boucles-with-deprecated/ (in French)
+
+## 🎯 Challenge — Migrate `with_*` loops to `loop:`
+
+### ✅ Objective
 
 Write `challenge/solution.yml` that on **db1.lab** uses **only the
 modern `loop:` form** (never `with_items:` nor `with_dict:`) for two
@@ -11,7 +38,7 @@ different iterations:
 | Simple list | `[apple, banana, cherry]` | 3 files `/tmp/withitems-<fruit>.txt` |
 | Dict (key→value) | `{nginx: 80, redis: 6379}` | `/tmp/withdict-nginx.txt` (content `80`), `/tmp/withdict-redis.txt` (content `6379`) |
 
-## 🧩 Stuck?
+### 🧩 Stuck?
 
 ```bash
 dsoxlab hint ecrire-code-boucles-with-deprecated
@@ -20,7 +47,7 @@ dsoxlab hint ecrire-code-boucles-with-deprecated
 Hints are progressive and **cost points**: the first one points you in the
 right direction, the last one unblocks you.
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -69,7 +96,7 @@ right direction, the last one unblocks you.
 > - **No double-loop**: `loop:` accepts only one dimension. For 2
 >   dimensions, use the `subelements` or `product` filter.
 
-## 🚀 Launch
+### 🚀 Launch
 
 ```bash
 ansible-playbook labs/ecrire-code/boucles-with-deprecated/challenge/solution.yml
@@ -82,19 +109,19 @@ ansible db1.lab -m ansible.builtin.command -a "ls /tmp/withitems-*.txt /tmp/with
 ansible db1.lab -m ansible.builtin.command -a "cat /tmp/withdict-nginx.txt"
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/boucles-with-deprecated/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-boucles-with-deprecated
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`with_items` → `loop`** (1-to-1); **`with_dict` → `loop: dict | dict2items`**;
   **`with_subelements` → `subelements` filter**. The Ansible docs list all

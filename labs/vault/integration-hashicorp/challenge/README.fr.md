@@ -1,6 +1,34 @@
-# 🎯 Challenge — HashiCorp Vault / OpenBao : lookup KV v2, prouvée
+# Une administratrice est partie, et personne ne sait ce qu'elle pouvait lire
 
-## ✅ Objectif
+## La situation
+
+La procédure de départ posait une question simple, et l'équipe n'a pas su
+répondre : à quels secrets avait-elle accès, et lesquels sont désormais
+compromis ? Tous les secrets du dépôt sont chiffrés avec un mot de passe vault
+qu'elle détenait, donc la réponse est « tous », et le remède consiste à tout faire
+tourner à la main. Aucune piste d'audit, aucune rotation, aucune expiration.
+Ansible Vault protège un fichier. Il ne gère pas la vie d'un secret.
+
+Votre mission, depuis le répertoire du projet :
+
+1. Monter un **serveur de secrets local** (HashiCorp Vault ou son fork open
+   source) et y stocker les identifiants de l'application, pour que le secret vive
+   dans un système capable de le journaliser, le faire tourner et l'expirer.
+2. Faire **lire** ce secret au runtime par un playbook via la collection dédiée,
+   avec le point de montage explicite et **aucune valeur secrète écrite dans le
+   YAML**, jamais.
+3. Garder le montage interchangeable entre les deux implémentations : l'API est la
+   même, et la question de licence ne doit pas réécrire vos playbooks.
+4. Comparer les modes d'authentification (token, AppRole, JWT) et dire lequel
+   revient à un humain, lequel à la CI, et pourquoi le token de dev n'est ni l'un
+   ni l'autre.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/integration-hashicorp-vault/
+
+## 🎯 Challenge — HashiCorp Vault / OpenBao : lookup KV v2, prouvée
+
+### ✅ Objectif
 
 Écrire `challenge/solution.yml` : un playbook qui récupère **au runtime**
 les deux secrets posés dans le Vault local (`db_password` et `api_key`,
@@ -13,7 +41,7 @@ API pour vérifier que ce que votre playbook a écrit correspond aux secrets
 réellement stockés. Sans serveur, ils se mettent en `skip` avec la marche à
 suivre : rien ne passe « à vide ».
 
-## 🔧 Pré-requis (infrastructure du lab)
+### 🔧 Pré-requis (infrastructure du lab)
 
 ```bash
 cd labs/vault/integration-hashicorp/
@@ -25,7 +53,7 @@ pipx inject ansible hvac                  # client Python Vault
 Le script pose les secrets de démo dans `secret/lab82` et affiche le token
 dev (`lab82-root`).
 
-## 🧩 Contrat attendu
+### 🧩 Contrat attendu
 
 | Élément | Attente |
 | --- | --- |
@@ -35,7 +63,7 @@ dev (`lab82-root`).
 | Preuve | `/tmp/lab82-vault-lookup.txt`, mode `0600`, contenant exactement les deux lignes `db_password length: <n>` et `api_key length: <n>` |
 | Interdit | toute valeur de secret en clair, dans le YAML comme dans le fichier preuve |
 
-## 🧩 Squelette
+### 🧩 Squelette
 
 ```yaml
 ---
@@ -82,14 +110,14 @@ dev (`lab82-root`).
 >   la clé SSH via `inventory_dir`, que l'implicite `localhost` ne sait pas
 >   résoudre. Sans cette neutralisation, le play plante avant sa 1ère tâche.
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/vault/integration-hashicorp/challenge/solution.yml
 cat /tmp/lab82-vault-lookup.txt
 ```
 
-## 🧪 Validation
+### 🧪 Validation
 
 ```bash
 pytest -v labs/vault/integration-hashicorp/challenge/tests/
@@ -99,14 +127,14 @@ Les tests lisent les secrets **directement dans Vault** (API HTTP) et
 comparent : longueurs exactes dans la preuve, aucune valeur en clair ni
 dans la preuve ni dans votre YAML, et idempotence au second passage.
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean vault-integration-hashicorp
 rm -f /tmp/lab82-vault-lookup.txt
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **OpenBao** : `dsoxlab clean vault-integration-hashicorp && IMAGE=openbao/openbao:latest
   l'`image:` du lab.yaml`, puis relancez playbook et tests : rien à changer,

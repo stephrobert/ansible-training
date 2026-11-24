@@ -1,6 +1,32 @@
-# 🎯 Challenge — `stat:` for system file audit
+# Produce the evidence file the auditor is asking for
 
-## ✅ Objective
+## The situation
+
+The auditor wants proof that the sensitive files on **db1.lab** carry the right
+permissions, and "I looked, it's fine" is not proof. Three files are on the
+list: the account database with a fingerprint that will let a later run detect
+tampering, the shadow file whose owner must be root, and the sudo config, which
+sudo itself ignores if its mode drifts from 0440. The report must be produced
+from **control-node.lab**, replayable, and must **change nothing** on the audited
+host.
+
+Your mission:
+
+1. Collect the state of the three files on **db1.lab** in **read only**: an
+   audit that modifies its subject is not an audit.
+2. Add a **SHA256 fingerprint** on the account database, since the module does
+   not compute one by default and its default algorithm is not the one you want.
+3. Gather what each file needs to prove: **mode** for all three, **owner** for
+   the shadow file.
+4. Assemble the whole thing into a readable **report** on the host, one entry
+   per file.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/module-stat/ (in French)
+
+## 🎯 Challenge — `stat:` for system file audit
+
+### ✅ Objective
 
 On **db1.lab**, use `ansible.builtin.stat` to collect **info** on 3 system files,
 then write them into a report `/tmp/lab-stat-report.txt`.
@@ -13,12 +39,12 @@ then write them into a report `/tmp/lab-stat-report.txt`.
 
 The report must be a readable `.txt` file with the 3 entries.
 
-## 🧩 Steps
+### 🧩 Steps
 
 1. **3 parallel `stat:` tasks** (with `get_checksum: true` for the 1st).
 2. **`copy: content:`** that assembles a multi-line report via Jinja2.
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -77,26 +103,26 @@ The report must be a readable `.txt` file with the 3 entries.
 > - **`get_checksum: true`**: adds `<var>.stat.checksum` (sha1 by
 >   default). Costly on large files, disabled by default.
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-diagnostic/stat/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "cat /tmp/lab-stat-report.txt"
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-diagnostic/stat/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 ansible db1.lab -b -m file -a "path=/tmp/lab-stat-report.txt state=absent"
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`get_attributes: true`**: add the extended attributes (xattrs, SELinux
   contexts) to the report, useful for advanced security audits.

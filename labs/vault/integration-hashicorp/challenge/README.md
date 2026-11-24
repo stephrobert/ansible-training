@@ -1,6 +1,33 @@
-# 🎯 Challenge — HashiCorp Vault / OpenBao: KV v2 lookup, proven
+# An admin left, and nobody can say what she could read
 
-## ✅ Objective
+## The situation
+
+The offboarding checklist asked a simple question and the team could not answer
+it: which secrets did she have access to, and which ones are now compromised? Every
+secret in the repository is encrypted with a vault password she had, so the answer
+is "all of them", and the fix is to rotate everything by hand. There is no audit
+trail, no rotation, no expiry. Ansible Vault protects a file. It does not manage a
+secret's life.
+
+Your mission, from the project directory:
+
+1. Stand up a **local secret server** (HashiCorp Vault or its open-source fork)
+   and store the application's credentials in it, so the secret lives in a system
+   that can log, rotate and expire it.
+2. Have a playbook **read** the secret at run time through the dedicated
+   collection, with the mount point stated explicitly and **no secret value
+   written in the YAML**, ever.
+3. Keep the setup swappable between the two implementations: the API is the same,
+   and the licence question should not rewrite your playbooks.
+4. Compare the ways to authenticate (token, AppRole, JWT) and say which belongs
+   to a human, which to CI, and why the dev token belongs to neither.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/integration-hashicorp-vault/ (in French)
+
+## 🎯 Challenge — HashiCorp Vault / OpenBao: KV v2 lookup, proven
+
+### ✅ Objective
 
 Write `challenge/solution.yml`: a playbook that retrieves **at runtime**
 the two secrets created in the local Vault (`db_password` and `api_key`,
@@ -13,7 +40,7 @@ API themselves to check that what your playbook wrote matches the secrets
 actually stored. Without a server, they `skip` with the steps
 to follow: nothing passes "empty".
 
-## 🔧 Prerequisites (the lab infrastructure)
+### 🔧 Prerequisites (the lab infrastructure)
 
 ```bash
 cd labs/vault/integration-hashicorp/
@@ -25,7 +52,7 @@ pipx inject ansible hvac                  # Python Vault client
 The script creates the demo secrets in `secret/lab82` and displays the dev
 token (`lab82-root`).
 
-## 🧩 Expected contract
+### 🧩 Expected contract
 
 | Element | Expectation |
 | --- | --- |
@@ -35,7 +62,7 @@ token (`lab82-root`).
 | Proof | `/tmp/lab82-vault-lookup.txt`, mode `0600`, containing exactly the two lines `db_password length: <n>` and `api_key length: <n>` |
 | Forbidden | any cleartext secret value, in the YAML as in the proof file |
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -82,14 +109,14 @@ token (`lab82-root`).
 >   the SSH key via `inventory_dir`, which the implicit `localhost` cannot
 >   resolve. Without this neutralization, the play crashes before its 1st task.
 
-## 🚀 Launch
+### 🚀 Launch
 
 ```bash
 ansible-playbook labs/vault/integration-hashicorp/challenge/solution.yml
 cat /tmp/lab82-vault-lookup.txt
 ```
 
-## 🧪 Validation
+### 🧪 Validation
 
 ```bash
 pytest -v labs/vault/integration-hashicorp/challenge/tests/
@@ -99,14 +126,14 @@ The tests read the secrets **directly in Vault** (HTTP API) and
 compare: exact lengths in the proof, no cleartext value either
 in the proof or in your YAML, and idempotence on the second run.
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean vault-integration-hashicorp
 rm -f /tmp/lab82-vault-lookup.txt
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **OpenBao**: `dsoxlab clean vault-integration-hashicorp && IMAGE=openbao/openbao:latest
   the `image:` in lab.yaml`, then run the playbook and tests again: nothing to change,

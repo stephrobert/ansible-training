@@ -1,6 +1,33 @@
-# 🎯 Challenge — `block` + `rescue` + `always` on a deliberate error
+# The migration died halfway and left the door open
 
-## ✅ Objective
+## The situation
+
+A migration on **db1.lab** failed in the middle last month. It had already put
+the service into maintenance mode, and it never took it back out: the failure
+aborted the playbook on the spot, and the cleanup step, sitting neatly at the
+bottom of the file, never ran. The host stayed out of rotation until someone
+noticed. An error is not the problem: an error with no recovery and no cleanup
+is. You rebuild the play from **control-node.lab**, with a real transaction
+around it.
+
+Your mission:
+
+1. Group the risky tasks in a **`block:`** on `db1.lab`, including one that is
+   certain to fail.
+2. Catch that failure in a **`rescue:`** that records what happened, instead of
+   letting the play die where it stands.
+3. Guarantee the cleanup runs in **`always:`**, whether the block succeeded or
+   blew up.
+4. Read the recap: **`failed=0`**. The error happened, it was handled, the play
+   is a success. Then find the variable that tells `rescue` what actually
+   failed.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/block-rescue-always/ (in French)
+
+## 🎯 Challenge — `block` + `rescue` + `always` on a deliberate error
+
+### ✅ Objective
 
 Write `challenge/solution.yml` that, on **db1.lab**:
 
@@ -12,7 +39,7 @@ Write `challenge/solution.yml` that, on **db1.lab**:
 4. The final `PLAY RECAP` must show **`failed=0`**: the rescue caught
    the error and the play ends in **success**.
 
-## 🧩 Pattern
+### 🧩 Pattern
 
 ```yaml
 - name: Bloc transactionnel
@@ -26,7 +53,7 @@ Write `challenge/solution.yml` that, on **db1.lab**:
 
 Python analogy: `try / except / finally`.
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -59,7 +86,7 @@ Python analogy: `try / except / finally`.
 > 💡 **Hint for the failing command**: `/bin/false` always returns rc=1. You
 > can also use `command: /bin/sh -c 'exit 1'`.
 
-## 🚀 Launch
+### 🚀 Launch
 
 ```bash
 ansible-playbook labs/ecrire-code/block-rescue-always/challenge/solution.yml
@@ -87,19 +114,19 @@ ansible-playbook labs/ecrire-code/block-rescue-always/challenge/solution.yml
 >   `ansible_failed_result` for debugging. Do not confuse them with
 >   `ansible_failed_handler` (failed handlers).
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/block-rescue-always/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-block-rescue-always
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`ansible_failed_task` / `ansible_failed_result`**: magic variables
   available in `rescue:` that expose the task that failed and its

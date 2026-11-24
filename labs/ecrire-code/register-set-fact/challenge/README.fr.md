@@ -1,6 +1,34 @@
-# 🎯 Challenge — `register` puis `set_fact` pour calculer un identifiant
+# Un identifiant que personne ne devrait avoir à taper
 
-## ✅ Objectif
+## La situation
+
+L'outil de support corrèle les incidents par un identifiant système : nom
+court de l'hôte, puis noyau en cours d'exécution. Aujourd'hui, quelqu'un
+compose cette chaîne à la main et la colle dans le ticket, en se trompant à
+peu près une fois sur cinq, en général juste après une mise à jour de noyau,
+quand la machine ne fait plus tourner ce que le ticket prétend. L'hôte connaît
+parfaitement les deux moitiés. Il suffit de les lui demander, d'assembler la
+réponse, et de l'écrire. Vous le faites sur **db1.lab** depuis
+**control-node.lab**, sans collecter tous les facts.
+
+Votre mission :
+
+1. Capturer le **nom court de l'hôte** et la **version du noyau** avec deux
+   commandes en lecture seule, en conservant chaque résultat.
+2. Garantir que ces lectures ne se déclarent jamais `changed` : une commande
+   qui se contente de regarder le système ne change rien et doit le dire, sinon
+   votre playbook n'est plus jamais idempotent.
+3. Assembler les deux valeurs capturées en un seul **fact de runtime**.
+4. L'écrire sur db1 sous la forme `system_id=<hostname>:<kernel>`, et savoir où
+   se situe un `set_fact` dans l'ordre de précédence, et ce que change
+   `cacheable`.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/register-set-fact/
+
+## 🎯 Challenge — `register` puis `set_fact` pour calculer un identifiant
+
+### ✅ Objectif
 
 Écrire `challenge/solution.yml` qui sur **db1.lab** :
 
@@ -8,13 +36,13 @@
 2. Combine ces 2 informations dans un **fact runtime** via `set_fact`.
 3. Pose le résultat dans `/tmp/system-id.txt` (format `system_id=<hostname>:<kernel>`).
 
-## 🧩 Pattern register → set_fact
+### 🧩 Pattern register → set_fact
 
 C'est un schéma très courant en production : on **lit** plusieurs valeurs avec
 `command:`, on les **assemble** avec `set_fact:`, puis on les **utilise** dans
 les tâches suivantes (template, copy, debug…).
 
-### Squelette
+#### Squelette
 
 ```yaml
 ---
@@ -45,14 +73,14 @@ les tâches suivantes (template, copy, debug…).
         mode: "0644"
 ```
 
-### Indices commandes
+#### Indices commandes
 
 - Hostname court : la commande `hostname -s` (Linux) retourne `db1` (sans le
   domaine `.lab`).
 - Version noyau : la commande `uname -r` retourne quelque chose comme
   `5.14.0-503.40.1.el9_1.x86_64`.
 
-### Indices Ansible
+#### Indices Ansible
 
 - **`register: var_name`** capture le résultat d'une tâche dans une variable.
   Le résultat contient `stdout`, `rc`, `start`, `end`, etc.
@@ -62,7 +90,7 @@ les tâches suivantes (template, copy, debug…).
 - **`set_fact:`** crée une variable de niveau **19** dans la précédence
   (au-dessus de `vars:` du play et de `vars_files:`, sous `--extra-vars`).
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/ecrire-code/register-set-fact/challenge/solution.yml
@@ -85,7 +113,7 @@ ansible db1.lab -m ansible.builtin.command -a "cat /tmp/system-id.txt"
 >   que `vars_files:` (14), mais sous `--extra-vars` (22). Donc un
 >   `--extra-vars` peut écraser un `set_fact`.
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/ecrire-code/register-set-fact/challenge/tests/
@@ -97,13 +125,13 @@ Le test vérifie sur db1 :
 - Contient `system_id=db1:` (preuve hostname capturé).
 - Contient `.el9` ou `.x86_64` (preuve kernel capturé).
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-register-set-fact
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **Utiliser `ansible_facts`** au lieu de `command:` : `ansible_facts.hostname`
   et `ansible_facts.kernel` sont déjà collectés par `gather_facts`. Comparez

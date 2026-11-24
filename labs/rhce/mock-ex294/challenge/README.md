@@ -1,6 +1,33 @@
-# Challenge — Mock RHCE EX294: 19 tasks in 4 hours
+# Four hours, no search engine, and nobody to ask
 
-## Exam conditions
+## The situation
+
+This is the exam. Not a lesson about the exam: the thing itself, under the clock.
+Nineteen independent tasks across the four lab machines, four hours, and the only
+documentation you get is what ships with Ansible. No search engine, no colleague,
+no half credit for a playbook that "almost" runs. A task counts when it executes
+clean and its result holds up under inspection, and not one second before.
+
+Your mission, from **control-node.lab**:
+
+1. Start the clock and work the nineteen tasks: inventories and variables, files,
+   packages, services, users, storage, security, roles and vault, then error
+   handling, rolling waves, delegation, tags, scheduled jobs, custom facts and a
+   content collection installed from a `requirements.yml`, across **web1.lab**,
+   **web2.lab** and **db1.lab**.
+2. **Verify each task as you finish it.** Candidates who leave verification for the
+   end discover their mistakes with forty minutes left and no time to fix them.
+3. Manage the clock like an exam, not a lab: a task that resists gets abandoned and
+   revisited. Ten minutes lost on task 3 is task 17 never attempted.
+4. Debrief honestly at the end. What you had to look up is your real weakness, and
+   it is the only useful output of a mock exam. Under three hours means ready.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/certifications/rhce/ (in French)
+
+## Mock RHCE EX294: 19 tasks in 4 hours
+
+### Exam conditions
 
 - **Duration**: 4 hours on the clock.
 - **Environment**: 4 VMs (`web1.lab`, `web2.lab`, `db1.lab`, `control-node.lab`).
@@ -10,7 +37,7 @@
 - **Success criterion**: the pytest tests green (19 tasks, several
   of them checked by more than one test).
 
-## Prerequisites (to validate before starting the clock)
+### Prerequisites (to validate before starting the clock)
 
 ```bash
 cd $ANSIBLE_TRAINING
@@ -37,7 +64,7 @@ dsoxlab run rhce-mock-ex294       # plays the setup.yaml, then hands control bac
 
 Start the clock **after**.
 
-## Imposed tree
+### Imposed tree
 
 All the files below are to be created **under the lab folder**:
 `labs/rhce/mock-ex294/`. Always refer to paths relative to the
@@ -60,7 +87,7 @@ labs/rhce/mock-ex294/
     └── solution.yml          ← the single playbook that orchestrates the 19 tasks
 ```
 
-## Expected launch
+### Expected launch
 
 ```bash
 ANSIBLE_ROLES_PATH=labs/rhce/mock-ex294/roles \
@@ -78,9 +105,9 @@ ansible-playbook \
 
 ---
 
-## The 19 tasks
+### The 19 tasks
 
-### Task 1 — Static inventory
+#### Task 1 — Static inventory
 
 Produce `inventory/hosts.yml` in YAML format declaring:
 
@@ -98,7 +125,7 @@ Produce `inventory/hosts.yml` in YAML format declaring:
 `ansible-inventory -i inventory/hosts.yml --graph` must display the two
 groups with their hosts.
 
-### Task 2 — Hierarchical variables
+#### Task 2 — Hierarchical variables
 
 Define:
 
@@ -116,7 +143,7 @@ app_env: production
 worker_count: 4
 ```
 
-### Task 3 — Vault
+#### Task 3 — Vault
 
 - Create `.vault_password` (mode `0600`) with a password of your choice.
 - Create `vault.yml`, **encrypted**, containing the variable:
@@ -125,7 +152,7 @@ worker_count: 4
 - On `db1.lab`, write `/tmp/lab100-vault-test.txt` (mode `0600`) containing
   the decrypted value of `db_password`.
 
-### Task 4 — Template
+#### Task 4 — Template
 
 On `db1.lab`, deposit `/tmp/lab100-app.conf`:
 
@@ -133,16 +160,16 @@ On `db1.lab`, deposit `/tmp/lab100-app.conf`:
 - content generated from a Jinja2 template including **at minimum** the Ansible
   hostname and the value of `db_name` (the string `lab100db` must appear).
 
-### Task 5 — Packages
+#### Task 5 — Packages
 
 Install on **all** the hosts: `nginx`, `mariadb-server`, `python3-libselinux`.
 
-### Task 6 — Services
+#### Task 6 — Services
 
 - On `webservers`: `nginx` enabled at boot and started.
 - On `db1.lab`: `mariadb` enabled at boot and started.
 
-### Task 7 — Users and groups
+#### Task 7 — Users and groups
 
 On **all** the hosts:
 
@@ -151,7 +178,7 @@ On **all** the hosts:
 - The user `appuser` must be able to run `/usr/bin/systemctl` via `sudo` **without
   entering a password** (only this command).
 
-### Task 8 — SELinux
+#### Task 8 — SELinux
 
 On `webservers`, enable the SELinux boolean `httpd_can_network_connect`
 **permanently** (survives the reboot).
@@ -164,7 +191,7 @@ On `webservers`, enable the SELinux boolean `httpd_can_network_connect`
 > `httpd_can_network_connect`, `httpd_enable_homedirs` and the like therefore
 > apply to nginx.
 
-### Task 9 — Firewalld
+#### Task 9 — Firewalld
 
 - On `webservers`: open the services `http` and `https`.
 - On `db1.lab`: open the service `mysql`.
@@ -172,7 +199,7 @@ On `webservers`, enable the SELinux boolean `httpd_can_network_connect`
 The rules must be **persistent** (reboot) **and active immediately**
 (no need for `firewall-cmd --reload` after the playbook).
 
-### Task 10 — LVM storage
+#### Task 10 — LVM storage
 
 On `db1.lab`, in the existing VG `vg_lab`:
 
@@ -180,7 +207,7 @@ On `db1.lab`, in the existing VG `vg_lab`:
 - Format it in **XFS**.
 - Mount it on `/mnt/data`, with an `fstab` entry that **persists at reboot**.
 
-### Task 11 — Role `app_deploy`
+#### Task 11 — Role `app_deploy`
 
 Create a role `app_deploy` (under `roles/app_deploy/`) that, on the `webservers`:
 
@@ -193,7 +220,7 @@ Create a role `app_deploy` (under `roles/app_deploy/`) that, on the `webservers`
 The `solution.yml` invokes this role for the `webservers` (e.g. `roles:` or
 `include_role:` in a `play` that targets `webservers`).
 
-### Task 12 — Loops and conditions
+#### Task 12 — Loops and conditions
 
 On `db1.lab`, create 5 files `/tmp/file1` to `/tmp/file5`:
 
@@ -202,7 +229,7 @@ On `db1.lab`, create 5 files `/tmp/file1` to `/tmp/file5`:
 
 The 5 files must be created in **a single task** with a loop.
 
-### Task 13 — Incident handling
+#### Task 13 — Incident handling
 
 On `db1.lab`, the playbook must attempt to start the service
 `lab100-collecteur`. No package of the distribution provides this service: the
@@ -219,7 +246,7 @@ attempt **really fails**, on every pass. This is intended.
 - **In all cases**, success as well as failure: write
   `/tmp/lab100-incident-fin.txt` (mode `0644`).
 
-### Task 14 — Rolling deployment
+#### Task 14 — Rolling deployment
 
 On the `webservers`, the deployment must be done **in waves of a single host at
 a time**, in inventory order (`web1.lab`, then `web2.lab`).
@@ -236,7 +263,7 @@ a time**, in inventory order (`web1.lab`, then `web2.lab`).
 > that of `web1.lab` must precede that of `web2.lab` by at least 3 seconds.
 > A parallel deployment deposits them a few milliseconds apart.
 
-### Task 15 — Centralized deployment log
+#### Task 15 — Centralized deployment log
 
 From a play that targets the **`webservers`**, write the log
 `/tmp/lab100-deploy-log.txt` (mode `0644`, owner `root`) **on `db1.lab`**.
@@ -247,7 +274,7 @@ From a play that targets the **`webservers`**, write the log
   `inventory_hostname`) and carry the value of `worker_count` (see task 2).
 - The file must exist **on no** webserver.
 
-### Task 16 — Scheduled task
+#### Task 16 — Scheduled task
 
 On `db1.lab`, schedule a report in the **crontab of the user
 `appuser`** (see task 7), that is the one that
@@ -257,7 +284,7 @@ On `db1.lab`, schedule a report in the **crontab of the user
 - command: `/usr/bin/date >> /tmp/lab100-rapport.log 2>&1`;
 - one entry and only one: replaying the playbook must not duplicate it.
 
-### Task 17 — Task selection by tags
+#### Task 17 — Task selection by tags
 
 On `db1.lab`, four tasks, each depositing its marker in mode `0644`:
 
@@ -278,7 +305,7 @@ The two behaviors verified, on real runs:
 - **With `--tags deploiement`**: deployment and systematic are deposited;
   preparation and purge are **absent**.
 
-### Task 18 — Custom fact
+#### Task 18 — Custom fact
 
 On the `webservers`, publish a custom fact that any fact collection
 will find:
@@ -300,7 +327,7 @@ ansible webservers -i inventory/hosts.yml \
     -m ansible.builtin.setup -a filter=ansible_local
 ```
 
-### Task 19 — Content Collection via `requirements.yml`
+#### Task 19 — Content Collection via `requirements.yml`
 
 The EX294 objective **"Install Content Collections and use them in playbooks"**
 is not proven by any of the previous tasks: add it.
@@ -328,7 +355,7 @@ Then, from `db1.lab`:
 
 ---
 
-## Validation
+### Validation
 
 ```bash
 pytest -v labs/rhce/mock-ex294/challenge/tests/
@@ -351,13 +378,13 @@ Obtaining the right file by the wrong means does not pass: an error ignored
 instead of being caught leaves the same file behind it, and the `PLAY RECAP`
 denounces it.
 
-## Reset
+### Reset
 
 ```bash
 dsoxlab clean rhce-mock-ex294
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`ansible-lint --profile production`**: validate the quality of your solution.
 

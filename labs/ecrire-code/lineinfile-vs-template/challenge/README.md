@@ -1,6 +1,33 @@
-# 🎯 Challenge — `lineinfile` vs `template` (the 2 approaches)
+# One file you own, one file you are only visiting
 
-## ✅ Objective
+## The situation
+
+Two incidents in the same week, opposite causes. First: a `lineinfile` written
+without a `regexp` appended its entry to `/etc/hosts` on every single run —
+forty identical lines by the time anyone looked. Second: a colleague decided to
+manage `/etc/hosts` with a template instead, took ownership of the entire file,
+and wiped the entries another tool had legitimately put there. Neither module
+is wrong. They answer different questions.
+
+You put them side by side on `db1.lab`, from **control-node.lab**.
+
+Your mission:
+
+1. Add a **single host entry** to `/etc/hosts` without disturbing the lines
+   already there.
+2. Make that addition idempotent by **matching** the line instead of appending
+   blindly: the missing `regexp` is the entire first incident.
+3. Generate `/etc/myapp.conf` **entirely from a template**, every value
+   interpolated from structured variables.
+4. Then state the rule out loud: which of the two files you own, which one you
+   are only visiting, and why that answer, not taste, picks the module.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/lineinfile-vs-template/ (in French)
+
+## 🎯 Challenge — `lineinfile` vs `template` (the 2 approaches)
+
+### ✅ Objective
 
 On **db1.lab**, demonstrate **two opposite philosophies** to manage a
 configuration file:
@@ -11,7 +38,7 @@ configuration file:
   from a Jinja2 template (ideal for configs generated in full, like a business
   `/etc/nginx/nginx.conf`).
 
-## 🧩 Task 1 — `lineinfile` on `/etc/hosts`
+### 🧩 Task 1 — `lineinfile` on `/etc/hosts`
 
 Add a **single line** in `/etc/hosts`:
 
@@ -29,7 +56,7 @@ Hints:
   pattern already exists, it is **replaced** (not duplicated).
 - `state: present` (default).
 
-## 🧩 Task 2 — `template` on `/etc/myapp.conf`
+### 🧩 Task 2 — `template` on `/etc/myapp.conf`
 
 Create `challenge/templates/myapp.conf.j2` that produces:
 
@@ -59,7 +86,7 @@ database:
 The template must interpolate **each** value from these dicts (e.g.
 `{{ server.host }}`, `{{ database.pool_size }}`).
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -102,7 +129,7 @@ The template must interpolate **each** value from these dicts (e.g.
 > - **`blockinfile`** (lab 33): in between, manages a **marked
 >   block** in an existing file.
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 ansible-playbook labs/ecrire-code/lineinfile-vs-template/challenge/solution.yml
@@ -110,19 +137,19 @@ ansible db1.lab -m ansible.builtin.command -a "grep mon-host /etc/hosts"
 ansible db1.lab -m ansible.builtin.command -a "cat /etc/myapp.conf"
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/lineinfile-vs-template/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-lineinfile-vs-template
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **When to use `lineinfile` vs `template`?**
   - **`lineinfile`**: config managed by several sources (Ansible + another

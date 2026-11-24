@@ -1,6 +1,32 @@
-# 🎯 Challenge — Passbolt: retrieve a secret, and prove it
+# The shared spreadsheet of passwords has to die
 
-## ✅ Objective
+## The situation
+
+Your playbooks get their infrastructure secrets from a proper secret server. The
+humans do not. The SaaS accounts, the third-party API keys, the certificate
+passphrases and the admin login everyone uses live in a spreadsheet on a shared
+drive, because the team needs to read them with their eyes, not just from a
+playbook. Those secrets need a home that serves both: a web UI a human will
+actually use, and an interface Ansible can query.
+
+Your mission, from the project directory:
+
+1. Stand up a **local Passbolt** instance with its database, and set up the admin
+   account and the **OpenPGP key** that identifies you to it.
+2. Have a playbook fetch a secret from it through the dedicated collection,
+   authenticating with your private key and passphrase, with **no secret value
+   hardcoded** in the YAML.
+3. Silence the sensitive tasks so the secret never surfaces in the output or the
+   logs, whatever the verbosity.
+4. Position the tool against a HashiCorp-style server: its identity model is a
+   key per human, not a token per machine. Say which secrets go where.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/secrets-vault/integration-passbolt/ (in French)
+
+## 🎯 Challenge — Passbolt: retrieve a secret, and prove it
+
+### ✅ Objective
 
 Write `challenge/solution.yml`: a playbook that authenticates against
 your local Passbolt with **your OpenPGP key**, retrieves the secret
@@ -15,7 +41,7 @@ know it: as long as the server does not respond, the key is not exported
 or the passphrase is not in the environment, they go into a
 **`skip` with the steps to follow**. They never pass "empty".
 
-## 🔧 Prerequisites (the manual steps, once)
+### 🔧 Prerequisites (the manual steps, once)
 
 ```bash
 cd labs/vault/integration-passbolt/
@@ -39,7 +65,7 @@ mise install   # py-passbolt voyage avec ansible-core
 export PASSBOLT_PASSPHRASE='<votre passphrase>'
 ```
 
-## 🧩 Expected contract
+### 🧩 Expected contract
 
 | Element | Expectation |
 | --- | --- |
@@ -51,7 +77,7 @@ export PASSBOLT_PASSPHRASE='<votre passphrase>'
 | Proof | `/tmp/lab83-passbolt-lookup.txt`, mode `0600`, content `Secret length: <n>` |
 | Silence | `no_log: true` on any task that manipulates the secret |
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -97,7 +123,7 @@ export PASSBOLT_PASSPHRASE='<votre passphrase>'
 >   the SSH key via `inventory_dir`, which the implicit `localhost` cannot
 >   resolve. Without this neutralization, the play crashes before its 1st task.
 
-## 🚀 Launch
+### 🚀 Launch
 
 ```bash
 export PASSBOLT_PASSPHRASE='<votre passphrase>'
@@ -105,7 +131,7 @@ ansible-playbook labs/vault/integration-passbolt/challenge/solution.yml
 cat /tmp/lab83-passbolt-lookup.txt
 ```
 
-## 🧪 Validation
+### 🧪 Validation
 
 ```bash
 pytest -v labs/vault/integration-passbolt/challenge/tests/
@@ -116,14 +142,14 @@ playbook and check the proof on the system (existence, mode `0600`,
 consistent length, no cleartext secret in the YAML). Otherwise: an explicit
 `skip`, never a false green.
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean vault-integration-passbolt
 rm -f /tmp/lab83-passbolt-lookup.txt
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **Passbolt vs HashiCorp Vault**: Passbolt targets the **human teams**
   (rich UI, sharing per group), Vault targets the **runtime** (dynamic

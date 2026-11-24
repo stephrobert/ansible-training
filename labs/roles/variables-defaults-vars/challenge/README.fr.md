@@ -1,8 +1,33 @@
-# 🎯 Challenge — Override de variables au niveau du play
+# Un rôle, deux équipes, deux ports
+
+## La situation
+
+Le rôle `webserver` fonctionne, mais il fige le port 80. L'équipe base de données
+veut maintenant ce même rôle sur **db1.lab**, en écoute sur **8080** : le port 80
+est déjà pris par un agent de supervision. Un collègue a voulu éditer les tâches
+du rôle ; vous refusez. Un rôle qu'il faut modifier pour le réutiliser n'est pas
+un rôle, c'est une copie en sursis. Les réglages appartiennent à l'appelant, les
+détails internes non.
+
+Votre mission, depuis **control-node.lab** :
+
+1. Déployer le rôle `webserver` sur **db1.lab** en **surchargeant** son port
+   d'écoute à **8080** et ses worker connections à **2048**, depuis le playbook
+   uniquement, sans toucher au rôle.
+2. Injecter une page d'accueil personnalisée qui porte le nom de l'hôte ciblé.
+3. Prouver que la surcharge a bien pris : le port ouvert dans firewalld et la
+   configuration générée doivent afficher **8080**, pas la valeur livrée.
+4. Établir quelles variables sont faites pour être surchargées et lesquelles
+   sont des détails internes que l'appelant ne doit jamais atteindre.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/variables-defaults-vars/
+
+## 🎯 Challenge — Override de variables au niveau du play
 
 Vous avez vu le rôle `webserver` paramétré par `defaults/main.yml`. Le challenge consiste à **override** ces valeurs depuis un playbook qui appelle le rôle, et à **prouver** que les nouvelles valeurs sont bien appliquées.
 
-## ✅ Objectif
+### ✅ Objectif
 
 Écrire `solution.yml` qui :
 
@@ -12,7 +37,7 @@ Vous avez vu le rôle `webserver` paramétré par `defaults/main.yml`. Le challe
    - `webserver_worker_connections: 2048` (au lieu de 1024)
    - `webserver_index_content: "Custom page from challenge lab 59 on {{ inventory_hostname }}"`
 
-## 🧩 Consignes
+### 🧩 Consignes
 
 Squelette à compléter (`challenge/solution.yml`) :
 
@@ -59,7 +84,7 @@ Vérifier sur `db1.lab` :
    # → Custom page from challenge lab 59 on db1.lab
    ```
 
-## 🧪 Validation
+### 🧪 Validation
 
 Le test pytest vérifie automatiquement :
 
@@ -72,7 +97,7 @@ Le test pytest vérifie automatiquement :
 pytest -v challenge/tests/
 ```
 
-## 🚀 Pour aller plus loin
+### 🚀 Pour aller plus loin
 
 - Modifier `defaults/main.yml` du rôle pour mettre `webserver_listen_port: 80` (déjà la valeur par défaut). Re-lancer la solution. Le résultat est le **même** — preuve que **les `vars:` du play override les `defaults/`**.
 - Tenter d'override `__webserver_html_dir` (qui est dans `vars/main.yml`). Observer que la valeur d'override **n'est pas prise en compte** — `vars/` (priorité 15) gagne sur `vars:` du play (priorité 12). Attention : un `vars:` posé sous `- role:` est un role param (priorité 20), lui GAGNE.
@@ -82,7 +107,7 @@ pytest -v challenge/tests/
 
 Bonne chance ! 🧠
 
-## 🧹 Reset
+### 🧹 Reset
 
 Pour rejouer le challenge dans un état neutre :
 

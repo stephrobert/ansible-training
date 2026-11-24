@@ -1,6 +1,32 @@
-# 🎯 Challenge — Complete LVM pipeline (PV → VG → LV → FS → mount)
+# Build storage that can grow without a maintenance window
 
-## ✅ Objective
+## The situation
+
+The last outage on **db1.lab** taught the lesson the hard way: the data
+partition was full, and enlarging a raw partition meant unmounting, resizing
+and praying. The architecture team settled the matter for the next volume, LVM,
+precisely so tomorrow's growth costs one command instead of a Sunday night. The
+spare disk is attached and raw. You build the whole chain from
+**control-node.lab**, from the physical volume up to the mounted volume, on a
+playbook the fleet will replay.
+
+Your mission:
+
+1. On **db1.lab**, turn the **spare disk into a physical volume** and pool it
+   into a **volume group**, in the single step the dedicated module offers.
+2. Carve a **logical volume** out of that group, leaving room in the pool for
+   the growth this whole setup exists for.
+3. **Format** the logical volume in xfs and **mount it through fstab**, with the
+   option that spares the disk its access-time writes. A volume mounted by hand
+   is gone at the next reboot, silently.
+4. Confirm the second run reports **`changed: 0`**.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/systeme/lvm-storage/ (in French)
+
+## 🎯 Challenge — Complete LVM pipeline (PV → VG → LV → FS → mount)
+
+### ✅ Objective
 
 On **db1.lab**, the secondary disk **`/dev/vdb`** (5 GiB) is blank: the
 lab setup made it so, with no label or partition. Write `solution.yml`
@@ -19,7 +45,7 @@ that brings the machine into this state:
 > LVM does not need one, and it is the most common pipeline
 > for a dedicated disk.
 
-## 🧩 Skeleton to complete
+### 🧩 Skeleton to complete
 
 ```yaml
 ---
@@ -67,7 +93,7 @@ that brings the machine into this state:
 > - **The mount point**: `state: mounted` creates the directory if it is
 >   missing, a dedicated `file:` task is superfluous.
 
-## 🚀 Run
+### 🚀 Run
 
 Once `solution.yml` is complete, run it against `db1.lab`:
 
@@ -78,7 +104,7 @@ ansible-playbook labs/modules-rhel/lvm-storage/challenge/solution.yml
 The `PLAY RECAP` must show `failed=0`. Run it a second time: a
 `changed=0` confirms idempotence.
 
-## 🧪 Validation
+### 🧪 Validation
 
 > ⏱️ **One test reboots db1** (about 90 s). It is marked `slow`, and it is
 > there on purpose: persistence after a restart is the trap that fails RHCSA
@@ -104,7 +130,7 @@ The tests check on db1:
 - `/etc/fstab` carries the mount entry (type, device and `noatime`).
 - The 2nd run of the playbook reports no more `changed`.
 
-## 🧹 Reset
+### 🧹 Reset
 
 To replay the challenge from a neutral state:
 
@@ -115,7 +141,7 @@ dsoxlab clean modules-rhel-lvm-storage
 The cleanup unmounts, removes the fstab entry, deletes LV, VG and PV, then makes
 `/dev/vdb` blank: you can rerun the solution from scratch.
 
-## 💡 Going further
+### 💡 Going further
 
 - **`ansible-lint --profile production`**: validate the quality of your solution.
 

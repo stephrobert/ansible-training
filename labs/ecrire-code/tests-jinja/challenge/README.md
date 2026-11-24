@@ -1,12 +1,39 @@
-# 🎯 Challenge — Jinja2 tests in a conditional file
+# The template that crashed on a string it took for a list
 
-## ✅ Objective
+## The situation
+
+The generator worked for a year. Then someone passed a single value where the
+template expected a list. Jinja iterated over it happily — character by
+character — and produced a config with one line per letter. Nobody noticed
+until the service refused to start. Another day, an optional variable was
+simply absent and the run died mid-render. A template that trusts its input is
+a template waiting for the day the input changes.
+
+You make it **check before it acts**, on `db1.lab`, from **control-node.lab**.
+
+Your mission:
+
+1. Write conditional lines into `/tmp/tests-jinja.txt` that only render when
+   their test actually passes.
+2. Test **existence** and test **type**: a variable that is defined, a value
+   that is really a dict, a value that is really a list.
+3. Test the negative case too: an optional variable that was never defined must
+   be **detected as undefined**, not crash the render.
+4. Do not mix the two syntaxes: a filter goes after `|`, a test goes after
+   `is`. Then keep the output clean with whitespace control.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/templates-jinja2/tests-jinja/ (in French)
+
+## 🎯 Challenge — Jinja2 tests in a conditional file
+
+### ✅ Objective
 
 Write `challenge/solution.yml` that, on **db1.lab**, drops `/tmp/tests-jinja.txt`
 containing 4 lines, each produced by a different **Jinja2 test** (`is
 defined`, `is mapping`, `is sequence`, `is undefined`).
 
-## 🧩 Input data
+### 🧩 Input data
 
 ```yaml
 user: { name: alice, age: 30 }
@@ -17,7 +44,7 @@ ports: [80, 443, 8080]
 # optional_var is intentionally not defined
 ```
 
-## 🧩 Expected output
+### 🧩 Expected output
 
 ```text
 user_defined=yes
@@ -28,7 +55,7 @@ optional_undefined=yes
 
 Each line appears **only if** its corresponding test returns true.
 
-## 🧩 The 4 Jinja2 tests to use
+### 🧩 The 4 Jinja2 tests to use
 
 | Test | True if… |
 | --- | --- |
@@ -40,7 +67,7 @@ Each line appears **only if** its corresponding test returns true.
 > ⚠️ **Filter** vs **test** difference: **filters** go after `|`
 > (`var | upper`), **tests** go after `is` (`var is defined`). Do not swap them.
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -87,26 +114,26 @@ Each line appears **only if** its corresponding test returns true.
 > - **`is divisibleby`**: `42 is divisibleby 7` → `true`. Useful for
 >   selective iterations (every 5th element, etc.).
 
-## 🚀 Launch
+### 🚀 Launch
 
 ```bash
 ansible-playbook labs/ecrire-code/tests-jinja/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "cat /tmp/tests-jinja.txt"
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/tests-jinja/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-tests-jinja
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **Numeric tests**: `is even`, `is odd`, `is divisibleby(N)`.
 - **String tests**: `is iterable`, `is string`, `is integer`, `is float`,

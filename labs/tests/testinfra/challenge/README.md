@@ -1,6 +1,31 @@
-# 🎯 Challenge: write the testinfra tests for the webserver role
+# The YAML assertions have outgrown YAML
 
-## ✅ Mission
+## The situation
+
+Your `verify.yml` has become a wall. Checking eight packages means eight
+near-identical blocks, each with its own `register` and its own `assert`. When
+one fails, the report says a task failed, not which package. The reviewer asked
+for coverage of the service, the socket, the config file and the users, and the
+YAML is now longer than the role it tests. The assertions are not wrong, they
+have simply outgrown the language they are written in.
+
+Your mission, from the project directory:
+
+1. Switch the scenario's **verifier** to the Python one, and make the cycle run
+   the new assertions in place of the YAML ones.
+2. Rewrite the checks against the live instance: package installed, service
+   running, socket listening, config file present, users and groups as expected.
+3. Collapse the repetitive cases into a **single parametrized test**, so eight
+   packages cost one test and each failure names its own case.
+4. Argue the trade-off: when the YAML verifier is still the right call, and when
+   Python earns its dependency.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/tests-testinfra/ (in French)
+
+## 🎯 Challenge: write the testinfra tests for the webserver role
+
+### ✅ Mission
 
 The `webserver` role and `converge.yml` are delivered. Your job is to write
 the verification layer in Python:
@@ -17,7 +42,7 @@ The 4 minimal expected proofs:
 3. socket listening on port 8080,
 4. `nginx -t` returns 0 (valid configuration).
 
-## 🧩 Stuck?
+### 🧩 Stuck?
 
 ```bash
 dsoxlab hint tests-testinfra
@@ -26,7 +51,7 @@ dsoxlab hint tests-testinfra
 Hints are progressive and **cost points**: the first one points you in the
 right direction, the last one unblocks you.
 
-## 📓 Command log
+### 📓 Command log
 
 When your tests are ready, record the commands you ran (`molecule verify`...)
 in `challenge/solution.sh`. This log must exist for
@@ -36,7 +61,7 @@ pytest to run:
 chmod +x challenge/solution.sh
 ```
 
-## 🧪 Validation
+### 🧪 Validation
 
 ```bash
 pytest -v labs/tests/testinfra/challenge/tests/
@@ -46,13 +71,13 @@ The test analyzes your Python file (AST: real test functions
 using `host`, real assertions) and checks that pytest can
 collect it.
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean tests-testinfra
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - `host.file(...).content_string`: assert on a file's content.
 - Parametrize a single test over several packages with `@pytest.mark.parametrize`.

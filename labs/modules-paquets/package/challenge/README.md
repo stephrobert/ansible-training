@@ -1,6 +1,30 @@
-# 🎯 Challenge — `package:` module (multi-package, distro-agnostic)
+# Standardize the toolbox, and get telnet off the server
 
-## ✅ Objective
+## The situation
+
+Two things landed on your desk the same morning. The on-call team is tired of
+finding **web1.lab** without an editor worth the name or shell completion, and
+the security scan flagged the `telnet` client, whose cleartext protocol has no
+business on a server in 2026. Same play, opposite directions: install what is
+missing, remove what should not be there. And since the Debian fleet arrives
+next quarter, the playbook must not hardcode the RHEL package manager.
+
+Your mission:
+
+1. From **control-node.lab**, bring **web1.lab** up to the standard toolbox
+   (editor, shell completion, tree view) in a **single transaction**, not one
+   task per package.
+2. Remove **`telnet`**, and make sure the removal is proven against the package
+   database, not against a command that happens to be missing.
+3. Stay **distro-agnostic**: the same playbook must survive the arrival of
+   Debian nodes without an `apt` rewrite.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-package/ (in French)
+
+## 🎯 Challenge — `package:` module (multi-package, distro-agnostic)
+
+### ✅ Objective
 
 On **web1.lab**, manage 4 packages **with a single module**:
 
@@ -16,7 +40,7 @@ Use **`ansible.builtin.package`** rather than `dnf`. This module is
 Debian/Ubuntu, etc. Ideal for a single role that must run on several
 distributions.
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -54,7 +78,7 @@ distributions.
 >   RPM/dpkg database. No need to replay the playbook if you clean up
 >   manually with `dnf`.
 
-## 🚀 Launch
+### 🚀 Launch
 
 ```bash
 ansible-playbook labs/modules-paquets/package/challenge/solution.yml
@@ -62,19 +86,19 @@ ansible web1.lab -m ansible.builtin.command -a "rpm -q vim-enhanced bash-complet
 ansible web1.lab -m ansible.builtin.command -a "rpm -q telnet" || echo "telnet absent (OK)"
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-paquets/package/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean modules-paquets-package
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`package` vs `dnf`**: prefer `package` when the code can run on
   several distros. Prefer `dnf` (or `apt`) when you need

@@ -1,6 +1,30 @@
-# 🎯 Challenge: a real TDD cycle with Molecule
+# Tests written after the code always agree with the code
 
-## ✅ Mission
+## The situation
+
+The team's roles are all tested, and the tests never catch anything. The reason
+is visible in the git history: the tasks are written first, the assertions are
+written afterwards, and they end up describing what the code happens to do
+rather than what was asked for. You are starting a new `users` role, and this
+time the order is reversed: nothing gets written until a test demands it.
+
+Your mission, from the project directory:
+
+1. Write the **assertions first**, on a role whose tasks do not exist yet, and
+   run the cycle to watch them fail. A test that has never failed proves nothing.
+2. Declare the role's input contract before its code: the shape and type of the
+   list of users to create, so a bad call is rejected up front.
+3. Only then write the **minimum** tasks that turn the assertions green, looping
+   over the requested users rather than hardcoding any of them.
+4. Refactor the role once green, and use the suite as your safety net: it must
+   stay green through the rewrite, or it was never protecting you.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/molecule-tdd-cycle/ (in French)
+
+## 🎯 Challenge: a real TDD cycle with Molecule
+
+### ✅ Mission
 
 The `users` role is shipped with its **contract** (`meta/argument_specs.yml`,
 `defaults/main.yml`) and its **input data** (`converge.yml` creates
@@ -26,7 +50,7 @@ Expected state (this is what pytest checks):
 | `converge.yml` | unchanged: it is the contract data |
 | Everything | `molecule syntax` passes (pytest actually runs it) |
 
-## 🧩 Stuck?
+### 🧩 Stuck?
 
 ```bash
 dsoxlab hint molecule-tdd-cycle
@@ -35,7 +59,7 @@ dsoxlab hint molecule-tdd-cycle
 Hints are progressive and **cost points**: the first one points you in the
 right direction, the last one unblocks you.
 
-## 📓 Command log
+### 📓 Command log
 
 Record in `challenge/solution.sh` the sequence you actually ran
 (converge, verify red, implementation, verify green). This log must
@@ -45,7 +69,7 @@ exist for pytest to run:
 chmod +x challenge/solution.sh
 ```
 
-## 🧪 Validation
+### 🧪 Validation
 
 ```bash
 pytest -v labs/molecule/tdd-cycle/challenge/tests/
@@ -60,13 +84,13 @@ slow'`:
 pytest -v -m 'not slow' labs/molecule/tdd-cycle/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean molecule-tdd-cycle
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - Add a `dave` user in converge.yml: which tests do you write
   first?

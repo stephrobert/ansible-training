@@ -1,6 +1,34 @@
-# 🎯 Challenge — `--check --diff` puis exécution réelle
+# « montrez-moi ce que ça va changer, avant que ça change »
 
-## ✅ Objectif
+## La situation
+
+Le comité de validation des changements pose toujours la même question avant
+un run sur **db1.lab**, et elle est légitime : qu'est-ce que ce playbook va
+toucher, exactement ? Le trimestre dernier, un playbook a réécrit un fichier
+sous `/etc` que personne n'attendait, et le « ça devrait bien se passer » n'a
+pas survécu au post-mortem. Nouvelle règle : tout changement est répété à
+blanc, son diff est lu à voix haute, et seulement ensuite le même playbook
+tourne pour de vrai. Vous répétez ce workflow depuis **control-node.lab** sur
+un fichier marqueur inoffensif.
+
+Votre mission :
+
+1. Écrire un play qui dépose `/etc/lab-checkmode.txt` sur `db1.lab`, en mode
+   `0644`, avec un contenu connu.
+2. Le lancer d'abord en **`--check --diff`** : lire le bloc avant/après, puis
+   confirmer sur `db1.lab` que rien n'a réellement été écrit.
+3. Le lancer pour de vrai et vérifier que le diff correspond exactement à ce
+   qu'annonçait le run à blanc.
+4. Le lancer une troisième fois : aucun diff, `changed=0`. Puis identifier les
+   modules incapables de simuler, et savoir forcer une tâche en lecture seule
+   à s'exécuter malgré le check mode.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/playbooks/checkmode-diff/
+
+## 🎯 Challenge — `--check --diff` puis exécution réelle
+
+### ✅ Objectif
 
 Écrire `challenge/solution.yml` qui pose un fichier `/etc/lab-checkmode.txt` sur
 **db1.lab** contenant la chaîne **`Lab checkmode validé`**.
@@ -11,7 +39,7 @@ Le but pédagogique : démontrer le **workflow audit → exécution** :
    changer, sans rien écrire.
 2. **Exécution réelle** : une fois le diff validé, on relance sans `--check`.
 
-## 🧩 Bloqué ?
+### 🧩 Bloqué ?
 
 ```bash
 dsoxlab hint ecrire-code-checkmode-diff
@@ -20,9 +48,9 @@ dsoxlab hint ecrire-code-checkmode-diff
 Les indices sont progressifs et **coûtent des points** : le premier oriente, le
 dernier débloque.
 
-## 🚀 Lancement en deux temps
+### 🚀 Lancement en deux temps
 
-### 1. Audit en `--check --diff`
+#### 1. Audit en `--check --diff`
 
 ```bash
 ansible-playbook labs/ecrire-code/checkmode-diff/challenge/solution.yml \
@@ -40,7 +68,7 @@ ansible-playbook labs/ecrire-code/checkmode-diff/challenge/solution.yml \
    # Doit retourner: ls: cannot access ...: No such file or directory
    ```
 
-### 2. Exécution réelle
+#### 2. Exécution réelle
 
 ```bash
 ansible-playbook labs/ecrire-code/checkmode-diff/challenge/solution.yml --diff
@@ -56,7 +84,7 @@ ansible-playbook labs/ecrire-code/checkmode-diff/challenge/solution.yml --diff
    ansible db1.lab -m ansible.builtin.command -a "cat /etc/lab-checkmode.txt"
    ```
 
-### 3. Vérifier l'idempotence
+#### 3. Vérifier l'idempotence
 
 ```bash
 ansible-playbook labs/ecrire-code/checkmode-diff/challenge/solution.yml --diff
@@ -64,7 +92,7 @@ ansible-playbook labs/ecrire-code/checkmode-diff/challenge/solution.yml --diff
 
 🔍 `changed=0`, **pas de diff** affiché. C'est l'état stationnaire.
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/ecrire-code/checkmode-diff/challenge/tests/
@@ -80,7 +108,7 @@ Le test vérifie sur db1 :
 > *"Aucun challenge/solution.yml ni solution.sh trouvé"*, c'est qu'il faut
 > d'abord écrire `solution.yml` !
 
-## 🧹 Reset (rejouer le scénario depuis zéro)
+### 🧹 Reset (rejouer le scénario depuis zéro)
 
 ```bash
 dsoxlab clean ecrire-code-checkmode-diff
@@ -89,7 +117,7 @@ dsoxlab clean ecrire-code-checkmode-diff
 Cette cible supprime `/etc/lab-checkmode.txt` côté db1 pour rejouer l'audit
 diff "à blanc" (le diff doit re-montrer un ajout).
 
-## 🚀 Pour aller plus loin
+### 🚀 Pour aller plus loin
 
 - **Reproduire l'audit** : faites `dsoxlab clean <id-du-lab>` puis ré-exécutez `--check --diff`
   pour bien voir le diff "création depuis rien". Comparez avec un `--check

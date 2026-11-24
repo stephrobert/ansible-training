@@ -1,11 +1,37 @@
-# 🎯 Challenge — `find:` + cleanup automatique
+# Nettoyer les logs obèses sans supprimer les utiles
 
-## ✅ Objectif
+## La situation
+
+Une application de **db1.lab** déverse ses logs dans `/tmp` depuis des semaines,
+et certains ont assez grossi pour menacer la partition. La règle retenue par
+l'équipe est simple : au-delà d'une certaine taille, le log part ; en dessous, il
+reste, parce que les petits sont justement ceux que l'on lit pour déboguer.
+Personne ne veut d'un `rm` récité de mémoire à 2 h du matin sur une machine de
+production. Vous pilotez le nettoyage depuis **control-node.lab**, et c'est
+Ansible qui décide de ce qui part.
+
+Votre mission :
+
+1. Mettre en place le répertoire de travail et ses fichiers de log sur
+   **db1.lab** : le terrain sur lequel ce nettoyage s'exécutera.
+2. **Rechercher** dans ce répertoire les fichiers `.log` de **plus de 5 Mo**, en
+   laissant le module de recherche faire le filtrage plutôt qu'une ligne de
+   shell.
+3. **Supprimer les seuls fichiers trouvés**, en itérant sur le résultat de la
+   recherche : ce qui n'est pas dans la liste n'est pas touché.
+4. Prouver le résultat : les petits logs survivent, les gros ont disparu.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/module-find/
+
+## 🎯 Challenge — `find:` + cleanup automatique
+
+### ✅ Objectif
 
 Sur **db1.lab**, créer 5 fichiers `.log` de tailles diverses, puis utiliser
 `find:` pour identifier ceux **> 5Mo** et les supprimer en boucle.
 
-## 🧩 Étapes
+### 🧩 Étapes
 
 1. Créer un dossier `/tmp/lab-find-cleanup/` (mode 0755).
 2. Y créer **5 fichiers** `.log` :
@@ -19,7 +45,7 @@ Sur **db1.lab**, créer 5 fichiers `.log` de tailles diverses, puis utiliser
 
 À la fin, **seuls** `small1.log` et `small2.log` doivent rester.
 
-## 🧩 Squelette
+### 🧩 Squelette
 
 ```yaml
 ---
@@ -74,26 +100,26 @@ Sur **db1.lab**, créer 5 fichiers `.log` de tailles diverses, puis utiliser
 > - **`patterns:`** : liste de globs (`*.log`, `*.tmp`). Pour regex :
 >   `use_regex: true` + patterns regex.
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/modules-diagnostic/find/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "ls -la /tmp/lab-find-cleanup/"
 ```
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/modules-diagnostic/find/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 ansible db1.lab -b -m file -a "path=/tmp/lab-find-cleanup state=absent"
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **`age: 7d`** : ajouter un filtre temporel (logs > 5Mo **ET** > 7 jours).
 - **`recurse: true`** : descendre dans les sous-dossiers.

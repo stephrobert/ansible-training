@@ -1,6 +1,34 @@
-# 🎯 Challenge — Script de vérification d'installation
+# « chez moi ça marche »
 
-## ✅ Objectif
+## La situation
+
+Un collègue vous passe un playbook qui tourne très bien sur son portable et
+meurt sur le vôtre avec un laconique « couldn't resolve module/action ». Deux
+heures plus tard, le coupable apparaît : une collection manquante. Personne
+n'avait jamais écrit ce qu'un poste doit réellement embarquer pour mériter le
+nom de control node, alors chacun le redécouvre à ses dépens. Vous allez coder
+cette vérification une fois pour toutes.
+
+Tout se passe sur **votre propre control node**, aucun managed node impliqué.
+
+Votre mission :
+
+1. Identifier comment Ansible a été installé ici, et refuser toute version
+   antérieure à **ansible-core 2.18**.
+2. Vérifier la présence des **8 binaires standard** dans le `PATH` : un control
+   node sans `ansible-vault` ne sait pas gérer le moindre secret.
+3. Vérifier qu'une vraie bibliothèque de modules est accessible (**au moins
+   100 modules** via `ansible-doc`) et que les **3 collections** utilisées par
+   ce dépôt sont installées.
+4. Le rendre exploitable en CI : **exit 0** si le poste est conforme, **exit 1**
+   avec un message qui nomme ce qui manque.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/decouvrir/installation-ansible/
+
+## 🎯 Challenge — Script de vérification d'installation
+
+### ✅ Objectif
 
 Écrire un script Bash `solution.sh` à la racine de **ce répertoire**
 (`labs/decouvrir/installation-ansible/challenge/solution.sh`) qui :
@@ -43,7 +71,7 @@ done
 echo "Installation OK"
 ```
 
-## 🧪 Validation
+### 🧪 Validation
 
 Le script `tests/test_functional.py` lance votre `solution.sh` et vérifie
 qu'il retourne **exit 0** sans erreur :
@@ -52,13 +80,13 @@ qu'il retourne **exit 0** sans erreur :
 pytest -v labs/decouvrir/installation-ansible/challenge/tests/
 ```
 
-## 🚀 Pour aller plus loin
+### 🚀 Pour aller plus loin
 
 - Ajoutez un check de la **version Python** (≥ 3.11 attendu).
 - Affichez la **méthode d'installation détectée** (pipx vs dnf vs mise) en
   parsant `ansible --version`.
 
-## 🧹 Reset
+### 🧹 Reset
 
 Pour rejouer le challenge dans un état neutre :
 

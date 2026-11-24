@@ -1,17 +1,45 @@
-# 🎯 Challenge — Provisionner 3 comptes RHCE
+# Accueillir la nouvelle équipe sur le serveur de base de données
 
-## ✅ Objectif
+## La situation
+
+Deux personnes rejoignent le projet lundi et la chaîne de déploiement a besoin
+de sa propre identité sur **db1.lab** : Alice prend le rôle d'admin et doit
+atteindre sudo, Bob travaille comme développeur, et un compte de service exécute
+les déploiements depuis un répertoire applicatif plutôt qu'un home classique. Le
+partage NFS que l'équipe montera lit les permissions **par UID** : les comptes
+techniques doivent donc porter les mêmes numéros sur tous les hôtes. Vous
+provisionnez depuis **control-node.lab**.
+
+Votre mission :
+
+1. Créer d'abord le **groupe de l'équipe** sur **db1.lab**, puis les trois
+   comptes qui en dépendent : l'ordre n'est pas négociable.
+2. Donner à Alice ses privilèges d'admin via le **groupe secondaire** qui ouvre
+   sudo, **sans lui retirer** les groupes auxquels elle appartient peut-être
+   déjà.
+3. Figer les **UID fixes** sur les deux comptes techniques, et donner au compte
+   de déploiement son home dans le répertoire applicatif plutôt que dans
+   `/home`.
+4. Vérifier que l'ensemble est **idempotent** : un compte conforme doit
+   afficher `ok`, jamais `changed`.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/utilisateurs/module-user/
+
+## 🎯 Challenge — Provisionner 3 comptes RHCE
+
+### ✅ Objectif
 
 Sur **db1.lab**, créer 1 groupe + 3 comptes utilisateur avec des attributs
 spécifiques à chacun.
 
-## 🧩 Spécifications
+### 🧩 Spécifications
 
-### Groupe préalable
+#### Groupe préalable
 
 - `rhce-team` — groupe primaire des 3 users.
 
-### Utilisateurs à créer
+#### Utilisateurs à créer
 
 | Nom | Shell | Comment | Groupe primaire | Groupes secondaires | UID forcé | Home |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -19,7 +47,7 @@ spécifiques à chacun.
 | `bob` | `/bin/bash` | `Bob — dev` | `rhce-team` | — | **2001** | (défaut) |
 | `deploy` | `/bin/bash` | `Compte applicatif deploy` | `rhce-team` | — | **2000** | `/opt/deploy/` |
 
-## 🧩 Bloqué ?
+### 🧩 Bloqué ?
 
 ```bash
 dsoxlab hint modules-utilisateurs-user
@@ -28,7 +56,7 @@ dsoxlab hint modules-utilisateurs-user
 Les indices sont progressifs et **coûtent des points** : le premier oriente, le
 dernier débloque.
 
-## 🧩 Squelette
+### 🧩 Squelette
 
 ```yaml
 ---
@@ -86,26 +114,26 @@ dernier débloque.
 >   Pas la chaîne en clair. Pour un user sans password : `password: !`
 >   (locked) ou `password: '*'`.
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/modules-utilisateurs/user/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "id alice bob deploy"
 ```
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/modules-utilisateurs/user/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean modules-utilisateurs-user
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **`generate_ssh_key: true`** : crée une paire de clés SSH dans
   `~/.ssh/` du user au moment de la création.

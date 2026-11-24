@@ -1,6 +1,34 @@
-# 🎯 Challenge — Module `cron:` (2 jobs via `cron_file:`)
+# Planifier la sauvegarde et le nettoyage qui n'ont jamais tourné
 
-## ✅ Objectif
+## La situation
+
+La partition `/tmp` de **db1.lab** a saturé dimanche et a emporté la base avec
+elle, tandis que la sauvegarde horaire que tout le monde croyait active ne
+figurait dans la crontab de personne. Les deux jobs doivent être planifiés, et
+surtout **auditables** : l'administrateur précédent éditait une crontab
+partagée à la main, et personne ne sait aujourd'hui qui a ajouté quoi. Vous
+passez à un fichier dédié et versionné, déployé depuis **control-node.lab**, et
+les échecs doivent atteindre un humain.
+
+Votre mission :
+
+1. Provisionner un **fichier qui vous appartient dans `/etc/cron.d/`** sur
+   **db1.lab**, plutôt que de patcher la crontab partagée, pour qu'un rôle
+   possède sa planification.
+2. Poser l'**adresse de notification** en tête de ce fichier, pour qu'un job en
+   échec écrive à quelqu'un au lieu de mourir en silence.
+3. Planifier les deux jobs en root : la **sauvegarde horaire** et le
+   **nettoyage quotidien à 3 h** des fichiers de `/tmp` vieux de plus d'une
+   semaine.
+4. Garantir l'**idempotence** : rejouer le playbook ne doit pas empiler une
+   seconde copie de chaque job.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/paquets-services/module-cron/
+
+## 🎯 Challenge — Module `cron:` (2 jobs via `cron_file:`)
+
+### ✅ Objectif
 
 Sur **db1.lab**, créer un fichier dédié **`/etc/cron.d/lab-rhce`** qui
 contient :
@@ -16,7 +44,7 @@ contient :
 > et permet de poser une **configuration packageable** (un rôle pose son
 > fichier dédié, c'est plus propre que de patcher une crontab partagée).
 
-## 🧩 Pattern `cron_file:`
+### 🧩 Pattern `cron_file:`
 
 Avec `cron_file: lab-rhce`, **chaque appel** à `ansible.builtin.cron`
 écrit/modifie une ligne dans `/etc/cron.d/lab-rhce`. Pour
@@ -26,7 +54,7 @@ le `name:` (qui devient un commentaire `#Ansible: <name>` dans le fichier).
 > ⚠️ **`name:`** est **obligatoire** quand vous utilisez `cron_file:` —
 > c'est l'identifiant d'idempotence.
 
-## 🧩 Squelette
+### 🧩 Squelette
 
 ```yaml
 ---
@@ -75,7 +103,7 @@ le `name:` (qui devient un commentaire `#Ansible: <name>` dans le fichier).
 >   `daily`, `weekly`, etc. Évite l'écriture manuelle de
 >   `0 0 * * 0`.
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/modules-services/cron/challenge/solution.yml
@@ -93,19 +121,19 @@ MAILTO=admin@lab.local
 0 3 * * * root /usr/bin/find /tmp -mtime +7 -delete
 ```
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/modules-services/cron/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean modules-services-cron
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **Crontab utilisateur** : sans `cron_file:`, `cron:` modifie la crontab de
   l'utilisateur cible (`crontab -e`). Plus standard mais moins versionnable.

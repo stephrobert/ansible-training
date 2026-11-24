@@ -1,8 +1,35 @@
-# 🎯 Challenge: target only the running VMs of the lab
+# Stop maintaining an inventory the hypervisor already knows
+
+## The situation
+
+The static inventory lies. Two VMs listed in it were destroyed last month, a
+third was renamed, and every run wastes time timing out on hosts that no longer
+exist. Meanwhile libvirt knows exactly what is running, right now, on the
+hypervisor. Worse, the file lists shut-down VMs alongside live ones, so a play
+aimed at "everything" always fails on the ones that are off. You wire the
+inventory to the source of truth from **control-node.lab**.
+
+Your mission:
+
+1. Have libvirt **discover the VMs automatically** through the inventory plugin,
+   remembering that the inventory becomes a **directory** the plugin composes,
+   not a single hand-written file.
+2. Use the **dynamic state groups** the plugin generates, which no static file
+   declares, to tell running VMs from the rest.
+3. Target the **intersection** of the lab's static group and the running VMs: a
+   VM that is off must not be attempted, and a running VM outside the lab must
+   not be touched.
+4. Drop a marker on each VM actually reached, proving the discovery reflects the
+   state **at run time**.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/dynamiques/plugin-libvirt-kvm/ (in French)
+
+## 🎯 Challenge: target only the running VMs of the lab
 
 You have seen the libvirt plugin in action. The challenge is to **combine** the dynamic groups (`state_running`) and the static ones (`lab_vms`) to target **precisely** the lab VMs that are running.
 
-## ✅ Objective
+### ✅ Objective
 
 Write `solution.yml` that:
 
@@ -16,7 +43,7 @@ Write `solution.yml` that:
    The `<nom>` is that of the **libvirt domain**: `web1.lab`, not `web1`. The
    marker of `web1.lab` is therefore called `/tmp/lab57-mark-web1.lab.txt`.
 
-## 🧩 Instructions
+### 🧩 Instructions
 
 Skeleton to complete:
 
@@ -80,7 +107,7 @@ VM web2.lab running - inventaire dynamique libvirt OK
 VM db1.lab running - inventaire dynamique libvirt OK
 ```
 
-## 🧪 Validation
+### 🧪 Validation
 
 The pytest tests check that the **4 markers** exist with the right content,
 that the pattern resolves **only** the 4 lab VMs (no foreign VM touched), and
@@ -90,7 +117,7 @@ that the playbook is **idempotent**.
 pytest -v challenge/tests/
 ```
 
-## 🚀 Going further
+### 🚀 Going further
 
 - Shut off `web2.lab` (`virsh -c qemu:///system shutdown web2.lab`), rerun the
   playbook: only 3 markers are created, `web2.lab` is no longer in
@@ -110,7 +137,7 @@ pytest -v challenge/tests/
 
 Good luck! 🧠
 
-## 🧹 Reset
+### 🧹 Reset
 
 To replay the challenge in a neutral state:
 

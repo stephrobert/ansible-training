@@ -1,6 +1,34 @@
-# 🎯 Challenge — Targeted `when` conditions
+# One playbook, hosts that are not the same
 
-## ✅ Objective
+## The situation
+
+The playbook has to run on the whole fleet, and the fleet is not homogeneous:
+some hosts belong to the RedHat family and some do not, some run a version old
+enough to lack the feature, and one option should only be on where the team
+explicitly asked for it. Today there are three near-identical playbooks,
+copy-pasted from one another. They diverged the day someone fixed a bug in
+exactly one of them.
+
+You collapse the logic into a single play on `db1.lab`, gated by conditions.
+
+Your mission:
+
+1. Gate a task on a **fact**: it applies to the RedHat family and skips
+   everywhere else.
+2. **Combine two conditions** for the version-specific task: the right
+   distribution *and* a version high enough.
+3. Handle a flag that may not exist at all: check it is **defined** before
+   reading it, then coerce it — a flag passed on the command line is a string,
+   not a boolean, and it is truthy either way.
+4. Prove the skip is clean: the Debian task must be **skipped, not failed**,
+   and its file must be nowhere on db1.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/conditions-when/ (in French)
+
+## 🎯 Challenge — Targeted `when` conditions
+
+### ✅ Objective
 
 Write `challenge/solution.yml` that on **db1.lab** lays down **3 conditional
 files** and **does not lay down a 4th** (proof that a false `when` cleanly
@@ -16,7 +44,7 @@ skips the task).
 | --- | --- |
 | `/tmp/cond-debian.txt` | `ansible_os_family == "Debian"` (false on AlmaLinux) |
 
-## 🧩 Stuck?
+### 🧩 Stuck?
 
 ```bash
 dsoxlab hint ecrire-code-conditions-when
@@ -25,7 +53,7 @@ dsoxlab hint ecrire-code-conditions-when
 Hints are progressive and **cost points**: the first one points you in the
 right direction, the last one unblocks you.
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -82,7 +110,7 @@ right direction, the last one unblocks you.
 >   of the variable, `not none` tests its value. Subtle but
 >   important difference.
 
-## 🚀 Launch
+### 🚀 Launch
 
 ```bash
 ansible-playbook labs/ecrire-code/conditions-when/challenge/solution.yml \
@@ -92,7 +120,7 @@ ansible-playbook labs/ecrire-code/conditions-when/challenge/solution.yml \
 🔍 Expected output: `ok=4, changed=3, skipped=1` (the debian task is
 skipped).
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/ecrire-code/conditions-when/challenge/tests/
@@ -101,13 +129,13 @@ pytest -v labs/ecrire-code/conditions-when/challenge/tests/
 > ⚠️ The root `conftest.py` automatically plays your `solution.yml` with
 > `--extra-vars "enable_feature=true"` (see `_EXTRA_ARGS`).
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-conditions-when
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`when:` on a `block:`**: applies the condition to all the tasks of the
   block. DRY when you have 5 tasks that share the same condition.

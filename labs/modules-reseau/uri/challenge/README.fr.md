@@ -1,6 +1,33 @@
-# 🎯 Challenge — Module `uri:` (appels API + parsing JSON)
+# Parler à l'API depuis le playbook, pas depuis un pipeline curl
 
-## ✅ Objectif
+## La situation
+
+La chaîne de déploiement doit enregistrer chaque serveur auprès d'une API
+d'inventaire : lire la charge utile de référence, puis déclarer le nœud.
+Aujourd'hui cela se fait en `command: curl` tuyauté dans `jq`, et cela fait mal.
+Le code de retour ne dit rien d'utile sur le code HTTP, la réponse est analysée à
+la regex, et toute API qui répond `201` au lieu de `200` casse l'exécution. Vous
+réécrivez l'échange depuis **control-node.lab**, sur **db1.lab**, avec Ansible
+qui analyse réellement le JSON au lieu d'un shell qui fait semblant.
+
+Votre mission :
+
+1. **Interroger l'endpoint de référence** en GET depuis **db1.lab**, en
+   **capturant le corps de la réponse**, que le module ne renvoie pas par
+   défaut, et l'enregistrer dans `/opt/`.
+2. **Déclarer le nœud en POST** avec un **corps JSON** construit comme une
+   structure, pas comme une chaîne échappée à la main.
+3. **Accepter les codes légitimes de l'API** (`200` et `201`) : une création qui
+   répond `201` est un succès, pas un échec.
+4. Enregistrer la réponse **analysée** en JSON lisible, en partant de la
+   structure que renvoie le module plutôt que du texte brut.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/reseau/module-uri/
+
+## 🎯 Challenge — Module `uri:` (appels API + parsing JSON)
+
+### ✅ Objectif
 
 Sur **db1.lab**, faire 2 appels HTTP avec **`ansible.builtin.uri`** vers l'API
 d'inventaire interne du lab, servie par **`api-interne.lab:8009`** :
@@ -18,7 +45,7 @@ Pas de `command: curl`. Tout via le module Ansible.
 > chaque appel** : les tests relisent ce journal, et voient donc si la requête
 > est réellement partie, et avec quel agent.
 
-## 🧩 Étapes
+### 🧩 Étapes
 
 1. **GET** `http://api-interne.lab:8009/api/reference` :
    - `return_content: true` pour capturer le body.
@@ -33,7 +60,7 @@ Pas de `command: curl`. Tout via le module Ansible.
    - `register: post_response`.
    - **Écrire** `post_response.json | to_nice_json` dans `/opt/lab-uri-post.json`.
 
-## 🧩 Squelette
+### 🧩 Squelette
 
 ```yaml
 ---
@@ -91,7 +118,7 @@ Pas de `command: curl`. Tout via le module Ansible.
 >   identifiant de trace ou un horodatage dans la réponse rendrait le `copy:`
 >   `changed` à chaque passage.
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/modules-reseau/uri/challenge/solution.yml
@@ -101,20 +128,20 @@ ansible db1.lab -m ansible.builtin.command -a "head -5 /opt/lab-uri-get.json"
 ansible web2.lab -b -m ansible.builtin.command -a "cat /var/log/nginx/lab-uri-api.log"
 ```
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/modules-reseau/uri/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 ansible db1.lab -b -m file -a "path=/opt/lab-uri-get.json state=absent"
 ansible db1.lab -b -m file -a "path=/opt/lab-uri-post.json state=absent"
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **`until:` + `retries:` + `delay:`** : healthcheck applicatif — répéter
   l'appel jusqu'à ce qu'il réponde correctement (max N fois).

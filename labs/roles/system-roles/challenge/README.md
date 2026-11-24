@@ -1,6 +1,42 @@
-# 🎯 Challenge — Drive `chronyd` with the `timesync` system role
+# The file nobody should have written
 
-## ✅ Objective
+## The situation
+
+The audit came back. On db1.lab the clock drifts, the NTP servers are whatever
+DHCP felt like pushing, and the `/etc/chrony.conf` in place carries three
+generations of contradictory comments. The colleague who "fixed it by hand last
+time" has left. Nobody dares touch it, because nobody knows what breaks if they
+do.
+
+Red Hat already wrote the thing you were about to rewrite. The `timesync` system
+role takes an intent expressed as variables and returns a generated, signed,
+consistent file, across every RHEL version. It is an EX294 objective in its own
+right, and it is also the only way to leave that file repairable by the next
+person.
+
+Your mission, from the project directory, against **db1.lab**:
+
+1. Consume the **`timesync`** system role at play level, by fully qualified
+   name. You must not write a single line of `chrony.conf` yourself.
+2. Declare **three NTP servers**: `0.fr.pool.ntp.org` as the preferred source,
+   `1.fr.pool.ntp.org`, and `2.fr.pool.ntp.org` capped at a maximum polling
+   interval. All three with `iburst`.
+3. Bring the **clock stepping threshold** down to 0.1 second, and require **two
+   sources** to agree before any adjustment.
+4. Remove what the distribution had put there: the default `pool` and the DHCP
+   back door.
+5. Prove it on the machine, not in your editor: `chronyd` must run with those
+   three sources, and the clock must be locked onto one of them.
+
+The play must be **idempotent**: replayed, it rewrites nothing and restarts
+nothing.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/roles/ (in French)
+
+## 🎯 Challenge — Drive `chronyd` with the `timesync` system role
+
+### ✅ Objective
 
 Write `challenge/solution.yml`: **one play** on db1.lab that consumes the
 system role **`fedora.linux_system_roles.timesync`** and passes it the compliance
@@ -16,9 +52,9 @@ configuration is a failure.
 > the role's variables. A test parses your YAML and requires the role in FQCN in
 > the play's `roles:` list.
 
-## 🧩 Expected contract
+### 🧩 Expected contract
 
-### The three NTP servers
+#### The three NTP servers
 
 | Server | Requested options |
 | --- | --- |
@@ -30,13 +66,13 @@ Reminder: each entry of `timesync_ntp_servers` is a **dictionary**, whose
 only required key is `hostname`. The other options are booleans or
 integers bearing the name of the corresponding chrony directive.
 
-### The two clock settings
+#### The two clock settings
 
 - **Hard-correction threshold**: `0.1` second (the distribution is at `1.0`).
 - **Minimum of concordant sources** before adjustment: `2` (the distribution
   is at `1`).
 
-### What must disappear
+#### What must disappear
 
 - The distribution's **`pool`** directive.
 - The **`sourcedir`** directive, which let the DHCP inject its servers.
@@ -45,7 +81,7 @@ Those two go away **on their own** if you did the rest correctly:
 the role **regenerates** the file instead of amending it. If they are still there,
 it means something is writing alongside the role.
 
-## 🧩 Skeleton
+### 🧩 Skeleton
 
 ```yaml
 ---
@@ -84,13 +120,13 @@ it means something is writing alongside the role.
 >   safe", your play will no longer be idempotent and the idempotence test will say so.
 > - **`0.1` is not `"0.1"`.** The threshold is a float.
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 ansible-playbook labs/roles/system-roles/challenge/solution.yml
 ```
 
-## 🧪 Validation
+### 🧪 Validation
 
 ```bash
 pytest -v labs/roles/system-roles/challenge/tests/
@@ -106,13 +142,13 @@ chronyc -N sources                           # what the daemon loaded
 chronyc tracking                             # what the clock is locked onto
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean roles-system-roles
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **Set `timesync_dhcp_ntp_servers: true`** and replay: `sourcedir`
   reappears, `PEERNTP=no` disappears. One variable, two files, zero line

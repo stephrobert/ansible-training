@@ -1,8 +1,36 @@
-# 🎯 Challenge : cibler uniquement les VMs running du lab
+# Cesser d'entretenir un inventaire que l'hyperviseur connaît déjà
+
+## La situation
+
+L'inventaire statique ment. Deux VMs qu'il liste ont été détruites le mois
+dernier, une troisième a été renommée, et chaque exécution perd du temps en
+timeouts sur des hôtes qui n'existent plus. Pendant ce temps, libvirt sait
+exactement ce qui tourne sur l'hyperviseur. Pire, le fichier mélange les VMs
+éteintes et les vivantes : un play visant « tout » échoue toujours sur celles
+qui sont arrêtées. Vous branchez l'inventaire sur la source de vérité depuis
+**control-node.lab**.
+
+Votre mission :
+
+1. Faire **découvrir les VMs automatiquement** par libvirt via le plugin
+   d'inventaire, en gardant à l'esprit que l'inventaire devient un
+   **répertoire** que le plugin compose, et non un fichier écrit à la main.
+2. Utiliser les **groupes d'état dynamiques** générés par le plugin, qu'aucun
+   fichier statique ne déclare, pour isoler les VMs en cours d'exécution.
+3. Viser l'**intersection** du groupe statique du lab et des VMs running : une
+   VM éteinte ne doit pas être tentée, et une VM running hors du lab ne doit pas
+   être touchée.
+4. Poser un marqueur sur chaque VM réellement atteinte, prouvant que la
+   découverte reflète l'état **au moment de l'exécution**.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/inventaires/dynamiques/plugin-libvirt-kvm/
+
+## 🎯 Challenge : cibler uniquement les VMs running du lab
 
 Vous avez vu le plugin libvirt en action. Le challenge consiste à **combiner** les groupes dynamiques (`state_running`) et statiques (`lab_vms`) pour cibler **précisément** les VMs du lab qui sont en cours d'exécution.
 
-## ✅ Objectif
+### ✅ Objectif
 
 Écrire `solution.yml` qui :
 
@@ -16,7 +44,7 @@ Vous avez vu le plugin libvirt en action. Le challenge consiste à **combiner** 
    Le `<nom>` est celui du **domaine libvirt** : `web1.lab`, pas `web1`. Le
    marqueur de `web1.lab` s'appelle donc `/tmp/lab57-mark-web1.lab.txt`.
 
-## 🧩 Consignes
+### 🧩 Consignes
 
 Squelette à compléter :
 
@@ -80,7 +108,7 @@ VM web2.lab running - inventaire dynamique libvirt OK
 VM db1.lab running - inventaire dynamique libvirt OK
 ```
 
-## 🧪 Validation
+### 🧪 Validation
 
 Les tests pytest vérifient que les **4 marqueurs** existent avec le bon contenu,
 que le pattern ne résout **que** les 4 VMs du lab (aucune VM étrangère touchée),
@@ -90,7 +118,7 @@ et que le playbook est **idempotent**.
 pytest -v challenge/tests/
 ```
 
-## 🚀 Pour aller plus loin
+### 🚀 Pour aller plus loin
 
 - Éteignez `web2.lab` (`virsh -c qemu:///system shutdown web2.lab`), relancez le
   playbook : seuls 3 marqueurs sont créés, `web2.lab` n'est plus dans
@@ -110,7 +138,7 @@ pytest -v challenge/tests/
 
 Bonne chance ! 🧠
 
-## 🧹 Reset
+### 🧹 Reset
 
 Pour rejouer le challenge dans un état neutre :
 

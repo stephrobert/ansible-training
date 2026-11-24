@@ -1,6 +1,32 @@
-# 🎯 Challenge — `wait_for:` + `pause:` (synchronization)
+# Replace the blind sleeps holding the deployment together
 
-## ✅ Objective
+## The situation
+
+The deployment playbook for **db1.lab** is riddled with `sleep 30`, each one
+added the day something went wrong. Nobody dares remove them, and they still are
+not enough: the job sometimes finishes in two seconds, sometimes in forty, and
+the play carries on regardless of what actually happened. Waiting blindly is not
+synchronizing. You rewrite the sequence from **control-node.lab** so it waits for
+**events**, not for the clock.
+
+Your mission:
+
+1. On **db1.lab**, launch the background job that lays down its marker after a
+   few seconds, then **wait for the marker to appear** with a timeout that
+   fails fast instead of hanging for minutes.
+2. Add a short **stabilization pause**, the one case where a timer is honest,
+   and know that it blocks the control node, not the managed node.
+3. **Check the service is actually listening** on its port before declaring
+   success: a service that is `started` is not always a service that answers,
+   and the module only tests TCP.
+4. Write the success marker once, and only once, the synchronization holds.
+
+The full method is in the companion guide:
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/modules/diagnostic/module-wait-for-pause/ (in French)
+
+## 🎯 Challenge — `wait_for:` + `pause:` (synchronization)
+
+### ✅ Objective
 
 On **db1.lab**, write a play that:
 
@@ -12,7 +38,7 @@ On **db1.lab**, write a play that:
    `chronyd`/323 is UDP, not testable by `wait_for: port:` which tests **TCP only**.
 5. Writes a **success** file `/tmp/lab-waitfor-success.txt`.
 
-## 🧩 Steps
+### 🧩 Steps
 
 ```yaml
 ---
@@ -63,26 +89,26 @@ On **db1.lab**, write a play that:
 >   with `delay:`, useful to synchronize with a service that drops
 >   a marker.
 
-## 🚀 Run
+### 🚀 Run
 
 ```bash
 ansible-playbook labs/modules-diagnostic/wait-for-pause/challenge/solution.yml
 ansible db1.lab -m ansible.builtin.command -a "ls /tmp/lab-waitfor-*"
 ```
 
-## 🧪 Automated validation
+### 🧪 Automated validation
 
 ```bash
 pytest -v labs/modules-diagnostic/wait-for-pause/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 ansible db1.lab -b -m shell -a "rm -f /tmp/lab-waitfor-*"
 ```
 
-## 💡 Going further
+### 💡 Going further
 
 - **`active_connection_states:`** on `wait_for: port:`: match the precise TCP
   states (`LISTEN` only).

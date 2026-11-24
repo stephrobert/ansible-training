@@ -1,6 +1,33 @@
-# 🎯 Challenge — Créer 3 users dont 2 actifs (`loop` + `when` + `loop_control`)
+# Trois comptes demandés, un déjà révoqué
 
-## ✅ Objectif
+## La situation
+
+Les RH ont envoyé la liste : trois comptes à créer sur **db1.lab**, chacun
+avec son shell. Entre la demande et aujourd'hui, l'un d'eux a été révoqué : la
+personne n'a jamais rejoint l'entreprise. La liste porte toujours les trois,
+avec un drapeau qui dit lesquels sont actifs, parce que cette liste est la
+source de vérité et que personne n'a le droit de la tailler à la main. Votre
+playbook doit lire le drapeau, pas la longueur.
+
+Vous l'écrivez depuis **control-node.lab**.
+
+Votre mission :
+
+1. Itérer sur la liste des comptes et ne créer **que ceux marqués actifs**,
+   chacun avec le shell qu'il réclame.
+2. Garantir que le compte révoqué **n'existe pas** sur l'hôte, même si un run
+   antérieur l'avait créé avant la révocation.
+3. Garder la console lisible : quarante comptes affichés en dicts bruts, c'est
+   un mur de bruit. **Étiquetez** chaque itération par son nom.
+4. Écrire un récapitulatif listant les comptes actifs, par ordre alphabétique
+   et séparés par des virgules, dérivé de cette même liste plutôt que ressaisi.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/controle-flux/boucles-loop/
+
+## 🎯 Challenge — Créer 3 users dont 2 actifs (`loop` + `when` + `loop_control`)
+
+### ✅ Objectif
 
 Écrire `challenge/solution.yml` qui sur **db1.lab** :
 
@@ -10,7 +37,7 @@
 3. Pose un fichier récapitulatif `/tmp/loop-result.txt` listant les users
    actifs (séparés par virgule, ordre alphabétique).
 
-## 🧩 Données d'entrée
+### 🧩 Données d'entrée
 
 ```yaml
 challenge_users:
@@ -25,7 +52,7 @@ Résultat attendu :
 - User `chal_bob` **non** créé.
 - `/tmp/loop-result.txt` contient `chal_alice,chal_charlie`.
 
-## 🧩 Modèle d'une boucle conditionnelle
+### 🧩 Modèle d'une boucle conditionnelle
 
 ```yaml
 - name: Faire qqch sur certains items seulement
@@ -37,7 +64,7 @@ Résultat attendu :
   when: item.???              # filtre sur l'item courant
 ```
 
-## 🧩 Squelette
+### 🧩 Squelette
 
 ```yaml
 ---
@@ -89,7 +116,7 @@ Résultat attendu :
 > - **`selectattr` retourne un generator**. Chainer `| list` si vous
 >   voulez `length` ou indexer (`[0]`).
 
-## 🚀 Lancement
+### 🚀 Lancement
 
 ```bash
 ansible-playbook labs/ecrire-code/boucles-loop/challenge/solution.yml
@@ -103,13 +130,13 @@ ansible db1.lab -m ansible.builtin.command -a "id chal_bob" || echo "chal_bob ab
 ansible db1.lab -m ansible.builtin.command -a "cat /tmp/loop-result.txt"
 ```
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/ecrire-code/boucles-loop/challenge/tests/
 ```
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-boucles-loop
@@ -117,7 +144,7 @@ dsoxlab clean ecrire-code-boucles-loop
 
 Supprime les 3 users + le fichier marqueur.
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **`with_items` (deprecated)** : ancienne syntaxe équivalente à `loop:`.
   Évitez-la dans le code neuf — `ansible-lint` la signale.

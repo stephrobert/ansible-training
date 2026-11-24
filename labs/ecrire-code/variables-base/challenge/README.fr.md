@@ -1,6 +1,35 @@
-# 🎯 Challenge — Variables et override par `--extra-vars`
+# La valeur par défaut qui est partie en production
 
-## ✅ Objectif
+## La situation
+
+Le playbook de `db1.lab` porte ses valeurs dans le fichier : nom du service,
+port, moteur de base, limite de connexions. Vendredi dernier, quelqu'un a
+modifié ce fichier pour pointer un run vers la production, l'a lancé, et a
+oublié de revenir en arrière. Le collègue suivant a récupéré le dépôt et a
+poussé des réglages de production sur un hôte de test. Les valeurs ne sont pas
+le problème : les figer à un seul endroit, et **modifier cet endroit pour
+changer un run**, si. Vous restructurez ça depuis **control-node.lab**.
+
+Votre mission :
+
+1. Séparer les sources : garder l'identité du service dans les **`vars:`** du
+   play, déplacer les réglages de base dans un fichier externe chargé par
+   **`vars_files:`**.
+2. Lancer une fois sans rien passer en ligne de commande : chaque variable doit
+   prendre la valeur venant de sa propre source.
+3. En surcharger deux au runtime avec **`--extra-vars`**, sans toucher au
+   moindre fichier.
+4. Écrire les valeurs résolues sur `db1.lab` et les relire : seules les deux
+   surchargées ont bougé. Puis dire pourquoi, si les deux sources portaient la
+   même variable, c'est `vars_files:` (niveau 14) qui l'emporterait sur les
+   `vars:` du play (niveau 12), et non l'inverse.
+
+La méthode complète est dans le guide compagnon :
+https://www.stephane-robert.info/docs/infra-as-code/gestion-de-configuration/ansible/ecrire-code/variables-facts/variables-base/
+
+## 🎯 Challenge — Variables et override par `--extra-vars`
+
+### ✅ Objectif
 
 Écrire `challenge/solution.yml` qui sur **db1.lab** combine **3 sources** de
 variables et démontre la **précédence** d'`--extra-vars` (niveau 22, le plus haut).
@@ -13,7 +42,7 @@ Vous allez créer **deux fichiers** :
 À l'exécution, on passe `--extra-vars` pour forcer 2 valeurs et observer
 qu'elles **écrasent** celles du play.
 
-## 🧩 Bloqué ?
+### 🧩 Bloqué ?
 
 ```bash
 dsoxlab hint ecrire-code-variables-base
@@ -22,9 +51,9 @@ dsoxlab hint ecrire-code-variables-base
 Les indices sont progressifs et **coûtent des points** : le premier oriente, le
 dernier débloque.
 
-## 🚀 Lancement
+### 🚀 Lancement
 
-### Premier run — sans `--extra-vars`
+#### Premier run — sans `--extra-vars`
 
 ```bash
 ansible-playbook labs/ecrire-code/variables-base/challenge/solution.yml
@@ -36,7 +65,7 @@ ansible db1.lab -m ansible.builtin.command -a "cat /tmp/challenge-vars.txt"
 
 🔍 Vous devez voir les 4 valeurs **par défaut** (cf. tableau ci-dessus).
 
-### Second run — avec `--extra-vars`
+#### Second run — avec `--extra-vars`
 
 ```bash
 ansible-playbook labs/ecrire-code/variables-base/challenge/solution.yml \
@@ -67,7 +96,7 @@ db_max_connections=500         ← écrasé par --extra-vars
 >   variables, donc le piège ne se déclenche pas ; le lab
 >   `precedence-variables` le met en scène et le mesure.
 
-## 🧪 Validation automatisée
+### 🧪 Validation automatisée
 
 ```bash
 pytest -v labs/ecrire-code/variables-base/challenge/tests/
@@ -77,13 +106,13 @@ pytest -v labs/ecrire-code/variables-base/challenge/tests/
 > `--extra-vars "service_name=production-api db_max_connections=500"` (cf.
 > `_EXTRA_ARGS` dans le conftest). C'est ce qui rend les 5 assertions vertes.
 
-## 🧹 Reset
+### 🧹 Reset
 
 ```bash
 dsoxlab clean ecrire-code-variables-base
 ```
 
-## 💡 Pour aller plus loin
+### 💡 Pour aller plus loin
 
 - **Tester `group_vars/all.yml`** : posez `service_port: 9999` dans
   `inventory/group_vars/all.yml` et relancez sans `--extra-vars`. Quelle valeur
